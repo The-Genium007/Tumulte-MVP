@@ -14,6 +14,15 @@ export default class AuthController {
   }
 
   /**
+   * Masque une valeur sensible en logs
+   */
+  private maskSecret(value?: string | null): string {
+    if (!value) return 'undefined'
+    if (value.length <= 6) return `${value.slice(0, 2)}***`
+    return `${value.slice(0, 2)}***${value.slice(-4)}`
+  }
+
+  /**
    * Redirige vers l'URL d'autorisation OAuth Twitch
    */
   async redirect({ response, session }: HttpContext) {
@@ -26,9 +35,16 @@ export default class AuthController {
     // Générer l'URL d'autorisation Twitch
     const authUrl = this.twitchAuthService.getAuthorizationUrl(state)
 
-    logger.info(
-      `Redirecting to Twitch OAuth with redirect_uri=${env.get('TWITCH_REDIRECT_URI')}`
-    )
+    logger.info({
+      message: 'Redirecting to Twitch OAuth',
+      redirect_uri: env.get('TWITCH_REDIRECT_URI'),
+      client_id: env.get('TWITCH_CLIENT_ID'),
+      client_secret_masked: this.maskSecret(env.get('TWITCH_CLIENT_SECRET')),
+      frontend_url: env.get('FRONTEND_URL'),
+      node_env: env.get('NODE_ENV'),
+      log_level: env.get('LOG_LEVEL'),
+      session_driver: env.get('SESSION_DRIVER'),
+    })
 
     return response.redirect(authUrl)
   }
@@ -40,6 +56,15 @@ export default class AuthController {
     const code = request.input('code')
     const state = request.input('state')
     const storedState = session.get('oauth_state')
+
+    logger.info({
+      message: 'OAuth callback received',
+      has_code: Boolean(code),
+      state,
+      stored_state: storedState,
+      redirect_uri: env.get('TWITCH_REDIRECT_URI'),
+      client_id: env.get('TWITCH_CLIENT_ID'),
+    })
 
     // Valider le state CSRF
     if (!state || !storedState || state !== storedState) {
@@ -53,11 +78,24 @@ export default class AuthController {
     try {
       // Échanger le code contre des tokens
       const tokens = await this.twitchAuthService.exchangeCodeForTokens(code)
+      logger.info({
+        message: 'OAuth tokens exchanged successfully',
+        scopes: tokens.scope,
+        expires_in: tokens.expires_in,
+        has_refresh: Boolean(tokens.refresh_token),
+        has_access: Boolean(tokens.access_token),
+      })
 
       // Récupérer les informations de l'utilisateur
       const userInfo = await this.twitchAuthService.getUserInfo(tokens.access_token)
 
-      logger.info(`OAuth callback: user ${userInfo.login} authenticated`)
+      logger.info({
+        message: 'OAuth callback: user authenticated',
+        user_login: userInfo.login,
+        user_id: userInfo.id,
+        display_name: userInfo.display_name,
+        scopes: tokens.scope,
+      })
 
       // Déterminer le rôle de l'utilisateur
       const isMJ = this.twitchAuthService.isMJ(userInfo.id)
@@ -120,9 +158,22 @@ export default class AuthController {
       const redirectPath = role === 'MJ' ? '/mj' : '/streamer'
       const redirectUrl = `${env.get('FRONTEND_URL')}/auth/callback?redirect=${encodeURIComponent(redirectPath)}`
 
+      logger.info({
+        message: 'Redirecting user to frontend after auth',
+        redirect_path: redirectPath,
+        redirect_url: redirectUrl,
+        frontend_url: env.get('FRONTEND_URL'),
+      })
+
       return response.redirect(redirectUrl)
     } catch (error) {
-      logger.error(`OAuth callback failed: ${error.message}`)
+      logger.error({
+        message: 'OAuth callback failed',
+        error: error?.message,
+        stack: error?.stack,
+        redirect_uri: env.get('TWITCH_REDIRECT_URI'),
+        client_id: env.get('TWITCH_CLIENT_ID'),
+      })
       return response.redirect(`${env.get('FRONTEND_URL')}/login?error=oauth_failed`)
     }
   }
