@@ -9,11 +9,12 @@ services:
     container_name: tumulte-backend
     environment:
       NODE_ENV: production
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_USER: ${DB_USER:-postgres}
-      DB_PASSWORD: ${DB_PASSWORD:-postgres}
-      DB_DATABASE: ${DB_DATABASE:-twitch_polls}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_DATABASE: ${DB_DATABASE}
       PORT: 3333
       HOST: 0.0.0.0
       APP_KEY: ${APP_KEY}
@@ -22,7 +23,7 @@ services:
       TWITCH_REDIRECT_URI: ${TWITCH_REDIRECT_URI}
       MJ_TWITCH_IDS: ${MJ_TWITCH_IDS}
       SESSION_DRIVER: ${SESSION_DRIVER:-cookie}
-      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      FRONTEND_URL: ${FRONTEND_URL}
     networks:
       - dokploy-network
     restart: unless-stopped
