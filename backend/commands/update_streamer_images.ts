@@ -2,6 +2,17 @@ import { BaseCommand } from '@adonisjs/core/ace'
 import type { CommandOptions } from '@adonisjs/core/types/ace'
 import Streamer from '#models/streamer'
 import TwitchApiService from '#services/twitch_api_service'
+import env from '#start/env'
+
+interface TwitchUserData {
+  data: Array<{
+    id: string
+    login: string
+    display_name: string
+    profile_image_url: string
+    broadcaster_type: string
+  }>
+}
 
 export default class UpdateStreamerImages extends BaseCommand {
   static commandName = 'streamers:update-images'
@@ -12,6 +23,7 @@ export default class UpdateStreamerImages extends BaseCommand {
   async run() {
     const streamers = await Streamer.query()
     const twitchApiService = new TwitchApiService()
+    const clientId = env.get('TWITCH_CLIENT_ID') || ''
 
     this.logger.info(`Mise à jour des images pour ${streamers.length} streamer(s)...`)
 
@@ -25,7 +37,7 @@ export default class UpdateStreamerImages extends BaseCommand {
           {
             headers: {
               'Authorization': `Bearer ${appAccessToken}`,
-              'Client-Id': twitchApiService['clientId'],
+              'Client-Id': clientId,
             },
           }
         )
@@ -37,16 +49,19 @@ export default class UpdateStreamerImages extends BaseCommand {
           continue
         }
 
-        const data = await response.json()
+        const data = (await response.json()) as TwitchUserData
 
         if (data.data && data.data.length > 0) {
-          const profileImageUrl = data.data[0].profile_image_url
-          streamer.profileImageUrl = profileImageUrl
+          const userData = data.data[0]
+          streamer.profileImageUrl = userData.profile_image_url
+          streamer.broadcasterType = userData.broadcaster_type || ''
           await streamer.save()
-          this.logger.success(`✓ ${streamer.twitchDisplayName}: ${profileImageUrl}`)
+          this.logger.success(`✓ ${streamer.twitchDisplayName}: ${userData.profile_image_url}`)
         }
-      } catch (error) {
-        this.logger.error(`Erreur pour ${streamer.twitchDisplayName}: ${error.message}`)
+      } catch (error: any) {
+        this.logger.error(
+          `Erreur pour ${streamer.twitchDisplayName}: ${error?.message || 'Unknown error'}`
+        )
       }
     }
 

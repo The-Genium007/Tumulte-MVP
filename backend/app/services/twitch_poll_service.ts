@@ -33,7 +33,7 @@ export default class TwitchPollService {
   private readonly authService: TwitchAuthService
 
   constructor() {
-    this.clientId = env.get('TWITCH_CLIENT_ID')
+    this.clientId = env.get('TWITCH_CLIENT_ID') || ''
     this.authService = new TwitchAuthService()
   }
 
@@ -77,7 +77,7 @@ export default class TwitchPollService {
       throw new Error(`Failed to create poll: ${error}`)
     }
 
-    const data: TwitchPollResponse = await response.json()
+    const data = (await response.json()) as TwitchPollResponse
 
     if (!data.data || data.data.length === 0) {
       throw new Error('No poll data returned from Twitch')
@@ -129,7 +129,7 @@ export default class TwitchPollService {
       throw new Error(`Failed to get poll: ${error}`)
     }
 
-    const data: TwitchPollResponse = await response.json()
+    const data = (await response.json()) as TwitchPollResponse
 
     if (!data.data || data.data.length === 0) {
       throw new Error('Poll not found')

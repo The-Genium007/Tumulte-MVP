@@ -26,9 +26,9 @@ export default class TwitchAuthService {
   private readonly scopes = ['channel:manage:polls', 'channel:read:polls']
 
   constructor() {
-    this.clientId = env.get('TWITCH_CLIENT_ID')
-    this.clientSecret = env.get('TWITCH_CLIENT_SECRET')
-    this.redirectUri = env.get('TWITCH_REDIRECT_URI')
+    this.clientId = env.get('TWITCH_CLIENT_ID') || ''
+    this.clientSecret = env.get('TWITCH_CLIENT_SECRET') || ''
+    this.redirectUri = env.get('TWITCH_REDIRECT_URI') || ''
   }
 
   /**
@@ -74,7 +74,7 @@ export default class TwitchAuthService {
       throw new Error(`Failed to exchange code for tokens: ${error}`)
     }
 
-    const data: TwitchTokenResponse = await response.json()
+    const data = (await response.json()) as TwitchTokenResponse
 
     return {
       access_token: data.access_token,
@@ -107,7 +107,7 @@ export default class TwitchAuthService {
       throw new Error(`Failed to get user info: ${error}`)
     }
 
-    const data: TwitchUserResponse = await response.json()
+    const data = (await response.json()) as TwitchUserResponse
 
     if (!data.data || data.data.length === 0) {
       throw new Error('No user data returned from Twitch')
@@ -151,7 +151,7 @@ export default class TwitchAuthService {
       throw new Error(`Failed to refresh token: ${error}`)
     }
 
-    const data: TwitchTokenResponse = await response.json()
+    const data = (await response.json()) as TwitchTokenResponse
 
     return {
       access_token: data.access_token,
