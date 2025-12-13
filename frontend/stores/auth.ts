@@ -39,7 +39,7 @@ export const useAuthStore = defineStore("auth", () => {
   }
 
   function loginWithTwitch(): void {
-    window.location.href = `${API_URL}/auth/twitch/redirect`;
+    window.location.href = `${API_URL}/twitch/redirect`;
   }
 
   async function logout(): Promise<void> {
