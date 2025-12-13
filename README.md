@@ -54,8 +54,13 @@ Tumulte allows Game Masters (GMs) to launch synchronized Twitch polls across mul
 git clone https://github.com/yourusername/tumulte.git
 cd tumulte
 
-# Start PostgreSQL
-docker-compose up -d
+# Start (or reuse) a PostgreSQL 16 instance
+# Example with Docker:
+docker run -d --name tumulte-postgres \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_PASSWORD=postgres \
+  -e POSTGRES_DB=twitch_polls \
+  -p 5432:5432 postgres:16-alpine
 
 # Backend setup
 cd backend
@@ -94,56 +99,30 @@ Find your Twitch User ID: https://www.streamweasels.com/tools/convert-twitch-use
 
 ## 📦 Deployment with Dokploy
 
-The project includes a Docker Compose configuration compatible with [Dokploy](https://docs.dokploy.com).
+Two separate Compose manifests are provided (both compatible with [Dokploy](https://docs.dokploy.com)):
 
-### Docker Compose Structure
+| File                        | Services included             | Notes |
+|-----------------------------|-------------------------------|-------|
+| `docker-compose.backend.yml`  | `backend` (Adonis API + WS)   | Connects to an **external** PostgreSQL instance via env vars. Mounts on the external `dokploy-network`. |
+| `docker-compose.frontend.yml` | `frontend` (Nuxt dashboard)   | Static Nuxt build served by Node (port 3000) on the same `dokploy-network`. |
 
-```yaml
-services:
-  backend:     # AdonisJS API + WebSocket
-  frontend:    # Vue.js Dashboard
-  postgres:    # PostgreSQL Database
-
-networks:
-  dokploy-network:  # Required for Dokploy (external)
-  internal:         # Internal services communication
-```
+> 💡 Deploy Postgres (or any other infra pieces such as Cloudflare Tunnel) in their own Dokploy services. Only the API and the dashboard are managed here.
 
 ### Network Information
 
-**Network name**: `dokploy-network` (external network managed by Dokploy)
+- **Network name**: `dokploy-network` (external network managed by Dokploy)
+- Attach your Cloudflared/Dokploy Traefik services to this network to route traffic.
 
-All services (backend, frontend) are connected to this network for Traefik routing and external access.
+### Service information for Cloudflare Tunnel (external stack)
 
-### Service Information for Cloudflare Tunnel
+| Service  | Hostname example        | Backend target                       | Protocol      |
+|----------|-------------------------|--------------------------------------|---------------|
+| Frontend | `app.yourdomain.com`    | `http://frontend:3000`               | HTTP          |
+| Backend  | `api.yourdomain.com`    | `http://backend:3333`                | HTTP + WS     |
 
-If you're configuring an external Cloudflare Tunnel, use these service details:
+> Assurez-vous que votre conteneur Cloudflared rejoint `dokploy-network` pour accéder aux services par leurs noms Docker (`frontend`, `backend`). Le tunnel reste dans un projet séparé afin de rester mutualisable.
 
-| Service  | Service Name       | Port | Protocol    | Description                  |
-|----------|--------------------|------|-------------|------------------------------|
-| Frontend | `frontend`         | 80   | HTTP        | Vue.js Dashboard & Overlay   |
-| Backend  | `backend`          | 3333 | HTTP/WS     | API + WebSocket              |
-
-**Example Cloudflare Tunnel Configuration:**
-```yaml
-# In your separate Cloudflare Tunnel service
-tunnel:
-  ingress:
-    - hostname: yourdomain.com
-      service: http://frontend:80
-    - hostname: api.yourdomain.com
-      service: http://backend:3333
-```
-
-**Important**:
-- Ensure your Cloudflare Tunnel container is on the same `dokploy-network`
-- Set Cloudflare SSL/TLS mode to **Full** or **Full (Strict)**
-- Backend supports WebSocket connections on the same port (3333)
-
-**Resources**:
-- [Dokploy Docker Compose Guide](https://docs.dokploy.com/docs/core/docker-compose)
-- [Cloudflare Tunnel Documentation](https://docs.dokploy.com/docs/core/domains/cloudflare)
-- [Dokploy Networking Best Practices](https://torchtree.com/en/post/dokploy-container-network-issue/)
+**Helpful docs**: [Dokploy Compose guide](https://docs.dokploy.com/docs/core/docker-compose) · [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/)
 
 ---
 
@@ -177,7 +156,8 @@ tumulte/
 │   ├── components/      # Reusable components
 │   └── composables/     # Shared logic (useAuth, useCampaigns, etc.)
 │
-└── docker-compose.yml   # Multi-service configuration
+├── docker-compose.backend.yml   # Backend stack (Adonis only)
+└── docker-compose.frontend.yml  # Frontend stack (Nuxt only)
 ```
 
 ---
@@ -187,14 +167,14 @@ tumulte/
 ### PostgreSQL Connection Issues
 
 ```bash
-# Check PostgreSQL is running
-docker-compose ps
+# If you run Postgres via Docker:
+docker ps --filter "name=tumulte-postgres"
+docker logs tumulte-postgres
+docker restart tumulte-postgres
 
-# View logs
-docker-compose logs postgres
-
-# Restart services
-docker-compose restart
+# For the backend service (Dokploy/local)
+docker compose -f docker-compose.backend.yml logs backend
+docker compose -f docker-compose.backend.yml restart backend
 ```
 
 ### OAuth Redirect Errors
