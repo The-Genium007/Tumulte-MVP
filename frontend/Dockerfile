@@ -37,21 +37,25 @@ ENV VITE_WS_URL=$VITE_WS_URL
 # Build the application
 RUN npm run build
 
-# Stage 3: Production with Nginx
-FROM nginx:alpine AS production
+# Stage 3: Production - run Nuxt server
+FROM node:20-alpine AS production
 
-# Copy built files
-COPY --from=build /app/dist /usr/share/nginx/html
+WORKDIR /app
 
-# Copy custom nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+ENV NODE_ENV=production
+ENV HOST=0.0.0.0
+ENV PORT=3000
 
-# Expose port
-EXPOSE 80
+# Copy the built output (contains server + public assets + runtime deps)
+COPY --from=build /app/.output ./.output
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost/health || exit 1
+# Optional: run as non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nuxt -u 1001 && \
+    chown -R nuxt:nodejs /app
 
-# Start nginx
-CMD ["nginx", "-g", "daemon off;"]
+USER nuxt
+
+EXPOSE 3000
+
+CMD ["node", ".output/server/index.mjs"]
