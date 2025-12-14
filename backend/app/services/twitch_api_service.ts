@@ -8,6 +8,14 @@ interface TwitchChannel {
   thumbnail_url: string
 }
 
+interface TwitchUserInfo {
+  id: string
+  login: string
+  display_name: string
+  profile_image_url: string
+  broadcaster_type: string
+}
+
 export default class TwitchApiService {
   private appAccessToken: string | null = null
   private tokenExpiry: number = 0
@@ -115,5 +123,45 @@ export default class TwitchApiService {
       logger.error(`Failed to search Twitch users: ${errorMessage}`)
       throw error
     }
+  }
+
+  /**
+   * Récupère des informations utilisateur pour une liste d'IDs
+   */
+  async getUsersByIds(ids: string[], accessToken: string): Promise<TwitchUserInfo[]> {
+    if (ids.length === 0) {
+      return []
+    }
+
+    const clientId = env.get('TWITCH_CLIENT_ID')
+
+    if (!clientId) {
+      throw new Error('Missing Twitch Client ID in environment')
+    }
+
+    const results: TwitchUserInfo[] = []
+    const chunkSize = 100
+    for (let i = 0; i < ids.length; i += chunkSize) {
+      const chunk = ids.slice(i, i + chunkSize)
+      const params = chunk.map((id) => `id=${encodeURIComponent(id)}`).join('&')
+
+      const response = await fetch(`https://api.twitch.tv/helix/users?${params}`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Client-Id': clientId,
+        },
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        logger.error(`Twitch API error (users): ${response.status} - ${errorText}`)
+        throw new Error(`Twitch API error: ${response.status}`)
+      }
+
+      const data = (await response.json()) as { data: TwitchUserInfo[] }
+      results.push(...data.data)
+    }
+
+    return results
   }
 }

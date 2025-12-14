@@ -6,6 +6,7 @@ import Streamer from '#models/streamer'
 import CampaignMembership from '#models/campaign_membership'
 import TwitchPollService from './twitch_poll_service.js'
 import WebSocketService from './websocket_service.js'
+import TwitchApiService from './twitch_api_service.js'
 
 export interface PollAggregatedVotes {
   pollInstanceId: string
@@ -17,11 +18,13 @@ export interface PollAggregatedVotes {
 export default class PollService {
   private readonly twitchPollService: TwitchPollService
   private readonly webSocketService: WebSocketService
+  private readonly twitchApiService: TwitchApiService
   private pollingIntervals: Map<string, NodeJS.Timeout> = new Map()
 
   constructor() {
     this.twitchPollService = new TwitchPollService()
     this.webSocketService = new WebSocketService()
+    this.twitchApiService = new TwitchApiService()
   }
 
   /**
@@ -47,8 +50,18 @@ export default class PollService {
       logger.info(`Creating polls for ${streamers.length} streamers (legacy mode)`)
     }
 
-    // Créer un poll pour chaque streamer
+    await this.refreshStreamersInfo(streamers)
+
+    // Créer un poll pour chaque streamer compatible
     for (const streamer of streamers) {
+      if (!this.isStreamerCompatible(streamer)) {
+        logger.warn(
+          `Skipping poll creation for ${streamer.twitchDisplayName}: broadcasterType=${streamer.broadcasterType ||
+            'unknown'}`
+        )
+        continue
+      }
+
       try {
         const accessToken = await streamer.getDecryptedAccessToken()
 
@@ -92,6 +105,53 @@ export default class PollService {
           logger.warn(`Streamer ${streamer.twitchDisplayName} deactivated due to invalid token`)
         }
       }
+    }
+  }
+
+  private isStreamerCompatible(streamer: Streamer): boolean {
+    const type = (streamer.broadcasterType || '').toLowerCase()
+    return type === 'affiliate' || type === 'partner'
+  }
+
+  private async refreshStreamersInfo(streamers: Streamer[]): Promise<void> {
+    if (streamers.length === 0) {
+      return
+    }
+
+    try {
+      const accessToken = await this.twitchApiService.getAppAccessToken()
+      const users = await this.twitchApiService.getUsersByIds(
+        streamers.map((s) => s.twitchUserId),
+        accessToken
+      )
+      const userMap = new Map(users.map((user) => [user.id, user]))
+
+      for (const streamer of streamers) {
+        const userInfo = userMap.get(streamer.twitchUserId)
+        if (!userInfo) continue
+
+        let dirty = false
+        const newType = userInfo.broadcaster_type || ''
+        if ((streamer.broadcasterType || '') !== newType) {
+          streamer.broadcasterType = newType
+          dirty = true
+        }
+
+        if ((streamer.profileImageUrl || '') !== userInfo.profile_image_url) {
+          streamer.profileImageUrl = userInfo.profile_image_url
+          dirty = true
+        }
+
+        if (dirty) {
+          await streamer.save()
+          logger.info(
+            `Updated streamer ${streamer.twitchDisplayName}: broadcaster_type=${newType || 'NONE'}`
+          )
+        }
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error'
+      logger.error(`Failed to refresh streamer info before polls: ${message}`)
     }
   }
 
