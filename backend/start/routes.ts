@@ -14,6 +14,7 @@ const AuthController = () => import('#controllers/auth_controller')
 const MJController = () => import('#controllers/mj_controller')
 const StreamerController = () => import('#controllers/streamer_controller')
 const CampaignsController = () => import('#controllers/campaigns_controller')
+const SupportController = () => import('#controllers/support_controller')
 
 // Health check
 router.get('/', async () => {
@@ -121,6 +122,16 @@ router
     router.get('/polls/:id', [MJController, 'getPoll'])
   })
   .prefix('/mj')
+  .use(middleware.auth())
+
+// ==========================================
+// Support / Tickets Discord
+// ==========================================
+router
+  .group(() => {
+    router.post('/report', [SupportController, 'report'])
+  })
+  .prefix('/support')
   .use(middleware.auth())
 
 // ==========================================

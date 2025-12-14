@@ -1,5 +1,5 @@
 <template>
-  <div v-if="isDev" class="fixed bottom-4 right-4 z-50">
+  <div v-if="isDev" class="fixed bottom-4 left-4 z-50">
     <UCard class="bg-warning-500/10 border-warning-500/50 backdrop-blur-sm">
       <div class="flex items-center gap-3">
         <UIcon
