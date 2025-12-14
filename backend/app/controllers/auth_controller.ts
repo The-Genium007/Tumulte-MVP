@@ -112,9 +112,24 @@ export default class AuthController {
         user = streamer.user
 
         // Mettre à jour le display_name si changé
-        if (user.displayName !== userInfo.display_name) {
-          user.displayName = userInfo.display_name
-          await user.save()
+        if (user) {
+          if (user.displayName !== userInfo.display_name) {
+            user.displayName = userInfo.display_name
+            await user.save()
+          }
+        } else {
+          // Corrige les anciens enregistrements sans user associé
+          user = await User.create({
+            role,
+            displayName: userInfo.display_name,
+            email: userInfo.email,
+          })
+          streamer.userId = user.id
+          await streamer.save()
+        }
+
+        if (!user) {
+          throw new Error('Unable to resolve user for streamer')
         }
 
         // Mettre à jour les infos Twitch du streamer
