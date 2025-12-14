@@ -34,5 +34,13 @@ export default await Env.create(new URL('../', import.meta.url), {
   | Variables for configuring session package
   |----------------------------------------------------------
   */
-  SESSION_DRIVER: Env.schema.enum(['cookie', 'memory'] as const)
+  SESSION_DRIVER: Env.schema.enum(['cookie', 'memory'] as const),
+
+  /*
+  |----------------------------------------------------------
+  | Discord support / Tickets
+  |----------------------------------------------------------
+  */
+  DISCORD_SUPPORT_WEBHOOK_URL: Env.schema.string.optional(),
+  DISCORD_SUPPORT_ROLE_ID: Env.schema.string.optional()
 })
