@@ -1017,7 +1017,14 @@ export default class MJController {
       pollResult.startedAt = DateTime.now()
       await pollResult.save()
 
-      logger.info(`Poll ${pollId} launched on ${members.length} streamers by MJ ${user.id}`)
+      logger.info({
+        message: 'Poll launched by MJ',
+        poll_id: pollId,
+        poll_instance_id: pollResult.id,
+        mj_id: user.id,
+        streamers_count: members.length,
+        failed_streamers: failedStreamers,
+      })
 
       return response.created({
         data: {
@@ -1234,9 +1241,15 @@ export default class MJController {
       pollResult.cancelledAt = DateTime.now()
       await pollResult.save()
 
-      logger.info(
-        `Poll ${pollId} cancelled by MJ ${user.id}. ${cancelledStreamers.length} streamers affected.`
-      )
+      logger.info({
+        message: 'Poll cancelled by MJ',
+        poll_id: pollId,
+        poll_instance_id: pollResult.id,
+        mj_id: user.id,
+        cancelled_streamers_count: cancelledStreamers.length,
+        failed_cancellations_count: failedCancellations.length,
+        failed_cancellations: failedCancellations,
+      })
 
       return response.ok({
         data: {

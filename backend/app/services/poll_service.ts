@@ -51,6 +51,18 @@ export default class PollService {
     }
 
     await this.refreshStreamersInfo(streamers)
+    logger.info({
+      message: 'Streamer compatibility snapshot before poll creation',
+      poll_instance_id: pollInstance.id,
+      compatible_count: streamers.filter((s) => this.isStreamerCompatible(s)).length,
+      incompatible_streamers: streamers
+        .filter((s) => !this.isStreamerCompatible(s))
+        .map((s) => ({
+          streamer_id: s.id,
+          display_name: s.twitchDisplayName,
+          broadcaster_type: s.broadcasterType || 'UNKNOWN',
+        })),
+    })
 
     // Créer un poll pour chaque streamer compatible
     for (const streamer of streamers) {
@@ -92,17 +104,31 @@ export default class PollService {
           votesByOption: {},
         })
 
-        logger.info(`Poll created for streamer ${streamer.twitchDisplayName}`)
+        logger.info({
+          message: 'Poll created for streamer',
+          poll_instance_id: pollInstance.id,
+          streamer_id: streamer.id,
+          streamer_display_name: streamer.twitchDisplayName,
+          twitch_poll_id: poll.id,
+        })
       } catch (error) {
-        logger.error(
-          `Failed to create poll for streamer ${streamer.twitchDisplayName}: ${error.message}`
-        )
+        logger.error({
+          message: 'Failed to create poll for streamer',
+          poll_instance_id: pollInstance.id,
+          streamer_id: streamer.id,
+          streamer_display_name: streamer.twitchDisplayName,
+          error: error instanceof Error ? error.message : String(error),
+        })
 
         // Désactiver le streamer si le token est invalide
         if (error instanceof Error && error.message.includes('UNAUTHORIZED')) {
           streamer.isActive = false
           await streamer.save()
-          logger.warn(`Streamer ${streamer.twitchDisplayName} deactivated due to invalid token`)
+          logger.warn({
+            message: 'Streamer deactivated due to invalid token',
+            streamer_id: streamer.id,
+            streamer_display_name: streamer.twitchDisplayName,
+          })
         }
       }
     }
@@ -144,14 +170,17 @@ export default class PollService {
 
         if (dirty) {
           await streamer.save()
-          logger.info(
-            `Updated streamer ${streamer.twitchDisplayName}: broadcaster_type=${newType || 'NONE'}`
-          )
+          logger.info({
+            message: 'Streamer info refreshed before polls',
+            streamer_id: streamer.id,
+            streamer_display_name: streamer.twitchDisplayName,
+            broadcaster_type: newType || 'NONE',
+          })
         }
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error'
-      logger.error(`Failed to refresh streamer info before polls: ${message}`)
+      logger.error({ message: 'Failed to refresh streamer info before polls', error: message })
     }
   }
 
