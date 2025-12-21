@@ -1,10 +1,8 @@
-version: '3.8'
-
 services:
   # Backend - AdonisJS API + WebSocket
   backend:
     build:
-      context: ./backend
+      context: .
       dockerfile: Dockerfile
     container_name: tumulte-backend
     environment:
