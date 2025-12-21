@@ -67,11 +67,6 @@ services:
         parallelism: 1
         delay: 10s
         failure_action: rollback
-    labels:
-      # Traefik labels (Dokploy will manage domain routing via UI)
-      traefik.enable: "true"
-      traefik.docker.network: "dokploy-network"
-      traefik.http.services.tumulte-backend.loadbalancer.server.port: "3333"
 
 # Networks
 networks:
