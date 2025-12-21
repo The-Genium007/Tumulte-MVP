@@ -17,8 +17,8 @@ RUN npm ci && npm cache clean --force
 # Stage 2: Production runtime with TypeScript support
 FROM node:20-alpine AS production
 
-# Install dumb-init for proper signal handling and curl for health checks
-RUN apk add --no-cache dumb-init curl
+# Install runtime dependencies: dumb-init, curl for health checks, postgresql-client for migrations
+RUN apk add --no-cache dumb-init curl postgresql-client netcat-openbsd
 
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && \
@@ -31,6 +31,10 @@ COPY --from=deps --chown=nodejs:nodejs /app/node_modules ./node_modules
 
 # Copy application source code
 COPY --chown=nodejs:nodejs . .
+
+# Copy and set permissions for entrypoint script
+COPY --chown=nodejs:nodejs docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # Set environment variables
 ENV NODE_ENV=production \
@@ -49,8 +53,8 @@ EXPOSE 3333
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:3333/health || exit 1
 
-# Use dumb-init to handle signals properly
-ENTRYPOINT ["dumb-init", "--"]
+# Use custom entrypoint that runs migrations
+ENTRYPOINT ["dumb-init", "--", "docker-entrypoint.sh"]
 
 # Start the application with ts-node (runtime transpilation)
 CMD ["node", "--loader", "ts-node-maintained/esm", "bin/server.ts"]

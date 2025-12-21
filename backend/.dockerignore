@@ -48,6 +48,7 @@ docs
 Dockerfile*
 docker-compose*.yml
 .dockerignore
+!docker-entrypoint.sh
 
 # CI/CD
 .github
