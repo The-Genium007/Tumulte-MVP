@@ -51,6 +51,10 @@ import { ref, onMounted } from "vue";
 import { useRoute } from "vue-router";
 import { useAuth } from "@/composables/useAuth";
 
+definePageMeta({
+  layout: "default" as const,
+});
+
 const route = useRoute();
 const { loginWithTwitch } = useAuth();
 

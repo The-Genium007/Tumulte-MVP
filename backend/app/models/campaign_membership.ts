@@ -25,11 +25,33 @@ export default class CampaignMembership extends BaseModel {
   @column.dateTime()
   declare acceptedAt: DateTime | null
 
+  @column.dateTime()
+  declare pollAuthorizationGrantedAt: DateTime | null
+
+  @column.dateTime()
+  declare pollAuthorizationExpiresAt: DateTime | null
+
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
+
+  /**
+   * Check if poll authorization is currently active
+   */
+  get isPollAuthorizationActive(): boolean {
+    if (!this.pollAuthorizationExpiresAt) return false
+    return this.pollAuthorizationExpiresAt > DateTime.now()
+  }
+
+  /**
+   * Get remaining authorization time in seconds (or null if not authorized)
+   */
+  get authorizationRemainingSeconds(): number | null {
+    if (!this.isPollAuthorizationActive) return null
+    return Math.floor(this.pollAuthorizationExpiresAt!.diff(DateTime.now(), 'seconds').seconds)
+  }
 
   // Relations
   @belongsTo(() => Campaign, {

@@ -32,6 +32,11 @@ export default class AuthController {
     // Stocker l'état en session pour validation
     session.put('oauth_state', state)
 
+    // Forcer la revalidation des permissions (prompt=consent)
+    // Cela force Twitch à demander à nouveau l'autorisation, même si l'utilisateur
+    // a déjà autorisé l'application. Utile quand les scopes changent.
+    session.put('force_verify', true)
+
     // Générer l'URL d'autorisation Twitch
     const authUrl = this.twitchAuthService.getAuthorizationUrl(state)
 
@@ -78,13 +83,32 @@ export default class AuthController {
     try {
       // Échanger le code contre des tokens
       const tokens = await this.twitchAuthService.exchangeCodeForTokens(code)
+
+      // Vérifier que tous les scopes requis sont présents
+      const hasAllScopes = this.twitchAuthService.hasAllRequiredScopes(tokens.scope)
+      const requiredScopes = this.twitchAuthService.getRequiredScopes()
+      const missingScopes = requiredScopes.filter((scope) => !tokens.scope.includes(scope))
+
       logger.info({
         message: 'OAuth tokens exchanged successfully',
         scopes: tokens.scope,
+        required_scopes: requiredScopes,
+        has_all_scopes: hasAllScopes,
+        missing_scopes: missingScopes.length > 0 ? missingScopes : undefined,
         expires_in: tokens.expires_in,
         has_refresh: Boolean(tokens.refresh_token),
         has_access: Boolean(tokens.access_token),
       })
+
+      // Si des scopes sont manquants, loguer un avertissement
+      if (!hasAllScopes) {
+        logger.warning({
+          message: 'User authorized with missing scopes',
+          missing_scopes: missingScopes,
+          received_scopes: tokens.scope,
+          required_scopes: requiredScopes,
+        })
+      }
 
       // Récupérer les informations de l'utilisateur
       const userInfo = await this.twitchAuthService.getUserInfo(tokens.access_token)

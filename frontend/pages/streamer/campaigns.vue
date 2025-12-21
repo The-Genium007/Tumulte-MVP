@@ -1,23 +1,7 @@
 <template>
-  <DefaultLayout>
-    <div class="min-h-screen bg-gradient-to-br from-gray-950 via-purple-950/10 to-gray-950 p-6">
-      <div class="max-w-4xl mx-auto space-y-6">
-        <!-- Header -->
-        <UCard>
-          <div class="flex items-center gap-4">
-            <UButton
-              color="neutral"
-              variant="ghost"
-              icon="i-lucide-arrow-left"
-              to="/streamer"
-            />
-            <div class="flex-1">
-              <h1 class="text-3xl font-bold text-white">Mes Campagnes</h1>
-              <p class="text-gray-400 mt-1">Gérez vos invitations et campagnes actives</p>
-            </div>
-          </div>
-        </UCard>
-
+  
+    <div class="min-h-screen bg-gradient-to-br from-gray-950 via-purple-950/10 to-gray-950 py-6">
+      <div class="space-y-6">
         <!-- Invitations en attente -->
         <UCard v-if="loading">
           <div class="text-center py-12">
@@ -90,6 +74,67 @@
                   />
                 </div>
               </div>
+            </UCard>
+          </div>
+        </UCard>
+
+        <!-- Autorisations de sondages -->
+        <UCard>
+          <template #header>
+            <div class="flex items-center gap-3">
+              <div class="bg-blue-500/10 p-2 rounded-lg">
+                <UIcon name="i-lucide-shield" class="size-6 text-blue-500" />
+              </div>
+              <h2 class="text-xl font-semibold text-white">Autorisations de sondages</h2>
+              <UBadge v-if="authorizationStatuses.length > 0" color="info" variant="soft">
+                {{ authorizationStatuses.length }}
+              </UBadge>
+            </div>
+          </template>
+
+          <div v-if="loadingAuth" class="text-center py-12">
+            <UIcon name="i-lucide-loader" class="size-10 text-primary-500 animate-spin mx-auto" />
+          </div>
+
+          <div v-else-if="authorizationStatuses.length === 0" class="text-center py-12">
+            <div class="bg-gray-800/50 p-4 rounded-2xl mb-4 inline-block">
+              <UIcon name="i-lucide-shield-off" class="size-12 text-gray-600" />
+            </div>
+            <p class="text-gray-400 mb-2">Aucune campagne active</p>
+            <p class="text-sm text-gray-500">
+              Acceptez une invitation pour gérer vos autorisations de sondages
+            </p>
+          </div>
+
+          <div v-else class="space-y-4">
+            <UCard
+              v-for="status in authorizationStatuses"
+              :key="status.campaign_id"
+              variant="outline"
+              :ui="{ base: status.is_authorized ? 'border-2 border-green-500/50' : '' }"
+            >
+              <template #header>
+                <div class="flex justify-between items-center">
+                  <div>
+                    <h3 class="text-lg font-semibold text-white">{{ status.campaign_name }}</h3>
+                    <p class="text-sm text-gray-400">ID: {{ status.campaign_id }}</p>
+                  </div>
+                  <UBadge
+                    :color="status.is_authorized ? 'success' : 'neutral'"
+                    :label="status.is_authorized ? 'Autorisé' : 'Non autorisé'"
+                    size="lg"
+                  />
+                </div>
+              </template>
+
+              <AuthorizationCard
+                :campaign-id="status.campaign_id"
+                :is-authorized="status.is_authorized"
+                :expires-at="status.expires_at"
+                :remaining-seconds="status.remaining_seconds"
+                @authorize="handleAuthorize"
+                @revoke="handleRevokeAuth"
+              />
             </UCard>
           </div>
         </UCard>
@@ -168,14 +213,21 @@
         </UCard>
       </div>
     </div>
-  </DefaultLayout>
+  
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue";
-import DefaultLayout from "@/layouts/DefaultLayout.vue";
+import AuthorizationCard from "@/components/AuthorizationCard.vue";
 import { useCampaigns } from "@/composables/useCampaigns";
-import type { Campaign, CampaignInvitation } from "@/types";
+import type { Campaign, CampaignInvitation, AuthorizationStatus } from "@/types";
+
+definePageMeta({
+  layout: "authenticated" as const,
+  breadcrumbs: [
+    { label: "Mes campagnes", to: null, icon: "i-lucide-folder-kanban" }
+  ]
+});
 
 const {
   fetchInvitations,
@@ -183,12 +235,17 @@ const {
   declineInvitation,
   fetchActiveCampaigns,
   leaveCampaign,
+  getAuthorizationStatus,
+  grantAuthorization,
+  revokeAuthorization,
 } = useCampaigns();
 const toast = useToast();
 
 const invitations = ref<CampaignInvitation[]>([]);
 const activeCampaigns = ref<Campaign[]>([]);
+const authorizationStatuses = ref<AuthorizationStatus[]>([]);
 const loading = ref(false);
+const loadingAuth = ref(false);
 
 // Mode développement
 const isDev = computed(() => import.meta.env.DEV);
@@ -229,6 +286,7 @@ const mockInvitations: CampaignInvitation[] = [
 
 onMounted(async () => {
   await loadData();
+  await loadAuthorizationStatus();
 });
 
 const loadData = async () => {
@@ -255,6 +313,59 @@ const loadData = async () => {
     });
   } finally {
     loading.value = false;
+  }
+};
+
+const loadAuthorizationStatus = async () => {
+  loadingAuth.value = true;
+  try {
+    const data = await getAuthorizationStatus();
+    authorizationStatuses.value = data;
+  } catch (error) {
+    toast.add({
+      title: "Erreur",
+      description: "Impossible de charger les autorisations",
+      color: "error",
+    });
+    console.error("Failed to load authorization status:", error);
+  } finally {
+    loadingAuth.value = false;
+  }
+};
+
+const handleAuthorize = async (campaignId: string) => {
+  try {
+    await grantAuthorization(campaignId);
+    toast.add({
+      title: "Autorisation accordée",
+      description: "Les sondages peuvent maintenant être lancés sur votre chaîne pour les 12 prochaines heures",
+      color: "success",
+    });
+    await loadAuthorizationStatus();
+  } catch (error) {
+    toast.add({
+      title: "Erreur",
+      description: error instanceof Error ? error.message : "Impossible d'accorder l'autorisation",
+      color: "error",
+    });
+  }
+};
+
+const handleRevokeAuth = async (campaignId: string) => {
+  try {
+    await revokeAuthorization(campaignId);
+    toast.add({
+      title: "Autorisation révoquée",
+      description: "Les sondages ne pourront plus être lancés sur votre chaîne",
+      color: "success",
+    });
+    await loadAuthorizationStatus();
+  } catch (error) {
+    toast.add({
+      title: "Erreur",
+      description: error instanceof Error ? error.message : "Impossible de révoquer l'autorisation",
+      color: "error",
+    });
   }
 };
 

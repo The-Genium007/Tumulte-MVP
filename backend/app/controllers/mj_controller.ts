@@ -1,5 +1,6 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import { DateTime } from 'luxon'
+import { inject } from '@adonisjs/core'
 import logger from '@adonisjs/core/services/logger'
 import Streamer from '#models/streamer'
 import PollTemplate from '#models/poll_template'
@@ -10,16 +11,42 @@ import PollSession from '#models/poll_session'
 import Poll from '#models/poll'
 import PollResult from '#models/poll_result'
 import TwitchPollService from '#services/twitch_poll_service'
+import TwitchChatService from '#services/twitch/twitch_chat_service'
+import TwitchChatCountdownService from '#services/twitch/twitch_chat_countdown_service'
+import RedisService from '#services/cache/redis_service'
 import CampaignMembership from '#models/campaign_membership'
 
 export default class MJController {
-  private readonly pollService: PollService
-  private readonly twitchPollService: TwitchPollService
+  private _chatService?: TwitchChatService
+  private _chatCountdownService?: TwitchChatCountdownService
+  private _redisService?: RedisService
 
-  constructor() {
-    this.pollService = new PollService()
-    this.twitchPollService = new TwitchPollService()
+  private async getChatService() {
+    if (!this._chatService) {
+      const app = (await import('@adonisjs/core/services/app')).default
+      this._chatService = await app.container.make('TwitchChatService')
+    }
+    return this._chatService
   }
+
+  private async getChatCountdownService() {
+    if (!this._chatCountdownService) {
+      const app = (await import('@adonisjs/core/services/app')).default
+      this._chatCountdownService = await app.container.make('TwitchChatCountdownService')
+    }
+    return this._chatCountdownService
+  }
+
+  private async getRedisService() {
+    if (!this._redisService) {
+      const app = (await import('@adonisjs/core/services/app')).default
+      this._redisService = await app.container.make('RedisService')
+    }
+    return this._redisService
+  }
+
+  private readonly pollService = new PollService()
+  private readonly twitchPollService = new TwitchPollService()
 
   /**
    * Liste tous les streamers
@@ -913,6 +940,13 @@ export default class MJController {
     const user = auth.user!
     const { campaignId, pollId } = params
 
+    logger.info({
+      message: 'launchPollFromSession called',
+      user_id: user.id,
+      campaign_id: campaignId,
+      poll_id: pollId,
+    })
+
     // Vérifier que la campagne appartient au MJ
     const campaign = await Campaign.query()
       .where('id', campaignId)
@@ -920,6 +954,7 @@ export default class MJController {
       .first()
 
     if (!campaign) {
+      logger.warn({ message: 'Campaign not found', campaign_id: campaignId, user_id: user.id })
       return response.notFound({ error: 'Campaign not found' })
     }
 
@@ -931,20 +966,41 @@ export default class MJController {
       })
       .first()
 
+    logger.info({ message: 'Poll fetched', poll_found: !!poll, has_session: !!poll?.session })
+
     if (!poll || !poll.session) {
+      logger.warn({ message: 'Poll not found or no session', poll_id: pollId })
       return response.notFound({ error: 'Poll not found' })
     }
 
-    // Vérifier qu'un résultat n'existe pas déjà pour ce sondage
+    // Vérifier qu'un résultat n'existe pas déjà pour ce sondage EN COURS
     const existingResult = await PollResult.query()
       .where('poll_id', pollId)
       .where('campaign_id', campaignId)
       .whereIn('status', ['PENDING', 'RUNNING'])
       .first()
 
+    logger.info({
+      message: 'Checked existing result',
+      has_existing: !!existingResult,
+      existing_status: existingResult?.status,
+    })
+
     if (existingResult) {
-      return response.badRequest({ error: 'Poll is already running or pending' })
+      logger.warn({
+        message: 'Poll already running',
+        poll_id: pollId,
+        existing_result_id: existingResult.id,
+        status: existingResult.status,
+      })
+      return response.badRequest({
+        error: 'Poll is already running or pending',
+        details: 'Please cancel or wait for the current poll to end before relaunching',
+      })
     }
+
+    // Si un poll a déjà été lancé mais est terminé/annulé/échoué, on peut le relancer
+    // (création d'un nouveau PollResult)
 
     try {
       // Créer un résultat de sondage
@@ -975,6 +1031,7 @@ export default class MJController {
 
       const twitchPollsData: Record<string, any> = {}
       const failedStreamers: string[] = []
+      const chatStreamers: string[] = []
 
       // Lancer le sondage sur chaque streamer
       for (const member of members) {
@@ -982,21 +1039,44 @@ export default class MJController {
           // Récupérer l'access token déchiffré
           const accessToken = await member.streamer.getDecryptedAccessToken()
 
-          // Créer le sondage sur Twitch
-          const twitchPollResult = await this.twitchPollService.createPoll(
-            member.streamer.twitchUserId,
-            accessToken,
-            poll.question,
-            poll.options,
-            poll.session.defaultDurationSeconds
-          )
+          // DÉTECTION DU MODE : Vérifier si le streamer est affilié/partenaire
+          const shouldUseChatFallback =
+            !member.streamer.broadcasterType ||
+            (member.streamer.broadcasterType.toLowerCase() !== 'affiliate' &&
+              member.streamer.broadcasterType.toLowerCase() !== 'partner')
 
-          twitchPollsData[member.streamer.id] = {
-            twitch_poll_id: twitchPollResult.id,
-            status: twitchPollResult.status,
-            streamer_name: member.streamer.twitchDisplayName,
-            channel_points_enabled: channelPointsEnabled,
-            channel_points_amount: channelPointsAmount,
+          if (shouldUseChatFallback) {
+            // MODE CHAT : Fallback pour streamers non-affiliés
+            await this.launchChatPollForStreamer(member, poll, pollResult, accessToken)
+
+            twitchPollsData[member.streamer.id] = {
+              mode: 'CHAT',
+              status: 'ACTIVE',
+              streamer_name: member.streamer.twitchDisplayName,
+              chat_connected: true,
+              channel_points_enabled: false,
+              channel_points_amount: 0,
+            }
+
+            chatStreamers.push(member.streamer.id)
+          } else {
+            // MODE API : Utiliser l'API Twitch Polls (code existant)
+            const twitchPollResult = await this.twitchPollService.createPoll(
+              member.streamer.twitchUserId,
+              accessToken,
+              poll.question,
+              poll.options,
+              poll.session.defaultDurationSeconds
+            )
+
+            twitchPollsData[member.streamer.id] = {
+              mode: 'API',
+              twitch_poll_id: twitchPollResult.id,
+              status: twitchPollResult.status,
+              streamer_name: member.streamer.twitchDisplayName,
+              channel_points_enabled: channelPointsEnabled,
+              channel_points_amount: channelPointsAmount,
+            }
           }
         } catch (error) {
           logger.error(
@@ -1009,6 +1089,16 @@ export default class MJController {
             streamer_name: member.streamer.twitchDisplayName,
           }
         }
+      }
+
+      // Planifier les countdowns pour les streamers en mode chat
+      if (chatStreamers.length > 0) {
+        const chatCountdownService = await this.getChatCountdownService()
+        chatCountdownService.scheduleCountdown(
+          pollResult.id,
+          poll.session.defaultDurationSeconds,
+          chatStreamers
+        )
       }
 
       // Mettre à jour le résultat
@@ -1079,33 +1169,58 @@ export default class MJController {
 
         // Récupérer les résultats de chaque streamer
         for (const [streamerId, pollData] of Object.entries(twitchPollsData)) {
-          if (!pollData.twitch_poll_id) continue
+          const isChat = pollData.mode === 'CHAT'
 
           try {
-            const streamer = await Streamer.find(streamerId)
-            if (!streamer) continue
+            if (isChat) {
+              // MODE CHAT : Récupérer depuis Redis
+              const chatService = await this.getChatService()
+              const chatVotes = await chatService.getVotes(pollResult.id, streamerId)
 
-            // Récupérer l'access token déchiffré
-            const accessToken = await streamer.getDecryptedAccessToken()
+              // Agréger les votes (clés = index: "0", "1", "2")
+              for (const [optionIndex, votes] of Object.entries(chatVotes)) {
+                const optionIndexNum = parseInt(optionIndex, 10)
+                const poll = await Poll.find(pollId)
+                if (!poll) continue
 
-            const twitchPoll = await this.twitchPollService.getPoll(
-              streamer.twitchUserId,
-              pollData.twitch_poll_id,
-              accessToken
-            )
+                const optionTitle = poll.options[optionIndexNum]
+                if (!optionTitle) continue
 
-            // Agréger les votes
-            for (const choice of twitchPoll.choices) {
-              if (!votesByOption[choice.title]) {
-                votesByOption[choice.title] = 0
+                if (!votesByOption[optionTitle]) {
+                  votesByOption[optionTitle] = 0
+                }
+                votesByOption[optionTitle] += votes
+                totalVotes += votes
               }
-              votesByOption[choice.title] += choice.votes
-              totalVotes += choice.votes
-            }
+            } else {
+              // MODE API : Code existant
+              if (!pollData.twitch_poll_id) continue
 
-            // Mettre à jour le statut si le poll est terminé
-            if (twitchPoll.status === 'COMPLETED' || twitchPoll.status === 'TERMINATED') {
-              twitchPollsData[streamerId].status = twitchPoll.status
+              const streamer = await Streamer.find(streamerId)
+              if (!streamer) continue
+
+              // Récupérer l'access token déchiffré
+              const accessToken = await streamer.getDecryptedAccessToken()
+
+              const twitchPoll = await this.twitchPollService.getPoll(
+                streamer.twitchUserId,
+                pollData.twitch_poll_id,
+                accessToken
+              )
+
+              // Agréger les votes
+              for (const choice of twitchPoll.choices) {
+                if (!votesByOption[choice.title]) {
+                  votesByOption[choice.title] = 0
+                }
+                votesByOption[choice.title] += choice.votes
+                totalVotes += choice.votes
+              }
+
+              // Mettre à jour le statut si le poll est terminé
+              if (twitchPoll.status === 'COMPLETED' || twitchPoll.status === 'TERMINATED') {
+                twitchPollsData[streamerId].status = twitchPoll.status
+              }
             }
           } catch (error) {
             logger.error(
@@ -1162,6 +1277,13 @@ export default class MJController {
     const user = auth.user!
     const { campaignId, pollId } = params
 
+    logger.info({
+      message: 'cancelPollFromSession called',
+      user_id: user.id,
+      campaign_id: campaignId,
+      poll_id: pollId,
+    })
+
     // Vérifier que la campagne appartient au MJ
     const campaign = await Campaign.query()
       .where('id', campaignId)
@@ -1192,40 +1314,64 @@ export default class MJController {
 
       // Annuler le sondage sur chaque streamer
       for (const [streamerId, pollData] of Object.entries(twitchPollsData)) {
-        if (!pollData.twitch_poll_id || pollData.status === 'FAILED') continue
+        if (pollData.status === 'FAILED') continue
+
+        const isChat = pollData.mode === 'CHAT'
 
         try {
-          const streamer = await Streamer.find(streamerId)
-          if (!streamer) {
-            failedCancellations.push(pollData.streamer_name || streamerId)
-            continue
-          }
+          if (isChat) {
+            // MODE CHAT : Annulation via chat
+            const chatCountdownService = await this.getChatCountdownService()
+            const chatService = await this.getChatService()
 
-          if (!streamer.broadcasterType ||
-            (streamer.broadcasterType.toLowerCase() !== 'affiliate' &&
-              streamer.broadcasterType.toLowerCase() !== 'partner')
-          ) {
-            logger.warn(
-              `Skipping remote cancellation for streamer ${streamer.twitchDisplayName}: not affiliate/partner`
-            )
-            failedCancellations.push(pollData.streamer_name || streamer.twitchDisplayName)
+            // Annuler les countdowns
+            chatCountdownService.cancelCountdown(pollResult.id)
+
+            // Envoyer message d'annulation AVANT de déconnecter
+            await chatService.sendMessage(streamerId, '❌ Sondage annulé par le MJ')
+
+            // Déconnecter le client IRC
+            await chatService.disconnectFromPoll(streamerId, pollResult.id)
+
             twitchPollsData[streamerId].status = 'TERMINATED'
-            continue
+            cancelledStreamers.push(pollData.streamer_name || streamerId)
+          } else {
+            // MODE API : Code existant
+            if (!pollData.twitch_poll_id) continue
+
+            const streamer = await Streamer.find(streamerId)
+            if (!streamer) {
+              failedCancellations.push(pollData.streamer_name || streamerId)
+              continue
+            }
+
+            if (
+              !streamer.broadcasterType ||
+              (streamer.broadcasterType.toLowerCase() !== 'affiliate' &&
+                streamer.broadcasterType.toLowerCase() !== 'partner')
+            ) {
+              logger.warn(
+                `Skipping remote cancellation for streamer ${streamer.twitchDisplayName}: not affiliate/partner`
+              )
+              failedCancellations.push(pollData.streamer_name || streamer.twitchDisplayName)
+              twitchPollsData[streamerId].status = 'TERMINATED'
+              continue
+            }
+
+            // Récupérer l'access token déchiffré
+            const accessToken = await streamer.getDecryptedAccessToken()
+
+            // Terminer le sondage sur Twitch (status TERMINATED)
+            await this.twitchPollService.endPoll(
+              streamer.twitchUserId,
+              pollData.twitch_poll_id,
+              accessToken,
+              'TERMINATED'
+            )
+
+            twitchPollsData[streamerId].status = 'TERMINATED'
+            cancelledStreamers.push(pollData.streamer_name || streamer.twitchDisplayName)
           }
-
-          // Récupérer l'access token déchiffré
-          const accessToken = await streamer.getDecryptedAccessToken()
-
-          // Terminer le sondage sur Twitch (status TERMINATED)
-          await this.twitchPollService.endPoll(
-            streamer.twitchUserId,
-            pollData.twitch_poll_id,
-            accessToken,
-            'TERMINATED'
-          )
-
-          twitchPollsData[streamerId].status = 'TERMINATED'
-          cancelledStreamers.push(pollData.streamer_name || streamer.twitchDisplayName)
         } catch (error) {
           logger.error(`Failed to cancel poll on streamer ${streamerId}: ${error.message}`)
           failedCancellations.push(pollData.streamer_name || streamerId)
@@ -1265,5 +1411,75 @@ export default class MJController {
       logger.error(`Failed to cancel poll: ${error.message}`)
       return response.internalServerError({ error: 'Failed to cancel poll' })
     }
+  }
+
+  /**
+   * Lance un poll en mode chat pour un streamer (fallback non-affilié)
+   */
+  private async launchChatPollForStreamer(
+    member: CampaignMembership,
+    poll: Poll,
+    pollResult: PollResult,
+    accessToken: string
+  ): Promise<void> {
+    const streamer = member.streamer
+    const chatService = await this.getChatService()
+    const redisService = await this.getRedisService()
+
+    // Connecter le client IRC
+    await chatService.connectToPoll(
+      streamer.id,
+      streamer.twitchLogin,
+      accessToken,
+      pollResult.id,
+      poll.options.length
+    )
+
+    // Définir le TTL Redis (durée + 5 minutes de marge)
+    await redisService.setChatVotesTTL(
+      pollResult.id,
+      streamer.id,
+      poll.session.defaultDurationSeconds + 300
+    )
+
+    // Envoyer le message initial
+    const initialMessage = this.buildInitialChatMessage(
+      poll.question,
+      poll.options,
+      poll.session.defaultDurationSeconds
+    )
+
+    await chatService.sendMessage(streamer.id, initialMessage)
+
+    logger.info({
+      event: 'chat_poll_launched',
+      poll_instance_id: pollResult.id,
+      streamer_id: streamer.id,
+      streamer_name: streamer.twitchDisplayName,
+      options_count: poll.options.length,
+      duration: poll.session.defaultDurationSeconds,
+    })
+  }
+
+  /**
+   * Construit le message initial multiligne pour le chat
+   */
+  private buildInitialChatMessage(
+    question: string,
+    options: string[],
+    durationSeconds: number
+  ): string {
+    const emojis = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟']
+
+    let message = `🎮 SONDAGE - ${durationSeconds} secondes\n${question}\n`
+
+    options.forEach((option, index) => {
+      const emoji = emojis[index] || `${index + 1}️⃣`
+      message += `${emoji} ${option}\n`
+    })
+
+    message += `Votez en tapant ${options.map((_, i) => i + 1).join(', ')} !`
+
+    return message
   }
 }

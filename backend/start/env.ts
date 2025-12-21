@@ -38,9 +38,27 @@ export default await Env.create(new URL('../', import.meta.url), {
 
   /*
   |----------------------------------------------------------
+  | Variables for configuring Redis
+  |----------------------------------------------------------
+  */
+  REDIS_CONNECTION: Env.schema.string.optional(),
+  REDIS_HOST: Env.schema.string({ format: 'host' }),
+  REDIS_PORT: Env.schema.number(),
+  REDIS_PASSWORD: Env.schema.string.optional(),
+  REDIS_DB: Env.schema.number.optional(),
+
+  /*
+  |----------------------------------------------------------
+  | Variables for configuring Sentry
+  |----------------------------------------------------------
+  */
+  SENTRY_DSN: Env.schema.string.optional(),
+
+  /*
+  |----------------------------------------------------------
   | Discord support / Tickets
   |----------------------------------------------------------
   */
   DISCORD_SUPPORT_WEBHOOK_URL: Env.schema.string.optional(),
-  DISCORD_SUPPORT_ROLE_ID: Env.schema.string.optional()
+  DISCORD_SUPPORT_ROLE_ID: Env.schema.string.optional(),
 })

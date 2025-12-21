@@ -8,6 +8,7 @@ export interface User {
     id: string;
     twitch_display_name: string;
     twitch_login: string;
+    profile_image_url: string;
     is_active: boolean;
     broadcaster_type: string;
   } | null;

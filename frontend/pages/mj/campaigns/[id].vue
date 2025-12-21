@@ -1,5 +1,4 @@
 <template>
-  <DefaultLayout>
     <div class="min-h-screen bg-gradient-to-br from-gray-950 via-purple-950/20 to-gray-950 py-8 px-4">
       <div class="max-w-7xl mx-auto">
         <!-- Header avec retour et actions -->
@@ -271,13 +270,11 @@
         </div>
       </template>
     </UModal>
-  </DefaultLayout>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from "vue";
 import { useRouter, useRoute } from "vue-router";
-import DefaultLayout from "@/layouts/DefaultLayout.vue";
 import { useCampaigns } from "@/composables/useCampaigns";
 import type { Campaign, CampaignMembership } from "@/types";
 
@@ -292,6 +289,14 @@ const toast = useToast();
 const isDev = import.meta.env.DEV;
 
 const campaign = ref<Campaign | null>(null);
+
+definePageMeta({
+  layout: "authenticated" as const,
+  breadcrumbs: computed(() => [
+    { label: "Campagnes", to: "/mj/campaigns", icon: "i-lucide-folder-kanban" },
+    { label: campaign.value?.name || "Campagne", to: null }
+  ])
+});
 const members = ref<CampaignMembership[]>([]);
 const loadingMembers = ref(false);
 const showInviteModal = ref(false);

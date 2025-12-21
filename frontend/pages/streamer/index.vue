@@ -1,51 +1,11 @@
 <template>
-  <DefaultLayout>
-    <div class="min-h-screen bg-gradient-to-br from-gray-950 via-purple-950/10 to-gray-950 p-6">
-      <div class="max-w-4xl mx-auto space-y-6">
-        <!-- Header -->
-        <UCard>
-          <div class="flex justify-between items-center">
-            <div class="flex items-center gap-4">
-              <div class="bg-primary-500/10 p-3 rounded-xl">
-                <UIcon name="i-simple-icons-twitch" class="size-8 text-primary-500" />
-              </div>
-              <div>
-                <h1 class="text-3xl font-bold text-white">Dashboard Streamer</h1>
-                <p class="text-gray-400 mt-1">Gérez votre overlay OBS et vos campagnes</p>
-              </div>
-            </div>
-            <div class="flex gap-3 items-center">
-              <UButton
-                color="purple"
-                variant="soft"
-                icon="i-lucide-folder-kanban"
-                to="/streamer/campaigns"
-              >
-                <template #default>
-                  <span>Mes Campagnes</span>
-                </template>
-                <template v-if="invitationCount > 0" #trailing>
-                  <UBadge color="yellow" variant="solid" size="sm">
-                    {{ invitationCount }}
-                  </UBadge>
-                </template>
-              </UButton>
-              <RoleToggle />
-              <UButton
-                color="error"
-                variant="soft"
-                icon="i-lucide-log-out"
-                label="Déconnexion"
-                @click="handleLogout"
-              />
-            </div>
-          </div>
-        </UCard>
-
+  
+    <div class="min-h-screen bg-gradient-to-br from-gray-950 via-purple-950/10 to-gray-950 py-6">
+      <div class="space-y-6">
         <!-- Alert pour invitations en attente -->
         <UCard v-if="invitationCount > 0">
           <UAlert
-            color="yellow"
+            color="warning"
             variant="soft"
             icon="i-lucide-mail"
             :title="`Vous avez ${invitationCount} invitation${invitationCount > 1 ? 's' : ''} en attente`"
@@ -54,7 +14,7 @@
               <div class="flex items-center justify-between mt-2">
                 <p>Consultez vos invitations pour rejoindre de nouvelles campagnes</p>
                 <UButton
-                  color="yellow"
+                  color="warning"
                   size="sm"
                   label="Voir les invitations"
                   to="/streamer/campaigns"
@@ -80,7 +40,7 @@
               color="warning"
               variant="soft"
               icon="i-lucide-alert-triangle"
-              title="Compte non compatible avec le système de sondages"
+              title="Compte non-affilié"
             >
               <template #description>
                 <p class="mb-2">
@@ -105,7 +65,7 @@
               color="success"
               variant="soft"
               icon="i-lucide-check-circle"
-              title="Compte compatible avec le système de sondages"
+              title="Compte affilié"
             >
               <template #description>
                 <p>
@@ -161,6 +121,91 @@
           </div>
         </UCard>
 
+        <!-- Autorisations de campagnes -->
+        <UCard>
+          <template #header>
+            <div class="flex items-center gap-3">
+              <div class="bg-blue-500/10 p-2 rounded-lg">
+                <UIcon name="i-lucide-shield" class="size-6 text-blue-500" />
+              </div>
+              <h2 class="text-xl font-semibold text-white">Autorisations de sondages</h2>
+              <UBadge v-if="authorizationStatuses.length > 0" color="info" variant="soft">
+                {{ authorizationStatuses.length }}
+              </UBadge>
+            </div>
+          </template>
+
+          <div v-if="loadingAuth" class="text-center py-12">
+            <UIcon name="i-lucide-loader" class="size-10 text-primary-500 animate-spin mx-auto" />
+          </div>
+
+          <div v-else-if="authorizationStatuses.length === 0" class="text-center py-12">
+            <div class="bg-gray-800/50 p-4 rounded-2xl mb-4 inline-block">
+              <UIcon name="i-lucide-shield-off" class="size-12 text-gray-600" />
+            </div>
+            <p class="text-gray-400 mb-2">Aucune campagne active</p>
+            <p class="text-sm text-gray-500">
+              Acceptez une invitation pour gérer vos autorisations de sondages
+            </p>
+          </div>
+
+          <div v-else class="space-y-4">
+            <!-- Info text above list -->
+            <UAlert
+              color="info"
+              variant="soft"
+              icon="i-lucide-info"
+            >
+              <template #description>
+                Autorisez Tumulte à lancer des sondages sur votre chaîne pour ces campagnes pendant 12 heures.
+              </template>
+            </UAlert>
+
+            <!-- Campaign list -->
+            <div class="space-y-3">
+              <div
+                v-for="status in authorizationStatuses"
+                :key="status.campaign_id"
+                class="flex items-center justify-between p-4 rounded-lg border"
+                :class="status.is_authorized ? 'border-green-500/50 bg-green-500/5' : 'border-gray-700 bg-gray-800/30'"
+              >
+                <!-- Campaign name -->
+                <div class="flex-1">
+                  <h3 class="text-lg font-semibold text-white">{{ status.campaign_name }}</h3>
+                </div>
+
+                <!-- Authorization button/status -->
+                <div class="flex items-center gap-3">
+                  <UButton
+                    v-if="!status.is_authorized"
+                    color="primary"
+                    size="lg"
+                    icon="i-lucide-shield-check"
+                    label="Autoriser pour 12 heures"
+                    @click="handleAuthorize(status.campaign_id)"
+                  />
+                  <template v-else>
+                    <UBadge color="success" variant="soft" size="lg" class="px-4 py-2">
+                      <div class="flex items-center gap-2">
+                        <UIcon name="i-lucide-clock" class="size-4" />
+                        <span class="font-mono text-base">{{ formatTime(status.remaining_seconds || 0) }}</span>
+                      </div>
+                    </UBadge>
+                    <UButton
+                      color="error"
+                      variant="soft"
+                      size="lg"
+                      icon="i-lucide-shield-off"
+                      label="Révoquer"
+                      @click="handleRevokeAuth(status.campaign_id)"
+                    />
+                  </template>
+                </div>
+              </div>
+            </div>
+          </div>
+        </UCard>
+
         <!-- URL de l'overlay -->
         <UCard class="opacity-60 pointer-events-none relative">
           <template #header>
@@ -172,7 +217,7 @@
 
           <div class="space-y-4">
             <UAlert
-              color="yellow"
+              color="warning"
               variant="soft"
               icon="i-lucide-construction"
               title="Fonctionnalité en cours de développement"
@@ -307,19 +352,22 @@
         </UCard>
       </div>
     </div>
-  </DefaultLayout>
+  
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
-import DefaultLayout from "@/layouts/DefaultLayout.vue";
-import RoleToggle from "@/components/RoleToggle.vue";
+import { ref, onMounted, onUnmounted } from "vue";
 import { useAuth } from "@/composables/useAuth";
 import { useCampaigns } from "@/composables/useCampaigns";
+import type { AuthorizationStatus } from "@/types/api";
+
+definePageMeta({
+  layout: "authenticated" as const,
+});
 
 const API_URL = import.meta.env.VITE_API_URL;
 const { user, logout } = useAuth();
-const { fetchInvitations } = useCampaigns();
+const { fetchInvitations, getAuthorizationStatus, grantAuthorization, revokeAuthorization } = useCampaigns();
 const toast = useToast();
 
 // Dev mode
@@ -329,6 +377,12 @@ const overlayUrl = ref<string | null>(null);
 const loadingOverlay = ref(false);
 const copySuccess = ref(false);
 const invitationCount = ref(0);
+const authorizationStatuses = ref<AuthorizationStatus[]>([]);
+const loadingAuth = ref(false);
+
+// Intervalles pour les compteurs
+let countdownInterval: ReturnType<typeof setInterval> | null = null;
+let refreshInterval: ReturnType<typeof setInterval> | null = null;
 
 const fetchOverlayUrl = async () => {
   loadingOverlay.value = true;
@@ -402,17 +456,6 @@ const handleRevokeAccess = async () => {
   }
 };
 
-const handleLogout = async () => {
-  try {
-    await logout();
-  } catch (error) {
-    toast.add({
-      title: "Erreur",
-      description: "Impossible de se déconnecter",
-      color: "error",
-    });
-  }
-};
 
 // Charger le nombre d'invitations
 const loadInvitationCount = async () => {
@@ -425,9 +468,119 @@ const loadInvitationCount = async () => {
   }
 };
 
-// Charger automatiquement l'URL de l'overlay et les invitations au montage
+// Charger les autorisations
+const loadAuthorizationStatus = async () => {
+  loadingAuth.value = true;
+  try {
+    const data = await getAuthorizationStatus();
+    authorizationStatuses.value = data;
+    // Démarrer le compteur après avoir chargé les données
+    startCountdown();
+  } catch (error) {
+    // Fail silencieusement - pas critique
+    console.error("Failed to load authorization status:", error);
+  } finally {
+    loadingAuth.value = false;
+  }
+};
+
+// Démarrer le compteur qui décrémente chaque seconde
+const startCountdown = () => {
+  // Nettoyer l'intervalle existant
+  if (countdownInterval) {
+    clearInterval(countdownInterval);
+  }
+
+  countdownInterval = setInterval(() => {
+    authorizationStatuses.value = authorizationStatuses.value.map(status => {
+      if (status.is_authorized && status.remaining_seconds !== null && status.remaining_seconds > 0) {
+        return {
+          ...status,
+          remaining_seconds: status.remaining_seconds - 1
+        };
+      }
+      return status;
+    });
+
+    // Vérifier si des autorisations ont expiré
+    const hasExpired = authorizationStatuses.value.some(
+      status => status.is_authorized && status.remaining_seconds === 0
+    );
+
+    if (hasExpired) {
+      // Recharger depuis le serveur si une autorisation a expiré
+      loadAuthorizationStatus();
+    }
+  }, 1000);
+};
+
+// Rafraîchir depuis le serveur toutes les 60 secondes pour éviter la dérive
+const startRefreshInterval = () => {
+  refreshInterval = setInterval(() => {
+    loadAuthorizationStatus();
+  }, 60000); // 60 secondes
+};
+
+// Handlers d'autorisation
+const handleAuthorize = async (campaignId: string) => {
+  try {
+    await grantAuthorization(campaignId);
+    toast.add({
+      title: "Autorisation accordée",
+      description: "Les sondages peuvent maintenant être lancés sur votre chaîne pour les 12 prochaines heures",
+      color: "success",
+    });
+    await loadAuthorizationStatus();
+  } catch (error) {
+    toast.add({
+      title: "Erreur",
+      description: error instanceof Error ? error.message : "Impossible d'accorder l'autorisation",
+      color: "error",
+    });
+  }
+};
+
+const handleRevokeAuth = async (campaignId: string) => {
+  try {
+    await revokeAuthorization(campaignId);
+    toast.add({
+      title: "Autorisation révoquée",
+      description: "Les sondages ne pourront plus être lancés sur votre chaîne",
+      color: "success",
+    });
+    await loadAuthorizationStatus();
+  } catch (error) {
+    toast.add({
+      title: "Erreur",
+      description: error instanceof Error ? error.message : "Impossible de révoquer l'autorisation",
+      color: "error",
+    });
+  }
+};
+
+// Format time helper avec heures, minutes, secondes
+const formatTime = (seconds: number): string => {
+  const hours = Math.floor(seconds / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
+  const secs = seconds % 60;
+  return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+};
+
+// Charger automatiquement l'URL de l'overlay, les invitations et les autorisations au montage
 onMounted(async () => {
   fetchOverlayUrl();
   await loadInvitationCount();
+  await loadAuthorizationStatus();
+  startRefreshInterval();
+});
+
+// Nettoyer les intervalles au démontage
+onUnmounted(() => {
+  if (countdownInterval) {
+    clearInterval(countdownInterval);
+  }
+  if (refreshInterval) {
+    clearInterval(refreshInterval);
+  }
 });
 </script>

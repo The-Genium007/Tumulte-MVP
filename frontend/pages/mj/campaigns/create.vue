@@ -1,9 +1,9 @@
 <template>
-  <DefaultLayout>
+  
     <div
-      class="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/10 to-gray-900 p-6"
+      class="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/10 to-gray-900 py-6"
     >
-      <div class="max-w-2xl mx-auto space-y-6">
+      <div class="space-y-6">
         <!-- Header -->
         <UCard>
           <div class="flex items-center gap-4">
@@ -90,14 +90,21 @@
         </UCard>
       </div>
     </div>
-  </DefaultLayout>
+  
 </template>
 
 <script setup lang="ts">
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { useCampaigns } from "@/composables/useCampaigns";
-import DefaultLayout from "@/layouts/DefaultLayout.vue";
+
+definePageMeta({
+  layout: "authenticated" as const,
+  breadcrumbs: [
+    { label: "Campagnes", to: "/mj/campaigns", icon: "i-lucide-folder-kanban" },
+    { label: "Nouvelle campagne", to: null, icon: "i-lucide-folder-plus" }
+  ]
+});
 
 const router = useRouter();
 const toast = useToast();

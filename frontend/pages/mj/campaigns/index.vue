@@ -1,38 +1,8 @@
 <template>
-  <DefaultLayout>
     <div
-      class="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/10 to-gray-900 p-6"
+      class="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/10 to-gray-900 py-6"
     >
-      <div class="max-w-7xl mx-auto space-y-6">
-        <!-- Header -->
-        <UCard>
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-4">
-              <UButton
-                color="gray"
-                variant="ghost"
-                icon="i-lucide-arrow-left"
-                @click="router.push('/mj')"
-              />
-              <div class="bg-primary-500/10 p-3 rounded-xl">
-                <UIcon name="i-lucide-folder-kanban" class="size-8 text-primary-500" />
-              </div>
-              <div>
-                <h1 class="text-3xl font-bold text-white">Mes Campagnes</h1>
-                <p class="text-gray-400 mt-1">
-                  Gérez vos campagnes et invitez des streamers
-                </p>
-              </div>
-            </div>
-            <UButton
-              color="primary"
-              icon="i-lucide-plus"
-              label="Créer une campagne"
-              @click="router.push('/mj/campaigns/create')"
-            />
-          </div>
-        </UCard>
-
+      <div class="space-y-6">
         <!-- Loading State -->
         <div
           v-if="loading"
@@ -135,14 +105,15 @@
         </div>
       </div>
     </div>
-  </DefaultLayout>
 </template>
 
 <script setup lang="ts">
+definePageMeta({
+  layout: "authenticated" as const,
+});
 import { onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useCampaigns } from "@/composables/useCampaigns";
-import DefaultLayout from "@/layouts/DefaultLayout.vue";
 
 const router = useRouter();
 const toast = useToast();

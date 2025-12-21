@@ -153,30 +153,41 @@ export const useCampaigns = () => {
           profile_image_url?: string;
         },
   ): Promise<void> => {
-    const response = await fetch(`${API_URL}/mj/campaigns/${campaignId}/invite`, {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+    const response = await fetch(
+      `${API_URL}/mj/campaigns/${campaignId}/invite`,
+      {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      },
+    );
     if (!response.ok) throw new Error("Failed to invite streamer");
   };
 
   /**
    * Retire un membre d'une campagne
    */
-  const removeMember = async (campaignId: string, memberId: string): Promise<void> => {
-    const response = await fetch(`${API_URL}/mj/campaigns/${campaignId}/members/${memberId}`, {
-      method: "DELETE",
-      credentials: "include",
-    });
+  const removeMember = async (
+    campaignId: string,
+    memberId: string,
+  ): Promise<void> => {
+    const response = await fetch(
+      `${API_URL}/mj/campaigns/${campaignId}/members/${memberId}`,
+      {
+        method: "DELETE",
+        credentials: "include",
+      },
+    );
     if (!response.ok) throw new Error("Failed to remove member");
   };
 
   /**
    * Recherche des streamers via Twitch API
    */
-  const searchTwitchStreamers = async (query: string): Promise<StreamerSearchResult[]> => {
+  const searchTwitchStreamers = async (
+    query: string,
+  ): Promise<StreamerSearchResult[]> => {
     const response = await fetch(
       `${API_URL}/mj/twitch/search-streamers?q=${encodeURIComponent(query)}`,
       { credentials: "include" },
@@ -204,10 +215,13 @@ export const useCampaigns = () => {
    * Accepte une invitation
    */
   const acceptInvitation = async (id: string): Promise<void> => {
-    const response = await fetch(`${API_URL}/streamer/campaigns/invitations/${id}/accept`, {
-      method: "POST",
-      credentials: "include",
-    });
+    const response = await fetch(
+      `${API_URL}/streamer/campaigns/invitations/${id}/accept`,
+      {
+        method: "POST",
+        credentials: "include",
+      },
+    );
     if (!response.ok) throw new Error("Failed to accept invitation");
   };
 
@@ -215,10 +229,13 @@ export const useCampaigns = () => {
    * Refuse une invitation
    */
   const declineInvitation = async (id: string): Promise<void> => {
-    const response = await fetch(`${API_URL}/streamer/campaigns/invitations/${id}/decline`, {
-      method: "POST",
-      credentials: "include",
-    });
+    const response = await fetch(
+      `${API_URL}/streamer/campaigns/invitations/${id}/decline`,
+      {
+        method: "POST",
+        credentials: "include",
+      },
+    );
     if (!response.ok) throw new Error("Failed to decline invitation");
   };
 
@@ -245,6 +262,55 @@ export const useCampaigns = () => {
     if (!response.ok) throw new Error("Failed to leave campaign");
   };
 
+  // ========== Authorization Methods ==========
+
+  /**
+   * Accorde l'autorisation pour 12 heures
+   */
+  const grantAuthorization = async (
+    campaignId: string,
+  ): Promise<{ expires_at: string; remaining_seconds: number }> => {
+    const response = await fetch(
+      `${API_URL}/api/v2/streamer/campaigns/${campaignId}/authorize`,
+      {
+        method: "POST",
+        credentials: "include",
+      },
+    );
+    if (!response.ok) throw new Error("Failed to grant authorization");
+    const data = await response.json();
+    return data.data;
+  };
+
+  /**
+   * Révoque l'autorisation
+   */
+  const revokeAuthorization = async (campaignId: string): Promise<void> => {
+    const response = await fetch(
+      `${API_URL}/api/v2/streamer/campaigns/${campaignId}/authorize`,
+      {
+        method: "DELETE",
+        credentials: "include",
+      },
+    );
+    if (!response.ok) throw new Error("Failed to revoke authorization");
+  };
+
+  /**
+   * Récupère le statut d'autorisation pour toutes les campagnes
+   */
+  const getAuthorizationStatus = async (): Promise<any[]> => {
+    const response = await fetch(
+      `${API_URL}/api/v2/streamer/campaigns/authorization-status`,
+      {
+        credentials: "include",
+      },
+    );
+    if (!response.ok) throw new Error("Failed to fetch authorization status");
+    const data = await response.json();
+    return data.data;
+  };
+
   return {
     // State
     campaigns: readonly(campaigns),
@@ -268,5 +334,10 @@ export const useCampaigns = () => {
     declineInvitation,
     fetchActiveCampaigns,
     leaveCampaign,
+
+    // Authorization Methods
+    grantAuthorization,
+    revokeAuthorization,
+    getAuthorizationStatus,
   };
 };

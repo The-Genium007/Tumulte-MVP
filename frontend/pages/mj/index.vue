@@ -1,34 +1,8 @@
 <template>
-  <DefaultLayout>
-    <div
-      class="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/10 to-gray-900 p-6"
-    >
-      <div class="max-w-7xl mx-auto space-y-6">
-        <!-- Header -->
-        <UCard>
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-4">
-              <div class="bg-primary-500/10 p-3 rounded-xl">
-                <UIcon name="i-lucide-terminal" class="size-8 text-primary-500" />
-              </div>
-              <div>
-                <h1 class="text-3xl font-bold text-white">Dashboard MJ</h1>
-                <p class="text-gray-400 mt-1">Gérez vos sondages multi-streams</p>
-              </div>
-            </div>
-            <div class="flex gap-3 items-center">
-              <RoleToggle />
-              <UButton
-                color="error"
-                variant="soft"
-                icon="i-lucide-log-out"
-                label="Déconnexion"
-                @click="handleLogout"
-              />
-            </div>
-          </div>
-        </UCard>
-
+  <div
+    class="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/10 to-gray-900 py-6"
+  >
+    <div class="space-y-6">
         <!-- Campaigns and Streamers Grid -->
         <div v-if="campaignsLoaded && campaigns.length > 0" class="grid grid-cols-3 gap-6">
           <!-- Campaign List (2/3) -->
@@ -151,18 +125,11 @@
                 class="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg"
               >
                 <div class="flex items-center gap-2">
-                  <img
-                    v-if="streamer.profile_image_url"
-                    :src="streamer.profile_image_url"
-                    :alt="streamer.twitch_display_name"
-                    class="size-8 rounded-full ring-2 ring-purple-500/20"
+                  <TwitchAvatar
+                    :image-url="streamer.profile_image_url"
+                    :display-name="streamer.twitch_display_name"
+                    size="sm"
                   />
-                  <div
-                    v-else
-                    class="size-8 rounded-full ring-2 ring-purple-500/20 bg-purple-500/20 flex items-center justify-center"
-                  >
-                    <UIcon name="i-lucide-user" class="size-4 text-purple-500" />
-                  </div>
                   <div>
                     <p class="font-semibold text-white text-sm">
                       {{ streamer.twitch_display_name }}
@@ -187,7 +154,7 @@
                   />
                   <UBadge
                     v-else
-                    label="Non compatible"
+                    label="Non-affilié"
                     color="warning"
                     variant="soft"
                     size="xs"
@@ -195,6 +162,25 @@
                   <UBadge
                     :label="streamer.is_active ? 'Actif' : 'Inactif'"
                     :color="streamer.is_active ? 'success' : 'neutral'"
+                    variant="soft"
+                    size="xs"
+                  />
+                  <!-- Badge d'autorisation -->
+                  <UBadge
+                    v-if="streamer.is_poll_authorized"
+                    color="success"
+                    variant="soft"
+                    size="xs"
+                  >
+                    <div class="flex items-center gap-1">
+                      <UIcon name="i-lucide-shield-check" class="size-3" />
+                      <span>{{ formatAuthTime(streamer.authorization_remaining_seconds) }}</span>
+                    </div>
+                  </UBadge>
+                  <UBadge
+                    v-else
+                    label="Non autorisé"
+                    color="neutral"
                     variant="soft"
                     size="xs"
                   />
@@ -430,7 +416,7 @@
                   icon="i-lucide-plus"
                   label="Sondage"
                   size="sm"
-                  @click="openManageSessionModal(session)"
+                  @click="navigateToSessionPolls(session)"
                 />
                 <UButton
                   color="primary"
@@ -493,165 +479,6 @@
               label="Créer"
               :loading="creating"
               @click="handleCreateSession"
-            />
-          </div>
-        </template>
-      </UModal>
-
-      <!-- Manage Session Modal -->
-      <UModal v-model:open="showManageSessionModal">
-        <template #header>
-          <h3 class="text-xl font-bold text-white">Gérer la session: {{ currentSession?.name }}</h3>
-        </template>
-
-        <template #body>
-          <div class="space-y-6">
-            <!-- Polls List -->
-            <div v-if="currentSessionPolls.length > 0" class="space-y-3">
-              <div
-                v-for="(poll, index) in currentSessionPolls"
-                :key="poll.id"
-                class="p-4 bg-gray-800/30 rounded-lg"
-              >
-                <div class="flex items-start justify-between gap-4">
-                  <div class="flex-1 space-y-2">
-                    <div class="flex items-center gap-2">
-                      <span class="text-sm font-medium text-gray-400">#{{ index + 1 }}</span>
-                      <UBadge :label="poll.type" :color="poll.type === 'UNIQUE' ? 'primary' : 'neutral'" variant="soft" size="sm" />
-                      <UBadge v-if="poll.channel_points_enabled" :label="`${poll.channel_points_amount} pts`" color="success" variant="soft" size="sm" />
-                    </div>
-                    <p class="font-semibold text-white">{{ poll.question }}</p>
-                    <div class="flex flex-wrap gap-2">
-                      <UBadge v-for="(option, i) in poll.options" :key="i" :label="option" color="neutral" variant="soft" size="sm" />
-                    </div>
-                  </div>
-                  <UButton color="error" variant="ghost" icon="i-lucide-trash-2" square @click="handleDeletePoll(poll.id)" />
-                </div>
-              </div>
-            </div>
-
-            <!-- Empty State -->
-            <div v-else class="text-center py-8">
-              <UIcon name="i-lucide-inbox" class="size-12 text-gray-500 mb-2" />
-              <p class="text-gray-400">Aucun sondage dans cette session</p>
-            </div>
-
-            <!-- Add Poll Form -->
-            <div class="border-t border-gray-700 pt-6 space-y-4">
-              <h4 class="font-semibold text-white">Ajouter un sondage</h4>
-
-              <div>
-                <label class="block text-sm font-medium text-gray-300 mb-2">Question</label>
-                <UInput
-                  v-model="newPoll.question"
-                  placeholder="Ex: Quelle direction prendre ?"
-                  size="lg"
-                  maxlength="45"
-                />
-                <p class="text-xs text-gray-400 mt-1">
-                  {{ newPoll.question.length }}/45 caractères
-                </p>
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-gray-300 mb-2">Type de sondage</label>
-                <div class="flex gap-2">
-                  <UButton
-                    :color="newPoll.type === 'UNIQUE' ? 'primary' : 'neutral'"
-                    :variant="newPoll.type === 'UNIQUE' ? 'solid' : 'soft'"
-                    label="Vote unique"
-                    @click="handlePollTypeChange('UNIQUE')"
-                  />
-                  <UButton
-                    :color="newPoll.type === 'STANDARD' ? 'primary' : 'neutral'"
-                    :variant="newPoll.type === 'STANDARD' ? 'solid' : 'soft'"
-                    label="Vote multiple"
-                    @click="handlePollTypeChange('STANDARD')"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-gray-300 mb-2">Réponses (2-5 max)</label>
-                <div class="space-y-2">
-                  <div v-for="(option, idx) in newPollOptions" :key="idx" class="flex gap-2">
-                    <UInput v-model="newPollOptions[idx]" placeholder="Réponse" size="lg" class="flex-1" />
-                    <UButton
-                      v-if="newPollOptions.length > 2"
-                      color="error"
-                      variant="ghost"
-                      icon="i-lucide-x"
-                      square
-                      @click="removePollOption(idx)"
-                    />
-                  </div>
-                  <UButton
-                    v-if="newPollOptions.length < 5"
-                    color="neutral"
-                    variant="soft"
-                    icon="i-lucide-plus"
-                    label="Ajouter une réponse"
-                    size="sm"
-                    @click="addPollOption"
-                  />
-                </div>
-              </div>
-
-              <div v-if="newPoll.type === 'UNIQUE'" class="border-t border-gray-700 pt-4 space-y-3">
-                <div class="flex items-center justify-between">
-                  <label class="text-sm font-medium text-gray-300">Points de chaîne</label>
-                  <USwitch v-model="newPoll.channelPointsEnabled" />
-                </div>
-                <div v-if="newPoll.channelPointsEnabled">
-                  <label class="block text-sm font-medium text-gray-300 mb-2">Nombre de points</label>
-                  <UInput
-                    v-model.number="newPoll.channelPointsAmount"
-                    type="number"
-                    :min="1"
-                    :max="1000000"
-                    size="lg"
-                    placeholder="50"
-                  />
-                </div>
-              </div>
-
-              <div v-else class="border-t border-gray-700 pt-4">
-                <div class="flex items-center gap-2 text-sm text-gray-400">
-                  <UIcon name="i-lucide-info" class="size-4" />
-                  <span>Les points de chaîne sont automatiquement activés pour les votes multiples</span>
-                </div>
-                <div class="mt-3">
-                  <label class="block text-sm font-medium text-gray-300 mb-2">Nombre de points</label>
-                  <UInput
-                    v-model.number="newPoll.channelPointsAmount"
-                    type="number"
-                    :min="1"
-                    :max="1000000"
-                    size="lg"
-                    placeholder="50"
-                  />
-                </div>
-              </div>
-
-              <UButton color="primary" icon="i-lucide-plus" label="Ajouter ce sondage" block @click="handleAddPoll" />
-            </div>
-          </div>
-        </template>
-
-        <template #footer>
-          <div class="flex justify-between items-center w-full">
-            <UButton
-              color="error"
-              variant="soft"
-              icon="i-lucide-trash-2"
-              label="Supprimer la session"
-              @click="handleDeleteSession"
-            />
-            <UButton
-              color="neutral"
-              variant="soft"
-              label="Fermer"
-              @click="showManageSessionModal = false"
             />
           </div>
         </template>
@@ -739,25 +566,24 @@
           </div>
         </template>
       </UModal>
-    </div>
-  </DefaultLayout>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, watch } from "vue";
 import { storeToRefs } from "pinia";
 import { useRoute, useRouter } from "vue-router";
-import { useAuth } from "@/composables/useAuth";
 import { usePollTemplates } from "@/composables/usePollTemplates";
 import { useCampaigns } from "@/composables/useCampaigns";
 import { usePollControlStore } from "@/stores/pollControl";
-import DefaultLayout from "@/layouts/DefaultLayout.vue";
-import RoleToggle from "@/components/RoleToggle.vue";
+
+definePageMeta({
+  layout: "authenticated" as const,
+});
 
 const route = useRoute();
 const router = useRouter();
 const toast = useToast();
-const { logout } = useAuth();
 const {
   templates,
   loading: templatesLoading,
@@ -814,8 +640,21 @@ const selectedCampaignStreamers = computed(() => {
       profile_image_url: member.streamer.profile_image_url,
       broadcaster_type: member.streamer.broadcaster_type || '',
       is_active: true, // On peut améliorer ça plus tard avec un vrai statut
+      is_poll_authorized: member.pollAuthorizationExpiresAt
+        ? new Date(member.pollAuthorizationExpiresAt) > new Date()
+        : false,
+      authorization_remaining_seconds: member.pollAuthorizationExpiresAt
+        ? Math.max(0, Math.floor((new Date(member.pollAuthorizationExpiresAt).getTime() - Date.now()) / 1000))
+        : null,
     }));
 });
+
+const formatAuthTime = (seconds: number | null): string => {
+  if (!seconds) return 'Non autorisé';
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${String(secs).padStart(2, '0')}`;
+};
 
 // Charger les membres de la campagne sélectionnée
 const loadCampaignMembers = async (campaignId: string) => {
@@ -994,26 +833,15 @@ const handleDeleteTemplate = async (templateId: string) => {
 const sessions = ref<any[]>([]);
 const sessionsLoading = ref(false);
 const showCreateSessionModal = ref(false);
-const showManageSessionModal = ref(false);
 const showDeleteSessionConfirm = ref(false);
 const showCloseSessionConfirm = ref(false);
 const currentSession = ref<any>(null);
-const currentSessionPolls = ref<any[]>([]);
 const deleting = ref(false);
 
 const newSession = reactive({
   name: "",
   default_duration_seconds: 60,
 });
-
-const newPoll = reactive({
-  question: "",
-  type: "UNIQUE" as "STANDARD" | "UNIQUE",
-  channelPointsEnabled: false,
-  channelPointsAmount: 50,
-});
-
-const newPollOptions = ref<string[]>(["", ""]);
 
 // ==========================================
 // POLL CONTROL CARD (Live Session)
@@ -1445,9 +1273,7 @@ const confirmDeleteSession = async () => {
     });
 
     showDeleteSessionConfirm.value = false;
-    showManageSessionModal.value = false;
     currentSession.value = null;
-    currentSessionPolls.value = [];
 
     await fetchSessions(selectedCampaignId.value);
   } catch (error) {
@@ -1461,180 +1287,14 @@ const confirmDeleteSession = async () => {
   }
 };
 
-const openManageSessionModal = async (session: any) => {
-  currentSession.value = session;
-  showManageSessionModal.value = true;
-
-  // Charger les sondages de cette session
+// Navigation vers la page d'ajout de sondage depuis une session
+const navigateToSessionPolls = (session: any) => {
   if (!selectedCampaignId.value) return;
 
-  try {
-    const API_URL = import.meta.env.VITE_API_URL;
-    const response = await fetch(
-      `${API_URL}/mj/campaigns/${selectedCampaignId.value}/poll-sessions/${session.id}`,
-      {
-        credentials: "include",
-      }
-    );
-
-    if (!response.ok) throw new Error("Failed to fetch session details");
-    const data = await response.json();
-    currentSessionPolls.value = data.data.polls || [];
-  } catch (error) {
-    toast.add({
-      title: "Erreur",
-      description: "Impossible de charger les sondages",
-      color: "error",
-    });
-  }
-};
-
-const addPollOption = () => {
-  if (newPollOptions.value.length < 5) {
-    newPollOptions.value.push("");
-  }
-};
-
-const removePollOption = (index: number) => {
-  if (newPollOptions.value.length > 2) {
-    newPollOptions.value.splice(index, 1);
-  }
-};
-
-const handlePollTypeChange = (type: 'STANDARD' | 'UNIQUE') => {
-  newPoll.type = type;
-  if (type === 'STANDARD') {
-    newPoll.channelPointsEnabled = true;
-  }
-};
-
-const handleAddPoll = async () => {
-  const options = newPollOptions.value.filter((o: string) => o.trim());
-
-  if (!newPoll.question) {
-    toast.add({
-      title: "Erreur",
-      description: "Veuillez saisir une question",
-      color: "error",
-    });
-    return;
-  }
-
-  // Vérifier si une réponse contient des virgules
-  const hasCommas = options.some((o: string) => o.includes(','));
-  if (hasCommas) {
-    toast.add({
-      title: "Erreur",
-      description: "Les réponses ne doivent pas contenir de virgules. Utilisez le bouton '+ Ajouter une réponse' pour ajouter plusieurs options.",
-      color: "error",
-    });
-    return;
-  }
-
-  if (options.length < 2 || options.length > 5) {
-    toast.add({
-      title: "Erreur",
-      description: "Vous devez fournir entre 2 et 5 réponses",
-      color: "error",
-    });
-    return;
-  }
-
-  if (!selectedCampaignId.value || !currentSession.value) return;
-
-  try {
-    const API_URL = import.meta.env.VITE_API_URL;
-    const response = await fetch(
-      `${API_URL}/mj/campaigns/${selectedCampaignId.value}/poll-sessions/${currentSession.value.id}/polls`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          question: newPoll.question,
-          options,
-          type: newPoll.type,
-          channel_points_enabled: newPoll.channelPointsEnabled,
-          channel_points_amount: newPoll.channelPointsEnabled ? newPoll.channelPointsAmount : null,
-        }),
-      }
-    );
-
-    if (!response.ok) throw new Error("Failed to add poll");
-
-    const data = await response.json();
-    currentSessionPolls.value.push(data.data);
-
-    toast.add({
-      title: "Succès",
-      description: "Sondage ajouté",
-      color: "success",
-    });
-
-    // Reset form
-    newPoll.question = "";
-    newPoll.type = "UNIQUE";
-    newPoll.channelPointsEnabled = false;
-    newPoll.channelPointsAmount = 50;
-    newPollOptions.value = ["", ""];
-
-    // Recharger les sessions pour mettre à jour le compteur
-    await fetchSessions(selectedCampaignId.value);
-  } catch (error) {
-    toast.add({
-      title: "Erreur",
-      description: "Impossible d'ajouter le sondage",
-      color: "error",
-    });
-  }
-};
-
-const handleDeletePoll = async (pollId: string) => {
-  if (!confirm("Êtes-vous sûr de vouloir supprimer ce sondage ?")) return;
-
-  if (!selectedCampaignId.value || !currentSession.value) return;
-
-  try {
-    const API_URL = import.meta.env.VITE_API_URL;
-    const response = await fetch(
-      `${API_URL}/mj/campaigns/${selectedCampaignId.value}/poll-sessions/${currentSession.value.id}/polls/${pollId}`,
-      {
-        method: "DELETE",
-        credentials: "include",
-      }
-    );
-
-    if (!response.ok) throw new Error("Failed to delete poll");
-
-    currentSessionPolls.value = currentSessionPolls.value.filter((p) => p.id !== pollId);
-
-    toast.add({
-      title: "Succès",
-      description: "Sondage supprimé",
-      color: "success",
-    });
-
-    // Recharger les sessions pour mettre à jour le compteur
-    await fetchSessions(selectedCampaignId.value);
-  } catch (error) {
-    toast.add({
-      title: "Erreur",
-      description: "Impossible de supprimer le sondage",
-      color: "error",
-    });
-  }
-};
-
-const handleLogout = async () => {
-  try {
-    await logout();
-  } catch (error) {
-    toast.add({
-      title: "Erreur",
-      description: "Impossible de se déconnecter",
-      color: "error",
-    });
-  }
+  router.push({
+    path: `/mj/sessions/${session.id}/polls/create`,
+    query: { campaignId: selectedCampaignId.value }
+  });
 };
 
 // Reset modal on close
