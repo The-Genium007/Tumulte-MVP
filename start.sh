@@ -48,7 +48,7 @@ fi
 # Run migrations
 echo "🗄️  Running database migrations..."
 cd backend
-node ace migration:run
+node ace migration run
 cd ..
 echo "✅ Migrations completed!"
 echo ""
@@ -75,5 +75,5 @@ echo "   Backend:  http://localhost:3333"
 echo ""
 echo "📚 Documentation:"
 echo "   README.md - General documentation"
-echo "   DOKPLOY.md - Deployment guide"
+echo "   DOKPLOY_DEPLOYMENT.md - Deployment guide for Dokploy"
 echo ""

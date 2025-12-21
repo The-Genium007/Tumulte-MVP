@@ -25,7 +25,20 @@ export default class AuthController {
   /**
    * Redirige vers l'URL d'autorisation OAuth Twitch
    */
-  async redirect({ response, session }: HttpContext) {
+  async redirect({ response, session, request }: HttpContext) {
+    logger.info('🚀 [AUTH] /auth/twitch/redirect route called')
+    logger.info({
+      message: '[AUTH] Request details',
+      method: request.method(),
+      url: request.url(),
+      ip: request.ip(),
+      headers: {
+        'host': request.header('host'),
+        'user-agent': request.header('user-agent'),
+        'referer': request.header('referer'),
+      },
+    })
+
     // Générer un état CSRF aléatoire
     const state = randomBytes(32).toString('hex')
 

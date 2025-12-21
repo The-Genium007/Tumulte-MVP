@@ -25,6 +25,15 @@ router.get('/', async () => {
   }
 })
 
+// Dedicated health endpoint for Docker healthcheck and monitoring
+router.get('/health', async ({ response }) => {
+  return response.ok({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+  })
+})
+
 // ==========================================
 // Routes d'authentification
 // ==========================================

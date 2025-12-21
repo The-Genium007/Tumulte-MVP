@@ -1,0 +1,47 @@
+services:
+  # Frontend - Nuxt dashboard
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+      args:
+        VITE_API_URL: ${VITE_API_URL}
+        VITE_WS_URL: ${VITE_WS_URL}
+    image: ${IMAGE_NAME:-tumulte-frontend}:${IMAGE_TAG:-latest}
+    environment:
+      # Application
+      NODE_ENV: production
+      PORT: 3000
+      HOST: 0.0.0.0
+
+      # API & WebSocket URLs
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:3333}
+      VITE_WS_URL: ${VITE_WS_URL:-ws://localhost:3333}
+    networks:
+      - dokploy-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+
+# Networks
+networks:
+  # Dokploy network - required for Dokploy domain management and Traefik routing
+  dokploy-network:
+    external: true

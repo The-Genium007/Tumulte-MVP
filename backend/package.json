@@ -10,7 +10,8 @@
     "test": "node ace test",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build": "tsc && cp adonisrc.js build/adonisrc.js"
   },
   "imports": {
     "#controllers/*": "./app/controllers/*.js",

@@ -1,21 +1,75 @@
-version: '3.8'
-
 services:
-  redis:
-    image: redis:7-alpine
-    container_name: tumulte-redis
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    command: redis-server --appendonly yes
+  # Backend - AdonisJS API + WebSocket
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    image: ${IMAGE_NAME:-tumulte-backend}:${IMAGE_TAG:-latest}
+    environment:
+      # Application
+      NODE_ENV: production
+      PORT: 3333
+      HOST: 0.0.0.0
+      APP_KEY: ${APP_KEY}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      TZ: ${TZ:-UTC}
+
+      # Database PostgreSQL
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_DATABASE: ${DB_DATABASE}
+
+      # Redis
+      REDIS_CONNECTION: ${REDIS_CONNECTION:-main}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_DB: ${REDIS_DB:-0}
+
+      # Twitch OAuth
+      TWITCH_CLIENT_ID: ${TWITCH_CLIENT_ID}
+      TWITCH_CLIENT_SECRET: ${TWITCH_CLIENT_SECRET}
+      TWITCH_REDIRECT_URI: ${TWITCH_REDIRECT_URI}
+
+      # Discord Support
+      DISCORD_SUPPORT_WEBHOOK_URL: ${DISCORD_SUPPORT_WEBHOOK_URL}
+      DISCORD_SUPPORT_ROLE_ID: ${DISCORD_SUPPORT_ROLE_ID}
+
+      # Session & Security
+      SESSION_DRIVER: ${SESSION_DRIVER:-cookie}
+
+      # Frontend URL (pour CORS)
+      FRONTEND_URL: ${FRONTEND_URL}
+
+      # Sentry (optional)
+      SENTRY_DSN: ${SENTRY_DSN}
+    networks:
+      - dokploy-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 3s
-      retries: 5
+      test: ["CMD", "curl", "-f", "http://localhost:3333/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
 
-volumes:
-  redis_data:
-    driver: local
+# Networks
+networks:
+  # Dokploy network - required for Dokploy domain management and Traefik routing
+  dokploy-network:
+    external: true
