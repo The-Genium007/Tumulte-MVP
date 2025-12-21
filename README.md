@@ -3,8 +3,10 @@
 > Système de sondages multi-stream pour sessions de jeu de rôle sur Twitch
 
 [![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
-[![Version](https://img.shields.io/badge/version-0.1.0--alpha-orange.svg)](https://github.com/The-Genium007/tumulte/releases)
+[![Version](https://img.shields.io/badge/version-0.2.0--alpha-orange.svg)](https://github.com/The-Genium007/tumulte/releases)
 [![Status](https://img.shields.io/badge/status-early%20development-yellow.svg)]()
+[![Staging CI](https://github.com/The-Genium007/Tumulte/actions/workflows/staging-ci.yml/badge.svg?branch=staging)](https://github.com/The-Genium007/Tumulte/actions/workflows/staging-ci.yml)
+[![Production CI](https://github.com/The-Genium007/Tumulte/actions/workflows/production-ci.yml/badge.svg?branch=main)](https://github.com/The-Genium007/Tumulte/actions/workflows/production-ci.yml)
 
 **Tumulte** permet à un Maître de Jeu (MJ) de lancer des sondages Twitch synchronisés sur plusieurs streams simultanément durant une partie de JDR. Les joueurs votent sur le chat de leur streamer préféré, et les résultats sont agrégés en temps réel avec un overlay OBS transparent.
 
@@ -76,6 +78,7 @@
 - **Cache** : Redis 7
 - **Conteneurisation** : Docker + Docker Compose
 - **Déploiement** : Dokploy
+- **CI/CD** : GitHub Actions (tests automatiques)
 - **Reverse Proxy** : Cloudflare Tunnel (optionnel)
 
 ---
@@ -316,6 +319,45 @@ docker exec -it tumulte-redis redis-cli ping
 # Vérifier les logs backend
 docker compose logs backend
 ```
+
+---
+
+## 🔄 Workflow de développement
+
+Le projet utilise une stratégie GitFlow avec CI/CD automatisé via GitHub Actions :
+
+```
+developement → staging → main
+    (dev)      (pre-prod)  (production)
+```
+
+### Branches
+
+- **`developement`** : Branche de développement quotidien (aucun check automatique)
+- **`staging`** : Pré-production avec CI/CD progressif (tests automatiques)
+- **`main`** : Production avec CI/CD complet (tous les tests requis)
+
+### CI/CD Staging (developement → staging)
+
+Lors d'un merge vers `staging`, GitHub Actions exécute :
+1. ✅ **Quality Checks** : Type-check + Lint (bloquant)
+2. ✅ **Unit Tests** : Tests unitaires backend (bloquant)
+3. ✅ **Build** : Build backend + frontend (bloquant)
+4. ⚠️ **Functional Tests** : Tests fonctionnels (warning seulement)
+
+### CI/CD Production (staging → main)
+
+Lors d'un merge vers `main`, GitHub Actions exécute :
+1. ✅ **Quality Checks** : Type-check + Lint (bloquant)
+2. ✅ **Security Audit** : npm audit (bloquant)
+3. ✅ **Unit Tests** : Tests unitaires (bloquant)
+4. ✅ **Functional Tests** : Tests fonctionnels (bloquant)
+5. ✅ **Build Production** : Build optimisé (bloquant)
+6. ⚠️ **E2E Tests** : Tests end-to-end Playwright (warning)
+
+### Guide complet
+
+Voir [`.github/BRANCH_PROTECTION.md`](.github/BRANCH_PROTECTION.md) pour la configuration détaillée des protections de branches et du workflow de travail.
 
 ---
 
