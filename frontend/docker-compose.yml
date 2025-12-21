@@ -40,9 +40,12 @@ services:
         delay: 10s
         failure_action: rollback
     labels:
-      # Traefik labels (Dokploy will manage these via UI)
+      # Traefik labels for routing
       traefik.enable: "true"
       traefik.docker.network: "dokploy-network"
+      traefik.http.routers.tumulte-frontend.rule: "Host(`tumulte-staging.traefik.me`)"
+      traefik.http.routers.tumulte-frontend.entrypoints: "web"
+      traefik.http.services.tumulte-frontend.loadbalancer.server.port: "3000"
 
 # Networks
 networks:
