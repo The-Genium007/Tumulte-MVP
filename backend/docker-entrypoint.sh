@@ -23,7 +23,7 @@ fi
 
 # Run database migrations
 echo "🔄 Running database migrations..."
-./ace migration run --force
+node --loader ts-node-maintained/esm bin/console.ts migration:run --force
 
 # Check if migrations succeeded
 if [ $? -eq 0 ]; then
