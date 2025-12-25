@@ -1,8 +1,6 @@
 <template>
-  
-    <div
-      class="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/10 to-gray-900 py-6"
-    >
+
+    <div class="min-h-screen py-6">
       <div class="space-y-6">
         <!-- Header -->
         <UCard>

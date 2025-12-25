@@ -1,8 +1,17 @@
 <template>
-    <div
-      class="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/10 to-gray-900 py-6"
-    >
+    <div class="min-h-screen py-6">
       <div class="space-y-6">
+        <!-- Header with back button -->
+        <div class="flex items-center gap-4">
+          <UButton
+            variant="soft"
+            color="neutral"
+            icon="i-lucide-arrow-left"
+            label="Retour au dashboard"
+            @click="router.push('/mj')"
+          />
+        </div>
+
         <!-- Loading State -->
         <div
           v-if="loading"

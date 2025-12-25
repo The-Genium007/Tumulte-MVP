@@ -1,7 +1,16 @@
 <template>
-  
-    <div class="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/10 to-gray-900 py-6">
+
+    <div class="min-h-screen py-6">
       <div class="max-w-5xl mx-auto space-y-6">
+        <!-- Bouton retour -->
+        <UButton
+          color="neutral"
+          variant="soft"
+          icon="i-lucide-arrow-left"
+          label="Retour au dashboard"
+          @click="goBackToDashboard"
+        />
+
         <!-- Informations de base -->
         <UCard>
           <template #header>
@@ -165,16 +174,53 @@
           </div>
         </UCard>
 
-        <!-- Zone danger (si streamer) -->
-        <UCard v-if="user?.role === 'STREAMER'" class="border-error-500/50">
+        <!-- Grille des zones de danger -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Révocation Twitch (si streamer) -->
+          <UCard v-if="user?.role === 'STREAMER'" class="border-error-500/50">
+            <template #header>
+              <div class="flex items-center gap-3">
+                <div class="bg-error-500/10 p-3 rounded-xl">
+                  <UIcon name="i-lucide-twitch" class="size-6 text-error-500" />
+                </div>
+                <div>
+                  <h2 class="text-xl font-semibold text-white">Révocation Twitch</h2>
+                  <p class="text-sm text-gray-400">Gérer votre connexion Twitch</p>
+                </div>
+              </div>
+            </template>
+
+            <div class="space-y-4">
+              <div class="p-4 rounded-lg bg-error-500/5 border border-error-500/20">
+                <div class="flex items-start justify-between">
+                  <div class="flex-1">
+                    <h3 class="font-semibold text-white mb-1">Révoquer l'accès Twitch</h3>
+                    <p class="text-sm text-gray-400">
+                      Révoque l'accès de Tumulte à votre compte Twitch et désactive votre compte streamer.
+                    </p>
+                  </div>
+                  <UButton
+                    color="error"
+                    variant="solid"
+                    label="Révoquer l'accès"
+                    :loading="revokeLoading"
+                    @click="handleRevokeTwitch"
+                  />
+                </div>
+              </div>
+            </div>
+          </UCard>
+
+          <!-- Révocation de compte -->
+          <UCard class="border-error-500/50" :class="{ 'md:col-span-2': user?.role !== 'STREAMER' }">
           <template #header>
             <div class="flex items-center gap-3">
               <div class="bg-error-500/10 p-3 rounded-xl">
-                <UIcon name="i-lucide-alert-triangle" class="size-6 text-error-500" />
+                <UIcon name="i-lucide-shield-alert" class="size-6 text-error-500" />
               </div>
               <div>
-                <h2 class="text-xl font-semibold text-white">Zone de danger</h2>
-                <p class="text-sm text-gray-400">Actions sensibles et irréversibles</p>
+                <h2 class="text-xl font-semibold text-white">Révoquer l'acces Twitch</h2>
+                <p class="text-sm text-gray-400">Gestion de vos données personnelles</p>
               </div>
             </div>
           </template>
@@ -183,46 +229,37 @@
             <div class="p-4 rounded-lg bg-error-500/5 border border-error-500/20">
               <div class="flex items-start justify-between">
                 <div class="flex-1">
-                  <h3 class="font-semibold text-white mb-1">Révoquer l'accès Twitch</h3>
+                  <h3 class="font-semibold text-white mb-1">Bloque mon compte </h3>
                   <p class="text-sm text-gray-400">
-                    Révoque l'accès de Tumulte à votre compte Twitch et désactive votre compte streamer.
+                    Cette action bloquera toutes vos actions sur la platforme twitch.
                   </p>
                 </div>
                 <UButton
                   color="error"
-                  variant="soft"
-                  label="Révoquer"
-                  :loading="revokeLoading"
-                  @click="handleRevokeTwitch"
+                  variant="solid"
+                  label="Révoquer l'acces"
+                  @click="showRevokeModal = true"
                 />
               </div>
             </div>
           </div>
         </UCard>
 
-        <!-- RGPD - Suppression de compte -->
-        <UCard class="border-error-500/50">
+          <!-- Suppression de compte -->
+          <UCard class="border-error-500/50" :class="{ 'md:col-span-2': user?.role !== 'STREAMER' }">
           <template #header>
             <div class="flex items-center gap-3">
               <div class="bg-error-500/10 p-3 rounded-xl">
                 <UIcon name="i-lucide-shield-alert" class="size-6 text-error-500" />
               </div>
               <div>
-                <h2 class="text-xl font-semibold text-white">RGPD - Protection des données</h2>
+                <h2 class="text-xl font-semibold text-white">Suppression de compte</h2>
                 <p class="text-sm text-gray-400">Gestion de vos données personnelles</p>
               </div>
             </div>
           </template>
 
           <div class="space-y-4">
-            <UAlert
-              color="blue"
-              variant="soft"
-              icon="i-lucide-info"
-              title="Suppression de compte"
-              description="La suppression de votre compte anonymisera toutes vos données personnelles. Vous pourrez vous reconnecter ultérieurement et un nouveau compte sera créé."
-            />
-
             <div class="p-4 rounded-lg bg-error-500/5 border border-error-500/20">
               <div class="flex items-start justify-between">
                 <div class="flex-1">
@@ -241,21 +278,22 @@
             </div>
           </div>
         </UCard>
+        </div>
       </div>
     </div>
 
     <!-- Modal de confirmation de suppression -->
-    <UModal v-model="showDeleteModal">
-      <UCard>
-        <template #header>
-          <div class="flex items-center gap-3">
-            <div class="bg-error-500/10 p-2 rounded-lg">
-              <UIcon name="i-lucide-alert-triangle" class="size-6 text-error-500" />
-            </div>
-            <h3 class="text-xl font-semibold text-white">Confirmer la suppression</h3>
+    <UModal v-model:open="showDeleteModal">
+      <template #header>
+        <div class="flex items-center gap-3">
+          <div class="bg-error-500/10 p-2 rounded-lg">
+            <UIcon name="i-lucide-alert-triangle" class="size-6 text-error-500" />
           </div>
-        </template>
+          <h3 class="text-xl font-semibold text-white">Confirmer la suppression</h3>
+        </div>
+      </template>
 
+      <template #body>
         <div class="space-y-4">
           <UAlert
             color="error"
@@ -276,40 +314,40 @@
             />
           </div>
         </div>
+      </template>
 
-        <template #footer>
-          <div class="flex justify-end gap-3">
-            <UButton
-              color="neutral"
-              variant="soft"
-              label="Annuler"
-              @click="showDeleteModal = false"
-            />
-            <UButton
-              color="error"
-              variant="solid"
-              label="Confirmer la suppression"
-              :disabled="deleteConfirmation !== 'SUPPRIMER'"
-              :loading="deleteLoading"
-              @click="handleDeleteAccount"
-            />
-          </div>
-        </template>
-      </UCard>
+      <template #footer>
+        <div class="flex justify-end gap-3">
+          <UButton
+            color="neutral"
+            variant="soft"
+            label="Annuler"
+            @click="showDeleteModal = false"
+          />
+          <UButton
+            color="error"
+            variant="solid"
+            label="Confirmer la suppression"
+            :disabled="deleteConfirmation !== 'SUPPRIMER'"
+            :loading="deleteLoading"
+            @click="handleDeleteAccount"
+          />
+        </div>
+      </template>
     </UModal>
 
     <!-- Modal de confirmation de révocation Twitch -->
-    <UModal v-model="showRevokeModal">
-      <UCard>
-        <template #header>
-          <div class="flex items-center gap-3">
-            <div class="bg-error-500/10 p-2 rounded-lg">
-              <UIcon name="i-lucide-alert-triangle" class="size-6 text-error-500" />
-            </div>
-            <h3 class="text-xl font-semibold text-white">Confirmer la révocation</h3>
+    <UModal v-model:open="showRevokeModal">
+      <template #header>
+        <div class="flex items-center gap-3">
+          <div class="bg-error-500/10 p-2 rounded-lg">
+            <UIcon name="i-lucide-alert-triangle" class="size-6 text-error-500" />
           </div>
-        </template>
+          <h3 class="text-xl font-semibold text-white">Confirmer la révocation</h3>
+        </div>
+      </template>
 
+      <template #body>
         <div class="space-y-4">
           <UAlert
             color="warning"
@@ -323,25 +361,25 @@
             Êtes-vous sûr de vouloir révoquer l'accès Twitch ?
           </p>
         </div>
+      </template>
 
-        <template #footer>
-          <div class="flex justify-end gap-3">
-            <UButton
-              color="neutral"
-              variant="soft"
-              label="Annuler"
-              @click="showRevokeModal = false"
-            />
-            <UButton
-              color="error"
-              variant="solid"
-              label="Confirmer"
-              :loading="revokeLoading"
-              @click="confirmRevokeTwitch"
-            />
-          </div>
-        </template>
-      </UCard>
+      <template #footer>
+        <div class="flex justify-end gap-3">
+          <UButton
+            color="neutral"
+            variant="soft"
+            label="Annuler"
+            @click="showRevokeModal = false"
+          />
+          <UButton
+            color="error"
+            variant="solid"
+            label="Confirmer la révocation"
+            :loading="revokeLoading"
+            @click="confirmRevokeTwitch"
+          />
+        </div>
+      </template>
     </UModal>
   
 </template>
@@ -349,9 +387,6 @@
 <script setup lang="ts">
 definePageMeta({
   layout: "authenticated" as const,
-  breadcrumbs: [
-    { label: "Paramètres", to: null, icon: "i-lucide-settings" }
-  ]
 });
 
 const router = useRouter()
@@ -365,6 +400,17 @@ const deleteLoading = ref(false)
 
 const showRevokeModal = ref(false)
 const revokeLoading = ref(false)
+
+const goBackToDashboard = () => {
+  // Rediriger vers le dashboard approprié selon le rôle
+  if (user.value?.role === 'MJ') {
+    router.push('/mj')
+  } else if (user.value?.role === 'STREAMER') {
+    router.push('/streamer')
+  } else {
+    router.push('/')
+  }
+}
 
 const formatDate = (date: string | undefined) => {
   if (!date) return 'N/A'

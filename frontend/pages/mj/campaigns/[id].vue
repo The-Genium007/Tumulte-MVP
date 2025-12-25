@@ -1,44 +1,37 @@
 <template>
-    <div class="min-h-screen bg-gradient-to-br from-gray-950 via-purple-950/20 to-gray-950 py-8 px-4">
+    <div class="min-h-screen py-8 px-4">
       <div class="max-w-7xl mx-auto">
         <!-- Header avec retour et actions -->
         <div class="mb-8">
           <UButton
             icon="i-lucide-arrow-left"
             label="Retour aux campagnes"
-            variant="ghost"
-            color="gray"
+            variant="soft"
+            color="neutral"
             to="/mj/campaigns"
             class="mb-4"
           />
 
-          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 class="text-3xl font-bold text-white mb-2">
+          <div>
+            <div class="flex items-center gap-3 mb-2">
+              <h1 class="text-3xl font-bold text-white">
                 {{ campaign?.name || 'Chargement...' }}
               </h1>
-              <p v-if="campaign?.description" class="text-gray-400">
-                {{ campaign.description }}
-              </p>
-              <p v-if="campaign" class="text-sm text-gray-500 mt-1">
-                Créée le {{ formatDate(campaign.created_at) }}
-              </p>
-            </div>
-
-            <div class="flex gap-2">
-              <UButton
-                icon="i-lucide-activity"
-                label="Dashboard"
-                color="primary"
-                @click="navigateToCampaignDashboard"
-              />
               <UButton
                 icon="i-lucide-trash-2"
+                label="Supprimer"
                 color="error"
                 variant="soft"
+                size="sm"
                 @click="handleDeleteCampaign"
               />
             </div>
+            <p v-if="campaign?.description" class="text-gray-400">
+              {{ campaign.description }}
+            </p>
+            <p v-if="campaign" class="text-sm text-gray-500 mt-1">
+              Créée le {{ formatDate(campaign.created_at) }}
+            </p>
           </div>
         </div>
 
@@ -169,7 +162,8 @@
                 />
 
                 <UButton
-                  icon="i-lucide-trash-2"
+                  icon="i-lucide-x"
+                  label="Révoquer"
                   color="error"
                   variant="ghost"
                   size="sm"
@@ -181,6 +175,49 @@
         </UCard>
       </div>
     </div>
+
+    <!-- Modal de confirmation de suppression -->
+    <UModal v-model:open="showDeleteModal" :ui="{ width: 'sm:max-w-md' }">
+      <template #header>
+        <div class="flex items-center gap-3">
+          <div class="bg-error-500/10 p-2 rounded-lg">
+            <UIcon name="i-lucide-alert-triangle" class="size-6 text-error-500" />
+          </div>
+          <h3 class="text-xl font-bold text-white">Supprimer la campagne</h3>
+        </div>
+      </template>
+
+      <template #body>
+        <div class="space-y-4">
+          <p class="text-gray-300">
+            Êtes-vous sûr de vouloir supprimer la campagne
+            <strong class="text-white">{{ campaign?.name }}</strong> ?
+          </p>
+          <div class="bg-error-500/10 border border-error-500/20 rounded-lg p-4">
+            <p class="text-sm text-error-300">
+              ⚠️ Cette action est irréversible. Tous les templates, sondages et membres seront supprimés définitivement.
+            </p>
+          </div>
+        </div>
+      </template>
+
+      <template #footer>
+        <div class="flex gap-3 justify-end">
+          <UButton
+            color="neutral"
+            variant="soft"
+            label="Annuler"
+            @click="showDeleteModal = false"
+          />
+          <UButton
+            color="error"
+            icon="i-lucide-trash-2"
+            label="Supprimer définitivement"
+            @click="confirmDeleteCampaign"
+          />
+        </div>
+      </template>
+    </UModal>
 
     <!-- Modal d'invitation -->
     <UModal v-model:open="showInviteModal" :ui="{ width: 'sm:max-w-2xl' }">
@@ -292,14 +329,11 @@ const campaign = ref<Campaign | null>(null);
 
 definePageMeta({
   layout: "authenticated" as const,
-  breadcrumbs: computed(() => [
-    { label: "Campagnes", to: "/mj/campaigns", icon: "i-lucide-folder-kanban" },
-    { label: campaign.value?.name || "Campagne", to: null }
-  ])
 });
 const members = ref<CampaignMembership[]>([]);
 const loadingMembers = ref(false);
 const showInviteModal = ref(false);
+const showDeleteModal = ref(false);
 const searchQuery = ref("");
 const searchResults = ref<any[]>([]);
 const searching = ref(false);
@@ -460,19 +494,16 @@ const handleActivateMember = async (memberId: string) => {
   }
 };
 
-// Navigate to campaign dashboard
-const navigateToCampaignDashboard = () => {
-  router.push({ path: "/mj", query: { campaign: campaignId } });
+// Handle delete campaign - open modal
+const handleDeleteCampaign = () => {
+  showDeleteModal.value = true;
 };
 
-// Handle delete campaign
-const handleDeleteCampaign = async () => {
-  if (!confirm(`Êtes-vous sûr de vouloir supprimer la campagne "${campaign.value?.name}" ?\n\nTous les templates, sondages et membres seront supprimés définitivement.`)) {
-    return;
-  }
-
+// Confirm delete campaign - execute deletion
+const confirmDeleteCampaign = async () => {
   try {
     await deleteCampaign(campaignId);
+    showDeleteModal.value = false;
     toast.add({
       title: "Succès",
       description: "Campagne supprimée avec succès",

@@ -1,7 +1,5 @@
 <template>
-  <div
-    class="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/10 to-gray-900 py-6"
-  >
+  <div class="min-h-screen py-6">
     <div class="space-y-6">
         <!-- Campaigns and Streamers Grid -->
         <div v-if="campaignsLoaded && campaigns.length > 0" class="grid grid-cols-3 gap-6">
@@ -411,8 +409,8 @@
               </div>
               <div class="flex gap-2">
                 <UButton
+                  variant="soft"
                   color="neutral"
-                  variant="ghost"
                   icon="i-lucide-plus"
                   label="Sondage"
                   size="sm"

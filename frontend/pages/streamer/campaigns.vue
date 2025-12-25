@@ -1,6 +1,6 @@
 <template>
-  
-    <div class="min-h-screen bg-gradient-to-br from-gray-950 via-purple-950/10 to-gray-950 py-6">
+
+    <div class="min-h-screen py-6">
       <div class="space-y-6">
         <!-- Invitations en attente -->
         <UCard v-if="loading">
@@ -224,9 +224,6 @@ import type { Campaign, CampaignInvitation, AuthorizationStatus } from "@/types"
 
 definePageMeta({
   layout: "authenticated" as const,
-  breadcrumbs: [
-    { label: "Mes campagnes", to: null, icon: "i-lucide-folder-kanban" }
-  ]
 });
 
 const {

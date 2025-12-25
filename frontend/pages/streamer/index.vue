@@ -1,6 +1,6 @@
 <template>
-  
-    <div class="min-h-screen bg-gradient-to-br from-gray-950 via-purple-950/10 to-gray-950 py-6">
+
+    <div class="min-h-screen py-6">
       <div class="space-y-6">
         <!-- Alert pour invitations en attente -->
         <UCard v-if="invitationCount > 0">
@@ -323,33 +323,6 @@
           </div>
         </UCard>
 
-        <!-- Révocation d'accès -->
-        <UCard>
-          <template #header>
-            <div class="flex items-center gap-3">
-              <UIcon name="i-lucide-alert-triangle" class="size-6 text-error-500" />
-              <h2 class="text-xl font-semibold text-error-400">Zone de danger</h2>
-            </div>
-          </template>
-
-          <div class="space-y-4">
-            <UAlert
-              color="error"
-              variant="soft"
-              icon="i-lucide-shield-alert"
-              title="Action irréversible"
-              description="Si vous révoquez l'accès, vous devrez vous reconnecter pour réutiliser l'application."
-            />
-
-            <UButton
-              color="error"
-              variant="solid"
-              icon="i-lucide-ban"
-              label="Révoquer l'accès à Twitch"
-              @click="handleRevokeAccess"
-            />
-          </div>
-        </UCard>
       </div>
     </div>
   
@@ -366,7 +339,7 @@ definePageMeta({
 });
 
 const API_URL = import.meta.env.VITE_API_URL;
-const { user, logout } = useAuth();
+const { user } = useAuth();
 const { fetchInvitations, getAuthorizationStatus, grantAuthorization, revokeAuthorization } = useCampaigns();
 const toast = useToast();
 
@@ -427,35 +400,6 @@ const previewOverlay = () => {
     window.open(overlayUrl.value, "_blank", "width=1920,height=1080");
   }
 };
-
-const handleRevokeAccess = async () => {
-  if (!confirm("Êtes-vous sûr de vouloir révoquer l'accès ? Vous devrez vous reconnecter.")) {
-    return;
-  }
-
-  try {
-    const response = await fetch(`${API_URL}/streamer/revoke`, {
-      method: "POST",
-      credentials: "include",
-    });
-    if (!response.ok) throw new Error("Failed to revoke access");
-    toast.add({
-      title: "Accès révoqué",
-      description: "Vous allez être déconnecté",
-      color: "success",
-    });
-    setTimeout(() => {
-      logout();
-    }, 1500);
-  } catch (error) {
-    toast.add({
-      title: "Erreur",
-      description: "Impossible de révoquer l'accès",
-      color: "error",
-    });
-  }
-};
-
 
 // Charger le nombre d'invitations
 const loadInvitationCount = async () => {
