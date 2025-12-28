@@ -1,42 +1,50 @@
 import transmit from '@adonisjs/transmit/services/main'
 import logger from '@adonisjs/core/services/logger'
 import type { PollAggregatedVotes } from '#services/polls/poll_aggregation_service'
-import PollInstance from '#models/poll_instance'
-import CampaignMembership from '#models/campaign_membership'
+import { pollInstance as PollInstance } from '#models/poll_instance'
+import { campaignMembership as CampaignMembership } from '#models/campaign_membership'
 
 interface PollStartEvent {
-  poll_instance_id: string
+  pollInstanceId: string
   title: string
   options: string[]
-  duration_seconds: number
+  durationSeconds: number
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   started_at: string
-  ends_at: string
+  endsAt: string
   [key: string]: any
 }
 
 interface PollUpdateEvent {
-  poll_instance_id: string
-  votes_by_option: Record<string, number>
-  total_votes: number
+  pollInstanceId: string
+  votesByOption: Record<string, number>
+  totalVotes: number
   percentages: Record<string, number>
   [key: string]: any
 }
 
 interface PollEndEvent {
-  poll_instance_id: string
-  final_votes: Record<string, number>
-  total_votes: number
+  pollInstanceId: string
+  finalVotes: Record<string, number>
+  totalVotes: number
   percentages: Record<string, number>
-  winner_index: number | null
+  winnerIndex: number | null
   [key: string]: any
 }
 
-export default class WebSocketService {
+class WebSocketService {
   /**
    * Émet l'événement de démarrage d'un sondage
    */
   async emitPollStart(data: PollStartEvent): Promise<void> {
-    const channel = `poll:${data.poll_instance_id}`
+    const channel = `poll:${data.pollInstanceId}`
+
+    logger.info({
+      event: 'websocket_emitPollStart_called',
+      pollInstanceId: data.pollInstanceId,
+      channel,
+      durationSeconds: data.durationSeconds,
+    })
 
     // Émettre vers le canal général du poll (pour dashboard MJ)
     transmit.broadcast(channel, {
@@ -44,9 +52,15 @@ export default class WebSocketService {
       data,
     })
 
+    logger.info({
+      event: 'websocket_poll_start_broadcast_sent',
+      channel,
+      pollInstanceId: data.pollInstanceId,
+    })
+
     // Émettre vers chaque streamer membre de la campagne (si applicable)
     try {
-      const pollInstance = await PollInstance.find(data.poll_instance_id)
+      const pollInstance = await PollInstance.find(data.pollInstanceId)
 
       if (pollInstance?.campaignId) {
         const memberships = await CampaignMembership.query()
@@ -58,19 +72,20 @@ export default class WebSocketService {
             event: 'poll:start',
             data: {
               ...data,
-              campaign_id: pollInstance.campaignId,
+              campaign_id: String(pollInstance.campaignId),
             },
           })
         }
 
         logger.info(
-          `WebSocket: poll:start emitted for poll ${data.poll_instance_id} to ${memberships.length} streamers`
+          `WebSocket: poll:start emitted for poll ${data.pollInstanceId} to ${memberships.length} streamers`
         )
       } else {
-        logger.info(`WebSocket: poll:start emitted for poll ${data.poll_instance_id} (no campaign)`)
+        logger.info(`WebSocket: poll:start emitted for poll ${data.pollInstanceId} (no campaign)`)
       }
     } catch (error) {
-      logger.error(`WebSocket: failed to emit poll:start to streamers: ${error.message}`)
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      logger.error(`WebSocket: failed to emit poll:start to streamers: ${errorMessage}`)
     }
   }
 
@@ -81,18 +96,43 @@ export default class WebSocketService {
     const channel = `poll:${pollInstanceId}`
 
     const data: PollUpdateEvent = {
-      poll_instance_id: pollInstanceId,
-      votes_by_option: aggregated.votesByOption,
-      total_votes: aggregated.totalVotes,
+      pollInstanceId: pollInstanceId,
+      votesByOption: aggregated.votesByOption,
+      totalVotes: aggregated.totalVotes,
       percentages: aggregated.percentages,
     }
+
+    logger.info({
+      event: 'websocket_emitPollUpdate_called',
+      pollInstanceId,
+      channel,
+      totalVotes: aggregated.totalVotes,
+    })
 
     transmit.broadcast(channel, {
       event: 'poll:update',
       data,
     })
 
-    logger.debug(`WebSocket: poll:update emitted for poll ${pollInstanceId}`)
+    logger.info({
+      event: 'websocket_poll_update_broadcast_sent',
+      channel,
+      pollInstanceId,
+      totalVotes: aggregated.totalVotes,
+    })
+  }
+
+  /**
+   * Convertit un Record en objet sérialisable (convertit les clés et valeurs en primitives)
+   */
+  private makeSerializable(obj: Record<string, number>): Record<string, number> {
+    const result: Record<string, number> = {}
+    for (const [key, value] of Object.entries(obj)) {
+      // Convertir les valeurs non sérialisables (NaN, Infinity) en 0
+      const numValue = typeof value === 'number' && Number.isFinite(value) ? value : 0
+      result[String(key)] = numValue
+    }
+    return result
   }
 
   /**
@@ -101,6 +141,14 @@ export default class WebSocketService {
   async emitPollEnd(pollInstanceId: string, aggregated: PollAggregatedVotes): Promise<void> {
     const channel = `poll:${pollInstanceId}`
 
+    logger.info({
+      event: 'websocket_emitPollEnd_called',
+      pollInstanceId,
+      channel,
+      totalVotes: aggregated.totalVotes,
+      votesByOption: aggregated.votesByOption,
+    })
+
     // Trouver l'option gagnante (celle avec le plus de votes)
     let winnerIndex: number | null = null
     let maxVotes = 0
@@ -108,22 +156,49 @@ export default class WebSocketService {
     for (const [optionIndex, votes] of Object.entries(aggregated.votesByOption)) {
       if (votes > maxVotes) {
         maxVotes = votes
-        winnerIndex = parseInt(optionIndex)
+        winnerIndex = Number.parseInt(optionIndex)
       }
     }
 
+    // Préparer des données sérialisables
+    const finalVotes = this.makeSerializable(aggregated.votesByOption)
+    const percentages = this.makeSerializable(aggregated.percentages)
+
+    logger.info({
+      event: 'websocket_poll_end_data_prepared',
+      pollInstanceId,
+      finalVotes,
+      percentages,
+      totalVotes: aggregated.totalVotes,
+      winnerIndex,
+    })
+
     const data: PollEndEvent = {
-      poll_instance_id: pollInstanceId,
-      final_votes: aggregated.votesByOption,
-      total_votes: aggregated.totalVotes,
-      percentages: aggregated.percentages,
-      winner_index: winnerIndex,
+      pollInstanceId: pollInstanceId,
+      finalVotes: finalVotes,
+      totalVotes: aggregated.totalVotes,
+      percentages: percentages,
+      winnerIndex: winnerIndex,
     }
+
+    logger.info({
+      event: 'websocket_poll_end_broadcasting',
+      channel,
+      pollInstanceId,
+      dataKeys: Object.keys(data),
+    })
 
     // Émettre vers le canal général du poll
     transmit.broadcast(channel, {
       event: 'poll:end',
       data,
+    })
+
+    logger.info({
+      event: 'websocket_poll_end_broadcast_sent',
+      channel,
+      pollInstanceId,
+      totalVotes: data.totalVotes,
     })
 
     // Émettre vers chaque streamer membre de la campagne
@@ -135,18 +210,38 @@ export default class WebSocketService {
           .where('campaign_id', pollInstance.campaignId)
           .where('status', 'ACTIVE')
 
+        // S'assurer que toutes les données sont sérialisables
+        const serializableData = {
+          pollInstanceId: String(data.pollInstanceId),
+          finalVotes: finalVotes,
+          totalVotes: data.totalVotes,
+          percentages: percentages,
+          winnerIndex: data.winnerIndex,
+          campaign_id: String(pollInstance.campaignId),
+        }
+
         for (const membership of memberships) {
-          transmit.broadcast(`streamer:${membership.streamerId}:polls`, {
-            event: 'poll:end',
-            data: {
-              ...data,
-              campaign_id: pollInstance.campaignId,
-            },
-          })
+          const streamerChannel = `streamer:${membership.streamerId}:polls`
+          logger.debug(`Emitting poll:end to channel: ${streamerChannel}`)
+
+          try {
+            transmit.broadcast(streamerChannel, {
+              event: 'poll:end',
+              data: serializableData,
+            })
+          } catch (broadcastError) {
+            const errorMsg =
+              broadcastError instanceof Error ? broadcastError.message : String(broadcastError)
+            logger.error(
+              `Failed to broadcast poll:end to ${streamerChannel}: ${errorMsg}`,
+              serializableData
+            )
+          }
         }
       }
     } catch (error) {
-      logger.error(`WebSocket: failed to emit poll:end to streamers: ${error.message}`)
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      logger.error(`WebSocket: failed to emit poll:end to streamers: ${errorMessage}`)
     }
 
     logger.info(`WebSocket: poll:end emitted for poll ${pollInstanceId}`)
@@ -164,3 +259,5 @@ export default class WebSocketService {
     logger.info(`WebSocket: streamer:left-campaign emitted for streamer ${streamerId}`)
   }
 }
+
+export { WebSocketService as webSocketService }

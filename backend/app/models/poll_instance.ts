@@ -1,14 +1,15 @@
 import { DateTime } from 'luxon'
 import { BaseModel, column, belongsTo, hasMany } from '@adonisjs/lucid/orm'
 import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
-import User from './user.js'
-import PollTemplate from './poll_template.js'
-import PollChannelLink from './poll_channel_link.js'
-import Campaign from './campaign.js'
+import { user as User } from './user.js'
+import { pollTemplate as PollTemplate } from './poll_template.js'
+import { pollChannelLink as PollChannelLink } from './poll_channel_link.js'
+import { campaign as Campaign } from './campaign.js'
 
 export type PollInstanceStatus = 'PENDING' | 'RUNNING' | 'ENDED'
+export type PollInstanceType = 'STANDARD' | 'UNIQUE'
 
-export default class PollInstance extends BaseModel {
+class PollInstance extends BaseModel {
   @column({ isPrimary: true })
   declare id: string
 
@@ -31,7 +32,25 @@ export default class PollInstance extends BaseModel {
   declare durationSeconds: number
 
   @column()
+  declare type: PollInstanceType
+
+  @column()
   declare status: PollInstanceStatus
+
+  @column()
+  declare channelPointsEnabled: boolean
+
+  @column()
+  declare channelPointsAmount: number | null
+
+  @column()
+  declare finalTotalVotes: number | null
+
+  @column({
+    prepare: (value: Record<string, number>) => JSON.stringify(value),
+    consume: (value: string) => (value ? JSON.parse(value) : null),
+  })
+  declare finalVotesByOption: Record<string, number> | null
 
   @column.dateTime()
   declare startedAt: DateTime | null
@@ -69,3 +88,5 @@ export default class PollInstance extends BaseModel {
   })
   declare channelLinks: HasMany<typeof PollChannelLink>
 }
+
+export { PollInstance as pollInstance }

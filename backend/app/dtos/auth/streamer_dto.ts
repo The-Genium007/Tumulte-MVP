@@ -1,10 +1,11 @@
-import type Streamer from '#models/streamer'
+import type { streamer as Streamer } from '#models/streamer'
 
 export class StreamerDto {
   id!: string
   userId!: string
   twitchUserId!: string
-  twitchUsername!: string
+  twitchDisplayName!: string
+  twitchLogin!: string
   profileImageUrl!: string | null
   broadcasterType!: string
   isActive!: boolean
@@ -17,7 +18,8 @@ export class StreamerDto {
       id: streamer.id,
       userId: streamer.userId || '',
       twitchUserId: streamer.twitchUserId,
-      twitchUsername: streamer.twitchLogin,
+      twitchDisplayName: streamer.twitchDisplayName,
+      twitchLogin: streamer.twitchLogin,
       profileImageUrl: streamer.profileImageUrl,
       broadcasterType: streamer.broadcasterType,
       isActive: streamer.isActive,

@@ -66,7 +66,6 @@ export default defineConfig({
   */
   preloads: [
     () => import('#start/routes'),
-    () => import('#start/routes_v2'),
     () => import('#start/kernel'),
     () => import('#start/container'),
   ],

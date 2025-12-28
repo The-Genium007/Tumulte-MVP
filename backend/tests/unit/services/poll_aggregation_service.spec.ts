@@ -1,9 +1,9 @@
 import { test } from '@japa/runner'
 import { PollAggregationService } from '#services/polls/poll_aggregation_service'
 import { PollChannelLinkRepository } from '#repositories/poll_channel_link_repository'
-import RedisService from '#services/cache/redis_service'
-import WebSocketService from '#services/websocket/websocket_service'
-import PollChannelLink from '#models/poll_channel_link'
+import { redisService as RedisService } from '#services/cache/redis_service'
+import { webSocketService as WebSocketService } from '#services/websocket/websocket_service'
+import { pollChannelLink as PollChannelLink } from '#models/poll_channel_link'
 
 test.group('PollAggregationService', () => {
   let pollAggregationService: PollAggregationService

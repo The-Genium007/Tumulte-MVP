@@ -1,12 +1,12 @@
 import { DateTime } from 'luxon'
 import { BaseModel, column, belongsTo } from '@adonisjs/lucid/orm'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
-import PollInstance from './poll_instance.js'
-import Streamer from './streamer.js'
+import { pollInstance as PollInstance } from './poll_instance.js'
+import { streamer as Streamer } from './streamer.js'
 
 export type PollChannelLinkStatus = 'CREATED' | 'RUNNING' | 'COMPLETED' | 'TERMINATED'
 
-export default class PollChannelLink extends BaseModel {
+class PollChannelLink extends BaseModel {
   @column({ isPrimary: true })
   declare id: string
 
@@ -17,7 +17,7 @@ export default class PollChannelLink extends BaseModel {
   declare streamerId: string
 
   @column()
-  declare twitchPollId: string
+  declare twitchPollId: string | null
 
   @column()
   declare status: PollChannelLinkStatus
@@ -27,7 +27,23 @@ export default class PollChannelLink extends BaseModel {
 
   @column({
     prepare: (value: Record<string, number>) => JSON.stringify(value),
-    consume: (value: string) => JSON.parse(value),
+    consume: (value: string | Record<string, number>) => {
+      // Si c'est déjà un objet, le retourner tel quel
+      if (typeof value === 'object' && value !== null) {
+        return value
+      }
+      // Si c'est une chaîne JSON, la parser
+      if (typeof value === 'string') {
+        try {
+          return JSON.parse(value)
+        } catch {
+          // Si le parsing échoue, retourner un objet vide
+          return {}
+        }
+      }
+      // Fallback : objet vide
+      return {}
+    },
   })
   declare votesByOption: Record<string, number>
 
@@ -48,3 +64,5 @@ export default class PollChannelLink extends BaseModel {
   })
   declare streamer: BelongsTo<typeof Streamer>
 }
+
+export { PollChannelLink as pollChannelLink }

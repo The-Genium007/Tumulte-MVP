@@ -74,9 +74,8 @@ const handleClick = (event: MouseEvent) => {
 }
 
 .button:focus {
-  outline: none;
-  ring: 2px;
-  ring-offset: 2px;
+  outline: 2px solid;
+  outline-offset: 2px;
 }
 
 /* Sizes */
@@ -109,7 +108,7 @@ const handleClick = (event: MouseEvent) => {
 }
 
 .button-primary:focus {
-  ring-color: rgb(99 102 241);
+  outline-color: rgb(99 102 241);
 }
 
 .button-secondary {

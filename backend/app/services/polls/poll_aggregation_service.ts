@@ -1,8 +1,8 @@
 import { inject } from '@adonisjs/core'
 import logger from '@adonisjs/core/services/logger'
 import { PollChannelLinkRepository } from '#repositories/poll_channel_link_repository'
-import RedisService from '../cache/redis_service.js'
-import WebSocketService from '../websocket/websocket_service.js'
+import { redisService as RedisService } from '../cache/redis_service.js'
+import { webSocketService as WebSocketService } from '../websocket/websocket_service.js'
 
 export interface PollAggregatedVotes {
   pollInstanceId: string
@@ -98,3 +98,4 @@ export class PollAggregationService {
 }
 
 export default PollAggregationService
+export { PollAggregationService as pollAggregationService }

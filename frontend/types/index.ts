@@ -2,15 +2,18 @@
 export interface User {
   id: string;
   role: "MJ" | "STREAMER";
-  display_name: string;
+  displayName: string;
   email: string | null;
   streamer: {
     id: string;
-    twitch_display_name: string;
-    twitch_login: string;
-    profile_image_url: string;
-    is_active: boolean;
-    broadcaster_type: string;
+    userId: string;
+    twitchUserId: string;
+    twitchUsername: string;
+    twitchDisplayName: string;
+    twitchLogin: string;
+    profileImageUrl: string;
+    isActive: boolean;
+    broadcasterType: string;
   } | null;
 }
 
@@ -19,28 +22,33 @@ export interface Campaign {
   id: string;
   name: string;
   description: string | null;
-  member_count?: number;
-  active_member_count?: number;
-  owner_name?: string;
-  joined_at?: string;
-  created_at: string;
+  memberCount?: number;
+  activeMemberCount?: number;
+  ownerName?: string;
+  joinedAt?: string;
+  createdAt: string;
 }
 
 export interface CampaignMembership {
   id: string;
-  campaign_id: string;
-  streamer_id: string;
   status: "PENDING" | "ACTIVE";
-  invited_at: string;
-  accepted_at: string | null;
-  joined_at: string;
+  isOwner: boolean;
+  invitedAt: string;
+  acceptedAt: string | null;
+  pollAuthorizationGrantedAt: string | null;
+  pollAuthorizationExpiresAt: string | null;
+  isPollAuthorized: boolean;
+  authorizationRemainingSeconds: number | null;
   streamer: {
     id: string;
-    twitch_display_name: string;
-    twitch_login: string;
-    is_active: boolean;
-    profile_image_url: string;
-    broadcaster_type: string;
+    userId: string;
+    twitchUserId: string;
+    twitchUsername: string;
+    twitchDisplayName: string;
+    twitchLogin: string;
+    profileImageUrl: string | null;
+    isActive: boolean;
+    broadcasterType: string;
   };
 }
 
@@ -53,9 +61,9 @@ export interface CampaignInvitation {
     id: string;
     name: string;
     description: string | null;
-    owner_name: string;
+    ownerName: string;
   };
-  invited_at: string;
+  invitedAt: string;
 }
 
 // Poll types
@@ -64,22 +72,22 @@ export interface PollTemplate {
   label: string;
   title: string;
   options: string[];
-  duration_seconds: number;
-  is_default: boolean;
-  created_at: string;
+  durationSeconds: number;
+  isDefault: boolean;
+  createdAt: string;
 }
 
 export interface PollInstance {
   id: string;
-  template_id: string | null;
-  campaign_id: string | null;
+  templateId: string | null;
+  campaignId: string | null;
   title: string;
   options: string[];
-  duration_seconds: number;
+  durationSeconds: number;
   status: "PENDING" | "RUNNING" | "ENDED";
-  started_at: string | null;
-  ended_at: string | null;
-  created_at: string;
+  startedAt: string | null;
+  endedAt: string | null;
+  createdAt: string;
 }
 
 export interface PollVotes {
@@ -87,43 +95,51 @@ export interface PollVotes {
 }
 
 export interface PollAggregatedVotes {
-  total_votes: number;
-  votes_by_option: PollVotes;
+  totalVotes: number;
+  votesByOption: PollVotes;
   percentages: { [optionIndex: string]: number };
-  winning_option_index: number | null;
+  winningOptionIndex: number | null;
 }
 
 // Streamer types
 export interface StreamerSearchResult {
   id: string;
   login: string;
-  display_name: string;
-  profile_image_url: string;
+  displayName: string;
+  profileImageUrl: string;
+}
+
+export interface AuthorizationStatus {
+  campaignId: string;
+  campaignName: string;
+  isAuthorized: boolean;
+  expiresAt: string | null;
+  remainingSeconds: number | null;
 }
 
 // WebSocket types
 export interface PollUpdateEvent {
-  poll_instance_id: string;
-  votes_by_option: PollVotes;
-  total_votes: number;
+  pollInstanceId: string;
+  votesByOption: PollVotes;
+  totalVotes: number;
   percentages: { [optionIndex: string]: number };
-  winning_option_index: number | null;
+  winningOptionIndex: number | null;
 }
 
 export interface PollStartEvent {
-  poll_instance_id: string;
+  pollInstanceId: string;
   title: string;
   options: string[];
-  duration_seconds: number;
-  started_at: string;
-  ends_at: string;
+  durationSeconds: number;
+  startedAt: string;
+  endsAt: string;
 }
 
 export interface PollEndEvent {
-  poll_instance_id: string;
-  votes_by_option: PollVotes;
-  total_votes: number;
+  pollInstanceId: string;
+  votesByOption: PollVotes;
+  totalVotes: number;
   percentages: { [optionIndex: string]: number };
-  winning_option_index: number | null;
-  ended_at: string;
+  winningOptionIndex: number | null;
+  endedAt: string;
 }

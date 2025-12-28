@@ -1,12 +1,12 @@
 import { DateTime } from 'luxon'
 import { BaseModel, column, belongsTo } from '@adonisjs/lucid/orm'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
-import Campaign from './campaign.js'
-import Streamer from './streamer.js'
+import { campaign as Campaign } from './campaign.js'
+import { streamer as Streamer } from './streamer.js'
 
 type MembershipStatus = 'PENDING' | 'ACTIVE'
 
-export default class CampaignMembership extends BaseModel {
+class CampaignMembership extends BaseModel {
   @column({ isPrimary: true })
   declare id: string
 
@@ -64,3 +64,5 @@ export default class CampaignMembership extends BaseModel {
   })
   declare streamer: BelongsTo<typeof Streamer>
 }
+
+export { CampaignMembership as campaignMembership }

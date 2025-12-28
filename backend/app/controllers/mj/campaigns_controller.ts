@@ -2,6 +2,7 @@ import { inject } from '@adonisjs/core'
 import type { HttpContext } from '@adonisjs/core/http'
 import { CampaignService } from '#services/campaigns/campaign_service'
 import { MembershipService } from '#services/campaigns/membership_service'
+import { StreamerRepository } from '#repositories/streamer_repository'
 import { CampaignDto } from '#dtos/campaigns/campaign_dto'
 import { CampaignDetailDto } from '#dtos/campaigns/campaign_detail_dto'
 import { CampaignInvitationDto } from '#dtos/campaigns/campaign_invitation_dto'
@@ -19,7 +20,8 @@ import { inviteStreamerSchema } from '#validators/campaigns/invite_streamer_vali
 export default class CampaignsController {
   constructor(
     private campaignService: CampaignService,
-    private membershipService: MembershipService
+    private membershipService: MembershipService,
+    private streamerRepository: StreamerRepository
   ) {}
 
   /**
@@ -109,8 +111,32 @@ export default class CampaignsController {
       async () => {}
     )
 
-    const { streamerId } = request.only(['streamerId'])
-    const membership = await this.membershipService.inviteStreamer(params.id, streamerId)
+    const data = request.only([
+      'twitch_user_id',
+      'twitch_login',
+      'twitch_display_name',
+      'profile_image_url',
+    ])
+
+    // Trouver ou créer le streamer
+    let streamer = await this.streamerRepository.findByTwitchUserId(data.twitch_user_id)
+
+    if (!streamer) {
+      // Créer un "streamer fantôme" (pas encore inscrit)
+      const { streamer: streamerModel } = await import('#models/streamer')
+      streamer = await streamerModel.create({
+        userId: null,
+        twitchUserId: data.twitch_user_id,
+        twitchLogin: data.twitch_login,
+        twitchDisplayName: data.twitch_display_name,
+        profileImageUrl: data.profile_image_url || null,
+        broadcasterType: '',
+        scopes: [],
+        isActive: false,
+      })
+    }
+
+    const membership = await this.membershipService.inviteStreamer(params.id, streamer.id)
 
     return response.created({
       data: CampaignInvitationDto.fromModel(membership),

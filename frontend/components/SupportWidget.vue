@@ -24,7 +24,7 @@
 
     <UCard
       v-if="open"
-      class="w-[840px] max-w-[95vw] bg-gray-950 border border-gray-800 text-white shadow-2xl"
+      class="w-210 max-w-[95vw] bg-gray-950 border border-gray-800 text-white shadow-2xl"
     >
       <div class="space-y-4">
         <header class="flex items-start justify-between gap-3">
@@ -140,13 +140,13 @@ import { computed, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
 import { useSupportReporter } from "@/composables/useSupportReporter";
+import { useSupportWidget } from "@/composables/useSupportWidget";
 import { getSupportSnapshot } from "@/utils/supportTelemetry";
 
 const authStore = useAuthStore();
 const { sendSupportReport } = useSupportReporter();
+const { isSupportWidgetOpen: open } = useSupportWidget();
 const router = useRouter();
-
-const open = ref(false);
 const description = ref("");
 const includeDiagnostics = ref(true);
 const isSending = ref(false);
@@ -159,9 +159,12 @@ const modalDescription = "Envoi automatique vers le salon des tickets via webhoo
 
 const sessionId = computed(() => getSupportSnapshot().sessionId || "n/a");
 const userLabel = computed(() => {
+   
   if (authStore.user?.display_name) return authStore.user.display_name;
-  if ((authStore.user as any)?.streamer?.twitch_display_name) {
-    return (authStore.user as any).streamer.twitch_display_name;
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  if ((authStore.user as unknown as { streamer?: { twitch_display_name?: string } })?.streamer?.twitch_display_name) {
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    return (authStore.user as unknown as { streamer?: { twitch_display_name?: string } }).streamer!.twitch_display_name;
   }
   return "Inconnu";
 });
@@ -197,7 +200,7 @@ const handleSend = async () => {
     feedback.value = { type: "success", message: "Ticket envoyé sur Discord." };
     description.value = "";
     open.value = false;
-  } catch (error: any) {
+  } catch (error: unknown) {
     feedback.value = {
       type: "error",
       message: error?.message || "Envoi impossible pour le moment.",

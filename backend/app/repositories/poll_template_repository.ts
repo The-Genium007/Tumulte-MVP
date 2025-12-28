@@ -1,4 +1,4 @@
-import PollTemplate from '#models/poll_template'
+import { pollTemplate as PollTemplate } from '#models/poll_template'
 
 export class PollTemplateRepository {
   async findById(id: string): Promise<PollTemplate | null> {
@@ -43,3 +43,4 @@ export class PollTemplateRepository {
 }
 
 export default PollTemplateRepository
+export { PollTemplateRepository as pollTemplateRepository }

@@ -1,4 +1,4 @@
-import PollResult from '#models/poll_result'
+import { pollResult as PollResult } from '#models/poll_result'
 import { DateTime } from 'luxon'
 
 export class PollResultRepository {
@@ -47,3 +47,4 @@ export class PollResultRepository {
 }
 
 export default PollResultRepository
+export { PollResultRepository as pollResultRepository }

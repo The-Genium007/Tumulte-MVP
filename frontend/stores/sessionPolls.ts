@@ -6,7 +6,7 @@ export interface Poll {
   question: string;
   options: string[];
   type: "UNIQUE" | "STANDARD";
-  duration_seconds: number | null;
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   created_at: string;
 }
 
@@ -14,14 +14,13 @@ export const useSessionPollsStore = defineStore("sessionPolls", () => {
   const polls = ref<Poll[]>([]);
   const loading = ref(false);
 
-  const fetchPolls = async (campaignId: string, sessionId: string) => {
+  const fetchPolls = async (_campaignId: string, sessionId: string) => {
     loading.value = true;
     try {
       const API_URL = import.meta.env.VITE_API_URL;
-      const response = await fetch(
-        `${API_URL}/mj/campaigns/${campaignId}/poll-sessions/${sessionId}`,
-        { credentials: "include" },
-      );
+      const response = await fetch(`${API_URL}/mj/sessions/${sessionId}`, {
+        credentials: "include",
+      });
 
       if (!response.ok) throw new Error("Failed to fetch session polls");
       const data = await response.json();
@@ -35,19 +34,20 @@ export const useSessionPollsStore = defineStore("sessionPolls", () => {
   };
 
   const addPoll = async (
-    campaignId: string,
+    _campaignId: string,
     sessionId: string,
     pollData: {
       question: string;
       options: string[];
       type: "UNIQUE" | "STANDARD";
-      duration_seconds: number | null;
+      channelPointsEnabled?: boolean;
+      channelPointsAmount?: number;
     },
   ) => {
     try {
       const API_URL = import.meta.env.VITE_API_URL;
       const response = await fetch(
-        `${API_URL}/mj/campaigns/${campaignId}/poll-sessions/${sessionId}/polls`,
+        `${API_URL}/mj/sessions/${sessionId}/polls`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -70,14 +70,14 @@ export const useSessionPollsStore = defineStore("sessionPolls", () => {
   };
 
   const deletePoll = async (
-    campaignId: string,
+    _campaignId: string,
     sessionId: string,
     pollId: string,
   ) => {
     try {
       const API_URL = import.meta.env.VITE_API_URL;
       const response = await fetch(
-        `${API_URL}/mj/campaigns/${campaignId}/poll-sessions/${sessionId}/polls/${pollId}`,
+        `${API_URL}/mj/sessions/${sessionId}/polls/${pollId}`,
         {
           method: "DELETE",
           credentials: "include",

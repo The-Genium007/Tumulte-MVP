@@ -34,6 +34,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<{
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   'update:modelValue': [value: string | number]
   blur: []
   focus: []
@@ -63,6 +64,7 @@ const inputClasses = computed(() => {
 const handleInput = (event: Event) => {
   const target = event.target as HTMLInputElement
   const value = props.type === 'number' ? Number(target.value) : target.value
+   
   emit('update:modelValue', value)
 }
 </script>

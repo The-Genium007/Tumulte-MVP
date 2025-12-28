@@ -4,30 +4,44 @@ import { ref, watch } from "vue";
 const STORAGE_KEY = "pollControl";
 const EXPIRY_HOURS = 24;
 
+interface PollResult {
+  option: string;
+  votes: number;
+}
+
+interface PollResults {
+  results: PollResult[];
+  totalVotes: number;
+}
+
 interface PollControlState {
-  activeSession: any | null;
-  activeSessionPolls: any[];
+  activeSession: unknown | null;
+  activeSessionPolls: unknown[];
   currentPollIndex: number;
-  pollStatus: "idle" | "sending" | "sent";
+  pollStatus: "idle" | "sending" | "sent" | "cancelled";
   countdown: number;
-  pollResults: any | null;
+  pollResults: PollResults | null;
   launchedPolls: number[];
   pollStartTime: number | null;
   pollDuration: number | null;
+  currentPollInstanceId: string | null;
   timestamp: number;
 }
 
 export const usePollControlStore = defineStore("pollControl", () => {
   // State
-  const activeSession = ref<any | null>(null);
-  const activeSessionPolls = ref<any[]>([]);
+  const activeSession = ref<unknown | null>(null);
+  const activeSessionPolls = ref<unknown[]>([]);
   const currentPollIndex = ref(0);
-  const pollStatus = ref<"idle" | "sending" | "sent">("idle");
+  const pollStatus = ref<"idle" | "sending" | "running" | "sent" | "cancelled">(
+    "idle",
+  );
   const countdown = ref(0);
-  const pollResults = ref<any | null>(null);
+  const pollResults = ref<PollResults | null>(null);
   const launchedPolls = ref<number[]>([]);
   const pollStartTime = ref<number | null>(null);
   const pollDuration = ref<number | null>(null);
+  const currentPollInstanceId = ref<string | null>(null);
 
   // Vérifier si on est côté client
   const isClient = typeof window !== "undefined";
@@ -61,9 +75,14 @@ export const usePollControlStore = defineStore("pollControl", () => {
       launchedPolls.value = data.launchedPolls;
       pollStartTime.value = data.pollStartTime;
       pollDuration.value = data.pollDuration;
+      currentPollInstanceId.value = data.currentPollInstanceId;
 
       // Recalculer le countdown si un sondage était en cours
-      if (data.pollStatus === "sending" && data.pollStartTime && data.pollDuration) {
+      if (
+        data.pollStatus === "sending" &&
+        data.pollStartTime &&
+        data.pollDuration
+      ) {
         const elapsed = Math.floor((now - data.pollStartTime) / 1000);
         const remainingTime = data.pollDuration - elapsed;
 
@@ -79,8 +98,8 @@ export const usePollControlStore = defineStore("pollControl", () => {
       } else {
         countdown.value = data.countdown;
       }
-    } catch (error) {
-      console.error("Failed to load poll control state:", error);
+    } catch {
+      console._error("Failed to load poll control state:", _error);
       if (isClient) {
         localStorage.removeItem(STORAGE_KEY);
       }
@@ -102,12 +121,13 @@ export const usePollControlStore = defineStore("pollControl", () => {
         launchedPolls: launchedPolls.value,
         pollStartTime: pollStartTime.value,
         pollDuration: pollDuration.value,
+        currentPollInstanceId: currentPollInstanceId.value,
         timestamp: Date.now(),
       };
 
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    } catch (error) {
-      console.error("Failed to save poll control state:", error);
+    } catch {
+      console._error("Failed to save poll control state:", _error);
     }
   };
 
@@ -122,6 +142,7 @@ export const usePollControlStore = defineStore("pollControl", () => {
     launchedPolls.value = [];
     pollStartTime.value = null;
     pollDuration.value = null;
+    currentPollInstanceId.value = null;
     if (isClient) {
       localStorage.removeItem(STORAGE_KEY);
     }
@@ -140,6 +161,7 @@ export const usePollControlStore = defineStore("pollControl", () => {
         launchedPolls,
         pollStartTime,
         pollDuration,
+        currentPollInstanceId,
       ],
       () => {
         // Si une session est active, on sauvegarde
@@ -168,6 +190,7 @@ export const usePollControlStore = defineStore("pollControl", () => {
     launchedPolls,
     pollStartTime,
     pollDuration,
+    currentPollInstanceId,
 
     // Actions
     clearState,

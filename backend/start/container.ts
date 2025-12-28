@@ -12,76 +12,75 @@ import app from '@adonisjs/core/services/app'
 */
 
 // Cache Service
-app.container.singleton('RedisService', async () => {
-  const { RedisService } = await import('#services/cache/redis_service')
-  return new RedisService()
+app.container.singleton('redisService', async () => {
+  const mod = await import('#services/cache/redis_service')
+  return new mod.redisService()
 })
 
 // Campaign Services
-app.container.bind('CampaignService', async () => {
-  const { CampaignService } = await import('#services/campaigns/campaign_service')
-  return app.container.make(CampaignService)
+app.container.bind('campaignService', async () => {
+  const mod = await import('#services/campaigns/campaign_service')
+  return app.container.make(mod.CampaignService)
 })
 
-app.container.bind('MembershipService', async () => {
-  const { MembershipService } = await import('#services/campaigns/membership_service')
-  return app.container.make(MembershipService)
+app.container.bind('membershipService', async () => {
+  const mod = await import('#services/campaigns/membership_service')
+  return app.container.make(mod.membershipService)
 })
 
 // Twitch Services
-app.container.bind('TwitchAuthService', async () => {
-  const { default: TwitchAuthService } = await import('#services/twitch/twitch_auth_service')
-  return new TwitchAuthService()
+app.container.bind('twitchAuthService', async () => {
+  const mod = await import('#services/twitch_auth_service')
+  return new mod.twitchAuthService()
 })
 
-app.container.bind('TwitchApiService', async () => {
-  const { default: TwitchApiService } = await import('#services/twitch/twitch_api_service')
-  return new TwitchApiService()
+app.container.bind('twitchApiService', async () => {
+  const mod = await import('#services/twitch/twitch_api_service')
+  return new mod.twitchApiService()
 })
 
-app.container.bind('TwitchPollService', async () => {
-  const { default: TwitchPollService } = await import('#services/twitch/twitch_poll_service')
-  return new TwitchPollService()
+app.container.bind('twitchPollService', async () => {
+  const mod = await import('#services/twitch/twitch_poll_service')
+  return new mod.twitchPollService()
 })
 
-app.container.singleton('TwitchChatService', async () => {
-  const { default: TwitchChatService } = await import('#services/twitch/twitch_chat_service')
-  const redisService = await app.container.make('RedisService')
-  return new TwitchChatService(redisService)
+app.container.singleton('twitchChatService', async () => {
+  const mod = await import('#services/twitch/twitch_chat_service')
+  const redisService = await app.container.make('redisService')
+  return new mod.twitchChatService(redisService)
 })
 
-app.container.singleton('TwitchChatCountdownService', async () => {
-  const { default: TwitchChatCountdownService } =
-    await import('#services/twitch/twitch_chat_countdown_service')
-  const chatService = await app.container.make('TwitchChatService')
-  return new TwitchChatCountdownService(chatService)
+app.container.singleton('twitchChatCountdownService', async () => {
+  const mod = await import('#services/twitch/twitch_chat_countdown_service')
+  const chatService = await app.container.make('twitchChatService')
+  return new mod.twitchChatCountdownService(chatService)
 })
 
 // WebSocket Service
-app.container.singleton('WebSocketService', async () => {
-  const { default: WebSocketService } = await import('#services/websocket/websocket_service')
-  return new WebSocketService()
+app.container.singleton('webSocketService', async () => {
+  const mod = await import('#services/websocket/websocket_service')
+  return new mod.webSocketService()
 })
 
 // Poll Services
-app.container.bind('PollCreationService', async () => {
-  const { PollCreationService } = await import('#services/polls/poll_creation_service')
-  return app.container.make(PollCreationService)
+app.container.bind('pollCreationService', async () => {
+  const mod = await import('#services/polls/poll_creation_service')
+  return app.container.make(mod.pollCreationService)
 })
 
-app.container.bind('PollAggregationService', async () => {
-  const { PollAggregationService } = await import('#services/polls/poll_aggregation_service')
-  return app.container.make(PollAggregationService)
+app.container.bind('pollAggregationService', async () => {
+  const mod = await import('#services/polls/poll_aggregation_service')
+  return app.container.make(mod.pollAggregationService)
 })
 
-app.container.bind('PollPollingService', async () => {
-  const { PollPollingService } = await import('#services/polls/poll_polling_service')
-  return app.container.make(PollPollingService)
+app.container.bind('pollPollingService', async () => {
+  const mod = await import('#services/polls/poll_polling_service')
+  return app.container.make(mod.PollPollingService)
 })
 
-app.container.bind('PollLifecycleService', async () => {
-  const { PollLifecycleService } = await import('#services/polls/poll_lifecycle_service')
-  return app.container.make(PollLifecycleService)
+app.container.bind('pollLifecycleService', async () => {
+  const mod = await import('#services/polls/poll_lifecycle_service')
+  return app.container.make(mod.pollLifecycleService)
 })
 
 /*
@@ -91,64 +90,63 @@ app.container.bind('PollLifecycleService', async () => {
 */
 
 // User Repository
-app.container.bind('UserRepository', async () => {
-  const { UserRepository } = await import('#repositories/user_repository')
-  return new UserRepository()
+app.container.bind('userRepository', async () => {
+  const mod = await import('#repositories/user_repository')
+  return new mod.userRepository()
 })
 
 // Streamer Repository
-app.container.bind('StreamerRepository', async () => {
-  const { StreamerRepository } = await import('#repositories/streamer_repository')
-  return new StreamerRepository()
+app.container.bind('streamerRepository', async () => {
+  const mod = await import('#repositories/streamer_repository')
+  return new mod.streamerRepository()
 })
 
 // Campaign Repository
-app.container.bind('CampaignRepository', async () => {
-  const { CampaignRepository } = await import('#repositories/campaign_repository')
-  return new CampaignRepository()
+app.container.bind('campaignRepository', async () => {
+  const mod = await import('#repositories/campaign_repository')
+  return new mod.CampaignRepository()
 })
 
 // Campaign Membership Repository
-app.container.bind('CampaignMembershipRepository', async () => {
-  const { CampaignMembershipRepository } =
-    await import('#repositories/campaign_membership_repository')
-  return new CampaignMembershipRepository()
+app.container.bind('campaignMembershipRepository', async () => {
+  const mod = await import('#repositories/campaign_membership_repository')
+  return new mod.campaignMembershipRepository()
 })
 
 // Poll Template Repository
-app.container.bind('PollTemplateRepository', async () => {
-  const { PollTemplateRepository } = await import('#repositories/poll_template_repository')
-  return new PollTemplateRepository()
+app.container.bind('pollTemplateRepository', async () => {
+  const mod = await import('#repositories/poll_template_repository')
+  return new mod.pollTemplateRepository()
 })
 
 // Poll Session Repository
-app.container.bind('PollSessionRepository', async () => {
-  const { PollSessionRepository } = await import('#repositories/poll_session_repository')
-  return new PollSessionRepository()
+app.container.bind('pollSessionRepository', async () => {
+  const mod = await import('#repositories/poll_session_repository')
+  return new mod.pollSessionRepository()
 })
 
 // Poll Repository
-app.container.bind('PollRepository', async () => {
-  const { PollRepository } = await import('#repositories/poll_repository')
-  return new PollRepository()
+app.container.bind('pollRepository', async () => {
+  const mod = await import('#repositories/poll_repository')
+  return new mod.pollRepository()
 })
 
 // Poll Instance Repository
-app.container.bind('PollInstanceRepository', async () => {
-  const { PollInstanceRepository } = await import('#repositories/poll_instance_repository')
-  return new PollInstanceRepository()
+app.container.bind('pollInstanceRepository', async () => {
+  const mod = await import('#repositories/poll_instance_repository')
+  return new mod.pollInstanceRepository()
 })
 
 // Poll Channel Link Repository
-app.container.bind('PollChannelLinkRepository', async () => {
-  const { PollChannelLinkRepository } = await import('#repositories/poll_channel_link_repository')
-  return new PollChannelLinkRepository()
+app.container.bind('pollChannelLinkRepository', async () => {
+  const mod = await import('#repositories/poll_channel_link_repository')
+  return new mod.pollChannelLinkRepository()
 })
 
 // Poll Result Repository
-app.container.bind('PollResultRepository', async () => {
-  const { PollResultRepository } = await import('#repositories/poll_result_repository')
-  return new PollResultRepository()
+app.container.bind('pollResultRepository', async () => {
+  const mod = await import('#repositories/poll_result_repository')
+  return new mod.pollResultRepository()
 })
 
 /*
@@ -160,57 +158,69 @@ app.container.bind('PollResultRepository', async () => {
 declare module '@adonisjs/core/types' {
   interface ContainerBindings {
     // Services
-    RedisService: InstanceType<typeof import('#services/cache/redis_service').RedisService>
-    CampaignService: InstanceType<
+    redisService: InstanceType<typeof import('#services/cache/redis_service').RedisService>
+    campaignService: InstanceType<
       typeof import('#services/campaigns/campaign_service').CampaignService
     >
-    MembershipService: InstanceType<
+    membershipService: InstanceType<
       typeof import('#services/campaigns/membership_service').MembershipService
     >
-    TwitchAuthService: import('#services/twitch/twitch_auth_service').default
-    TwitchApiService: import('#services/twitch/twitch_api_service').default
-    TwitchPollService: import('#services/twitch/twitch_poll_service').default
-    TwitchChatService: import('#services/twitch/twitch_chat_service').default
-    TwitchChatCountdownService: import('#services/twitch/twitch_chat_countdown_service').default
-    WebSocketService: import('#services/websocket/websocket_service').default
-    PollCreationService: InstanceType<
+    twitchAuthService: InstanceType<
+      typeof import('#services/twitch_auth_service').twitchAuthService
+    >
+    twitchApiService: InstanceType<
+      typeof import('#services/twitch/twitch_api_service').twitchApiService
+    >
+    twitchPollService: InstanceType<
+      typeof import('#services/twitch/twitch_poll_service').twitchPollService
+    >
+    twitchChatService: InstanceType<
+      typeof import('#services/twitch/twitch_chat_service').twitchChatService
+    >
+    twitchChatCountdownService: InstanceType<
+      typeof import('#services/twitch/twitch_chat_countdown_service').twitchChatCountdownService
+    >
+    webSocketService: InstanceType<
+      typeof import('#services/websocket/websocket_service').webSocketService
+    >
+    pollCreationService: InstanceType<
       typeof import('#services/polls/poll_creation_service').PollCreationService
     >
-    PollAggregationService: InstanceType<
+    pollAggregationService: InstanceType<
       typeof import('#services/polls/poll_aggregation_service').PollAggregationService
     >
-    PollPollingService: InstanceType<
+    pollPollingService: InstanceType<
       typeof import('#services/polls/poll_polling_service').PollPollingService
     >
-    PollLifecycleService: InstanceType<
+    pollLifecycleService: InstanceType<
       typeof import('#services/polls/poll_lifecycle_service').PollLifecycleService
     >
 
     // Repositories
-    UserRepository: InstanceType<typeof import('#repositories/user_repository').UserRepository>
-    StreamerRepository: InstanceType<
+    userRepository: InstanceType<typeof import('#repositories/user_repository').UserRepository>
+    streamerRepository: InstanceType<
       typeof import('#repositories/streamer_repository').StreamerRepository
     >
-    CampaignRepository: InstanceType<
+    campaignRepository: InstanceType<
       typeof import('#repositories/campaign_repository').CampaignRepository
     >
-    CampaignMembershipRepository: InstanceType<
+    campaignMembershipRepository: InstanceType<
       typeof import('#repositories/campaign_membership_repository').CampaignMembershipRepository
     >
-    PollTemplateRepository: InstanceType<
+    pollTemplateRepository: InstanceType<
       typeof import('#repositories/poll_template_repository').PollTemplateRepository
     >
-    PollSessionRepository: InstanceType<
+    pollSessionRepository: InstanceType<
       typeof import('#repositories/poll_session_repository').PollSessionRepository
     >
-    PollRepository: InstanceType<typeof import('#repositories/poll_repository').PollRepository>
-    PollInstanceRepository: InstanceType<
+    pollRepository: InstanceType<typeof import('#repositories/poll_repository').PollRepository>
+    pollInstanceRepository: InstanceType<
       typeof import('#repositories/poll_instance_repository').PollInstanceRepository
     >
-    PollChannelLinkRepository: InstanceType<
+    pollChannelLinkRepository: InstanceType<
       typeof import('#repositories/poll_channel_link_repository').PollChannelLinkRepository
     >
-    PollResultRepository: InstanceType<
+    pollResultRepository: InstanceType<
       typeof import('#repositories/poll_result_repository').PollResultRepository
     >
   }

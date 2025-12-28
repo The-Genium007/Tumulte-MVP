@@ -6,10 +6,10 @@
         <UCard>
           <div class="flex items-center gap-4">
             <UButton
-              color="gray"
+              color="neutral"
               variant="ghost"
               icon="i-lucide-arrow-left"
-              @click="router.push('/mj/campaigns')"
+              @click="_router.push('/mj/campaigns')"
             />
             <div class="bg-primary-500/10 p-3 rounded-xl">
               <UIcon name="i-lucide-folder-plus" class="size-8 text-primary-500" />
@@ -70,11 +70,11 @@
           <template #footer>
             <div class="flex justify-end gap-3">
               <UButton
-                color="gray"
+                color="neutral"
                 variant="soft"
                 label="Annuler"
                 icon="i-lucide-x"
-                @click="router.push('/mj/campaigns')"
+                @click="_router.push('/mj/campaigns')"
               />
               <UButton
                 color="primary"
@@ -104,7 +104,7 @@ definePageMeta({
   ]
 });
 
-const router = useRouter();
+const _router = useRouter();
 const toast = useToast();
 const { createCampaign } = useCampaigns();
 
@@ -117,7 +117,7 @@ const handleCreate = async () => {
     toast.add({
       title: "Erreur",
       description: "Le nom de la campagne est requis",
-      color: "red",
+      color: "error",
     });
     return;
   }
@@ -132,16 +132,16 @@ const handleCreate = async () => {
     toast.add({
       title: "Succès",
       description: `Campagne "${name.value}" créée avec succès`,
-      color: "green",
+      color: "success",
     });
 
-    router.push("/mj/campaigns");
-  } catch (error: any) {
+    _router.push("/mj/campaigns");
+  } catch (error: unknown) {
     console.error("Failed to create campaign:", error);
     toast.add({
       title: "Erreur",
-      description: error.data?.error || "Impossible de créer la campagne",
-      color: "red",
+      description: (error as { data?: { error?: string } })?.data?.error || "Impossible de créer la campagne",
+      color: "error",
     });
   } finally {
     creating.value = false;

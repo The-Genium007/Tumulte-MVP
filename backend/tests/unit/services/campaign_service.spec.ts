@@ -1,7 +1,7 @@
 import { test } from '@japa/runner'
 import { CampaignService } from '#services/campaigns/campaign_service'
 import { CampaignRepository } from '#repositories/campaign_repository'
-import Campaign from '#models/campaign'
+import { campaign as Campaign } from '#models/campaign'
 
 test.group('CampaignService', () => {
   let campaignService: CampaignService

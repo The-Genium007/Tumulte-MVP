@@ -1,37 +1,38 @@
 import transmit from '@adonisjs/transmit/services/main'
 import logger from '@adonisjs/core/services/logger'
 import type { PollAggregatedVotes } from './poll_service.js'
-import PollInstance from '#models/poll_instance'
-import CampaignMembership from '#models/campaign_membership'
+import { pollInstance as PollInstance } from '#models/poll_instance'
+import { campaignMembership as CampaignMembership } from '#models/campaign_membership'
 
 interface PollStartEvent {
-  poll_instance_id: string
+  pollInstanceId: string
   title: string
   options: string[]
-  duration_seconds: number
+  durationSeconds: number
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   started_at: string
-  ends_at: string
+  endsAt: string
   [key: string]: any
 }
 
 interface PollUpdateEvent {
-  poll_instance_id: string
-  votes_by_option: Record<string, number>
-  total_votes: number
+  pollInstanceId: string
+  votesByOption: Record<string, number>
+  totalVotes: number
   percentages: Record<string, number>
   [key: string]: any
 }
 
 interface PollEndEvent {
-  poll_instance_id: string
-  final_votes: Record<string, number>
-  total_votes: number
+  pollInstanceId: string
+  finalVotes: Record<string, number>
+  totalVotes: number
   percentages: Record<string, number>
-  winner_index: number | null
+  winnerIndex: number | null
   [key: string]: any
 }
 
-export default class WebSocketService {
+class WebSocketService {
   /**
    * Émet l'événement de démarrage d'un sondage
    */
@@ -81,9 +82,9 @@ export default class WebSocketService {
     const channel = `poll:${pollInstanceId}`
 
     const data: PollUpdateEvent = {
-      poll_instance_id: pollInstanceId,
-      votes_by_option: aggregated.votesByOption,
-      total_votes: aggregated.totalVotes,
+      pollInstanceId: pollInstanceId,
+      votesByOption: aggregated.votesByOption,
+      totalVotes: aggregated.totalVotes,
       percentages: aggregated.percentages,
     }
 
@@ -108,16 +109,16 @@ export default class WebSocketService {
     for (const [optionIndex, votes] of Object.entries(aggregated.votesByOption)) {
       if (votes > maxVotes) {
         maxVotes = votes
-        winnerIndex = parseInt(optionIndex)
+        winnerIndex = Number.parseInt(optionIndex)
       }
     }
 
     const data: PollEndEvent = {
-      poll_instance_id: pollInstanceId,
-      final_votes: aggregated.votesByOption,
-      total_votes: aggregated.totalVotes,
+      pollInstanceId: pollInstanceId,
+      finalVotes: aggregated.votesByOption,
+      totalVotes: aggregated.totalVotes,
       percentages: aggregated.percentages,
-      winner_index: winnerIndex,
+      winnerIndex: winnerIndex,
     }
 
     // Émettre vers le canal général du poll
@@ -164,3 +165,5 @@ export default class WebSocketService {
     logger.info(`WebSocket: streamer:left-campaign emitted for streamer ${streamerId}`)
   }
 }
+
+export { WebSocketService as webSocketService }

@@ -18,7 +18,7 @@ export default class extends BaseSchema {
         .references('id')
         .inTable('streamers')
         .onDelete('CASCADE')
-      table.string('twitch_poll_id').notNullable()
+      table.string('twitch_poll_id').nullable()
       table
         .enum('status', ['CREATED', 'RUNNING', 'COMPLETED', 'TERMINATED'])
         .notNullable()

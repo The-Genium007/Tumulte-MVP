@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-gray-950 via-purple-950/20 to-gray-950 py-12">
+  <div class="min-h-screen bg-linear-to-br from-gray-950 via-purple-950/20 to-gray-950 py-12">
     <div class="container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl">
       <UCard>
         <template #header>
@@ -29,23 +29,23 @@
             <h2 class="text-2xl font-semibold text-white mb-3">Comment ça marche ?</h2>
             <ul class="space-y-2 text-gray-300">
               <li class="flex items-start gap-2">
-                <UIcon name="i-lucide-check" class="size-5 text-primary-500 mt-0.5 flex-shrink-0" />
+                <UIcon name="i-lucide-check" class="size-5 text-primary-500 mt-0.5 shrink-0" />
                 <span>Le MJ crée une campagne et invite les streamers participants</span>
               </li>
               <li class="flex items-start gap-2">
-                <UIcon name="i-lucide-check" class="size-5 text-primary-500 mt-0.5 flex-shrink-0" />
+                <UIcon name="i-lucide-check" class="size-5 text-primary-500 mt-0.5 shrink-0" />
                 <span>Le MJ lance un sondage depuis son dashboard</span>
               </li>
               <li class="flex items-start gap-2">
-                <UIcon name="i-lucide-check" class="size-5 text-primary-500 mt-0.5 flex-shrink-0" />
+                <UIcon name="i-lucide-check" class="size-5 text-primary-500 mt-0.5 shrink-0" />
                 <span>Le sondage apparaît automatiquement sur tous les chats Twitch liés</span>
               </li>
               <li class="flex items-start gap-2">
-                <UIcon name="i-lucide-check" class="size-5 text-primary-500 mt-0.5 flex-shrink-0" />
+                <UIcon name="i-lucide-check" class="size-5 text-primary-500 mt-0.5 shrink-0" />
                 <span>Les votes de toutes les communautés sont agrégés en temps réel</span>
               </li>
               <li class="flex items-start gap-2">
-                <UIcon name="i-lucide-check" class="size-5 text-primary-500 mt-0.5 flex-shrink-0" />
+                <UIcon name="i-lucide-check" class="size-5 text-primary-500 mt-0.5 shrink-0" />
                 <span>Le résultat final est visible par tous instantanément</span>
               </li>
             </ul>

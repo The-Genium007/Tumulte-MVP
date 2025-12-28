@@ -1,7 +1,6 @@
 import { BaseCommand } from '@adonisjs/core/ace'
 import { CommandOptions } from '@adonisjs/core/types/ace'
-import Streamer from '#models/streamer'
-import TwitchAuthService from '#services/auth/twitch_auth_service'
+import { streamer as Streamer } from '#models/streamer'
 
 export default class CheckScopes extends BaseCommand {
   static commandName = 'check:scopes'
@@ -12,7 +11,7 @@ export default class CheckScopes extends BaseCommand {
   }
 
   async run() {
-    const authService = new TwitchAuthService()
+    // const authService = new TwitchAuthService()
     const requiredScopes = [
       'channel:manage:polls',
       'channel:read:polls',

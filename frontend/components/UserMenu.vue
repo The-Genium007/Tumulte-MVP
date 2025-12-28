@@ -133,7 +133,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { onClickOutside } from '@vueuse/core'
 import { useAuth } from '@/composables/useAuth'
@@ -142,7 +142,7 @@ import { useNotifications } from '@/composables/useNotifications'
 
 const router = useRouter()
 const { user, logout } = useAuth()
-const { switching, currentRole, targetRole, targetRoleLabel, switchToOppositeRole } = useRoleSwitch()
+const { switching, currentRole, targetRoleLabel, switchToOppositeRole } = useRoleSwitch()
 const { invitationCount, hasInvitations } = useNotifications()
 
 const isOpen = ref(false)

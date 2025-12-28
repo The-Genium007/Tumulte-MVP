@@ -2,9 +2,9 @@ import { DateTime } from 'luxon'
 import { BaseModel, column, belongsTo } from '@adonisjs/lucid/orm'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
 import encryption from '@adonisjs/core/services/encryption'
-import User from './user.js'
+import { user as User } from './user.js'
 
-export default class Streamer extends BaseModel {
+class Streamer extends BaseModel {
   @column({ isPrimary: true })
   declare id: string
 
@@ -113,3 +113,5 @@ export default class Streamer extends BaseModel {
     return streamer
   }
 }
+
+export { Streamer as streamer }

@@ -1,4 +1,4 @@
-import PollChannelLink from '#models/poll_channel_link'
+import { pollChannelLink as PollChannelLink } from '#models/poll_channel_link'
 
 export class PollChannelLinkRepository {
   async findById(id: string): Promise<PollChannelLink | null> {
@@ -71,3 +71,4 @@ export class PollChannelLinkRepository {
 }
 
 export default PollChannelLinkRepository
+export { PollChannelLinkRepository as pollChannelLinkRepository }

@@ -1,6 +1,6 @@
 <template>
   <div
-    class="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-950 via-purple-950/20 to-gray-950"
+    class="min-h-screen flex items-center justify-center bg-linear-to-br from-gray-950 via-purple-950/20 to-gray-950"
   >
     <div class="text-center">
       <div class="bg-primary-500/10 p-8 rounded-3xl mb-6 inline-block">
@@ -17,7 +17,7 @@ import { onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useAuth } from "@/composables/useAuth";
 
-const router = useRouter();
+const _router = useRouter();
 const { fetchMe, isMJ, isStreamer } = useAuth();
 
 onMounted(async () => {
@@ -27,15 +27,15 @@ onMounted(async () => {
 
     // Rediriger selon le rôle
     if (isMJ.value) {
-      router.push({ name: "mj-index" });
+      _router.push({ name: "mj-index" });
     } else if (isStreamer.value) {
-      router.push({ name: "streamer-index" });
+      _router.push({ name: "streamer-index" });
     } else {
-      router.push({ name: "login" });
+      _router.push({ name: "login" });
     }
-  } catch (error) {
+  } catch {
     // Si non authentifié, rediriger vers login
-    router.push({ name: "login" });
+    _router.push({ name: "login" });
   }
 });
 </script>

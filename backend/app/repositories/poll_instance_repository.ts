@@ -1,4 +1,4 @@
-import PollInstance from '#models/poll_instance'
+import { pollInstance as PollInstance } from '#models/poll_instance'
 
 export class PollInstanceRepository {
   async findById(id: string): Promise<PollInstance | null> {
@@ -36,11 +36,17 @@ export class PollInstanceRepository {
     title: string
     options: string[]
     durationSeconds: number
+    type?: 'STANDARD' | 'UNIQUE'
+    channelPointsEnabled?: boolean
+    channelPointsAmount?: number | null
   }): Promise<PollInstance> {
     return await PollInstance.create({
       ...data,
       options: JSON.stringify(data.options) as any,
       status: 'PENDING',
+      type: data.type || 'STANDARD',
+      channelPointsEnabled: data.channelPointsEnabled || false,
+      channelPointsAmount: data.channelPointsAmount || null,
     })
   }
 
@@ -62,17 +68,31 @@ export class PollInstanceRepository {
 
   async setEnded(pollId: string): Promise<void> {
     await PollInstance.query().where('id', pollId).update({
-      status: 'COMPLETED',
+      status: 'ENDED',
       endedAt: new Date(),
     })
   }
 
   async setCancelled(pollId: string): Promise<void> {
     await PollInstance.query().where('id', pollId).update({
-      status: 'CANCELLED',
+      status: 'ENDED',
       endedAt: new Date(),
     })
+  }
+
+  async saveFinalResults(
+    pollId: string,
+    totalVotes: number,
+    votesByOption: Record<string, number>
+  ): Promise<void> {
+    await PollInstance.query()
+      .where('id', pollId)
+      .update({
+        finalTotalVotes: totalVotes,
+        finalVotesByOption: JSON.stringify(votesByOption) as any,
+      })
   }
 }
 
 export default PollInstanceRepository
+export { PollInstanceRepository as pollInstanceRepository }

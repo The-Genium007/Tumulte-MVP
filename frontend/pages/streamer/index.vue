@@ -24,103 +24,6 @@
           </UAlert>
         </UCard>
 
-        <!-- Informations du streamer -->
-        <UCard v-if="user && user.streamer">
-          <template #header>
-            <div class="flex items-center gap-3">
-              <UIcon name="i-lucide-user-circle" class="size-6 text-primary-500" />
-              <h2 class="text-xl font-semibold text-white">Vos informations</h2>
-            </div>
-          </template>
-
-          <div class="space-y-4">
-            <!-- Alerte de compatibilité -->
-            <UAlert
-              v-if="!user.streamer.broadcaster_type || (user.streamer.broadcaster_type !== 'partner' && user.streamer.broadcaster_type !== 'affiliate')"
-              color="warning"
-              variant="soft"
-              icon="i-lucide-alert-triangle"
-              title="Compte non-affilié"
-            >
-              <template #description>
-                <p class="mb-2">
-                  Votre compte Twitch doit être <strong>Affilié</strong> ou <strong>Partenaire</strong> pour utiliser le système de sondages.
-                  Le système dépend entièrement de l'API Twitch Polls, qui est uniquement disponible pour les comptes affiliés et partenaires.
-                </p>
-                <p class="text-sm">
-                  Pour devenir Affilié Twitch, consultez :
-                  <a
-                    href="https://www.twitch.tv/creatorcamp/fr-fr/paths/getting-started-on-twitch/affiliate/"
-                    target="_blank"
-                    class="text-yellow-400 hover:text-yellow-300 underline"
-                  >
-                    Programme d'Affiliation Twitch
-                  </a>
-                </p>
-              </template>
-            </UAlert>
-
-            <UAlert
-              v-else
-              color="success"
-              variant="soft"
-              icon="i-lucide-check-circle"
-              title="Compte affilié"
-            >
-              <template #description>
-                <p>
-                  Votre compte {{ user.streamer.broadcaster_type === 'partner' ? 'Partenaire' : 'Affilié' }} Twitch est compatible avec le système de sondages !
-                </p>
-              </template>
-            </UAlert>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div>
-                <p class="text-sm text-gray-400 mb-1">Nom Twitch</p>
-                <p class="text-lg font-semibold text-white">{{ user.streamer.twitch_display_name }}</p>
-              </div>
-              <div>
-                <p class="text-sm text-gray-400 mb-1">Login Twitch</p>
-                <p class="text-lg font-semibold text-white">{{ user.streamer.twitch_login }}</p>
-              </div>
-              <div>
-                <p class="text-sm text-gray-400 mb-1">Statut du compte</p>
-                <UBadge
-                  v-if="user.streamer.broadcaster_type === 'partner'"
-                  label="Partenaire"
-                  color="primary"
-                  variant="soft"
-                  size="md"
-                />
-                <UBadge
-                  v-else-if="user.streamer.broadcaster_type === 'affiliate'"
-                  label="Affilié"
-                  color="info"
-                  variant="soft"
-                  size="md"
-                />
-                <UBadge
-                  v-else
-                  label="Standard"
-                  color="warning"
-                  variant="soft"
-                  size="md"
-                />
-              </div>
-              <div>
-                <p class="text-sm text-gray-400 mb-1">Statut de connexion</p>
-                <UBadge
-                  :color="user.streamer.is_active ? 'success' : 'error'"
-                  variant="soft"
-                  size="md"
-                >
-                  {{ user.streamer.is_active ? 'Actif' : 'Inactif' }}
-                </UBadge>
-              </div>
-            </div>
-          </div>
-        </UCard>
-
         <!-- Autorisations de campagnes -->
         <UCard>
           <template #header>
@@ -336,10 +239,16 @@ import type { AuthorizationStatus } from "@/types/api";
 
 definePageMeta({
   layout: "authenticated" as const,
+  middleware: async () => {
+    const { user } = useAuth();
+    if (user.value && user.value.role !== 'STREAMER') {
+      return navigateTo('/mj');
+    }
+  }
 });
 
 const API_URL = import.meta.env.VITE_API_URL;
-const { user } = useAuth();
+const { user: _user } = useAuth();
 const { fetchInvitations, getAuthorizationStatus, grantAuthorization, revokeAuthorization } = useCampaigns();
 const toast = useToast();
 
@@ -366,7 +275,7 @@ const fetchOverlayUrl = async () => {
     if (!response.ok) throw new Error("Failed to fetch overlay URL");
     const data = await response.json();
     overlayUrl.value = data.data.overlay_url;
-  } catch (error) {
+  } catch {
     toast.add({
       title: "Erreur",
       description: "Impossible de générer l'URL de l'overlay",
@@ -385,7 +294,7 @@ const copyOverlayUrl = async () => {
       setTimeout(() => {
         copySuccess.value = false;
       }, 3000);
-    } catch (error) {
+    } catch {
       toast.add({
         title: "Erreur",
         description: "Impossible de copier l'URL",
@@ -440,6 +349,7 @@ const startCountdown = () => {
       if (status.is_authorized && status.remaining_seconds !== null && status.remaining_seconds > 0) {
         return {
           ...status,
+           
           remaining_seconds: status.remaining_seconds - 1
         };
       }
@@ -475,10 +385,10 @@ const handleAuthorize = async (campaignId: string) => {
       color: "success",
     });
     await loadAuthorizationStatus();
-  } catch (error) {
+  } catch {
     toast.add({
       title: "Erreur",
-      description: error instanceof Error ? error.message : "Impossible d'accorder l'autorisation",
+      description: "Impossible d'accorder l'autorisation",
       color: "error",
     });
   }
@@ -493,10 +403,10 @@ const handleRevokeAuth = async (campaignId: string) => {
       color: "success",
     });
     await loadAuthorizationStatus();
-  } catch (error) {
+  } catch {
     toast.add({
       title: "Erreur",
-      description: error instanceof Error ? error.message : "Impossible de révoquer l'autorisation",
+      description: "Impossible de révoquer l'autorisation",
       color: "error",
     });
   }

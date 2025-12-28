@@ -23,12 +23,12 @@
             >
               <div class="option-header">
                 <span class="option-label">{{ option }}</span>
-                <span class="option-percentage">{{ percentages[index] || 0 }}%</span>
+                <span class="option-percentage">{{ percentages[index as number] || 0 }}%</span>
               </div>
               <div class="option-bar-container">
                 <div
                   class="option-bar"
-                  :style="{ width: `${percentages[index] || 0}%` }"
+                  :style="{ width: `${percentages[index as number] || 0}%` }"
                 />
               </div>
             </div>
@@ -44,12 +44,16 @@ import { ref, onMounted, onUnmounted } from "vue";
 import OverlayLayout from "@/layouts/OverlayLayout.vue";
 import { useWebSocket } from "@/composables/useWebSocket";
 import { useCampaigns } from "@/composables/useCampaigns";
+import type { PollStartEvent } from "@/types";
 
 const props = defineProps<{
   streamerId: string;
 }>();
 
-const activePoll = ref<any>(null);
+const activePoll = ref<(PollStartEvent & {
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  campaign_id?: string
+}) | null>(null);
 const percentages = ref<Record<number, number>>({});
 const remainingTime = ref(0);
 const activeCampaigns = ref<string[]>([]);
@@ -81,19 +85,19 @@ onMounted(async () => {
       }
 
       activePoll.value = data;
-      startTimer(data.ends_at);
+      startTimer(data.endsAt);
     },
 
     onUpdate: (data) => {
       // Ne mettre à jour que si c'est le poll actif
-      if (activePoll.value?.poll_instance_id === data.poll_instance_id) {
+      if (activePoll.value?.pollInstanceId === data.pollInstanceId) {
         percentages.value = data.percentages;
       }
     },
 
     onEnd: (data) => {
       // Ne terminer que si c'est le poll actif
-      if (activePoll.value?.poll_instance_id === data.poll_instance_id) {
+      if (activePoll.value?.pollInstanceId === data.pollInstanceId) {
         console.log("Poll ended:", data);
         percentages.value = data.percentages;
 

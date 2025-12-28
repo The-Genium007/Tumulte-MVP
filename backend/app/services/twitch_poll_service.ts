@@ -1,26 +1,30 @@
 import env from '#start/env'
-import TwitchAuthService from './twitch_auth_service.js'
+import { twitchAuthService as TwitchAuthService } from './twitch_auth_service.js'
 
 interface TwitchPollChoice {
   id: string
   title: string
   votes?: number
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   channel_points_votes?: number
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   bits_votes?: number
 }
 
 interface TwitchPoll {
   id: string
-  broadcaster_id: string
-  broadcaster_name: string
-  broadcaster_login: string
+  broadcasterId: string
+  broadcasterName: string
+  broadcasterLogin: string
   title: string
   choices: TwitchPollChoice[]
-  channel_points_voting_enabled: boolean
-  channel_points_per_vote: number
+  channelPointsVotingEnabled: boolean
+  channelPointsPerVote: number
   status: 'ACTIVE' | 'COMPLETED' | 'TERMINATED' | 'ARCHIVED' | 'MODERATED' | 'INVALID'
   duration: number
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   started_at: string
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   ended_at?: string
 }
 
@@ -28,7 +32,7 @@ interface TwitchPollResponse {
   data: TwitchPoll[]
 }
 
-export default class TwitchPollService {
+class TwitchPollService {
   private readonly clientId: string
   private readonly authService: TwitchAuthService
 
@@ -58,7 +62,7 @@ export default class TwitchPollService {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        broadcaster_id: broadcasterUserId,
+        broadcasterId: broadcasterUserId,
         title,
         choices: choices.map((choice) => ({ title: choice })),
         duration: durationSeconds,
@@ -108,7 +112,7 @@ export default class TwitchPollService {
     }>
   }> {
     const params = new URLSearchParams({
-      broadcaster_id: broadcasterId,
+      broadcasterId: broadcasterId,
       id: pollId,
     })
 
@@ -165,7 +169,7 @@ export default class TwitchPollService {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        broadcaster_id: broadcasterId,
+        broadcasterId: broadcasterId,
         id: pollId,
         status,
       }),
@@ -205,3 +209,5 @@ export default class TwitchPollService {
     }
   }
 }
+
+export { TwitchPollService as twitchPollService }

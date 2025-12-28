@@ -1,6 +1,6 @@
 import { inject } from '@adonisjs/core'
 import { DateTime } from 'luxon'
-import CampaignMembershipRepository from '#repositories/campaign_membership_repository'
+import { CampaignMembershipRepository } from '#repositories/campaign_membership_repository'
 
 @inject()
 export class AuthorizationService {
@@ -70,5 +70,3 @@ export class AuthorizationService {
     }
   }
 }
-
-export default AuthorizationService

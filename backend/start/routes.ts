@@ -4,19 +4,19 @@
 |--------------------------------------------------------------------------
 |
 | The routes file is used for defining the HTTP routes.
+| Architecture modulaire avec contrôleurs organisés par domaine.
 |
 */
 
 import router from '@adonisjs/core/services/router'
 import { middleware } from '#start/kernel'
 
-const AuthController = () => import('#controllers/auth_controller')
-const MJController = () => import('#controllers/mj_controller')
-const StreamerController = () => import('#controllers/streamer_controller')
-const CampaignsController = () => import('#controllers/campaigns_controller')
-const SupportController = () => import('#controllers/support_controller')
+const authController = () => import('#controllers/auth_controller')
+const supportController = () => import('#controllers/support_controller')
 
-// Health check
+// ==========================================
+// Health check & API Info
+// ==========================================
 router.get('/', async () => {
   return {
     app: 'Twitch Multi-Stream Poll',
@@ -25,7 +25,6 @@ router.get('/', async () => {
   }
 })
 
-// Dedicated health endpoint for Docker healthcheck and monitoring
 router.get('/health', async ({ response }) => {
   return response.ok({
     status: 'healthy',
@@ -39,127 +38,171 @@ router.get('/health', async ({ response }) => {
 // ==========================================
 router
   .group(() => {
-    router.get('/twitch/redirect', [AuthController, 'redirect'])
-    router.get('/twitch/callback', [AuthController, 'callback'])
-    // Alias pour compat front: /auth/twitch/redirect/callback
-    router.get('/auth/twitch/redirect', [AuthController, 'redirect'])
-    router.get('/auth/twitch/callback', [AuthController, 'callback'])
-    router.post('/logout', [AuthController, 'logout']).use(middleware.auth())
-    router.get('/me', [AuthController, 'me']).use(middleware.auth())
-    router.post('/switch-role', [AuthController, 'switchRole']).use(middleware.auth())
+    router.get('/twitch/redirect', [authController, 'redirect'])
+    router.get('/twitch/callback', [authController, 'callback'])
+    router.post('/logout', [authController, 'logout']).use(middleware.auth())
+    router.get('/me', [authController, 'me']).use(middleware.auth())
+    router.post('/switch-role', [authController, 'switchRole']).use(middleware.auth())
   })
   .prefix('/auth')
 
 // ==========================================
-// Routes MJ (Game Master)
+// Routes MJ (Game Master) - Architecture modulaire
 // ==========================================
 router
   .group(() => {
-    // Gestion des streamers
-    router.get('/streamers', [MJController, 'listStreamers'])
+    // Campaigns
+    router.get('/campaigns', '#controllers/mj/campaigns_controller.index')
+    router.post('/campaigns', '#controllers/mj/campaigns_controller.store')
+    router.get('/campaigns/:id', '#controllers/mj/campaigns_controller.show')
+    router.put('/campaigns/:id', '#controllers/mj/campaigns_controller.update')
+    router.delete('/campaigns/:id', '#controllers/mj/campaigns_controller.destroy')
+    router.post('/campaigns/:id/invite', '#controllers/mj/campaigns_controller.invite')
+    router.get('/campaigns/:id/members', '#controllers/mj/campaigns_controller.listMembers')
+    router.delete(
+      '/campaigns/:id/members/:memberId',
+      '#controllers/mj/campaigns_controller.removeMember'
+    )
 
-    // Gestion des campagnes
-    router.get('/campaigns', [CampaignsController, 'listCampaigns'])
-    router.post('/campaigns', [CampaignsController, 'createCampaign'])
-    router.get('/campaigns/:id', [CampaignsController, 'getCampaign'])
-    router.put('/campaigns/:id', [CampaignsController, 'updateCampaign'])
-    router.delete('/campaigns/:id', [CampaignsController, 'deleteCampaign'])
+    // Poll Sessions (nested sous campaigns OU standalone)
+    router.get(
+      '/campaigns/:campaignId/sessions',
+      '#controllers/mj/poll_sessions_controller.indexByCampaign'
+    )
+    router.post(
+      '/campaigns/:campaignId/sessions',
+      '#controllers/mj/poll_sessions_controller.storeByCampaign'
+    )
+    router.delete(
+      '/campaigns/:campaignId/sessions/:id',
+      '#controllers/mj/poll_sessions_controller.destroy'
+    )
+    router.get('/sessions/:id', '#controllers/mj/poll_sessions_controller.show')
+    router.put('/sessions/:id', '#controllers/mj/poll_sessions_controller.update')
+    router.delete('/sessions/:id', '#controllers/mj/poll_sessions_controller.destroy')
+    router.post('/sessions/:id/polls', '#controllers/mj/poll_sessions_controller.addPoll')
+    router.put('/sessions/:id/polls/:pollId', '#controllers/mj/poll_sessions_controller.updatePoll')
+    router.delete(
+      '/sessions/:id/polls/:pollId',
+      '#controllers/mj/poll_sessions_controller.deletePoll'
+    )
+    router.put(
+      '/sessions/:id/polls/reorder',
+      '#controllers/mj/poll_sessions_controller.reorderPolls'
+    )
 
-    // Gestion des membres de campagne
-    router.post('/campaigns/:id/invite', [CampaignsController, 'inviteStreamer'])
-    router.delete('/campaigns/:id/members/:memberId', [CampaignsController, 'removeMember'])
-    router.post('/campaigns/:id/members/:memberId/activate', [
-      CampaignsController,
-      'activateMember',
-    ])
+    // Lancement de session avec Health Check
+    router.post(
+      '/campaigns/:campaignId/sessions/:sessionId/launch',
+      '#controllers/mj/poll_sessions_controller.launch'
+    )
 
-    // Recherche Twitch
-    router.get('/twitch/search-streamers', [CampaignsController, 'searchStreamers'])
+    // Poll Templates (nested sous campaigns OU standalone)
+    router.get(
+      '/campaigns/:campaignId/templates',
+      '#controllers/mj/poll_templates_controller.indexByCampaign'
+    )
+    router.post(
+      '/campaigns/:campaignId/templates',
+      '#controllers/mj/poll_templates_controller.storeByCampaign'
+    )
+    router.get('/templates', '#controllers/mj/poll_templates_controller.index')
+    router.get('/templates/:id', '#controllers/mj/poll_templates_controller.show')
+    router.put('/templates/:id', '#controllers/mj/poll_templates_controller.update')
+    router.delete('/templates/:id', '#controllers/mj/poll_templates_controller.destroy')
 
-    // Sessions de sondages scoped par campagne
-    router.get('/campaigns/:campaignId/poll-sessions', [MJController, 'listPollSessions'])
-    router.post('/campaigns/:campaignId/poll-sessions', [MJController, 'createPollSession'])
-    router.get('/campaigns/:campaignId/poll-sessions/:id', [MJController, 'getPollSession'])
-    router.put('/campaigns/:campaignId/poll-sessions/:id', [MJController, 'updatePollSession'])
-    router.delete('/campaigns/:campaignId/poll-sessions/:id', [MJController, 'deletePollSession'])
+    // Polls (lancement et contrôle)
+    router.post('/campaigns/:campaignId/polls/launch', '#controllers/mj/polls_controller.launch')
+    router.get('/polls', '#controllers/mj/polls_controller.index')
+    router.get('/polls/:id', '#controllers/mj/polls_controller.show')
+    router.post('/polls/:id/cancel', '#controllers/mj/polls_controller.cancel')
+    router.get('/polls/:id/results', '#controllers/mj/polls_controller.results')
+    router.get('/polls/:id/live', '#controllers/mj/polls_controller.live')
 
-    // Gestion des sondages dans une session
-    router.post('/campaigns/:campaignId/poll-sessions/:sessionId/polls', [
-      MJController,
-      'addPollToSession',
-    ])
-    router.put('/campaigns/:campaignId/poll-sessions/:sessionId/polls/:pollId', [
-      MJController,
-      'updatePollInSession',
-    ])
-    router.delete('/campaigns/:campaignId/poll-sessions/:sessionId/polls/:pollId', [
-      MJController,
-      'deletePollFromSession',
-    ])
-
-    // Lancement et résultats des sondages
-    router.post('/campaigns/:campaignId/polls/:pollId/launch', [
-      MJController,
-      'launchPollFromSession',
-    ])
-    router.patch('/campaigns/:campaignId/polls/:pollId/cancel', [
-      MJController,
-      'cancelPollFromSession',
-    ])
-    router.get('/campaigns/:campaignId/polls/:pollId/results', [MJController, 'getPollResults'])
-
-    // Templates scoped par campagne (legacy)
-    router.get('/campaigns/:campaignId/templates', [MJController, 'listTemplates'])
-    router.post('/campaigns/:campaignId/templates', [MJController, 'createTemplate'])
-    router.put('/campaigns/:campaignId/templates/:id', [MJController, 'updateTemplate'])
-    router.delete('/campaigns/:campaignId/templates/:id', [MJController, 'deleteTemplate'])
-
-    // Polls scoped par campagne (legacy)
-    router.post('/campaigns/:campaignId/polls/launch', [MJController, 'launchPoll'])
-    router.get('/campaigns/:campaignId/polls', [MJController, 'listPolls'])
-    router.get('/campaigns/:campaignId/polls/:id', [MJController, 'getPoll'])
-
-    // Gestion des templates de sondages (legacy - sans campagne)
-    router.get('/poll-templates', [MJController, 'listTemplates'])
-    router.post('/poll-templates', [MJController, 'createTemplate'])
-    router.put('/poll-templates/:id', [MJController, 'updateTemplate'])
-    router.delete('/poll-templates/:id', [MJController, 'deleteTemplate'])
-
-    // Gestion des sondages (legacy - sans campagne)
-    router.post('/polls/launch', [MJController, 'launchPoll'])
-    router.get('/polls', [MJController, 'listPolls'])
-    router.get('/polls/:id', [MJController, 'getPoll'])
+    // Streamers (recherche Twitch)
+    router.get('/streamers', '#controllers/mj/streamers_controller.index')
+    router.get('/streamers/search', '#controllers/mj/streamers_controller.search')
   })
   .prefix('/mj')
   .use(middleware.auth())
+  .use(middleware.role({ role: 'MJ' }))
 
 // ==========================================
-// Support / Tickets Discord
+// Routes Streamer - Architecture modulaire
 // ==========================================
 router
   .group(() => {
-    router.post('/report', [SupportController, 'report'])
+    // Campaigns & Invitations
+    router.get('/campaigns/invitations', '#controllers/streamer/campaigns_controller.invitations')
+    router.post(
+      '/campaigns/invitations/:id/accept',
+      '#controllers/streamer/campaigns_controller.acceptInvitation'
+    )
+    router.post(
+      '/campaigns/invitations/:id/decline',
+      '#controllers/streamer/campaigns_controller.declineInvitation'
+    )
+    router.get('/campaigns', '#controllers/streamer/campaigns_controller.index')
+    router.post('/campaigns/:id/leave', '#controllers/streamer/campaigns_controller.leave')
+
+    // Authorization (double validation system)
+    router.get(
+      '/campaigns/authorization-status',
+      '#controllers/streamer/authorization_controller.status'
+    )
+    router.post(
+      '/campaigns/:campaignId/authorize',
+      '#controllers/streamer/authorization_controller.grant'
+    )
+    router.delete(
+      '/campaigns/:campaignId/authorize',
+      '#controllers/streamer/authorization_controller.revoke'
+    )
+
+    // Revoke Twitch access
+    router.post('/revoke', '#controllers/streamer/authorization_controller.revokeAccess')
+  })
+  .prefix('/streamer')
+  .use(middleware.auth())
+  .use(middleware.role({ role: 'STREAMER' }))
+
+// ==========================================
+// Routes Overlay (publiques, sans authentification)
+// ==========================================
+router
+  .group(() => {
+    router.get('/:streamerId', '#controllers/streamer/overlay_controller.streamerInfo')
+    router.get('/:streamerId/active-poll', '#controllers/streamer/overlay_controller.activePoll')
+    router.get(
+      '/:streamerId/poll/:pollInstanceId',
+      '#controllers/streamer/overlay_controller.pollResults'
+    )
+  })
+  .prefix('/overlay')
+// Pas de middleware auth - routes publiques pour OBS
+
+// ==========================================
+// Routes Account (accessible à tous les rôles authentifiés)
+// ==========================================
+router
+  .group(() => {
+    router.delete('/delete', '#controllers/account_controller.deleteAccount')
+  })
+  .prefix('/account')
+  .use(middleware.auth())
+
+// ==========================================
+// Routes Support (accessible à tous les rôles authentifiés)
+// ==========================================
+router
+  .group(() => {
+    router.post('/report', [supportController, 'report'])
   })
   .prefix('/support')
   .use(middleware.auth())
 
 // ==========================================
-// Routes Streamer
+// Transmit WebSocket routes
 // ==========================================
-router
-  .group(() => {
-    // Invitations et campagnes
-    router.get('/campaigns/invitations', [CampaignsController, 'listInvitations'])
-    router.post('/campaigns/invitations/:id/accept', [CampaignsController, 'acceptInvitation'])
-    router.post('/campaigns/invitations/:id/decline', [CampaignsController, 'declineInvitation'])
-
-    // Campagnes actives
-    router.get('/campaigns', [CampaignsController, 'listActiveCampaigns'])
-    router.post('/campaigns/:id/leave', [CampaignsController, 'leaveCampaign'])
-
-    // Routes existantes
-    router.get('/overlay-url', [StreamerController, 'getOverlayUrl'])
-    router.post('/revoke', [StreamerController, 'revokeAccess'])
-  })
-  .prefix('/streamer')
-  .use(middleware.auth())
+import transmit from '@adonisjs/transmit/services/main'
+transmit.registerRoutes()

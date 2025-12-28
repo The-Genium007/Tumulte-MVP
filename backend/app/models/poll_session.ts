@@ -1,11 +1,11 @@
 import { DateTime } from 'luxon'
 import { BaseModel, column, belongsTo, hasMany } from '@adonisjs/lucid/orm'
 import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
-import User from './user.js'
-import Campaign from './campaign.js'
-import Poll from './poll.js'
+import { user as User } from './user.js'
+import { campaign as Campaign } from './campaign.js'
+import { poll as Poll } from './poll.js'
 
-export default class PollSession extends BaseModel {
+class PollSession extends BaseModel {
   @column({ isPrimary: true })
   declare id: string
 
@@ -43,3 +43,5 @@ export default class PollSession extends BaseModel {
   })
   declare polls: HasMany<typeof Poll>
 }
+
+export { PollSession as pollSession }

@@ -1,10 +1,11 @@
 import { inject } from '@adonisjs/core'
 import { DateTime } from 'luxon'
 import logger from '@adonisjs/core/services/logger'
-import PollInstance from '#models/poll_instance'
+import app from '@adonisjs/core/services/app'
+import { pollInstance as PollInstance } from '#models/poll_instance'
 import { PollChannelLinkRepository } from '#repositories/poll_channel_link_repository'
-import TwitchPollService from '../twitch/twitch_poll_service.js'
-import WebSocketService from '../websocket/websocket_service.js'
+import { twitchPollService as TwitchPollService } from '../twitch/twitch_poll_service.js'
+import { webSocketService as WebSocketService } from '../websocket/websocket_service.js'
 
 // Forward declaration to avoid circular dependency
 type PollAggregationService = {
@@ -17,8 +18,10 @@ type PollAggregationService = {
 @inject()
 export class PollPollingService {
   private pollingIntervals: Map<string, NodeJS.Timeout> = new Map()
+  private sentMessages: Map<string, Set<string>> = new Map() // pollInstanceId -> Set de messages envoyés
   private aggregationService?: PollAggregationService
   private onPollEndCallback?: (pollInstance: PollInstance) => Promise<void>
+  private twitchChatService: any // Sera initialisé de manière lazy
 
   constructor(
     private pollChannelLinkRepository: PollChannelLinkRepository,
@@ -41,6 +44,20 @@ export class PollPollingService {
   }
 
   /**
+   * Initialise le TwitchChatService de manière lazy
+   */
+  private async getTwitchChatService(): Promise<any> {
+    if (!this.twitchChatService) {
+      const { twitchChatService: twitchChatServiceClass } =
+        await import('../twitch/twitch_chat_service.js')
+      const { redisService: redisServiceClass } = await import('../cache/redis_service.js')
+      const redisServiceInstance = await app.container.make(redisServiceClass)
+      this.twitchChatService = new twitchChatServiceClass(redisServiceInstance)
+    }
+    return this.twitchChatService
+  }
+
+  /**
    * Démarre le polling pour un poll instance
    */
   async startPolling(pollInstance: PollInstance): Promise<void> {
@@ -48,30 +65,78 @@ export class PollPollingService {
 
     // Si un polling est déjà en cours, on l'arrête d'abord
     if (this.pollingIntervals.has(pollId)) {
+      logger.warn({
+        event: 'polling_already_running',
+        pollInstanceId: pollId,
+        message: 'Stopping existing polling before starting new one',
+      })
       this.stopPolling(pollId)
     }
 
-    logger.info(`Starting polling for poll instance ${pollId}`)
-
     // Calculer la date de fin
     const endsAt = pollInstance.startedAt!.plus({ seconds: pollInstance.durationSeconds })
+    const timeRemaining = endsAt.diff(DateTime.now(), 'seconds').seconds
+
+    logger.info({
+      event: 'polling_started',
+      pollInstanceId: pollId,
+      campaignId: pollInstance.campaignId,
+      durationSeconds: pollInstance.durationSeconds,
+      startedAt: pollInstance.startedAt!.toISO(),
+      endsAt: endsAt.toISO(),
+      timeRemainingSeconds: Math.round(timeRemaining),
+    })
+
+    // Attendre 500ms pour laisser le temps au frontend de s'abonner au WebSocket
+    await new Promise((resolve) => setTimeout(resolve, 500))
 
     // Émettre l'événement de démarrage du poll
     this.webSocketService.emitPollStart({
-      poll_instance_id: pollId,
+      pollInstanceId: pollId,
       title: pollInstance.title,
       options: pollInstance.options,
-      duration_seconds: pollInstance.durationSeconds,
+      durationSeconds: pollInstance.durationSeconds,
       started_at: pollInstance.startedAt!.toISO()!,
-      ends_at: endsAt.toISO()!,
+      endsAt: endsAt.toISO()!,
     })
+
+    logger.info({
+      event: 'websocket_poll_start_emitted',
+      pollInstanceId: pollId,
+    })
+
+    // Compteurs de polling
+    let pollingCycleCount = 0
 
     // Fonction de polling
     const poll = async () => {
+      const cycleStartTime = Date.now()
+      pollingCycleCount++
+
       try {
+        const now = DateTime.now()
+        const remainingSeconds = Math.round(endsAt.diff(now, 'seconds').seconds)
+
+        // Récupérer tous les channel links pour ce poll (nécessaire pour les messages)
+        const channelLinks = await this.pollChannelLinkRepository.findByPollInstance(pollId)
+
         // Vérifier si le poll est terminé
-        if (DateTime.now() >= endsAt) {
-          logger.info(`Poll instance ${pollId} has ended`)
+        if (now >= endsAt) {
+          // IMPORTANT: Envoyer les messages finaux AVANT de terminer le poll
+          await this.sendAutomaticChatMessages(
+            pollId,
+            remainingSeconds,
+            pollInstance.durationSeconds,
+            channelLinks
+          )
+
+          logger.info({
+            event: 'poll_time_expired',
+            pollInstanceId: pollId,
+            totalCycles: pollingCycleCount,
+            scheduledEnd: endsAt.toISO(),
+            actualEnd: now.toISO(),
+          })
           this.stopPolling(pollId)
 
           // Appeler le callback de fin si configuré
@@ -81,62 +146,160 @@ export class PollPollingService {
           return
         }
 
-        // Récupérer tous les channel links pour ce poll
-        const channelLinks = await this.pollChannelLinkRepository.findByPollInstance(pollId)
+        const apiPolls = channelLinks.filter((l) => l.twitchPollId !== null)
+        const chatPolls = channelLinks.filter((l) => l.twitchPollId === null)
+
+        let successfulPolls = 0
+        let failedPolls = 0
+        let totalVotesAllStreamers = 0
 
         // Mettre à jour chaque channel link
         for (const link of channelLinks) {
           try {
-            const accessToken = await link.streamer.getDecryptedAccessToken()
+            const pollFetchStart = Date.now()
 
-            const pollData = await this.twitchPollService.withTokenRefresh(
-              (token) =>
-                this.twitchPollService.getPoll(
-                  link.streamer.twitchUserId,
-                  link.twitchPollId,
-                  token
-                ),
-              async () => accessToken,
-              await link.streamer.getDecryptedRefreshToken(),
-              async (newAccessToken, newRefreshToken) => {
-                await link.streamer.updateTokens(newAccessToken, newRefreshToken)
+            // Distinction entre polls API (avec twitchPollId) et polls IRC (sans twitchPollId)
+            if (link.twitchPollId) {
+              // ========== POLL API TWITCH ==========
+              const accessToken = await link.streamer.getDecryptedAccessToken()
+
+              const pollData = await this.twitchPollService.withTokenRefresh(
+                (token) =>
+                  this.twitchPollService.getPoll(
+                    link.streamer.twitchUserId,
+                    link.twitchPollId!,
+                    token
+                  ),
+                async () => accessToken,
+                await link.streamer.getDecryptedRefreshToken(),
+                async (newAccessToken, newRefreshToken) => {
+                  await link.streamer.updateTokens(newAccessToken, newRefreshToken)
+                }
+              )
+
+              // Convertir les votes en map par index d'option
+              const votesByOption: Record<string, number> = {}
+              pollData.choices.forEach((choice, index) => {
+                votesByOption[index.toString()] = choice.votes
+              })
+
+              // Calculer le total des votes
+              const totalVotes = Object.values(votesByOption).reduce((sum, votes) => sum + votes, 0)
+              totalVotesAllStreamers += totalVotes
+
+              // Mettre à jour le link
+              await this.pollChannelLinkRepository.updateVotes(link.id, votesByOption, totalVotes)
+
+              // Mettre à jour le statut
+              const newStatus = this.mapTwitchStatusToLinkStatus(pollData.status)
+              const statusChanged = newStatus !== link.status
+              if (statusChanged) {
+                await this.pollChannelLinkRepository.updateStatus(link.id, newStatus)
+                logger.info({
+                  event: 'poll_status_changed',
+                  pollInstanceId: pollId,
+                  streamer_id: link.streamerId,
+                  twitchPollId: link.twitchPollId,
+                  oldStatus: link.status,
+                  newStatus,
+                })
               }
-            )
 
-            // Convertir les votes en map par index d'option
-            const votesByOption: Record<string, number> = {}
-            pollData.choices.forEach((choice, index) => {
-              votesByOption[index.toString()] = choice.votes
-            })
+              successfulPolls++
 
-            // Calculer le total des votes
-            const totalVotes = Object.values(votesByOption).reduce((sum, votes) => sum + votes, 0)
+              const pollFetchDuration = Date.now() - pollFetchStart
+              logger.debug({
+                event: 'poll_fetch_success',
+                pollInstanceId: pollId,
+                streamer_id: link.streamerId,
+                twitchPollId: link.twitchPollId,
+                totalVotes,
+                twitchStatus: pollData.status,
+                durationMs: pollFetchDuration,
+              })
+            } else {
+              // ========== POLL IRC (CHAT) ==========
+              // Récupérer les votes depuis Redis
+              const { redisService: redisServiceClass } = await import('../cache/redis_service.js')
+              const redisService = await app.container.make(redisServiceClass)
 
-            // Mettre à jour le link
-            await this.pollChannelLinkRepository.updateVotes(link.id, votesByOption, totalVotes)
+              const chatVotes = await redisService.getChatVotes(pollId, link.streamerId)
 
-            // Mettre à jour le statut
-            const newStatus = this.mapTwitchStatusToLinkStatus(pollData.status)
-            if (newStatus !== link.status) {
-              await this.pollChannelLinkRepository.updateStatus(link.id, newStatus)
+              // Convertir en format attendu (index en string)
+              const votesByOption: Record<string, number> = {}
+              for (const [optionIndex, votes] of Object.entries(chatVotes)) {
+                votesByOption[optionIndex] = votes
+              }
+
+              // Calculer le total des votes
+              const totalVotes = Object.values(votesByOption).reduce((sum, votes) => sum + votes, 0)
+              totalVotesAllStreamers += totalVotes
+
+              // Synchroniser vers la base de données
+              await this.pollChannelLinkRepository.updateVotes(link.id, votesByOption, totalVotes)
+
+              successfulPolls++
+
+              const pollFetchDuration = Date.now() - pollFetchStart
+              logger.debug({
+                event: 'chat_poll_sync_success',
+                pollInstanceId: pollId,
+                streamer_id: link.streamerId,
+                streamerDisplayName: link.streamer.twitchDisplayName,
+                totalVotes,
+                votesByOption,
+                durationMs: pollFetchDuration,
+              })
             }
           } catch (error) {
-            logger.error(
-              `Failed to update poll for streamer ${link.streamer.twitchDisplayName}: ${error instanceof Error ? error.message : String(error)}`
-            )
+            failedPolls++
+            logger.error({
+              event: link.twitchPollId ? 'poll_fetch_failed' : 'chat_poll_sync_failed',
+              pollInstanceId: pollId,
+              streamer_id: link.streamerId,
+              streamerDisplayName: link.streamer.twitchDisplayName,
+              twitchPollId: link.twitchPollId || 'chat-mode',
+              error: error instanceof Error ? error.message : String(error),
+            })
           }
         }
+
+        // Envoyer les messages automatiques dans le chat
+        await this.sendAutomaticChatMessages(
+          pollId,
+          remainingSeconds,
+          pollInstance.durationSeconds,
+          channelLinks
+        )
 
         // Agréger les résultats et émettre via WebSocket
         if (this.aggregationService) {
           await this.aggregationService.aggregateAndEmit(pollId)
         }
 
-        logger.debug(`Poll instance ${pollId} updated`)
+        const cycleDuration = Date.now() - cycleStartTime
+
+        logger.info({
+          event: 'polling_cycle_completed',
+          pollInstanceId: pollId,
+          cycle: pollingCycleCount,
+          timeRemainingSeconds: remainingSeconds,
+          totalStreamers: channelLinks.length,
+          apiPolls: apiPolls.length,
+          chatPolls: chatPolls.length,
+          successfulPolls,
+          failedPolls,
+          totalVotes: totalVotesAllStreamers,
+          cycleDurationMs: cycleDuration,
+        })
       } catch (error) {
-        logger.error(
-          `Error during polling for poll instance ${pollId}: ${error instanceof Error ? error.message : String(error)}`
-        )
+        logger.error({
+          event: 'polling_cycle_error',
+          pollInstanceId: pollId,
+          cycle: pollingCycleCount,
+          error: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+        })
       }
     }
 
@@ -146,6 +309,113 @@ export class PollPollingService {
     // Puis toutes les 3 secondes
     const interval = setInterval(poll, 3000)
     this.pollingIntervals.set(pollId, interval)
+
+    logger.info({
+      event: 'polling_interval_configured',
+      pollInstanceId: pollId,
+      intervalMs: 3000,
+      expectedCycles: Math.ceil(pollInstance.durationSeconds / 3),
+    })
+  }
+
+  /**
+   * Envoie des messages automatiques dans le chat en fonction du temps restant
+   */
+  private async sendAutomaticChatMessages(
+    pollInstanceId: string,
+    remainingSeconds: number,
+    durationSeconds: number,
+    channelLinks: any[]
+  ): Promise<void> {
+    const messageKey = (seconds: number) => `${pollInstanceId}:${seconds}`
+
+    // Initialiser le set pour ce poll si nécessaire
+    if (!this.sentMessages.has(pollInstanceId)) {
+      this.sentMessages.set(pollInstanceId, new Set())
+    }
+
+    const sentSet = this.sentMessages.get(pollInstanceId)!
+
+    // Message à la moitié du temps
+    const halfwaySeconds = Math.floor(durationSeconds / 2)
+    if (
+      remainingSeconds <= halfwaySeconds &&
+      remainingSeconds > halfwaySeconds - 3 &&
+      !sentSet.has(messageKey(halfwaySeconds))
+    ) {
+      sentSet.add(messageKey(halfwaySeconds))
+      await this.broadcastMessage(
+        channelLinks,
+        `⏱️ Il reste ${remainingSeconds} secondes pour voter !`
+      )
+    }
+
+    // Message à 10 secondes
+    if (remainingSeconds <= 10 && remainingSeconds > 7 && !sentSet.has(messageKey(10))) {
+      sentSet.add(messageKey(10))
+      await this.broadcastMessage(channelLinks, `⏱️ Plus que 10 secondes pour voter !`)
+    }
+
+    // Message à 5 secondes - condition élargie pour tenir compte du cycle de 3s
+    if (remainingSeconds <= 6 && remainingSeconds > 3 && !sentSet.has(messageKey(5))) {
+      sentSet.add(messageKey(5))
+      await this.broadcastMessage(channelLinks, `⏱️ 5 secondes restantes !`)
+    }
+
+    // Message à 4 secondes - condition élargie
+    if (remainingSeconds <= 5 && remainingSeconds > 2 && !sentSet.has(messageKey(4))) {
+      sentSet.add(messageKey(4))
+      await this.broadcastMessage(channelLinks, `⏱️ 4...`)
+    }
+
+    // Message à 3 secondes
+    if (remainingSeconds <= 4 && remainingSeconds > 1 && !sentSet.has(messageKey(3))) {
+      sentSet.add(messageKey(3))
+      await this.broadcastMessage(channelLinks, `⏱️ 3...`)
+    }
+
+    // Message à 2 secondes - condition élargie
+    if (remainingSeconds <= 3 && remainingSeconds > 0 && !sentSet.has(messageKey(2))) {
+      sentSet.add(messageKey(2))
+      await this.broadcastMessage(channelLinks, `⏱️ 2...`)
+    }
+
+    // Message à 1 seconde - condition élargie pour accepter aussi les valeurs négatives
+    if (remainingSeconds <= 2 && remainingSeconds >= -1 && !sentSet.has(messageKey(1))) {
+      sentSet.add(messageKey(1))
+      await this.broadcastMessage(channelLinks, `⏱️ 1...`)
+    }
+
+    // Message de clôture - déclenché quand il reste 0 seconde ou moins
+    if (remainingSeconds <= 0 && !sentSet.has(messageKey(0))) {
+      sentSet.add(messageKey(0))
+      await this.broadcastMessage(channelLinks, `🔒 Les votes sont clôturés ! Merci d'avoir voté !`)
+    }
+  }
+
+  /**
+   * Diffuse un message sur tous les streamers d'un poll
+   */
+  private async broadcastMessage(channelLinks: any[], message: string): Promise<void> {
+    const chatService = await this.getTwitchChatService()
+
+    for (const link of channelLinks) {
+      try {
+        await chatService.sendMessage(link.streamerId, message)
+        logger.debug({
+          event: 'automatic_chat_message_sent',
+          streamer_id: link.streamerId,
+          message,
+        })
+      } catch (error) {
+        logger.warn({
+          event: 'automatic_chat_message_failed',
+          streamer_id: link.streamerId,
+          message,
+          error: error instanceof Error ? error.message : String(error),
+        })
+      }
+    }
   }
 
   /**
@@ -156,7 +426,33 @@ export class PollPollingService {
     if (interval) {
       clearInterval(interval)
       this.pollingIntervals.delete(pollInstanceId)
+
+      // Nettoyer les messages envoyés pour ce poll
+      this.sentMessages.delete(pollInstanceId)
+
       logger.info(`Polling stopped for poll instance ${pollInstanceId}`)
+    }
+  }
+
+  /**
+   * Envoie un message d'annulation dans tous les chats
+   */
+  async sendCancellationMessage(pollInstanceId: string): Promise<void> {
+    try {
+      const channelLinks = await this.pollChannelLinkRepository.findByPollInstance(pollInstanceId)
+      await this.broadcastMessage(channelLinks, `❌ Le sondage a été annulé par le MJ.`)
+
+      logger.info({
+        event: 'cancellation_message_sent',
+        pollInstanceId,
+        channelLinksCount: channelLinks.length,
+      })
+    } catch (error) {
+      logger.error({
+        event: 'cancellation_message_failed',
+        pollInstanceId,
+        error: error instanceof Error ? error.message : String(error),
+      })
     }
   }
 

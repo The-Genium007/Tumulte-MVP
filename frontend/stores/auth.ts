@@ -1,12 +1,12 @@
 import { defineStore } from "pinia";
-import { ref, computed, readonly } from "vue";
+import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
 import type { User } from "@/types";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
 export const useAuthStore = defineStore("auth", () => {
-  const router = useRouter();
+  const _router = useRouter();
 
   // State
   const user = ref<User | null>(null);
@@ -50,7 +50,7 @@ export const useAuthStore = defineStore("auth", () => {
       });
 
       user.value = null;
-      router.push({ name: "login" });
+      _router.push({ name: "login" });
     } catch (error) {
       console.error("Logout failed:", error);
       throw error;
@@ -76,9 +76,9 @@ export const useAuthStore = defineStore("auth", () => {
 
       // Rediriger vers la page appropriée
       if (newRole === "MJ") {
-        router.push("/mj");
+        _router.push("/mj");
       } else {
-        router.push("/streamer");
+        _router.push("/streamer");
       }
     } catch (error) {
       console.error("Switch role failed:", error);
@@ -87,9 +87,9 @@ export const useAuthStore = defineStore("auth", () => {
   }
 
   return {
-    // State (readonly pour l'extérieur)
-    user: readonly(user),
-    loading: readonly(loading),
+    // State
+    user,
+    loading,
 
     // Computed
     isAuthenticated,

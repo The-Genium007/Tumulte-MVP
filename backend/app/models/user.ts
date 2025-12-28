@@ -2,11 +2,11 @@ import { DateTime } from 'luxon'
 import { BaseModel, column, hasOne } from '@adonisjs/lucid/orm'
 import { DbRememberMeTokensProvider } from '@adonisjs/auth/session'
 import type { HasOne } from '@adonisjs/lucid/types/relations'
-import Streamer from './streamer.js'
+import { streamer as Streamer } from './streamer.js'
 
 export type UserRole = 'MJ' | 'STREAMER'
 
-export default class User extends BaseModel {
+class User extends BaseModel {
   @column({ isPrimary: true })
   declare id: string
 
@@ -32,3 +32,6 @@ export default class User extends BaseModel {
   // Token provider pour Remember Me
   static rememberMeTokens = DbRememberMeTokensProvider.forModel(User)
 }
+
+export { User as user }
+export default User

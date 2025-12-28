@@ -1,12 +1,12 @@
 import { DateTime } from 'luxon'
 import { BaseModel, column, belongsTo } from '@adonisjs/lucid/orm'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
-import Poll from './poll.js'
-import Campaign from './campaign.js'
+import { poll as Poll } from './poll.js'
+import { campaign as Campaign } from './campaign.js'
 
 export type PollResultStatus = 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'CANCELLED'
 
-export default class PollResult extends BaseModel {
+class PollResult extends BaseModel {
   @column({ isPrimary: true })
   declare id: string
 
@@ -79,3 +79,5 @@ export default class PollResult extends BaseModel {
   })
   declare campaign: BelongsTo<typeof Campaign>
 }
+
+export { PollResult as pollResult }

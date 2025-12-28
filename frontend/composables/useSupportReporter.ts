@@ -10,7 +10,11 @@ const buildPerformanceSnapshot = () => {
   const navigation = performance.getEntriesByType?.("navigation")?.[0] as
     | PerformanceNavigationTiming
     | undefined;
-  const memory = (performance as any)?.memory;
+  const memory = (
+    performance as unknown as {
+      memory?: { usedJSHeapSize: number; totalJSHeapSize: number };
+    }
+  )?.memory;
 
   return {
     navigation: navigation
@@ -18,7 +22,8 @@ const buildPerformanceSnapshot = () => {
           duration: Math.round(navigation.duration),
           domContentLoaded: Math.round(navigation.domContentLoadedEventEnd),
           load: Math.round(navigation.loadEventEnd),
-          transferSize: (navigation as any)?.transferSize,
+          transferSize: (navigation as unknown as { transferSize?: number })
+            ?.transferSize,
         }
       : undefined,
     memory: memory
@@ -38,12 +43,17 @@ export const useSupportReporter = () => {
     auth: {
       userId: authStore.user?.id ?? null,
       role: authStore.user?.role ?? null,
-      displayName: (authStore.user as any)?.display_name ?? null,
+      displayName:
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        (authStore.user as unknown as { display_name?: string })
+          ?.display_name ?? null,
       email: authStore.user?.email ?? null,
       streamer: authStore.user?.streamer,
     },
     pollControl: {
-      activeSessionId: (pollControlStore.activeSession as any)?.id ?? null,
+      activeSessionId:
+        (pollControlStore.activeSession as unknown as { id?: string })?.id ??
+        null,
       pollStatus: pollControlStore.pollStatus,
       currentPollIndex: pollControlStore.currentPollIndex,
       countdown: pollControlStore.countdown,
@@ -51,14 +61,20 @@ export const useSupportReporter = () => {
     },
   });
 
-  const buildFrontendContext = (description: string, includeDiagnostics: boolean) => {
-    const snapshot = includeDiagnostics ? getSupportSnapshot() : { consoleLogs: [], errors: [], sessionId: "" };
+  const buildFrontendContext = (
+    description: string,
+    includeDiagnostics: boolean,
+  ) => {
+    const snapshot = includeDiagnostics
+      ? getSupportSnapshot()
+      : { consoleLogs: [], errors: [], sessionId: "" };
     const resolved = Intl.DateTimeFormat().resolvedOptions();
 
     return {
       description: description.trim(),
       url: typeof window !== "undefined" ? window.location.href : undefined,
-      userAgent: typeof navigator !== "undefined" ? navigator.userAgent : undefined,
+      userAgent:
+        typeof navigator !== "undefined" ? navigator.userAgent : undefined,
       locale: typeof navigator !== "undefined" ? navigator.language : undefined,
       timezone: resolved.timeZone,
       viewport:
@@ -111,7 +127,9 @@ export const useSupportReporter = () => {
 
     if (!response.ok) {
       const error = await response.json().catch(() => null);
-      throw new Error(error?.error || "Impossible d'envoyer le ticket Discord.");
+      throw new Error(
+        error?.error || "Impossible d'envoyer le ticket Discord.",
+      );
     }
 
     return response.json().catch(() => ({}));

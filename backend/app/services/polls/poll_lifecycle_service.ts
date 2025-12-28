@@ -1,11 +1,11 @@
 import { inject } from '@adonisjs/core'
 import logger from '@adonisjs/core/services/logger'
-import PollInstance from '#models/poll_instance'
+import { pollInstance as PollInstance } from '#models/poll_instance'
 import { PollInstanceRepository } from '#repositories/poll_instance_repository'
 import { PollCreationService } from './poll_creation_service.js'
 import { PollPollingService } from './poll_polling_service.js'
 import { PollAggregationService } from './poll_aggregation_service.js'
-import WebSocketService from '../websocket/websocket_service.js'
+import { webSocketService as WebSocketService } from '../websocket/websocket_service.js'
 
 /**
  * Service pour gérer le cycle de vie des polls (start, cancel, end)
@@ -74,6 +74,9 @@ export class PollLifecycleService {
 
     logger.info({ pollInstanceId }, 'Cancelling poll instance')
 
+    // Envoyer le message d'annulation dans tous les chats
+    await this.pollPollingService.sendCancellationMessage(pollInstanceId)
+
     // Arrêter le polling
     this.pollPollingService.stopPolling(pollInstanceId)
 
@@ -86,10 +89,20 @@ export class PollLifecycleService {
     // Récupérer les résultats finaux
     const aggregated = await this.pollAggregationService.getAggregatedVotes(pollInstanceId)
 
+    // Sauvegarder les résultats agrégés finaux en base de données
+    await this.pollInstanceRepository.saveFinalResults(
+      pollInstanceId,
+      aggregated.totalVotes,
+      aggregated.votesByOption
+    )
+
     // Émettre l'événement WebSocket de fin
     this.webSocketService.emitPollEnd(pollInstanceId, aggregated)
 
-    logger.info({ pollInstanceId, totalVotes: aggregated.totalVotes }, 'Poll instance cancelled')
+    logger.info(
+      { pollInstanceId, totalVotes: aggregated.totalVotes },
+      'Poll instance cancelled with final results saved'
+    )
   }
 
   /**
@@ -109,10 +122,20 @@ export class PollLifecycleService {
     // Récupérer les résultats finaux
     const aggregated = await this.pollAggregationService.getAggregatedVotes(pollInstanceId)
 
+    // Sauvegarder les résultats agrégés finaux en base de données
+    await this.pollInstanceRepository.saveFinalResults(
+      pollInstanceId,
+      aggregated.totalVotes,
+      aggregated.votesByOption
+    )
+
     // Émettre l'événement WebSocket de fin
     this.webSocketService.emitPollEnd(pollInstanceId, aggregated)
 
-    logger.info({ pollInstanceId, totalVotes: aggregated.totalVotes }, 'Poll instance ended')
+    logger.info(
+      { pollInstanceId, totalVotes: aggregated.totalVotes },
+      'Poll instance ended with final results saved'
+    )
   }
 
   /**
@@ -124,3 +147,4 @@ export class PollLifecycleService {
 }
 
 export default PollLifecycleService
+export { PollLifecycleService as pollLifecycleService }

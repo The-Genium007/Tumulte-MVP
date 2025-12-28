@@ -10,12 +10,11 @@ export const useServiceStatus = () => {
     try {
       const config = useRuntimeConfig();
       const apiBase = config.public.apiBase;
-      const apiVersion = config.public.apiVersion;
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
 
-      const response = await fetch(`${apiBase}/api/${apiVersion}/health`, {
+      const response = await fetch(`${apiBase}/health`, {
         method: "GET",
         signal: controller.signal,
       });

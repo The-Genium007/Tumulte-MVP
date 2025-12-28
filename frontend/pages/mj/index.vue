@@ -50,7 +50,7 @@
                   <div>
                     <h3 class="font-semibold text-white">{{ campaign.name }}</h3>
                     <p class="text-sm text-gray-400">
-                      {{ campaign.active_member_count || 0 }} streamer(s)
+                      {{ campaign.activeMemberCount || 0 }} streamer(s)
                     </p>
                   </div>
                 </div>
@@ -124,27 +124,27 @@
               >
                 <div class="flex items-center gap-2">
                   <TwitchAvatar
-                    :image-url="streamer.profile_image_url"
-                    :display-name="streamer.twitch_display_name"
+                    :image-url="streamer.profileImageUrl"
+                    :display-name="streamer.twitchDisplayName"
                     size="sm"
                   />
                   <div>
                     <p class="font-semibold text-white text-sm">
-                      {{ streamer.twitch_display_name }}
+                      {{ streamer.twitchDisplayName }}
                     </p>
-                    <p class="text-xs text-gray-400">@{{ streamer.twitch_login }}</p>
+                    <p class="text-xs text-gray-400">@{{ streamer.twitchLogin }}</p>
                   </div>
                 </div>
                 <div class="flex items-center gap-2">
                   <UBadge
-                    v-if="streamer.broadcaster_type === 'partner'"
+                    v-if="streamer.broadcasterType === 'partner'"
                     label="Partenaire"
                     color="primary"
                     variant="soft"
                     size="xs"
                   />
                   <UBadge
-                    v-else-if="streamer.broadcaster_type === 'affiliate'"
+                    v-else-if="streamer.broadcasterType === 'affiliate'"
                     label="Affilié"
                     color="info"
                     variant="soft"
@@ -158,21 +158,21 @@
                     size="xs"
                   />
                   <UBadge
-                    :label="streamer.is_active ? 'Actif' : 'Inactif'"
-                    :color="streamer.is_active ? 'success' : 'neutral'"
+                    :label="streamer.isActive ? 'Actif' : 'Inactif'"
+                    :color="streamer.isActive ? 'success' : 'neutral'"
                     variant="soft"
                     size="xs"
                   />
                   <!-- Badge d'autorisation -->
                   <UBadge
-                    v-if="streamer.is_poll_authorized"
+                    v-if="streamer.isPollAuthorized"
                     color="success"
                     variant="soft"
                     size="xs"
                   >
                     <div class="flex items-center gap-1">
                       <UIcon name="i-lucide-shield-check" class="size-3" />
-                      <span>{{ formatAuthTime(streamer.authorization_remaining_seconds) }}</span>
+                      <span>{{ formatAuthTime(streamer.authorizationRemainingSeconds) }}</span>
                     </div>
                   </UBadge>
                   <UBadge
@@ -237,13 +237,13 @@
                 </span>
               </div>
 
-              <!-- Bouton Envoyer (carré, sans texte) -->
+              <!-- Bouton Envoyer -->
               <UButton
                 v-if="pollStatus === 'idle'"
                 color="primary"
                 icon="i-lucide-send"
+                label="Envoyer"
                 size="lg"
-                square
                 @click="sendPoll"
               />
             </div>
@@ -318,13 +318,13 @@
                 <div class="w-full bg-gray-700 rounded-full h-2">
                   <div
                     class="bg-primary-500 h-2 rounded-full transition-all duration-500"
-                    :style="{ width: `${(result.votes / pollResults.total_votes) * 100}%` }"
+                    :style="{ width: `${(result.votes / pollResults.totalVotes) * 100}%` }"
                   ></div>
                 </div>
               </div>
             </div>
             <p class="text-gray-400 text-xs text-center mt-3">
-              Total: {{ pollResults.total_votes }} votes
+              Total: {{ pollResults.totalVotes }} votes
             </p>
           </div>
         </UCard>
@@ -403,7 +403,7 @@
                 <div>
                   <h3 class="font-semibold text-white">{{ session.name }}</h3>
                   <p class="text-sm text-gray-400">
-                    {{ session.polls_count }} sondage(s) · {{ session.default_duration_seconds }}s par défaut
+                    {{ session.pollsCount }} sondage(s) · {{ session.defaultDurationSeconds }}s par défaut
                   </p>
                 </div>
               </div>
@@ -454,15 +454,15 @@
                 Durée par défaut des sondages (secondes)
               </label>
               <UInput
-                v-model.number="newSession.default_duration_seconds"
+                v-model.number="newSession.defaultDurationSeconds"
                 type="number"
                 :min="15"
                 :max="1800"
                 size="lg"
               />
               <p class="text-xs text-gray-400 mt-2">
-                {{ Math.floor(newSession.default_duration_seconds / 60) }}m
-                {{ newSession.default_duration_seconds % 60 }}s
+                {{ Math.floor(newSession.defaultDurationSeconds / 60) }}m
+                {{ newSession.defaultDurationSeconds % 60 }}s
               </p>
             </div>
           </div>
@@ -564,6 +564,80 @@
           </div>
         </template>
       </UModal>
+
+      <!-- Modal d'erreur Health Check avec Teleport -->
+      <Teleport to="body">
+        <Transition
+          enter-active-class="transition duration-200 ease-out"
+          enter-from-class="opacity-0"
+          enter-to-class="opacity-100"
+          leave-active-class="transition duration-150 ease-in"
+          leave-from-class="opacity-100"
+          leave-to-class="opacity-0"
+        >
+          <div
+            v-if="showHealthCheckError"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+            @click.self="showHealthCheckError = false"
+          >
+            <Transition
+              enter-active-class="transition duration-200 ease-out"
+              enter-from-class="opacity-0 scale-95"
+              enter-to-class="opacity-100 scale-100"
+              leave-active-class="transition duration-150 ease-in"
+              leave-from-class="opacity-100 scale-100"
+              leave-to-class="opacity-0 scale-95"
+            >
+              <UCard v-if="showHealthCheckError" class="max-w-lg mx-4">
+                <template #header>
+                  <div class="flex items-center gap-3">
+                    <div class="p-2 rounded-lg bg-error-500/10">
+                      <UIcon name="i-lucide-alert-triangle" class="size-6 text-error-500" />
+                    </div>
+                    <div>
+                      <h3 class="text-lg font-semibold text-white">Tokens expirés</h3>
+                      <p class="text-sm text-gray-400 mt-0.5">Reconnexion requise</p>
+                    </div>
+                  </div>
+                </template>
+
+                <div class="space-y-4">
+                  <div class="p-4 rounded-lg bg-error-500/10 border border-error-500/30">
+                    <p class="text-sm text-gray-300 mb-2">
+                      Les streamers suivants doivent se reconnecter pour rafraîchir leur token Twitch :
+                    </p>
+                    <ul class="list-disc list-inside text-sm text-white space-y-1 ml-2">
+                      <li v-for="streamerName in expiredStreamersNames" :key="streamerName">
+                        {{ streamerName }}
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div class="p-3 rounded-lg bg-blue-500/10 border border-blue-500/30">
+                    <div class="flex items-start gap-2">
+                      <UIcon name="i-lucide-info" class="size-4 text-blue-400 mt-0.5 shrink-0" />
+                      <p class="text-xs text-gray-300">
+                        Les streamers concernés doivent se déconnecter puis se reconnecter à Tumulte pour renouveler leur autorisation Twitch.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <template #footer>
+                  <div class="flex items-center justify-end gap-3">
+                    <UButton
+                      variant="soft"
+                      color="neutral"
+                      label="Fermer"
+                      @click="showHealthCheckError = false"
+                    />
+                  </div>
+                </template>
+              </UCard>
+            </Transition>
+          </div>
+        </Transition>
+      </Teleport>
   </div>
 </template>
 
@@ -572,8 +646,9 @@ import { ref, reactive, computed, onMounted, watch } from "vue";
 import { storeToRefs } from "pinia";
 import { useRoute, useRouter } from "vue-router";
 import { usePollTemplates } from "@/composables/usePollTemplates";
-import { useCampaigns } from "@/composables/useCampaigns";
+import { useCampaigns, type CampaignMember } from "@/composables/useCampaigns";
 import { usePollControlStore } from "@/stores/pollControl";
+import { useWebSocket } from "@/composables/useWebSocket";
 
 definePageMeta({
   layout: "authenticated" as const,
@@ -583,14 +658,47 @@ const route = useRoute();
 const router = useRouter();
 const toast = useToast();
 const {
-  templates,
-  loading: templatesLoading,
-  fetchTemplates,
   createTemplate,
   deleteTemplate,
   launchPoll,
 } = usePollTemplates();
 const { campaigns, fetchCampaigns, selectedCampaign, getCampaignMembers } = useCampaigns();
+
+// WebSocket setup
+const { subscribeToPoll } = useWebSocket();
+// Note: currentPollInstanceId est maintenant dans le store Pinia
+const pollSubscriptionCleanup = ref<(() => void) | null>(null);
+
+// Interfaces
+interface Poll {
+  id: string;
+  question: string;
+  options: string[];
+}
+
+interface Session {
+  id: string;
+  name: string;
+  pollsCount: number;
+  defaultDurationSeconds: number;
+}
+
+interface ActiveSession {
+  id: string;
+  name: string;
+  defaultDurationSeconds: number;
+}
+
+interface StreamerDisplay {
+  id: string;
+  twitchDisplayName: string;
+  twitchLogin: string;
+  profileImageUrl: string;
+  broadcasterType: string;
+  isActive: boolean;
+  isPollAuthorized: boolean;
+  authorizationRemainingSeconds: number | null;
+}
 
 // Campaign management
 const campaignsLoaded = ref(false);
@@ -613,37 +721,25 @@ const selectCampaign = (campaignId: string) => {
   selectedCampaignId.value = campaignId;
 };
 
-const campaignOptions = computed(() =>
-  campaigns.value.map((c) => ({
-    label: c.name,
-    value: c.id,
-  })),
-);
-
 
 // Streamers data
-const streamers = ref<any[]>([]);
 const streamersLoading = ref(false);
-const campaignMembers = ref<any[]>([]);
+const campaignMembers = ref<CampaignMember[]>([]);
 
 // Filtrer les streamers par campagne sélectionnée
-const selectedCampaignStreamers = computed(() => {
+const selectedCampaignStreamers = computed<StreamerDisplay[]>(() => {
   // Retourner uniquement les membres actifs de la campagne
   return campaignMembers.value
-    .filter((member: any) => member.status === 'ACTIVE')
-    .map((member: any) => ({
+    .filter((member) => member.status === 'ACTIVE')
+    .map((member): StreamerDisplay => ({
       id: member.streamer.id,
-      twitch_display_name: member.streamer.twitch_display_name,
-      twitch_login: member.streamer.twitch_login,
-      profile_image_url: member.streamer.profile_image_url,
-      broadcaster_type: member.streamer.broadcaster_type || '',
-      is_active: true, // On peut améliorer ça plus tard avec un vrai statut
-      is_poll_authorized: member.pollAuthorizationExpiresAt
-        ? new Date(member.pollAuthorizationExpiresAt) > new Date()
-        : false,
-      authorization_remaining_seconds: member.pollAuthorizationExpiresAt
-        ? Math.max(0, Math.floor((new Date(member.pollAuthorizationExpiresAt).getTime() - Date.now()) / 1000))
-        : null,
+      twitchDisplayName: member.streamer.twitchDisplayName,
+      twitchLogin: member.streamer.twitchLogin,
+      profileImageUrl: member.streamer.profileImageUrl || '',
+      broadcasterType: member.streamer.broadcasterType || '',
+      isActive: true,
+      isPollAuthorized: member.isPollAuthorized,
+      authorizationRemainingSeconds: member.authorizationRemainingSeconds,
     }));
 });
 
@@ -669,13 +765,17 @@ const loadCampaignMembers = async (campaignId: string) => {
   }
 };
 
+// Health Check error modal
+const showHealthCheckError = ref(false);
+const expiredStreamersNames = ref<string[]>([]);
+
 // Template creation modal
 const showCreateModal = ref(false);
 const creating = ref(false);
 const newTemplate = reactive({
   label: "",
   title: "",
-  duration_seconds: 60,
+  durationSeconds: 60,
 });
 const optionsText = ref("");
 
@@ -691,32 +791,9 @@ onMounted(async () => {
   } else if (campaigns.value.length > 0) {
     selectedCampaignId.value = campaigns.value[0]?.id ?? null;
   }
-
-  await fetchStreamers();
 });
 
-const fetchStreamers = async () => {
-  streamersLoading.value = true;
-  try {
-    const API_URL = import.meta.env.VITE_API_URL;
-    const response = await fetch(`${API_URL}/mj/streamers`, {
-      credentials: "include",
-    });
-    if (!response.ok) throw new Error("Failed to fetch streamers");
-    const data = await response.json();
-    streamers.value = data.data;
-  } catch (error) {
-    toast.add({
-      title: "Erreur",
-      description: "Impossible de charger les streamers",
-      color: "error",
-    });
-  } finally {
-    streamersLoading.value = false;
-  }
-};
-
-const handleCreateTemplate = async () => {
+const _handleCreateTemplate = async () => {
   const options = optionsText.value.split("\n").filter((o) => o.trim());
 
   if (options.length < 2 || options.length > 5) {
@@ -741,7 +818,10 @@ const handleCreateTemplate = async () => {
   try {
     await createTemplate(
       {
-        ...newTemplate,
+        label: newTemplate.label,
+        title: newTemplate.title,
+        // eslint-disable-next-line camelcase
+        duration_seconds: newTemplate.durationSeconds,
         options,
       },
       selectedCampaignId.value,
@@ -754,9 +834,9 @@ const handleCreateTemplate = async () => {
     showCreateModal.value = false;
     newTemplate.label = "";
     newTemplate.title = "";
-    newTemplate.duration_seconds = 60;
+    newTemplate.durationSeconds = 60;
     optionsText.value = "";
-  } catch (error) {
+  } catch {
     toast.add({
       title: "Erreur",
       description: "Impossible de créer le template",
@@ -767,7 +847,7 @@ const handleCreateTemplate = async () => {
   }
 };
 
-const handleLaunchPoll = async (templateId: string) => {
+const _handleLaunchPoll = async (templateId: string) => {
   if (!selectedCampaignId.value) {
     toast.add({
       title: "Erreur",
@@ -784,7 +864,7 @@ const handleLaunchPoll = async (templateId: string) => {
       description: "Sondage lancé sur tous les streamers actifs",
       color: "success",
     });
-  } catch (error) {
+  } catch {
     toast.add({
       title: "Erreur",
       description: "Impossible de lancer le sondage",
@@ -793,7 +873,7 @@ const handleLaunchPoll = async (templateId: string) => {
   }
 };
 
-const handleDeleteTemplate = async (templateId: string) => {
+const _handleDeleteTemplate = async (templateId: string) => {
   if (!confirm("Êtes-vous sûr de vouloir supprimer ce template ?")) {
     return;
   }
@@ -814,7 +894,7 @@ const handleDeleteTemplate = async (templateId: string) => {
       description: "Template supprimé",
       color: "success",
     });
-  } catch (error) {
+  } catch {
     toast.add({
       title: "Erreur",
       description: "Impossible de supprimer le template",
@@ -828,17 +908,17 @@ const handleDeleteTemplate = async (templateId: string) => {
 // ==========================================
 
 // Sessions data
-const sessions = ref<any[]>([]);
+const sessions = ref<Session[]>([]);
 const sessionsLoading = ref(false);
 const showCreateSessionModal = ref(false);
 const showDeleteSessionConfirm = ref(false);
 const showCloseSessionConfirm = ref(false);
-const currentSession = ref<any>(null);
+const currentSession = ref<Session | null>(null);
 const deleting = ref(false);
 
 const newSession = reactive({
   name: "",
-  default_duration_seconds: 60,
+  defaultDurationSeconds: 60,
 });
 
 // ==========================================
@@ -857,16 +937,17 @@ const {
   launchedPolls,
   pollStartTime,
   pollDuration,
+  currentPollInstanceId,
 } = storeToRefs(pollControlStore);
 
 // Computed pour la question actuelle
-const currentPoll = computed(() => {
+const currentPoll = computed<Poll | null>(() => {
   if (!activeSessionPolls.value.length) return null;
-  return activeSessionPolls.value[currentPollIndex.value];
+  return activeSessionPolls.value[currentPollIndex.value] as Poll;
 });
 
 // Fonction pour lancer une session
-const launchSession = async (session: any) => {
+const launchSession = async (session: Session) => {
   if (!selectedCampaignId.value) return;
 
   // Vérifier si une session est déjà active
@@ -880,21 +961,45 @@ const launchSession = async (session: any) => {
   }
 
   try {
-    // Charger les sondages de la session
     const API_URL = import.meta.env.VITE_API_URL;
+
+    // Lancer la session avec Health Check
     const response = await fetch(
-      `${API_URL}/mj/campaigns/${selectedCampaignId.value}/poll-sessions/${session.id}`,
+      `${API_URL}/mj/campaigns/${selectedCampaignId.value}/sessions/${session.id}/launch`,
       {
+        method: "POST",
         credentials: "include",
       }
     );
 
-    if (!response.ok) throw new Error("Failed to fetch session details");
+    // Si le health check échoue (503), afficher la modal d'erreur
+    if (response.status === 503) {
+      const errorData = await response.json();
+      const healthCheck = errorData.healthCheck;
+
+      // Récupérer les noms des streamers avec tokens expirés
+      const invalidStreamers = healthCheck?.services?.tokens?.invalidStreamers || [];
+      const streamerNames = invalidStreamers.map((s: { displayName: string }) => s.displayName);
+
+      if (streamerNames.length > 0) {
+        showHealthCheckError.value = true;
+        expiredStreamersNames.value = streamerNames;
+      } else {
+        toast.add({
+          title: "Erreur système",
+          description: errorData.error || "Le système n'est pas prêt pour lancer la session.",
+          color: "error",
+        });
+      }
+      return;
+    }
+
+    if (!response.ok) throw new Error("Failed to launch session");
     const data = await response.json();
 
     const polls = data.data.polls || [];
 
-    // Vérifier s'il y a au moins un sondage
+    // Vérifier s'il y a au moins un sondage (normalement géré côté backend)
     if (polls.length === 0) {
       toast.add({
         title: "Session vide",
@@ -913,7 +1018,15 @@ const launchSession = async (session: any) => {
     launchedPolls.value = [];
     pollStartTime.value = null;
     pollDuration.value = null;
+
+    toast.add({
+      title: "Session prête",
+      description: `${polls.length} sondage(s) chargé(s) - Système vérifié`,
+      color: "success",
+    });
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Erreur inconnue";
+    console.error('[Session Launch] Error:', errorMessage);
     toast.add({
       title: "Erreur",
       description: "Impossible de charger la session",
@@ -935,6 +1048,13 @@ const handleCloseOrCancel = () => {
 
 // Confirmer la fermeture de la session active
 const confirmCloseSession = () => {
+  // Nettoyer la souscription WebSocket
+  if (pollSubscriptionCleanup.value) {
+    pollSubscriptionCleanup.value();
+    pollSubscriptionCleanup.value = null;
+  }
+  currentPollInstanceId.value = null;
+
   pollControlStore.clearState();
   showCloseSessionConfirm.value = false;
 };
@@ -1014,7 +1134,7 @@ const sendPoll = async () => {
 
   pollStatus.value = 'sending';
   pollStartTime.value = Date.now();
-  pollDuration.value = activeSession.value.default_duration_seconds;
+  pollDuration.value = (activeSession.value as ActiveSession).defaultDurationSeconds;
   if (!launchedPolls.value.includes(currentPollIndex.value)) {
     launchedPolls.value.push(currentPollIndex.value);
   }
@@ -1022,9 +1142,17 @@ const sendPoll = async () => {
   try {
     // Appeler l'API pour lancer le sondage
     const API_URL = import.meta.env.VITE_API_URL;
-    const response = await fetch(`${API_URL}/mj/campaigns/${selectedCampaignId.value}/polls/${currentPoll.value.id}/launch`, {
+    const response = await fetch(`${API_URL}/mj/campaigns/${selectedCampaignId.value}/polls/launch`, {
       method: 'POST',
       credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        title: currentPoll.value.question,
+        options: currentPoll.value.options,
+        durationSeconds: pollDuration.value,
+      }),
     });
 
     if (!response.ok) {
@@ -1033,6 +1161,108 @@ const sendPoll = async () => {
     }
 
     const result = await response.json();
+
+    console.log('[DEBUG sendPoll] ========== POLL LAUNCH RESPONSE ==========');
+    console.log('[DEBUG sendPoll] Response data:', result);
+    console.log('[DEBUG sendPoll] Poll instance ID:', result.data.id);
+
+    // S'abonner immédiatement aux événements WebSocket du poll
+    currentPollInstanceId.value = result.data.id;
+
+    console.log('[DEBUG sendPoll] currentPollInstanceId set to:', currentPollInstanceId.value);
+    console.log('[DEBUG sendPoll] pollStatus before subscription:', pollStatus.value);
+
+    if (currentPollInstanceId.value) {
+      console.log('[DEBUG sendPoll] ========== STARTING WEBSOCKET SUBSCRIPTION ==========');
+      console.log('[WebSocket] Subscribing to poll:', currentPollInstanceId.value);
+
+      // Nettoyer l'ancienne souscription si elle existe
+      if (pollSubscriptionCleanup.value) {
+        console.log('[DEBUG sendPoll] Cleaning up old subscription');
+        pollSubscriptionCleanup.value();
+      }
+
+      console.log('[DEBUG sendPoll] Creating new subscription with callbacks:');
+      console.log('[DEBUG sendPoll] - onStart: defined');
+      console.log('[DEBUG sendPoll] - onUpdate: defined');
+      console.log('[DEBUG sendPoll] - onEnd: defined');
+
+      // Créer une nouvelle souscription
+      pollSubscriptionCleanup.value = subscribeToPoll(currentPollInstanceId.value, {
+        onStart: (data) => {
+          console.log('[WebSocket] poll:start received:', data);
+          if (pollStatus.value === 'sending') {
+            console.log('[WebSocket] Poll confirmed as started, switching to running state');
+            pollStatus.value = 'running';
+
+            // S'assurer que le countdown est bien démarré avec la bonne durée
+            if (data.durationSeconds) {
+              countdown.value = data.durationSeconds;
+              pollDuration.value = data.durationSeconds;
+
+              // Démarrer le countdown
+              console.log('[WebSocket] Starting countdown with', data.durationSeconds, 'seconds');
+              startCountdown();
+            }
+          }
+        },
+        onUpdate: (data) => {
+          console.log('[WebSocket] poll:update received:', data);
+          // Mettre à jour les résultats en temps réel
+          if (data.votesByOption && (pollStatus.value === 'sending' || pollStatus.value === 'running')) {
+            const results = Object.entries(data.votesByOption).map(([index, votes]) => ({
+              option: currentPoll.value?.options?.[parseInt(index)] || `Option ${parseInt(index) + 1}`,
+              votes: votes as number,
+            }));
+
+            pollResults.value = {
+              results,
+              totalVotes: data.totalVotes,
+            };
+          }
+        },
+        onEnd: (data) => {
+          console.log('[WebSocket] ========== POLL:END RECEIVED ==========');
+          console.log('[WebSocket] Full data:', JSON.stringify(data, null, 2));
+          console.log('[WebSocket] Current pollStatus before:', pollStatus.value);
+          console.log('[WebSocket] Current countdown before:', countdown.value);
+
+          pollStatus.value = 'sent';
+          console.log('[WebSocket] pollStatus set to:', pollStatus.value);
+
+          // Utiliser finalVotes au lieu de votesByOption pour poll:end
+          const votesData = ('finalVotes' in data ? (data as { finalVotes: Record<string, number> }).finalVotes : data.votesByOption);
+          console.log('[WebSocket] votesData:', votesData);
+
+          if (votesData) {
+            const results = Object.entries(votesData).map(([index, votes]) => ({
+              option: currentPoll.value?.options?.[parseInt(index)] || `Option ${parseInt(index) + 1}`,
+              votes: votes as number,
+            }));
+
+            console.log('[WebSocket] Mapped results:', results);
+
+            pollResults.value = {
+              results,
+              totalVotes: data.totalVotes,
+            };
+
+            console.log('[WebSocket] pollResults updated:', pollResults.value);
+          } else {
+            console.warn('[WebSocket] No votesData found in poll:end event');
+          }
+
+          // Arrêter le countdown
+          if (countdownInterval) {
+            console.log('[WebSocket] Clearing countdown interval');
+            clearInterval(countdownInterval);
+            countdownInterval = null;
+          }
+
+          console.log('[WebSocket] ========== POLL:END PROCESSING COMPLETE ==========');
+        },
+      });
+    }
 
     // Vérifier s'il y a des streamers en échec
     if (result.data.failed_streamers && result.data.failed_streamers.length > 0) {
@@ -1053,10 +1283,10 @@ const sendPoll = async () => {
     }
 
     // Démarrer le compte à rebours
-    countdown.value = activeSession.value.default_duration_seconds;
+    countdown.value = (activeSession.value as ActiveSession).defaultDurationSeconds;
     startCountdown();
-  } catch (error: any) {
-    const errorMessage = error?.message || "Impossible d'envoyer le sondage";
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Impossible d'envoyer le sondage";
 
     // Détecter les erreurs spécifiques
     if (errorMessage.includes('No active streamers')) {
@@ -1099,7 +1329,8 @@ const startCountdown = () => {
       pollStatus.value = 'sent';
       pollStartTime.value = null;
       pollDuration.value = null;
-      fetchPollResults();
+      // Les résultats seront reçus via WebSocket (événement poll:end)
+      // Plus besoin de fetchPollResults() ici
     }
   }, 1000);
 };
@@ -1113,47 +1344,103 @@ onMounted(() => {
     activeSession: activeSession.value,
     pollStatus: pollStatus.value,
     countdown: countdown.value,
-    activeSessionPolls: activeSessionPolls.value.length
+    activeSessionPolls: activeSessionPolls.value.length,
+    currentPollInstanceId: currentPollInstanceId.value,
   });
 
+  // Reconnecter le WebSocket si un poll est en cours
+  if (currentPollInstanceId.value && (pollStatus.value === 'sending' || pollStatus.value === 'running')) {
+    console.log('[WebSocket RESTORE] Reconnecting to poll:', currentPollInstanceId.value);
+    console.log('[WebSocket RESTORE] Current poll status:', pollStatus.value);
+
+    // Nettoyer l'ancienne souscription si elle existe
+    if (pollSubscriptionCleanup.value) {
+      console.log('[WebSocket RESTORE] Cleaning up old subscription');
+      pollSubscriptionCleanup.value();
+    }
+
+    // Recréer la souscription WebSocket
+    pollSubscriptionCleanup.value = subscribeToPoll(currentPollInstanceId.value, {
+      onStart: (data) => {
+        console.log('[WebSocket] poll:start received:', data);
+        if (pollStatus.value === 'sending') {
+          console.log('[WebSocket] Poll confirmed as started, switching to running state');
+          pollStatus.value = 'running';
+
+          if (data.durationSeconds) {
+            countdown.value = data.durationSeconds;
+            pollDuration.value = data.durationSeconds;
+            console.log('[WebSocket] Starting countdown with', data.durationSeconds, 'seconds');
+            startCountdown();
+          }
+        }
+      },
+      onUpdate: (data) => {
+        console.log('[WebSocket] poll:update received:', data);
+        if (data.votesByOption && (pollStatus.value === 'sending' || pollStatus.value === 'running')) {
+          const results = Object.entries(data.votesByOption).map(([index, votes]) => ({
+            option: currentPoll.value?.options?.[parseInt(index)] || `Option ${parseInt(index) + 1}`,
+            votes: votes as number,
+          }));
+
+          pollResults.value = {
+            results,
+            totalVotes: data.totalVotes,
+          };
+        }
+      },
+      onEnd: (data) => {
+        console.log('[WebSocket] ========== POLL:END RECEIVED ==========');
+        console.log('[WebSocket] Full data:', JSON.stringify(data, null, 2));
+        console.log('[WebSocket] Current pollStatus before:', pollStatus.value);
+        console.log('[WebSocket] Current countdown before:', countdown.value);
+
+        pollStatus.value = 'sent';
+        console.log('[WebSocket] pollStatus set to:', pollStatus.value);
+
+        const votesData = ('finalVotes' in data ? (data as { finalVotes: Record<string, number> }).finalVotes : data.votesByOption);
+        console.log('[WebSocket] votesData:', votesData);
+
+        if (votesData) {
+          const results = Object.entries(votesData).map(([index, votes]) => ({
+            option: currentPoll.value?.options?.[parseInt(index)] || `Option ${parseInt(index) + 1}`,
+            votes: votes as number,
+          }));
+
+          console.log('[WebSocket] Mapped results:', results);
+
+          pollResults.value = {
+            results,
+            totalVotes: data.totalVotes,
+          };
+
+          console.log('[WebSocket] pollResults updated:', pollResults.value);
+        } else {
+          console.warn('[WebSocket] No votesData found in poll:end event');
+        }
+
+        if (countdownInterval) {
+          console.log('[WebSocket] Clearing countdown interval');
+          clearInterval(countdownInterval);
+          countdownInterval = null;
+        }
+
+        console.log('[WebSocket] ========== POLL:END PROCESSING COMPLETE ==========');
+      },
+    });
+
+    console.log('[WebSocket RESTORE] Subscription recreated');
+  }
+
+  // Reprendre le countdown si un sondage était en cours
   if (pollStatus.value === 'sending' && countdown.value > 0) {
     console.log('Reprendre le countdown avec', countdown.value, 'secondes restantes');
     startCountdown();
   }
 });
 
-// Récupérer les résultats (10 fois en 10 secondes)
-const fetchPollResults = async () => {
-  if (!currentPoll.value || !selectedCampaignId.value) return;
-
-  let attempts = 0;
-  const maxAttempts = 10;
-
-  const fetchInterval = setInterval(async () => {
-    attempts++;
-
-    try {
-      // Appeler l'API pour récupérer les résultats
-      const API_URL = import.meta.env.VITE_API_URL;
-      const response = await fetch(`${API_URL}/mj/campaigns/${selectedCampaignId.value}/polls/${currentPoll.value.id}/results`, {
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch results');
-      }
-
-      const data = await response.json();
-      pollResults.value = data.data;
-    } catch (error) {
-      console.error("Failed to fetch poll results:", error);
-    }
-
-    if (attempts >= maxAttempts) {
-      clearInterval(fetchInterval);
-    }
-  }, 1000);
-};
+// NOTE: Les résultats sont maintenant reçus en temps réel via WebSocket (événements poll:update et poll:end)
+// Plus besoin de polling HTTP pour récupérer les résultats
 
 // Charger les sessions quand la campagne change
 watch(selectedCampaignId, async (newId) => {
@@ -1171,13 +1458,13 @@ const fetchSessions = async (campaignId: string) => {
   sessionsLoading.value = true;
   try {
     const API_URL = import.meta.env.VITE_API_URL;
-    const response = await fetch(`${API_URL}/mj/campaigns/${campaignId}/poll-sessions`, {
+    const response = await fetch(`${API_URL}/mj/campaigns/${campaignId}/sessions`, {
       credentials: "include",
     });
     if (!response.ok) throw new Error("Failed to fetch sessions");
     const data = await response.json();
     sessions.value = data.data;
-  } catch (error) {
+  } catch {
     toast.add({
       title: "Erreur",
       description: "Impossible de charger les sessions",
@@ -1189,7 +1476,7 @@ const fetchSessions = async (campaignId: string) => {
 };
 
 const handleCreateSession = async () => {
-  if (!newSession.name || !newSession.default_duration_seconds) {
+  if (!newSession.name || !newSession.defaultDurationSeconds) {
     toast.add({
       title: "Erreur",
       description: "Veuillez remplir tous les champs",
@@ -1211,7 +1498,7 @@ const handleCreateSession = async () => {
   try {
     const API_URL = import.meta.env.VITE_API_URL;
     const response = await fetch(
-      `${API_URL}/mj/campaigns/${selectedCampaignId.value}/poll-sessions`,
+      `${API_URL}/mj/campaigns/${selectedCampaignId.value}/sessions`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1230,10 +1517,10 @@ const handleCreateSession = async () => {
 
     showCreateSessionModal.value = false;
     newSession.name = "";
-    newSession.default_duration_seconds = 60;
+    newSession.defaultDurationSeconds = 60;
 
     await fetchSessions(selectedCampaignId.value);
-  } catch (error) {
+  } catch {
     toast.add({
       title: "Erreur",
       description: "Impossible de créer la session",
@@ -1244,7 +1531,7 @@ const handleCreateSession = async () => {
   }
 };
 
-const handleDeleteSession = () => {
+const _handleDeleteSession = () => {
   showDeleteSessionConfirm.value = true;
 };
 
@@ -1255,7 +1542,7 @@ const confirmDeleteSession = async () => {
   try {
     const API_URL = import.meta.env.VITE_API_URL;
     const response = await fetch(
-      `${API_URL}/mj/campaigns/${selectedCampaignId.value}/poll-sessions/${currentSession.value.id}`,
+      `${API_URL}/mj/campaigns/${selectedCampaignId.value}/sessions/${currentSession.value.id}`,
       {
         method: "DELETE",
         credentials: "include",
@@ -1274,7 +1561,7 @@ const confirmDeleteSession = async () => {
     currentSession.value = null;
 
     await fetchSessions(selectedCampaignId.value);
-  } catch (error) {
+  } catch {
     toast.add({
       title: "Erreur",
       description: "Impossible de supprimer la session",
@@ -1286,7 +1573,7 @@ const confirmDeleteSession = async () => {
 };
 
 // Navigation vers la page d'ajout de sondage depuis une session
-const navigateToSessionPolls = (session: any) => {
+const navigateToSessionPolls = (session: Session) => {
   if (!selectedCampaignId.value) return;
 
   router.push({
@@ -1300,7 +1587,7 @@ watch(showCreateModal, (isOpen) => {
   if (!isOpen) {
     newTemplate.label = "";
     newTemplate.title = "";
-    newTemplate.duration_seconds = 60;
+    newTemplate.durationSeconds = 60;
     optionsText.value = "";
   }
 });

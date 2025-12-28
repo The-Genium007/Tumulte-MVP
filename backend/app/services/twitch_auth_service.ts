@@ -1,10 +1,14 @@
 import env from '#start/env'
 
 interface TwitchTokenResponse {
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   access_token: string
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   refresh_token: string
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   expires_in: number
   scope: string | string[] // Twitch peut renvoyer une chaîne ou un tableau
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   token_type: string
 }
 
@@ -12,14 +16,16 @@ interface TwitchUserResponse {
   data: Array<{
     id: string
     login: string
-    display_name: string
+    displayName: string
     email?: string
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     profile_image_url: string
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     broadcaster_type: string
   }>
 }
 
-export default class TwitchAuthService {
+class TwitchAuthService {
   private readonly clientId: string
   private readonly clientSecret: string
   private readonly redirectUri: string
@@ -43,7 +49,9 @@ export default class TwitchAuthService {
   getAuthorizationUrl(state: string, forceVerify: boolean = true): string {
     const params = new URLSearchParams({
       client_id: this.clientId,
+
       redirect_uri: this.redirectUri,
+
       response_type: 'code',
       scope: this.scopes.join(' '),
       state,
@@ -76,8 +84,11 @@ export default class TwitchAuthService {
    * Échange le code d'autorisation contre des tokens
    */
   async exchangeCodeForTokens(code: string): Promise<{
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     access_token: string
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     refresh_token: string
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     expires_in: number
     scope: string[]
   }> {
@@ -88,9 +99,12 @@ export default class TwitchAuthService {
       },
       body: new URLSearchParams({
         client_id: this.clientId,
+
         client_secret: this.clientSecret,
         code,
+
         grant_type: 'authorization_code',
+
         redirect_uri: this.redirectUri,
       }),
     })
@@ -104,7 +118,9 @@ export default class TwitchAuthService {
 
     return {
       access_token: data.access_token,
+
       refresh_token: data.refresh_token,
+
       expires_in: data.expires_in,
       scope: Array.isArray(data.scope) ? data.scope : data.scope.split(' '),
     }
@@ -116,9 +132,11 @@ export default class TwitchAuthService {
   async getUserInfo(accessToken: string): Promise<{
     id: string
     login: string
-    display_name: string
+    displayName: string
     email?: string
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     profile_image_url: string
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     broadcaster_type: string
   }> {
     const response = await fetch('https://api.twitch.tv/helix/users', {
@@ -144,9 +162,11 @@ export default class TwitchAuthService {
     return {
       id: user.id,
       login: user.login,
-      display_name: user.display_name,
+      displayName: user.displayName,
       email: user.email,
+
       profile_image_url: user.profile_image_url,
+
       broadcaster_type: user.broadcaster_type || '',
     }
   }
@@ -155,8 +175,11 @@ export default class TwitchAuthService {
    * Refresh un access token expiré
    */
   async refreshAccessToken(refreshToken: string): Promise<{
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     access_token: string
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     refresh_token: string
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     expires_in: number
   }> {
     const response = await fetch('https://id.twitch.tv/oauth2/token', {
@@ -166,8 +189,11 @@ export default class TwitchAuthService {
       },
       body: new URLSearchParams({
         client_id: this.clientId,
+
         client_secret: this.clientSecret,
+
         grant_type: 'refresh_token',
+
         refresh_token: refreshToken,
       }),
     })
@@ -181,7 +207,9 @@ export default class TwitchAuthService {
 
     return {
       access_token: data.access_token,
+
       refresh_token: data.refresh_token,
+
       expires_in: data.expires_in,
     }
   }
@@ -196,7 +224,7 @@ export default class TwitchAuthService {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: new URLSearchParams({
-        client_id: this.clientId,
+        clientId: this.clientId,
         token,
       }),
     })
@@ -215,3 +243,5 @@ export default class TwitchAuthService {
     return mjIds.includes(twitchUserId)
   }
 }
+
+export { TwitchAuthService as twitchAuthService }

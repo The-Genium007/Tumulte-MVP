@@ -1,4 +1,4 @@
-import Streamer from '#models/streamer'
+import { streamer as Streamer } from '#models/streamer'
 
 /**
  * Repository pour gérer les streamers
@@ -124,3 +124,4 @@ export class StreamerRepository {
 }
 
 export default StreamerRepository
+export { StreamerRepository as streamerRepository }

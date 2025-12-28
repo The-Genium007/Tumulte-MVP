@@ -1,6 +1,6 @@
 <template>
   <div
-    class="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-950 via-purple-950/20 to-gray-950"
+    class="min-h-screen flex items-center justify-center bg-linear-to-br from-gray-950 via-purple-950/20 to-gray-950"
   >
     <div class="text-center">
       <div class="bg-primary-500/10 p-8 rounded-3xl mb-6 inline-block">
@@ -20,7 +20,7 @@ import { useRoute, useRouter } from "vue-router";
 import { useAuth } from "@/composables/useAuth";
 
 const route = useRoute();
-const router = useRouter();
+const _router = useRouter();
 const { fetchMe } = useAuth();
 
 onMounted(async () => {
@@ -32,10 +32,10 @@ onMounted(async () => {
     const redirect = (route.query.redirect as string) || "/";
 
     // Rediriger vers la page appropriée
-    router.push(redirect);
-  } catch (error) {
+    _router.push(redirect);
+  } catch {
     // Si erreur, rediriger vers login
-    router.push("/login?error=session_failed");
+    _router.push("/login?error=session_failed");
   }
 });
 </script>

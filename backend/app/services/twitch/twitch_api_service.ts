@@ -3,21 +3,27 @@ import logger from '@adonisjs/core/services/logger'
 
 interface TwitchChannel {
   id: string
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   broadcaster_login: string
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   display_name: string
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   thumbnail_url: string
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   broadcaster_type?: string
 }
 
 interface TwitchUserInfo {
   id: string
   login: string
-  display_name: string
+  displayName: string
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   profile_image_url: string
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   broadcaster_type: string
 }
 
-export default class TwitchApiService {
+class TwitchApiService {
   private appAccessToken: string | null = null
   private tokenExpiry: number = 0
 
@@ -46,7 +52,9 @@ export default class TwitchApiService {
         },
         body: new URLSearchParams({
           client_id: clientId,
+
           client_secret: clientSecret,
+
           grant_type: 'client_credentials',
         }),
       })
@@ -56,7 +64,9 @@ export default class TwitchApiService {
       }
 
       const data = (await response.json()) as {
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         access_token: string
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         expires_in: number
       }
 
@@ -84,8 +94,11 @@ export default class TwitchApiService {
     Array<{
       id: string
       login: string
+      // eslint-disable-next-line @typescript-eslint/naming-convention
       display_name: string
+      // eslint-disable-next-line @typescript-eslint/naming-convention
       profile_image_url: string
+      // eslint-disable-next-line @typescript-eslint/naming-convention
       broadcaster_type?: string
     }>
   > {
@@ -114,11 +127,18 @@ export default class TwitchApiService {
 
       const data = (await response.json()) as { data: TwitchChannel[] }
 
+      // Récupérer les vraies photos de profil via l'API Get Users
+      const userIds = data.data.map((channel) => channel.id)
+      const usersData = await this.getUsersByIds(userIds, accessToken)
+
+      // Créer un map des photos de profil par user ID
+      const profileImages = new Map(usersData.map((user) => [user.id, user.profile_image_url]))
+
       return data.data.map((channel: TwitchChannel) => ({
         id: channel.id,
         login: channel.broadcaster_login,
-        display_name: channel.display_name,
-        profile_image_url: channel.thumbnail_url,
+        display_name: channel.display_name, // eslint-disable-line camelcase
+        profile_image_url: profileImages.get(channel.id) || '',
         broadcaster_type: channel.broadcaster_type,
       }))
     } catch (error) {
@@ -168,3 +188,5 @@ export default class TwitchApiService {
     return results
   }
 }
+
+export { TwitchApiService as twitchApiService }

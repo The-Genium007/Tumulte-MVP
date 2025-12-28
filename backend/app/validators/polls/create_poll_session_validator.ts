@@ -6,7 +6,9 @@ export const createPollSessionSchema = z.object({
     .number()
     .int()
     .min(15, 'Durée minimum: 15 secondes')
-    .max(1800, 'Durée maximum: 30 minutes'),
+    .max(1800, 'Durée maximum: 30 minutes')
+    .optional()
+    .default(60),
 })
 
 export type CreatePollSessionDto = z.infer<typeof createPollSessionSchema>

@@ -1,11 +1,11 @@
 import { DateTime } from 'luxon'
 import { BaseModel, column, belongsTo } from '@adonisjs/lucid/orm'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
-import PollSession from './poll_session.js'
+import { pollSession as PollSession } from './poll_session.js'
 
 export type PollType = 'STANDARD' | 'UNIQUE'
 
-export default class Poll extends BaseModel {
+class Poll extends BaseModel {
   @column({ isPrimary: true })
   declare id: string
 
@@ -60,3 +60,5 @@ export default class Poll extends BaseModel {
   })
   declare session: BelongsTo<typeof PollSession>
 }
+
+export { Poll as poll }

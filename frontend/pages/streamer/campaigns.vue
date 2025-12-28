@@ -111,7 +111,7 @@
               v-for="status in authorizationStatuses"
               :key="status.campaign_id"
               variant="outline"
-              :ui="{ base: status.is_authorized ? 'border-2 border-green-500/50' : '' }"
+              :class="status.is_authorized ? 'border-2 border-green-500/50' : ''"
             >
               <template #header>
                 <div class="flex justify-between items-center">
@@ -220,10 +220,17 @@
 import { ref, onMounted, computed } from "vue";
 import AuthorizationCard from "@/components/AuthorizationCard.vue";
 import { useCampaigns } from "@/composables/useCampaigns";
+import { useAuth } from "@/composables/useAuth";
 import type { Campaign, CampaignInvitation, AuthorizationStatus } from "@/types";
 
 definePageMeta({
   layout: "authenticated" as const,
+  middleware: async () => {
+    const { user } = useAuth();
+    if (user.value && user.value.role !== 'STREAMER') {
+      return navigateTo('/mj');
+    }
+  }
 });
 
 const {
@@ -255,8 +262,10 @@ const mockInvitations: CampaignInvitation[] = [
       id: "mock-campaign-1",
       name: "🎭 Campagne des Ombres Perdues",
       description: "Une aventure épique dans un monde de fantasy sombre où les héros doivent retrouver les fragments d'une ancienne relique.",
+      // eslint-disable-next-line camelcase
       owner_name: "MaitreJeu_Epic",
     },
+     
     invited_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // Il y a 2 jours
   },
   {
@@ -265,8 +274,10 @@ const mockInvitations: CampaignInvitation[] = [
       id: "mock-campaign-2",
       name: "🚀 Space Opera: Les Confins de l'Univers",
       description: "Explorez les galaxies lointaines, combattez des aliens et découvrez les mystères de l'espace profond.",
+      // eslint-disable-next-line camelcase
       owner_name: "GM_Cosmos",
     },
+     
     invited_at: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(), // Il y a 5 heures
   },
   {
@@ -275,8 +286,10 @@ const mockInvitations: CampaignInvitation[] = [
       id: "mock-campaign-3",
       name: "⚔️ Donjons & Dragons : La Quête du Graal",
       description: null,
+      // eslint-disable-next-line camelcase
       owner_name: "DungeonMaster_Pro",
     },
+     
     invited_at: new Date(Date.now() - 30 * 60 * 1000).toISOString(), // Il y a 30 minutes
   },
 ];
@@ -302,7 +315,7 @@ const loadData = async () => {
     }
 
     activeCampaigns.value = campaignsData;
-  } catch (error) {
+  } catch {
     toast.add({
       title: "Erreur",
       description: "Impossible de charger les campagnes",
@@ -318,13 +331,12 @@ const loadAuthorizationStatus = async () => {
   try {
     const data = await getAuthorizationStatus();
     authorizationStatuses.value = data;
-  } catch (error) {
+  } catch {
     toast.add({
       title: "Erreur",
       description: "Impossible de charger les autorisations",
       color: "error",
     });
-    console.error("Failed to load authorization status:", error);
   } finally {
     loadingAuth.value = false;
   }
@@ -339,10 +351,10 @@ const handleAuthorize = async (campaignId: string) => {
       color: "success",
     });
     await loadAuthorizationStatus();
-  } catch (error) {
+  } catch {
     toast.add({
       title: "Erreur",
-      description: error instanceof Error ? error.message : "Impossible d'accorder l'autorisation",
+      description: "Impossible d'accorder l'autorisation",
       color: "error",
     });
   }
@@ -357,10 +369,10 @@ const handleRevokeAuth = async (campaignId: string) => {
       color: "success",
     });
     await loadAuthorizationStatus();
-  } catch (error) {
+  } catch {
     toast.add({
       title: "Erreur",
-      description: error instanceof Error ? error.message : "Impossible de révoquer l'autorisation",
+      description: "Impossible de révoquer l'autorisation",
       color: "error",
     });
   }
@@ -375,7 +387,7 @@ const handleAccept = async (id: string) => {
       color: "success",
     });
     await loadData();
-  } catch (error) {
+  } catch {
     toast.add({
       title: "Erreur",
       description: "Impossible d'accepter l'invitation",
@@ -397,7 +409,7 @@ const handleDecline = async (id: string) => {
       color: "success",
     });
     await loadData();
-  } catch (error) {
+  } catch {
     toast.add({
       title: "Erreur",
       description: "Impossible de refuser l'invitation",
@@ -419,7 +431,7 @@ const handleLeave = async (id: string, name: string) => {
       color: "success",
     });
     await loadData();
-  } catch (error) {
+  } catch {
     toast.add({
       title: "Erreur",
       description: "Impossible de quitter la campagne",

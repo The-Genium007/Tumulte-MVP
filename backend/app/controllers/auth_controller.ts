@@ -2,9 +2,9 @@ import type { HttpContext } from '@adonisjs/core/http'
 import { randomBytes } from 'node:crypto'
 import logger from '@adonisjs/core/services/logger'
 import env from '#start/env'
-import User from '#models/user'
-import Streamer from '#models/streamer'
-import TwitchAuthService from '#services/twitch_auth_service'
+import { user as User } from '#models/user'
+import { streamer as Streamer } from '#models/streamer'
+import { twitchAuthService as TwitchAuthService } from '#services/twitch_auth_service'
 
 export default class AuthController {
   private readonly twitchAuthService: TwitchAuthService
@@ -55,13 +55,13 @@ export default class AuthController {
 
     logger.info({
       message: 'Redirecting to Twitch OAuth',
-      redirect_uri: env.get('TWITCH_REDIRECT_URI'),
-      client_id: env.get('TWITCH_CLIENT_ID'),
-      client_secret_masked: this.maskSecret(env.get('TWITCH_CLIENT_SECRET')),
-      frontend_url: env.get('FRONTEND_URL'),
-      node_env: env.get('NODE_ENV'),
-      log_level: env.get('LOG_LEVEL'),
-      session_driver: env.get('SESSION_DRIVER'),
+      redirectUri: env.get('TWITCH_REDIRECT_URI'),
+      clientId: env.get('TWITCH_CLIENT_ID'),
+      clientSecretMasked: this.maskSecret(env.get('TWITCH_CLIENT_SECRET')),
+      frontendUrl: env.get('FRONTEND_URL'),
+      nodeEnv: env.get('NODE_ENV'),
+      logLevel: env.get('LOG_LEVEL'),
+      sessionDriver: env.get('SESSION_DRIVER'),
     })
 
     return response.redirect(authUrl)
@@ -77,11 +77,11 @@ export default class AuthController {
 
     logger.info({
       message: 'OAuth callback received',
-      has_code: Boolean(code),
+      hasCode: Boolean(code),
       state,
-      stored_state: storedState,
-      redirect_uri: env.get('TWITCH_REDIRECT_URI'),
-      client_id: env.get('TWITCH_CLIENT_ID'),
+      storedState: storedState,
+      redirectUri: env.get('TWITCH_REDIRECT_URI'),
+      clientId: env.get('TWITCH_CLIENT_ID'),
     })
 
     // Valider le state CSRF
@@ -105,21 +105,21 @@ export default class AuthController {
       logger.info({
         message: 'OAuth tokens exchanged successfully',
         scopes: tokens.scope,
-        required_scopes: requiredScopes,
-        has_all_scopes: hasAllScopes,
-        missing_scopes: missingScopes.length > 0 ? missingScopes : undefined,
+        requiredScopes: requiredScopes,
+        hasAllScopes: hasAllScopes,
+        missingScopes: missingScopes.length > 0 ? missingScopes : undefined,
         expires_in: tokens.expires_in,
-        has_refresh: Boolean(tokens.refresh_token),
-        has_access: Boolean(tokens.access_token),
+        hasRefresh: Boolean(tokens.refresh_token),
+        hasAccess: Boolean(tokens.access_token),
       })
 
       // Si des scopes sont manquants, loguer un avertissement
       if (!hasAllScopes) {
-        logger.warning({
+        logger.warn({
           message: 'User authorized with missing scopes',
-          missing_scopes: missingScopes,
-          received_scopes: tokens.scope,
-          required_scopes: requiredScopes,
+          missingScopes: missingScopes,
+          receivedScopes: tokens.scope,
+          requiredScopes: requiredScopes,
         })
       }
 
@@ -128,9 +128,9 @@ export default class AuthController {
 
       logger.info({
         message: 'OAuth callback: user authenticated',
-        user_login: userInfo.login,
+        userLogin: userInfo.login,
         user_id: userInfo.id,
-        display_name: userInfo.display_name,
+        displayName: userInfo.displayName,
         scopes: tokens.scope,
       })
 
@@ -150,15 +150,15 @@ export default class AuthController {
 
         // Mettre à jour le display_name si changé
         if (user) {
-          if (user.displayName !== userInfo.display_name) {
-            user.displayName = userInfo.display_name
+          if (user.displayName !== userInfo.displayName) {
+            user.displayName = userInfo.displayName
             await user.save()
           }
         } else {
           // Corrige les anciens enregistrements sans user associé
           user = await User.create({
             role,
-            displayName: userInfo.display_name,
+            displayName: userInfo.displayName,
             email: userInfo.email,
           })
           streamer.userId = user.id
@@ -171,7 +171,7 @@ export default class AuthController {
 
         // Mettre à jour les infos Twitch du streamer
         streamer.twitchLogin = userInfo.login
-        streamer.twitchDisplayName = userInfo.display_name
+        streamer.twitchDisplayName = userInfo.displayName
         streamer.profileImageUrl = userInfo.profile_image_url
         streamer.broadcasterType = userInfo.broadcaster_type
         await streamer.updateTokens(tokens.access_token, tokens.refresh_token)
@@ -182,7 +182,7 @@ export default class AuthController {
         // Créer un nouvel utilisateur
         user = await User.create({
           role,
-          displayName: userInfo.display_name,
+          displayName: userInfo.displayName,
           email: userInfo.email,
         })
 
@@ -191,7 +191,7 @@ export default class AuthController {
           userId: user.id,
           twitchUserId: userInfo.id,
           twitchLogin: userInfo.login,
-          twitchDisplayName: userInfo.display_name,
+          twitchDisplayName: userInfo.displayName,
           profileImageUrl: userInfo.profile_image_url,
           broadcasterType: userInfo.broadcaster_type,
           accessToken: tokens.access_token,
@@ -212,9 +212,9 @@ export default class AuthController {
 
       logger.info({
         message: 'Redirecting user to frontend after auth',
-        redirect_path: redirectPath,
-        redirect_url: redirectUrl,
-        frontend_url: env.get('FRONTEND_URL'),
+        redirectPath: redirectPath,
+        redirectUrl: redirectUrl,
+        frontendUrl: env.get('FRONTEND_URL'),
       })
 
       return response.redirect(redirectUrl)
@@ -223,8 +223,8 @@ export default class AuthController {
         message: 'OAuth callback failed',
         error: error?.message,
         stack: error?.stack,
-        redirect_uri: env.get('TWITCH_REDIRECT_URI'),
-        client_id: env.get('TWITCH_CLIENT_ID'),
+        redirectUri: env.get('TWITCH_REDIRECT_URI'),
+        clientId: env.get('TWITCH_CLIENT_ID'),
       })
       return response.redirect(`${env.get('FRONTEND_URL')}/login?error=oauth_failed`)
     }
@@ -254,7 +254,7 @@ export default class AuthController {
       return {
         id: user.id,
         role: user.role,
-        display_name: user.displayName,
+        displayName: user.displayName,
         email: user.email,
         streamer: user.streamer
           ? {
@@ -271,7 +271,7 @@ export default class AuthController {
     return {
       id: user.id,
       role: user.role,
-      display_name: user.displayName,
+      displayName: user.displayName,
       email: user.email,
       streamer: null,
     }
@@ -309,7 +309,7 @@ export default class AuthController {
       return {
         id: user.id,
         role: user.role,
-        display_name: user.displayName,
+        displayName: user.displayName,
         email: user.email,
         streamer: user.streamer
           ? {
@@ -325,7 +325,7 @@ export default class AuthController {
     return {
       id: user.id,
       role: user.role,
-      display_name: user.displayName,
+      displayName: user.displayName,
       email: user.email,
       streamer: null,
     }

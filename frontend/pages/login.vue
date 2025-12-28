@@ -1,6 +1,6 @@
 <template>
   <div
-    class="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-950 via-purple-950/20 to-gray-950"
+    class="min-h-screen flex items-center justify-center bg-linear-to-br from-gray-950 via-purple-950/20 to-gray-950"
   >
     <UCard class="w-full max-w-md">
       <template #header>
@@ -35,10 +35,10 @@
         </UButton>
 
         <UAlert
-          v-if="error"
+          v-if="_error"
           color="error"
           variant="soft"
-          :title="error"
+          :title="_error"
           icon="i-lucide-alert-circle"
         />
       </div>
@@ -58,22 +58,22 @@ definePageMeta({
 const route = useRoute();
 const { loginWithTwitch } = useAuth();
 
-const error = ref<string | null>(null);
+const _error = ref<string | null>(null);
 
 // Vérifier si une erreur est présente dans l'URL
 onMounted(() => {
   const errorParam = route.query.error as string;
   if (errorParam === "invalid_state") {
-    error.value = "Erreur de validation CSRF. Veuillez réessayer.";
+    _error.value = "Erreur de validation CSRF. Veuillez réessayer.";
   } else if (errorParam === "oauth_failed") {
-    error.value = "Échec de l'authentification OAuth. Veuillez réessayer.";
+    _error.value = "Échec de l'authentification OAuth. Veuillez réessayer.";
   } else if (errorParam === "session_failed") {
-    error.value = "Erreur de session. Veuillez vous reconnecter.";
+    _error.value = "Erreur de session. Veuillez vous reconnecter.";
   }
 });
 
 const handleLogin = () => {
-  error.value = null;
+  _error.value = null;
   loginWithTwitch();
 };
 </script>

@@ -30,7 +30,7 @@
               {{ campaign.description }}
             </p>
             <p v-if="campaign" class="text-sm text-gray-500 mt-1">
-              Créée le {{ formatDate(campaign.created_at) }}
+              Créée le {{ formatDate(campaign.createdAt) }}
             </p>
           </div>
         </div>
@@ -114,9 +114,9 @@
             >
               <div class="flex items-center gap-4">
                 <img
-                  v-if="member.streamer.profile_image_url"
-                  :src="member.streamer.profile_image_url"
-                  :alt="member.streamer.twitch_display_name"
+                  v-if="member.streamer.profileImageUrl"
+                  :src="member.streamer.profileImageUrl"
+                  :alt="member.streamer.twitchDisplayName"
                   class="size-12 rounded-full ring-2 ring-purple-500/20"
                 />
                 <div
@@ -128,46 +128,35 @@
                 <div>
                   <div class="flex items-center gap-2">
                     <p class="font-semibold text-white">
-                      {{ member.streamer.twitch_display_name }}
+                      {{ member.streamer.twitchDisplayName }}
                     </p>
                     <UBadge
                       :label="member.status === 'ACTIVE' ? 'Actif' : 'En attente'"
-                      :color="member.status === 'ACTIVE' ? 'green' : 'amber'"
+                      :color="member.status === 'ACTIVE' ? 'success' : 'warning'"
                       variant="soft"
                       size="sm"
                     />
                   </div>
                   <a
-                    :href="`https://twitch.tv/${member.streamer.twitch_login}`"
+                    :href="`https://twitch.tv/${member.streamer.twitchLogin}`"
                     target="_blank"
                     rel="noopener noreferrer"
                     class="text-sm text-primary-400 hover:text-primary-300 transition-colors inline-flex items-center gap-1"
                   >
-                    @{{ member.streamer.twitch_login }}
+                    @{{ member.streamer.twitchLogin }}
                     <UIcon name="i-lucide-external-link" class="size-3" />
                   </a>
                 </div>
               </div>
 
               <div class="flex gap-2">
-                <!-- Dev only: Activate pending member -->
-                <UButton
-                  v-if="isDev && member.status === 'PENDING'"
-                  icon="i-lucide-check"
-                  color="green"
-                  variant="soft"
-                  size="sm"
-                  label="Activer"
-                  @click="handleActivateMember(member.id)"
-                />
-
                 <UButton
                   icon="i-lucide-x"
                   label="Révoquer"
                   color="error"
                   variant="ghost"
                   size="sm"
-                  @click="handleRemoveMember(member.id)"
+                  @click="handleRemoveMember(member.id, member.streamer.twitchDisplayName)"
                 />
               </div>
             </div>
@@ -177,7 +166,7 @@
     </div>
 
     <!-- Modal de confirmation de suppression -->
-    <UModal v-model:open="showDeleteModal" :ui="{ width: 'sm:max-w-md' }">
+    <UModal v-model:open="showDeleteModal">
       <template #header>
         <div class="flex items-center gap-3">
           <div class="bg-error-500/10 p-2 rounded-lg">
@@ -219,8 +208,51 @@
       </template>
     </UModal>
 
+    <!-- Modal de confirmation de révocation -->
+    <UModal v-model:open="showRemoveMemberModal">
+      <template #header>
+        <div class="flex items-center gap-3">
+          <div class="bg-error-500/10 p-2 rounded-lg">
+            <UIcon name="i-lucide-user-x" class="size-6 text-error-500" />
+          </div>
+          <h3 class="text-xl font-bold text-white">Révoquer l'accès</h3>
+        </div>
+      </template>
+
+      <template #body>
+        <div class="space-y-4">
+          <p class="text-gray-300">
+            Êtes-vous sûr de vouloir révoquer l'accès de
+            <strong class="text-white">{{ memberToRemove?.name }}</strong> ?
+          </p>
+          <div class="bg-error-500/10 border border-error-500/20 rounded-lg p-4">
+            <p class="text-sm text-error-300">
+              ⚠️ Cette action retirera immédiatement ce membre de la campagne et de tous les sondages en cours.
+            </p>
+          </div>
+        </div>
+      </template>
+
+      <template #footer>
+        <div class="flex gap-3 justify-end">
+          <UButton
+            color="neutral"
+            variant="soft"
+            label="Annuler"
+            @click="showRemoveMemberModal = false"
+          />
+          <UButton
+            color="error"
+            icon="i-lucide-user-x"
+            label="Révoquer l'accès"
+            @click="confirmRemoveMember"
+          />
+        </div>
+      </template>
+    </UModal>
+
     <!-- Modal d'invitation -->
-    <UModal v-model:open="showInviteModal" :ui="{ width: 'sm:max-w-2xl' }">
+    <UModal v-model:open="showInviteModal">
       <template #header>
         <h3 class="text-xl font-bold text-white">Inviter un streamer</h3>
       </template>
@@ -249,14 +281,14 @@
           <div v-else-if="filteredSearchResults.length > 0" class="space-y-2 max-h-96 overflow-y-auto">
             <div
               v-for="streamer in filteredSearchResults"
-              :key="streamer.twitch_user_id"
+              :key="streamer.id"
               class="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg hover:bg-gray-700/50 transition-colors"
             >
               <div class="flex items-center gap-3">
                 <img
-                  v-if="streamer.profile_image_url"
-                  :src="streamer.profile_image_url"
-                  :alt="streamer.twitch_display_name"
+                  v-if="streamer.profileImageUrl"
+                  :src="streamer.profileImageUrl"
+                  :alt="streamer.displayName"
                   class="size-10 rounded-full ring-2 ring-purple-500/20"
                 />
                 <div
@@ -266,8 +298,8 @@
                   <UIcon name="i-lucide-user" class="size-5 text-purple-500" />
                 </div>
                 <div>
-                  <p class="font-semibold text-white">{{ streamer.twitch_display_name }}</p>
-                  <p class="text-sm text-gray-400">@{{ streamer.twitch_login }}</p>
+                  <p class="font-semibold text-white">{{ streamer.displayName }}</p>
+                  <p class="text-sm text-gray-400">@{{ streamer.login }}</p>
                 </div>
               </div>
               <UButton
@@ -299,7 +331,7 @@
       <template #footer>
         <div class="flex justify-end">
           <UButton
-            color="gray"
+            color="neutral"
             variant="soft"
             label="Fermer"
             @click="showInviteModal = false"
@@ -313,17 +345,14 @@
 import { ref, computed, onMounted, watch } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useCampaigns } from "@/composables/useCampaigns";
-import type { Campaign, CampaignMembership } from "@/types";
+import type { Campaign, CampaignMembership, StreamerSearchResult } from "@/types";
 
-const router = useRouter();
+const _router = useRouter();
 const route = useRoute();
 const campaignId = route.params.id as string;
 
 const { getCampaignDetails, inviteStreamer, removeMember, searchTwitchStreamers, deleteCampaign } = useCampaigns();
 const toast = useToast();
-
-// Dev mode detection
-const isDev = import.meta.env.DEV;
 
 const campaign = ref<Campaign | null>(null);
 
@@ -334,8 +363,10 @@ const members = ref<CampaignMembership[]>([]);
 const loadingMembers = ref(false);
 const showInviteModal = ref(false);
 const showDeleteModal = ref(false);
+const showRemoveMemberModal = ref(false);
+const memberToRemove = ref<{ id: string; name: string } | null>(null);
 const searchQuery = ref("");
-const searchResults = ref<any[]>([]);
+const searchResults = ref<StreamerSearchResult[]>([]);
 const searching = ref(false);
 
 // Computed properties
@@ -364,18 +395,12 @@ const loadMembers = async () => {
     const data = await getCampaignDetails(campaignId);
     campaign.value = data.campaign;
     members.value = data.members;
-    console.log('Campaign loaded:', campaign.value);
-    console.log('Members loaded:', members.value);
-    if (members.value.length > 0) {
-      console.log('First member:', members.value[0]);
-      console.log('First member joined_at:', members.value[0].joined_at);
-    }
   } catch (error) {
     console.error("Error loading campaign:", error);
     toast.add({
       title: "Erreur",
       description: "Impossible de charger la campagne",
-      color: "red",
+      color: "error",
     });
   } finally {
     loadingMembers.value = false;
@@ -405,7 +430,7 @@ watch(searchQuery, () => {
       toast.add({
         title: "Erreur",
         description: "Impossible de rechercher les streamers",
-        color: "red",
+        color: "error",
       });
     } finally {
       searching.value = false;
@@ -414,82 +439,64 @@ watch(searchQuery, () => {
 });
 
 // Handle invite
-const handleInvite = async (streamer: any) => {
+const handleInvite = async (streamer: StreamerSearchResult) => {
   try {
-    const payload = streamer.id !== null && streamer.id !== undefined
-      ? { streamer_id: streamer.id }
-      : {
-          twitch_user_id: streamer.twitch_user_id,
-          twitch_login: streamer.twitch_login,
-          twitch_display_name: streamer.twitch_display_name,
-          profile_image_url: streamer.profile_image_url,
-        };
+    const payload = {
+       
+      twitch_user_id: streamer.id,
+       
+      twitch_login: streamer.login,
+       
+      twitch_display_name: streamer.displayName,
+       
+      profile_image_url: streamer.profileImageUrl,
+    };
 
     await inviteStreamer(campaignId, payload);
     toast.add({
       title: "Succès",
-      description: `${streamer.twitch_display_name} a été invité`,
-      color: "green",
+      description: `${streamer.displayName} a été invité`,
+      color: "success",
     });
     showInviteModal.value = false;
     searchQuery.value = "";
     searchResults.value = [];
     await loadMembers();
-  } catch (error: any) {
-    const message = error?.data?.error || "Impossible d'inviter le streamer";
+  } catch (error) {
+    const message = (error as { data?: { error?: string } })?.data?.error || "Impossible d'inviter le streamer";
     toast.add({
       title: "Erreur",
       description: message,
-      color: "red",
+      color: "error",
     });
   }
 };
 
-// Handle remove member
-const handleRemoveMember = async (memberId: string) => {
-  if (!confirm("Êtes-vous sûr de vouloir retirer ce membre ? Il sera retiré immédiatement des sondages en cours.")) {
-    return;
-  }
+// Handle remove member - open modal
+const handleRemoveMember = (memberId: string, memberName: string) => {
+  memberToRemove.value = { id: memberId, name: memberName };
+  showRemoveMemberModal.value = true;
+};
+
+// Confirm remove member - execute removal
+const confirmRemoveMember = async () => {
+  if (!memberToRemove.value) return;
 
   try {
-    await removeMember(campaignId, memberId);
+    await removeMember(campaignId, memberToRemove.value.id);
+    showRemoveMemberModal.value = false;
+    memberToRemove.value = null;
     toast.add({
       title: "Succès",
       description: "Membre retiré de la campagne",
-      color: "green",
+      color: "success",
     });
     await loadMembers();
-  } catch (error) {
+  } catch {
     toast.add({
       title: "Erreur",
       description: "Impossible de retirer le membre",
-      color: "red",
-    });
-  }
-};
-
-// Handle activate member (dev only)
-const handleActivateMember = async (memberId: string) => {
-  try {
-    const API_URL = import.meta.env.VITE_API_URL;
-    const response = await fetch(`${API_URL}/mj/campaigns/${campaignId}/members/${memberId}/activate`, {
-      method: "POST",
-      credentials: "include",
-    });
-
-    if (!response.ok) throw new Error("Failed to activate member");
-
-    toast.add({
-      title: "Succès",
-      description: "Membre activé",
-      color: "green",
-    });
-    await loadMembers();
-  } catch (error) {
-    toast.add({
-      title: "Erreur",
-      description: "Impossible d'activer le membre",
-      color: "red",
+      color: "error",
     });
   }
 };
@@ -507,14 +514,14 @@ const confirmDeleteCampaign = async () => {
     toast.add({
       title: "Succès",
       description: "Campagne supprimée avec succès",
-      color: "green",
+      color: "success",
     });
-    router.push({ path: "/mj/campaigns" });
-  } catch (error) {
+    _router.push({ path: "/mj/campaigns" });
+  } catch {
     toast.add({
       title: "Erreur",
       description: "Impossible de supprimer la campagne",
-      color: "red",
+      color: "error",
     });
   }
 };

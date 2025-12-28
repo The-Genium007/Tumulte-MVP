@@ -1,6 +1,6 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import logger from '@adonisjs/core/services/logger'
-import TwitchAuthService from '#services/twitch_auth_service'
+import { twitchAuthService as TwitchAuthService } from '#services/twitch_auth_service'
 
 export default class AccountController {
   private readonly twitchAuthService: TwitchAuthService
@@ -13,7 +13,7 @@ export default class AccountController {
    * Anonymise le compte utilisateur et toutes ses données associées
    * Permet la reconnexion ultérieure (nouveau compte sera créé)
    */
-  async deleteAccount({ auth, response, session }: HttpContext) {
+  async deleteAccount({ auth, response }: HttpContext) {
     const user = auth.user!
 
     try {

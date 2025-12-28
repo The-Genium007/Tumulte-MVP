@@ -1,6 +1,8 @@
-import CampaignMembership from '#models/campaign_membership'
+import { campaignMembership as CampaignMembership } from '#models/campaign_membership'
 import { DateTime } from 'luxon'
+import { inject } from '@adonisjs/core'
 
+@inject()
 export class CampaignMembershipRepository {
   async findById(id: string): Promise<CampaignMembership | null> {
     return await CampaignMembership.find(id)
@@ -107,3 +109,4 @@ export class CampaignMembershipRepository {
 }
 
 export default CampaignMembershipRepository
+export { CampaignMembershipRepository as campaignMembershipRepository }

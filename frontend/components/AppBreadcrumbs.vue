@@ -38,5 +38,7 @@
 </template>
 
 <script setup lang="ts">
+import { useBreadcrumbs } from '~/composables/useBreadcrumbs'
+
 const { breadcrumbs, hasBreadcrumbs } = useBreadcrumbs()
 </script>

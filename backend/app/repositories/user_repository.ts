@@ -1,4 +1,4 @@
-import User from '#models/user'
+import { user as User } from '#models/user'
 
 /**
  * Repository pour gérer les utilisateurs
@@ -100,3 +100,4 @@ export class UserRepository {
 }
 
 export default UserRepository
+export { UserRepository as userRepository }

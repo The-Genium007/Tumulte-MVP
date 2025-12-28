@@ -1,6 +1,6 @@
 import { BaseCommand } from '@adonisjs/core/ace'
-import Streamer from '#models/streamer'
-import TwitchAuthService from '#services/auth/twitch_auth_service'
+import { streamer as Streamer } from '#models/streamer'
+import { twitchAuthService as TwitchAuthService } from '#services/auth/twitch_auth_service'
 
 export default class CheckScopes extends BaseCommand {
   static commandName = 'check:scopes'

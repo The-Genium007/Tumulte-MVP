@@ -6,7 +6,6 @@ import type {
   CampaignDetail,
   CreateCampaignRequest,
   UpdateCampaignRequest,
-  CampaignMember,
 } from "~/types/api";
 
 /**
@@ -17,7 +16,7 @@ export const useCampaignsStore = defineStore("campaigns", () => {
   const campaigns = ref<Campaign[]>([]);
   const selectedCampaign = ref<CampaignDetail | null>(null);
   const loading = ref(false);
-  const error = ref<string | null>(null);
+  const _error = ref<string | null>(null);
 
   // Getters
   const activeCampaigns = computed(() => {
@@ -29,12 +28,12 @@ export const useCampaignsStore = defineStore("campaigns", () => {
   // Actions
   async function fetchCampaigns() {
     loading.value = true;
-    error.value = null;
+    _error.value = null;
 
     try {
       campaigns.value = await campaignsRepository.list();
     } catch (err) {
-      error.value =
+      _error.value =
         err instanceof Error ? err.message : "Failed to fetch campaigns";
       throw err;
     } finally {
@@ -44,13 +43,13 @@ export const useCampaignsStore = defineStore("campaigns", () => {
 
   async function fetchCampaign(id: string) {
     loading.value = true;
-    error.value = null;
+    _error.value = null;
 
     try {
       selectedCampaign.value = await campaignsRepository.get(id);
       return selectedCampaign.value;
     } catch (err) {
-      error.value =
+      _error.value =
         err instanceof Error ? err.message : "Failed to fetch campaign";
       throw err;
     } finally {
@@ -60,14 +59,14 @@ export const useCampaignsStore = defineStore("campaigns", () => {
 
   async function createCampaign(data: CreateCampaignRequest) {
     loading.value = true;
-    error.value = null;
+    _error.value = null;
 
     try {
       const newCampaign = await campaignsRepository.create(data);
       campaigns.value.unshift(newCampaign);
       return newCampaign;
     } catch (err) {
-      error.value =
+      _error.value =
         err instanceof Error ? err.message : "Failed to create campaign";
       throw err;
     } finally {
@@ -77,7 +76,7 @@ export const useCampaignsStore = defineStore("campaigns", () => {
 
   async function updateCampaign(id: string, data: UpdateCampaignRequest) {
     loading.value = true;
-    error.value = null;
+    _error.value = null;
 
     try {
       const updatedCampaign = await campaignsRepository.update(id, data);
@@ -98,7 +97,7 @@ export const useCampaignsStore = defineStore("campaigns", () => {
 
       return updatedCampaign;
     } catch (err) {
-      error.value =
+      _error.value =
         err instanceof Error ? err.message : "Failed to update campaign";
       throw err;
     } finally {
@@ -108,7 +107,7 @@ export const useCampaignsStore = defineStore("campaigns", () => {
 
   async function deleteCampaign(id: string) {
     loading.value = true;
-    error.value = null;
+    _error.value = null;
 
     try {
       await campaignsRepository.delete(id);
@@ -121,7 +120,7 @@ export const useCampaignsStore = defineStore("campaigns", () => {
         selectedCampaign.value = null;
       }
     } catch (err) {
-      error.value =
+      _error.value =
         err instanceof Error ? err.message : "Failed to delete campaign";
       throw err;
     } finally {
@@ -131,7 +130,7 @@ export const useCampaignsStore = defineStore("campaigns", () => {
 
   async function inviteStreamer(campaignId: string, streamerId: string) {
     loading.value = true;
-    error.value = null;
+    _error.value = null;
 
     try {
       const member = await campaignsRepository.inviteStreamer(campaignId, {
@@ -148,7 +147,7 @@ export const useCampaignsStore = defineStore("campaigns", () => {
 
       return member;
     } catch (err) {
-      error.value =
+      _error.value =
         err instanceof Error ? err.message : "Failed to invite streamer";
       throw err;
     } finally {
@@ -158,7 +157,7 @@ export const useCampaignsStore = defineStore("campaigns", () => {
 
   async function removeMember(campaignId: string, memberId: string) {
     loading.value = true;
-    error.value = null;
+    _error.value = null;
 
     try {
       await campaignsRepository.removeMember(campaignId, memberId);
@@ -173,7 +172,7 @@ export const useCampaignsStore = defineStore("campaigns", () => {
         );
       }
     } catch (err) {
-      error.value =
+      _error.value =
         err instanceof Error ? err.message : "Failed to remove member";
       throw err;
     } finally {
@@ -182,7 +181,7 @@ export const useCampaignsStore = defineStore("campaigns", () => {
   }
 
   function clearError() {
-    error.value = null;
+    _error.value = null;
   }
 
   function clearSelection() {

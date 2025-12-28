@@ -13,10 +13,9 @@ class HttpClient {
   constructor() {
     const config = useRuntimeConfig();
     const apiBase = config.public.apiBase as string;
-    const apiVersion = config.public.apiVersion as string;
 
     this.instance = axios.create({
-      baseURL: `${apiBase}/api/${apiVersion}`,
+      baseURL: apiBase,
       timeout: 30000,
       withCredentials: true,
       headers: {
@@ -84,7 +83,7 @@ class HttpClient {
   /**
    * GET request
    */
-  async get<T>(url: string, params?: Record<string, any>): Promise<T> {
+  async get<T>(url: string, params?: Record<string, unknown>): Promise<T> {
     const response = await this.instance.get<T>(url, { params });
     return response.data;
   }
@@ -92,7 +91,7 @@ class HttpClient {
   /**
    * POST request
    */
-  async post<T>(url: string, data?: any): Promise<T> {
+  async post<T>(url: string, data?: unknown): Promise<T> {
     const response = await this.instance.post<T>(url, data);
     return response.data;
   }
@@ -100,7 +99,7 @@ class HttpClient {
   /**
    * PUT request
    */
-  async put<T>(url: string, data?: any): Promise<T> {
+  async put<T>(url: string, data?: unknown): Promise<T> {
     const response = await this.instance.put<T>(url, data);
     return response.data;
   }
@@ -116,7 +115,7 @@ class HttpClient {
   /**
    * PATCH request
    */
-  async patch<T>(url: string, data?: any): Promise<T> {
+  async patch<T>(url: string, data?: unknown): Promise<T> {
     const response = await this.instance.patch<T>(url, data);
     return response.data;
   }

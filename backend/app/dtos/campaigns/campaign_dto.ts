@@ -1,4 +1,4 @@
-import type Campaign from '#models/campaign'
+import type { campaign as Campaign } from '#models/campaign'
 import { StreamerDto } from '#dtos/auth/streamer_dto'
 
 export class CampaignDto {

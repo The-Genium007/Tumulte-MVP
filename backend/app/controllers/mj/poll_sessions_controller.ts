@@ -1,8 +1,10 @@
 import { inject } from '@adonisjs/core'
 import type { HttpContext } from '@adonisjs/core/http'
+import logger from '@adonisjs/core/services/logger'
 import { PollSessionRepository } from '#repositories/poll_session_repository'
 import { PollRepository } from '#repositories/poll_repository'
 import { CampaignRepository } from '#repositories/campaign_repository'
+import { HealthCheckService } from '#services/health_check_service'
 import { PollSessionDto } from '#dtos/polls/poll_session_dto'
 import { PollDto } from '#dtos/polls/poll_dto'
 import { validateRequest } from '#middleware/validate_middleware'
@@ -17,14 +19,15 @@ export default class PollSessionsController {
   constructor(
     private pollSessionRepository: PollSessionRepository,
     private pollRepository: PollRepository,
-    private campaignRepository: CampaignRepository
+    private campaignRepository: CampaignRepository,
+    private healthCheckService: HealthCheckService
   ) {}
 
   /**
    * Liste toutes les sessions de la campagne
-   * GET /api/v2/mj/campaigns/:campaignId/sessions
+   * GET /mj/campaigns/:campaignId/sessions
    */
-  async index({ auth, params, response }: HttpContext) {
+  async indexByCampaign({ auth, params, response }: HttpContext) {
     const userId = auth.user!.id
 
     // Vérifier que l'utilisateur est propriétaire de la campagne
@@ -65,10 +68,85 @@ export default class PollSessionsController {
   }
 
   /**
+   * Lance une session de sondage avec Health Check
+   * POST /api/v2/mj/campaigns/:campaignId/sessions/:sessionId/launch
+   */
+  async launch({ auth, params, response }: HttpContext) {
+    const userId = auth.user!.id
+    const { campaignId, sessionId } = params
+
+    // Vérifier l'ownership de la campagne
+    const isOwner = await this.campaignRepository.isOwner(campaignId, userId)
+    if (!isOwner) {
+      return response.forbidden({ error: 'Not authorized to access this campaign' })
+    }
+
+    // Vérifier que la session existe et appartient à l'utilisateur
+    const session = await this.pollSessionRepository.findByIdWithPolls(sessionId)
+    if (!session) {
+      return response.notFound({ error: 'Poll session not found' })
+    }
+
+    if (session.ownerId !== userId) {
+      return response.forbidden({ error: 'Not authorized' })
+    }
+
+    // Vérifier qu'il y a au moins un poll dans la session
+    if (!session.polls || session.polls.length === 0) {
+      return response.badRequest({
+        error: 'Session has no polls',
+        message: 'Cannot launch an empty session',
+      })
+    }
+
+    logger.info(
+      {
+        event: 'session_launch_initiated',
+        userId,
+        campaignId,
+        sessionId,
+        pollCount: session.polls.length,
+      },
+      'Starting session launch with health check'
+    )
+
+    // Effectuer le health check avant de lancer la session
+    const healthCheck = await this.healthCheckService.performHealthCheck(campaignId, userId)
+
+    if (!healthCheck.healthy) {
+      logger.error(
+        {
+          event: 'session_launch_blocked',
+          userId,
+          campaignId,
+          sessionId,
+          healthCheck,
+        },
+        'Health check failed, blocking session launch'
+      )
+
+      return response.status(503).json({
+        error: 'System health check failed. Cannot launch session.',
+        healthCheck,
+      })
+    }
+
+    logger.info({ campaignId, sessionId }, 'Health check passed, session ready to launch')
+
+    // Retourner la session avec ses polls
+    return response.ok({
+      data: {
+        ...PollSessionDto.fromModel(session),
+        polls: session.polls.map((poll) => PollDto.fromModel(poll)),
+      },
+    })
+  }
+
+  /**
    * Crée une nouvelle session de sondages
    * POST /api/v2/mj/campaigns/:campaignId/sessions
    */
-  async store({ auth, params, request, response }: HttpContext) {
+  async storeByCampaign({ auth, params, request, response }: HttpContext) {
     await validateRequest(createPollSessionSchema)(
       { request, response } as HttpContext,
       async () => {}

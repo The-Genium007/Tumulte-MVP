@@ -6,7 +6,7 @@ export const addPollSchema = z.object({
     .array(z.string().min(1).max(25))
     .min(2, 'Minimum 2 options')
     .max(5, 'Maximum 5 options'),
-  type: z.enum(['SIMPLE', 'MULTIPLE']).default('SIMPLE'),
+  type: z.enum(['UNIQUE', 'STANDARD']).default('STANDARD'),
   channelPointsPerVote: z.number().int().positive().optional().nullable(),
 })
 

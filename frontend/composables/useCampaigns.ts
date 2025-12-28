@@ -11,14 +11,20 @@ const API_URL = import.meta.env.VITE_API_URL;
 export interface CampaignMember {
   id: string;
   status: "PENDING" | "ACTIVE";
-  is_owner?: boolean;
+  isOwner: boolean;
   streamer: {
     id: string;
-    twitch_display_name: string;
-    twitch_login: string;
+    twitchDisplayName: string;
+    twitchLogin: string;
+    profileImageUrl?: string;
+    broadcasterType?: string;
   };
-  invited_at: string;
-  accepted_at?: string;
+  invitedAt: string;
+  acceptedAt: string | null;
+  pollAuthorizationGrantedAt: string | null;
+  pollAuthorizationExpiresAt: string | null;
+  isPollAuthorized: boolean;
+  authorizationRemainingSeconds: number | null;
 }
 
 export const useCampaigns = () => {
@@ -133,7 +139,9 @@ export const useCampaigns = () => {
         id: data.data.id,
         name: data.data.name,
         description: data.data.description,
-        created_at: data.data.created_at,
+        memberCount: data.data.memberCount,
+        activeMemberCount: data.data.activeMemberCount,
+        createdAt: data.data.createdAt,
       },
       members: data.data.members,
     };
@@ -144,12 +152,16 @@ export const useCampaigns = () => {
    */
   const inviteStreamer = async (
     campaignId: string,
-    payload:
+    payload: // eslint-disable-next-line @typescript-eslint/naming-convention
       | { streamer_id: string }
       | {
+          // eslint-disable-next-line @typescript-eslint/naming-convention
           twitch_user_id: string;
+          // eslint-disable-next-line @typescript-eslint/naming-convention
           twitch_login: string;
+          // eslint-disable-next-line @typescript-eslint/naming-convention
           twitch_display_name: string;
+          // eslint-disable-next-line @typescript-eslint/naming-convention
           profile_image_url?: string;
         },
   ): Promise<void> => {
@@ -189,12 +201,24 @@ export const useCampaigns = () => {
     query: string,
   ): Promise<StreamerSearchResult[]> => {
     const response = await fetch(
-      `${API_URL}/mj/twitch/search-streamers?q=${encodeURIComponent(query)}`,
+      `${API_URL}/mj/streamers/search?q=${encodeURIComponent(query)}`,
       { credentials: "include" },
     );
     if (!response.ok) throw new Error("Failed to search streamers");
     const data = await response.json();
-    return data.data;
+    return data.data.map(
+      (user: {
+        twitchUserId: string;
+        twitchUsername: string;
+        twitchDisplayName: string;
+        profileImageUrl: string;
+      }) => ({
+        id: user.twitchUserId,
+        login: user.twitchUsername,
+        displayName: user.twitchDisplayName,
+        profileImageUrl: user.profileImageUrl,
+      }),
+    );
   };
 
   // ========== Streamer Functions ==========
@@ -269,9 +293,10 @@ export const useCampaigns = () => {
    */
   const grantAuthorization = async (
     campaignId: string,
+    // eslint-disable-next-line @typescript-eslint/naming-convention
   ): Promise<{ expires_at: string; remaining_seconds: number }> => {
     const response = await fetch(
-      `${API_URL}/api/v2/streamer/campaigns/${campaignId}/authorize`,
+      `${API_URL}/streamer/campaigns/${campaignId}/authorize`,
       {
         method: "POST",
         credentials: "include",
@@ -287,7 +312,7 @@ export const useCampaigns = () => {
    */
   const revokeAuthorization = async (campaignId: string): Promise<void> => {
     const response = await fetch(
-      `${API_URL}/api/v2/streamer/campaigns/${campaignId}/authorize`,
+      `${API_URL}/streamer/campaigns/${campaignId}/authorize`,
       {
         method: "DELETE",
         credentials: "include",
@@ -299,9 +324,22 @@ export const useCampaigns = () => {
   /**
    * Récupère le statut d'autorisation pour toutes les campagnes
    */
-  const getAuthorizationStatus = async (): Promise<any[]> => {
+  const getAuthorizationStatus = async (): Promise<
+    {
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      campaign_id: string;
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      campaign_name: string;
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      is_authorized: boolean;
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      expires_at: string | null;
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      remaining_seconds: number | null;
+    }[]
+  > => {
     const response = await fetch(
-      `${API_URL}/api/v2/streamer/campaigns/authorization-status`,
+      `${API_URL}/streamer/campaigns/authorization-status`,
       {
         credentials: "include",
       },

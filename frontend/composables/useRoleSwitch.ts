@@ -55,13 +55,13 @@ export const useRoleSwitch = () => {
       toast.add({
         title: "Rôle changé",
         description: `Vous êtes maintenant en mode ${newRole}`,
-        color: "green",
+        color: "success",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.add({
         title: "Erreur",
         description: error.data?.message || "Impossible de changer de rôle",
-        color: "red",
+        color: "error",
       });
 
       // Revenir à l'état précédent en cas d'erreur

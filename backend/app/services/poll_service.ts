@@ -1,12 +1,12 @@
 import { DateTime } from 'luxon'
 import logger from '@adonisjs/core/services/logger'
-import PollInstance from '#models/poll_instance'
-import PollChannelLink from '#models/poll_channel_link'
-import Streamer from '#models/streamer'
-import CampaignMembership from '#models/campaign_membership'
-import TwitchPollService from './twitch_poll_service.js'
-import WebSocketService from './websocket_service.js'
-import TwitchApiService from './twitch_api_service.js'
+import { pollInstance as PollInstance } from '#models/poll_instance'
+import { pollChannelLink as PollChannelLink } from '#models/poll_channel_link'
+import { streamer as Streamer } from '#models/streamer'
+import { campaignMembership as CampaignMembership } from '#models/campaign_membership'
+import { twitchPollService as TwitchPollService } from './twitch_poll_service.js'
+import { webSocketService as WebSocketService } from './websocket_service.js'
+import { twitchApiService as TwitchApiService } from './twitch_api_service.js'
 
 export interface PollAggregatedVotes {
   pollInstanceId: string
@@ -15,7 +15,7 @@ export interface PollAggregatedVotes {
   percentages: Record<string, number>
 }
 
-export default class PollService {
+class PollService {
   private readonly twitchPollService: TwitchPollService
   private readonly webSocketService: WebSocketService
   private readonly twitchApiService: TwitchApiService
@@ -53,13 +53,14 @@ export default class PollService {
     await this.refreshStreamersInfo(streamers)
     logger.info({
       message: 'Streamer compatibility snapshot before poll creation',
-      poll_instance_id: pollInstance.id,
-      compatible_count: streamers.filter((s) => this.isStreamerCompatible(s)).length,
-      incompatible_streamers: streamers
+      pollInstanceId: pollInstance.id,
+      compatibleCount: streamers.filter((s) => this.isStreamerCompatible(s)).length,
+      incompatibleStreamers: streamers
         .filter((s) => !this.isStreamerCompatible(s))
         .map((s) => ({
           streamer_id: s.id,
-          display_name: s.twitchDisplayName,
+          displayName: s.twitchDisplayName,
+
           broadcaster_type: s.broadcasterType || 'UNKNOWN',
         })),
     })
@@ -68,8 +69,9 @@ export default class PollService {
     for (const streamer of streamers) {
       if (!this.isStreamerCompatible(streamer)) {
         logger.warn(
-          `Skipping poll creation for ${streamer.twitchDisplayName}: broadcasterType=${streamer.broadcasterType ||
-            'unknown'}`
+          `Skipping poll creation for ${streamer.twitchDisplayName}: broadcasterType=${
+            streamer.broadcasterType || 'unknown'
+          }`
         )
         continue
       }
@@ -106,17 +108,17 @@ export default class PollService {
 
         logger.info({
           message: 'Poll created for streamer',
-          poll_instance_id: pollInstance.id,
+          pollInstanceId: pollInstance.id,
           streamer_id: streamer.id,
-          streamer_display_name: streamer.twitchDisplayName,
-          twitch_poll_id: poll.id,
+          streamerDisplayName: streamer.twitchDisplayName,
+          twitchPollId: poll.id,
         })
       } catch (error) {
         logger.error({
           message: 'Failed to create poll for streamer',
-          poll_instance_id: pollInstance.id,
+          pollInstanceId: pollInstance.id,
           streamer_id: streamer.id,
-          streamer_display_name: streamer.twitchDisplayName,
+          streamerDisplayName: streamer.twitchDisplayName,
           error: error instanceof Error ? error.message : String(error),
         })
 
@@ -127,7 +129,7 @@ export default class PollService {
           logger.warn({
             message: 'Streamer deactivated due to invalid token',
             streamer_id: streamer.id,
-            streamer_display_name: streamer.twitchDisplayName,
+            streamerDisplayName: streamer.twitchDisplayName,
           })
         }
       }
@@ -173,7 +175,8 @@ export default class PollService {
           logger.info({
             message: 'Streamer info refreshed before polls',
             streamer_id: streamer.id,
-            streamer_display_name: streamer.twitchDisplayName,
+            streamerDisplayName: streamer.twitchDisplayName,
+
             broadcaster_type: newType || 'NONE',
           })
         }
@@ -226,12 +229,13 @@ export default class PollService {
 
     // Émettre l'événement de démarrage du poll
     this.webSocketService.emitPollStart({
-      poll_instance_id: pollId,
+      pollInstanceId: pollId,
       title: pollInstance.title,
       options: pollInstance.options,
-      duration_seconds: pollInstance.durationSeconds,
+      durationSeconds: pollInstance.durationSeconds,
+
       started_at: pollInstance.startedAt!.toISO()!,
-      ends_at: endsAt.toISO()!,
+      endsAt: endsAt.toISO()!,
     })
 
     // Fonction de polling
@@ -258,7 +262,7 @@ export default class PollService {
               (token) =>
                 this.twitchPollService.getPoll(
                   link.streamer.twitchUserId,
-                  link.twitchPollId,
+                  link.twitchPollId!,
                   token
                 ),
               async () => accessToken,
@@ -391,3 +395,5 @@ export default class PollService {
     }
   }
 }
+
+export { PollService as pollService }

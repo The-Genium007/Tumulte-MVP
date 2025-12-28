@@ -1,8 +1,10 @@
-import Campaign from '#models/campaign'
+import { campaign as Campaign } from '#models/campaign'
+import { inject } from '@adonisjs/core'
 
 /**
  * Repository pour gérer les campagnes
  */
+@inject()
 export class CampaignRepository {
   /**
    * Trouver une campagne par son ID
@@ -84,5 +86,3 @@ export class CampaignRepository {
     return Number(result[0]?.$extras?.total || 0)
   }
 }
-
-export default CampaignRepository

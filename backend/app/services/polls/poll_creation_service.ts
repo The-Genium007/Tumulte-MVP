@@ -1,12 +1,13 @@
 import { inject } from '@adonisjs/core'
+import app from '@adonisjs/core/services/app'
 import logger from '@adonisjs/core/services/logger'
 import { DateTime } from 'luxon'
-import PollInstance from '#models/poll_instance'
-import PollChannelLink from '#models/poll_channel_link'
-import Streamer from '#models/streamer'
-import CampaignMembership from '#models/campaign_membership'
-import TwitchPollService from '../twitch/twitch_poll_service.js'
-import TwitchApiService from '../twitch/twitch_api_service.js'
+import { pollInstance as PollInstance } from '#models/poll_instance'
+import { pollChannelLink as PollChannelLink } from '#models/poll_channel_link'
+import { streamer as Streamer } from '#models/streamer'
+import { campaignMembership as CampaignMembership } from '#models/campaign_membership'
+import { twitchPollService as TwitchPollService } from '../twitch/twitch_poll_service.js'
+import { twitchApiService as TwitchApiService } from '../twitch/twitch_api_service.js'
 
 /**
  * Service pour créer des polls Twitch pour tous les streamers d'une campagne
@@ -22,7 +23,16 @@ export class PollCreationService {
    * Crée des polls Twitch pour tous les streamers actifs d'une campagne
    */
   async createPollsOnTwitch(pollInstance: PollInstance): Promise<void> {
+    const startTime = Date.now()
     let streamers: Streamer[]
+
+    logger.info({
+      event: 'poll_creation_started',
+      pollInstanceId: pollInstance.id,
+      campaignId: pollInstance.campaignId,
+      title: pollInstance.title,
+      durationSeconds: pollInstance.durationSeconds,
+    })
 
     // Si le poll a une campagne, charger les membres ACTIFS ET AUTORISÉS de la campagne
     if (pollInstance.campaignId) {
@@ -42,97 +52,182 @@ export class PollCreationService {
       streamers = memberships.map((m) => m.streamer)
 
       const unauthorizedCount = allActiveMemberships.length - memberships.length
+      const unauthorizedStreamers = allActiveMemberships
+        .filter((am) => !memberships.find((m) => m.streamerId === am.streamerId))
+        .map((m) => m.streamerId)
 
       logger.info({
-        message: 'Authorization filter applied',
+        event: 'streamers_loaded',
+        pollInstanceId: pollInstance.id,
         campaign_id: pollInstance.campaignId,
-        total_active_members: allActiveMemberships.length,
-        authorized_members: memberships.length,
-        unauthorized_members: unauthorizedCount,
+        totalActiveMembers: allActiveMemberships.length,
+        authorizedMembers: memberships.length,
+        unauthorizedMembers: unauthorizedCount,
+        unauthorizedStreamerIds: unauthorizedStreamers,
       })
 
       if (unauthorizedCount > 0) {
-        logger.warn(
-          `${unauthorizedCount} active member(s) skipped due to missing poll authorization`
-        )
+        logger.warn({
+          event: 'streamers_skipped_unauthorized',
+          pollInstanceId: pollInstance.id,
+          campaign_id: pollInstance.campaignId,
+          count: unauthorizedCount,
+          streamerIds: unauthorizedStreamers,
+        })
       }
-
-      logger.info(
-        `Creating polls for ${streamers.length} authorized streamers in campaign ${pollInstance.campaignId}`
-      )
     } else {
       // Mode legacy : charger tous les streamers actifs
       streamers = await Streamer.query().where('is_active', true)
-      logger.info(`Creating polls for ${streamers.length} streamers (legacy mode)`)
+      logger.info({
+        event: 'streamers_loaded_legacy',
+        pollInstanceId: pollInstance.id,
+        count: streamers.length,
+      })
     }
 
     await this.refreshStreamersInfo(streamers)
+
+    const compatibleStreamers = streamers.filter((s) => this.isStreamerCompatible(s))
+    const incompatibleStreamers = streamers.filter((s) => !this.isStreamerCompatible(s))
+
     logger.info({
-      message: 'Streamer compatibility snapshot before poll creation',
-      poll_instance_id: pollInstance.id,
-      compatible_count: streamers.filter((s) => this.isStreamerCompatible(s)).length,
-      incompatible_streamers: streamers
-        .filter((s) => !this.isStreamerCompatible(s))
-        .map((s) => ({
-          streamer_id: s.id,
-          display_name: s.twitchDisplayName,
-          broadcaster_type: s.broadcasterType || 'UNKNOWN',
-        })),
+      event: 'streamer_compatibility_check',
+      pollInstanceId: pollInstance.id,
+      totalStreamers: streamers.length,
+      compatibleCount: compatibleStreamers.length,
+      incompatibleCount: incompatibleStreamers.length,
+      incompatibleDetails: incompatibleStreamers.map((s) => ({
+        streamer_id: s.id,
+        displayName: s.twitchDisplayName,
+        broadcaster_type: s.broadcasterType || 'UNKNOWN',
+      })),
     })
+
+    // Métriques de création
+    let apiPollsCreated = 0
+    let chatPollsCreated = 0
+    let pollCreationErrors = 0
 
     // Créer un poll pour chaque streamer compatible
     for (const streamer of streamers) {
       if (!this.isStreamerCompatible(streamer)) {
-        logger.warn(
-          `Skipping poll creation for ${streamer.twitchDisplayName}: broadcasterType=${streamer.broadcasterType || 'unknown'}`
-        )
+        logger.warn({
+          event: 'streamer_skipped_incompatible',
+          pollInstanceId: pollInstance.id,
+          streamer_id: streamer.id,
+          displayName: streamer.twitchDisplayName,
+          broadcaster_type: streamer.broadcasterType || 'unknown',
+        })
         continue
       }
 
       try {
-        const accessToken = await streamer.getDecryptedAccessToken()
+        const pollCreateStartTime = Date.now()
 
-        // Créer le poll via l'API Twitch
-        const poll = await this.twitchPollService.withTokenRefresh(
-          (token) =>
-            this.twitchPollService.createPoll(
-              streamer.twitchUserId,
-              token,
-              pollInstance.title,
-              pollInstance.options,
-              pollInstance.durationSeconds
-            ),
-          async () => accessToken,
-          await streamer.getDecryptedRefreshToken(),
-          async (newAccessToken, newRefreshToken) => {
-            await streamer.updateTokens(newAccessToken, newRefreshToken)
-          }
-        )
+        // Vérifier si le streamer peut utiliser l'API officielle des polls
+        if (this.canUseOfficialPolls(streamer)) {
+          // Affiliate ou Partner: utiliser l'API Twitch Polls
+          logger.info({
+            event: 'poll_creation_api_started',
+            pollInstanceId: pollInstance.id,
+            streamer_id: streamer.id,
+            displayName: streamer.twitchDisplayName,
+            broadcasterType: streamer.broadcasterType,
+          })
 
-        // Créer le lien en base
-        await PollChannelLink.create({
-          pollInstanceId: pollInstance.id,
-          streamerId: streamer.id,
-          twitchPollId: poll.id,
-          status: 'CREATED',
-          totalVotes: 0,
-          votesByOption: {},
-        })
+          const accessToken = await streamer.getDecryptedAccessToken()
 
-        logger.info({
-          message: 'Poll created for streamer',
-          poll_instance_id: pollInstance.id,
-          streamer_id: streamer.id,
-          streamer_display_name: streamer.twitchDisplayName,
-          twitch_poll_id: poll.id,
-        })
+          const poll = await this.twitchPollService.withTokenRefresh(
+            (token) =>
+              this.twitchPollService.createPoll(
+                streamer.twitchUserId,
+                token,
+                pollInstance.title,
+                pollInstance.options,
+                pollInstance.durationSeconds,
+                pollInstance.channelPointsEnabled,
+                pollInstance.channelPointsAmount
+              ),
+            async () => accessToken,
+            await streamer.getDecryptedRefreshToken(),
+            async (newAccessToken, newRefreshToken) => {
+              await streamer.updateTokens(newAccessToken, newRefreshToken)
+            }
+          )
+
+          // Créer le lien en base avec twitchPollId
+          await PollChannelLink.create({
+            pollInstanceId: pollInstance.id,
+            streamerId: streamer.id,
+            twitchPollId: poll.id,
+            status: 'CREATED',
+            totalVotes: 0,
+            votesByOption: {},
+          })
+
+          apiPollsCreated++
+
+          const duration = Date.now() - pollCreateStartTime
+          logger.info({
+            event: 'poll_created_api_success',
+            pollInstanceId: pollInstance.id,
+            streamer_id: streamer.id,
+            streamerDisplayName: streamer.twitchDisplayName,
+            twitchPollId: poll.id,
+            durationMs: duration,
+          })
+        } else {
+          // Non-affilié: utiliser le chat IRC
+          logger.info({
+            event: 'poll_creation_chat_started',
+            pollInstanceId: pollInstance.id,
+            streamer_id: streamer.id,
+            displayName: streamer.twitchDisplayName,
+            broadcasterType: streamer.broadcasterType || 'none',
+          })
+
+          const twitchChatService = await app.container.make('twitchChatService')
+          await twitchChatService.startChatPoll(
+            streamer.id,
+            pollInstance.id,
+            pollInstance.title,
+            pollInstance.options,
+            pollInstance.durationSeconds,
+            pollInstance.type
+          )
+
+          // Créer le lien en base SANS twitchPollId (mode chat)
+          await PollChannelLink.create({
+            pollInstanceId: pollInstance.id,
+            streamerId: streamer.id,
+            twitchPollId: null, // Pas de poll Twitch officiel
+            status: 'CREATED',
+            totalVotes: 0,
+            votesByOption: {},
+          })
+
+          chatPollsCreated++
+
+          const duration = Date.now() - pollCreateStartTime
+          logger.info({
+            event: 'poll_created_chat_success',
+            pollInstanceId: pollInstance.id,
+            streamer_id: streamer.id,
+            streamerDisplayName: streamer.twitchDisplayName,
+            durationMs: duration,
+          })
+        }
       } catch (error) {
+        pollCreationErrors++
+
         logger.error({
-          message: 'Failed to create poll for streamer',
-          poll_instance_id: pollInstance.id,
+          event: 'poll_creation_failed',
+          pollInstanceId: pollInstance.id,
           streamer_id: streamer.id,
-          streamer_display_name: streamer.twitchDisplayName,
+          streamerDisplayName: streamer.twitchDisplayName,
+          broadcasterType: streamer.broadcasterType,
           error: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
         })
 
         // Désactiver le streamer si le token est invalide
@@ -140,13 +235,31 @@ export class PollCreationService {
           streamer.isActive = false
           await streamer.save()
           logger.warn({
-            message: 'Streamer deactivated due to invalid token',
+            event: 'streamer_deactivated',
             streamer_id: streamer.id,
-            streamer_display_name: streamer.twitchDisplayName,
+            streamerDisplayName: streamer.twitchDisplayName,
+            reason: 'Invalid or expired token (UNAUTHORIZED)',
           })
         }
       }
     }
+
+    const totalDuration = Date.now() - startTime
+
+    // Log récapitulatif final
+    logger.info({
+      event: 'poll_creation_completed',
+      pollInstanceId: pollInstance.id,
+      campaignId: pollInstance.campaignId,
+      totalStreamers: streamers.length,
+      compatibleStreamers: compatibleStreamers.length,
+      apiPollsCreated,
+      chatPollsCreated,
+      totalPollsCreated: apiPollsCreated + chatPollsCreated,
+      errors: pollCreationErrors,
+      successRate: `${(((apiPollsCreated + chatPollsCreated) / compatibleStreamers.length) * 100).toFixed(1)}%`,
+      totalDurationMs: totalDuration,
+    })
   }
 
   /**
@@ -160,8 +273,8 @@ export class PollCreationService {
 
     logger.info({
       message: 'Terminating polls on Twitch',
-      poll_instance_id: pollInstance.id,
-      channel_links_count: channelLinks.length,
+      pollInstanceId: pollInstance.id,
+      channelLinksCount: channelLinks.length,
     })
 
     let successCount = 0
@@ -173,13 +286,14 @@ export class PollCreationService {
         // Si c'est un poll Twitch officiel (streamer affilié/partenaire)
         if (link.twitchPollId) {
           const accessToken = await link.streamer.getDecryptedAccessToken()
+          const twitchPollId = link.twitchPollId // Non-null à ce point grâce au if
 
           // Appeler l'API Twitch pour terminer le poll avec le statut TERMINATED
           await this.twitchPollService.withTokenRefresh(
             (token) =>
               this.twitchPollService.endPoll(
                 link.streamer.twitchUserId,
-                link.twitchPollId,
+                twitchPollId,
                 token,
                 'TERMINATED'
               ),
@@ -193,32 +307,33 @@ export class PollCreationService {
           successCount++
           logger.info({
             message: 'Poll terminated on Twitch',
-            poll_instance_id: pollInstance.id,
+            pollInstanceId: pollInstance.id,
             streamer_id: link.streamer.id,
-            streamer_display_name: link.streamer.twitchDisplayName,
-            twitch_poll_id: link.twitchPollId,
+            streamerDisplayName: link.streamer.twitchDisplayName,
+            twitchPollId: link.twitchPollId,
           })
         } else {
           // C'est un poll en mode chat (streamer non-affilié)
           // Déconnecter le client IRC
-          await this.twitchChatService.disconnectFromPoll(link.streamerId, pollInstance.id)
+          const twitchChatService = await app.container.make('twitchChatService')
+          await twitchChatService.disconnectFromPoll(link.streamerId, pollInstance.id)
 
           successCount++
           logger.info({
             message: 'Chat poll terminated (IRC disconnected)',
-            poll_instance_id: pollInstance.id,
+            pollInstanceId: pollInstance.id,
             streamer_id: link.streamer.id,
-            streamer_display_name: link.streamer.twitchDisplayName,
+            streamerDisplayName: link.streamer.twitchDisplayName,
           })
         }
       } catch (error) {
         failureCount++
         logger.error({
           message: 'Failed to terminate poll',
-          poll_instance_id: pollInstance.id,
+          pollInstanceId: pollInstance.id,
           streamer_id: link.streamer.id,
-          streamer_display_name: link.streamer.twitchDisplayName,
-          twitch_poll_id: link.twitchPollId || 'chat-mode',
+          streamerDisplayName: link.streamer.twitchDisplayName,
+          twitchPollId: link.twitchPollId || 'chat-mode',
           error: error instanceof Error ? error.message : String(error),
         })
       }
@@ -226,9 +341,9 @@ export class PollCreationService {
 
     logger.info({
       message: 'Polls termination completed',
-      poll_instance_id: pollInstance.id,
-      success_count: successCount,
-      failure_count: failureCount,
+      pollInstanceId: pollInstance.id,
+      successCount: successCount,
+      failureCount: failureCount,
     })
   }
 
@@ -257,9 +372,19 @@ export class PollCreationService {
   }
 
   /**
-   * Vérifie si le streamer est compatible (Affiliate ou Partner)
+   * Vérifie si le streamer est compatible (tous les types sont supportés)
+   * - Affiliate/Partner: via l'API Twitch Polls
+   * - Non-affilié (vide ou autre): via le chat IRC
    */
-  private isStreamerCompatible(streamer: Streamer): boolean {
+  private isStreamerCompatible(_streamer: Streamer): boolean {
+    // Tous les streamers sont compatibles maintenant
+    return true
+  }
+
+  /**
+   * Vérifie si le streamer peut utiliser l'API Twitch Polls (Affiliate ou Partner)
+   */
+  private canUseOfficialPolls(streamer: Streamer): boolean {
     const type = (streamer.broadcasterType || '').toLowerCase()
     return type === 'affiliate' || type === 'partner'
   }
@@ -301,7 +426,8 @@ export class PollCreationService {
           logger.info({
             message: 'Streamer info refreshed before polls',
             streamer_id: streamer.id,
-            streamer_display_name: streamer.twitchDisplayName,
+            streamerDisplayName: streamer.twitchDisplayName,
+
             broadcaster_type: newType || 'NONE',
           })
         }
@@ -314,3 +440,4 @@ export class PollCreationService {
 }
 
 export default PollCreationService
+export { PollCreationService as pollCreationService }

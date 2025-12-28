@@ -7,7 +7,8 @@ import { storeToRefs } from "pinia";
  */
 export function useAuth() {
   const authStore = useAuthStore();
-  const { user, loading, isAuthenticated, isMJ, isStreamer } = storeToRefs(authStore);
+  const { user, loading, isAuthenticated, isMJ, isStreamer } =
+    storeToRefs(authStore);
 
   return {
     user,

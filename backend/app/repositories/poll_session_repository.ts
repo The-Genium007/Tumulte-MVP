@@ -1,4 +1,4 @@
-import PollSession from '#models/poll_session'
+import { pollSession as PollSession } from '#models/poll_session'
 
 export class PollSessionRepository {
   async findById(id: string): Promise<PollSession | null> {
@@ -45,3 +45,4 @@ export class PollSessionRepository {
 }
 
 export default PollSessionRepository
+export { PollSessionRepository as pollSessionRepository }

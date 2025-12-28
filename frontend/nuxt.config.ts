@@ -7,8 +7,7 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      apiBase: process.env.NUXT_PUBLIC_API_BASE || "http://localhost:3334",
-      apiVersion: process.env.NUXT_PUBLIC_API_VERSION || "v2",
+      apiBase: process.env.NUXT_PUBLIC_API_BASE || "http://localhost:3333",
     },
   },
 
@@ -101,5 +100,11 @@ export default defineNuxtConfig({
   typescript: {
     strict: true,
     typeCheck: false,
+  },
+
+  vite: {
+    optimizeDeps: {
+      exclude: ["@adonisjs/transmit-client"],
+    },
   },
 });

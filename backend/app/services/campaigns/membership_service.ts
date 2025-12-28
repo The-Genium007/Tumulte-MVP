@@ -1,6 +1,6 @@
 import { inject } from '@adonisjs/core'
 import logger from '@adonisjs/core/services/logger'
-import CampaignMembership from '#models/campaign_membership'
+import { campaignMembership as CampaignMembership } from '#models/campaign_membership'
 import { DateTime } from 'luxon'
 
 /**
@@ -28,6 +28,9 @@ export class MembershipService {
       status: 'PENDING',
       invitedAt: DateTime.now(),
     })
+
+    // Précharger la relation campaign pour le DTO
+    await membership.load('campaign')
 
     logger.info({ campaignId, streamerId }, 'Streamer invited to campaign')
 
@@ -155,4 +158,4 @@ export class MembershipService {
   }
 }
 
-export default MembershipService
+export { MembershipService as membershipService }

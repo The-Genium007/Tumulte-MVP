@@ -64,6 +64,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<{
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   'update:modelValue': [value: boolean]
   close: []
 }>()
@@ -74,6 +75,7 @@ const modalClasses = computed(() => {
 })
 
 const close = () => {
+   
   emit('update:modelValue', false)
   emit('close')
 }

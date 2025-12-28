@@ -1,6 +1,7 @@
 import tmi from 'tmi.js'
 import logger from '@adonisjs/core/services/logger'
-import RedisService from '#services/cache/redis_service'
+import { redisService as RedisService } from '#services/cache/redis_service'
+import { twitchAuthService as TwitchAuthService } from '#services/auth/twitch_auth_service'
 
 interface ChatPollClient {
   client: tmi.Client
@@ -8,19 +9,83 @@ interface ChatPollClient {
   streamerLogin: string
   pollInstanceId: string
   optionsCount: number
+  pollType: 'STANDARD' | 'UNIQUE'
   active: boolean
 }
 
 /**
  * Service pour gérer les sondages via le chat Twitch (fallback pour non-affiliés)
  */
-export default class TwitchChatService {
+class TwitchChatService {
   private clients: Map<string, ChatPollClient> = new Map()
   private redisService: RedisService
   private inMemoryVotes: Map<string, Record<string, number>> = new Map()
+  private twitchAuthService: InstanceType<typeof TwitchAuthService>
 
   constructor(redisService: RedisService) {
     this.redisService = redisService
+    this.twitchAuthService = new TwitchAuthService()
+  }
+
+  /**
+   * Valide et rafraîchit automatiquement le token d'accès si nécessaire
+   * @returns Le token d'accès valide (potentiellement rafraîchi)
+   */
+  private async ensureValidAccessToken(streamerId: string): Promise<string> {
+    const { streamer: streamerModel } = await import('#models/streamer')
+    const streamer = await streamerModel.find(streamerId)
+
+    if (!streamer) {
+      throw new Error(`Streamer ${streamerId} not found`)
+    }
+
+    // Récupérer le token décrypté
+    let accessToken = await streamer.getDecryptedAccessToken()
+
+    // Valider le token
+    const isValid = await this.twitchAuthService.validateToken(accessToken)
+
+    if (!isValid) {
+      logger.info({
+        event: 'token_invalid_refreshing',
+        streamer_id: streamerId,
+        message: 'Access token invalid, attempting refresh',
+      })
+
+      try {
+        // Récupérer le refresh token
+        const refreshToken = await streamer.getDecryptedRefreshToken()
+
+        if (!refreshToken) {
+          throw new Error('No refresh token available')
+        }
+
+        // Rafraîchir le token
+        const refreshedTokens = await this.twitchAuthService.refreshAccessToken(refreshToken)
+
+        // Mettre à jour le streamer avec les nouveaux tokens
+        await streamer.updateTokens(refreshedTokens.access_token, refreshedTokens.refresh_token)
+
+        accessToken = refreshedTokens.access_token
+
+        logger.info({
+          event: 'token_refreshed_successfully',
+          streamer_id: streamerId,
+          message: 'Access token refreshed successfully',
+        })
+      } catch (error) {
+        logger.error({
+          event: 'token_refresh_failed',
+          streamer_id: streamerId,
+          error: error instanceof Error ? error.message : String(error),
+        })
+        throw new Error(
+          `Failed to refresh access token for streamer ${streamerId}: ${error instanceof Error ? error.message : String(error)}`
+        )
+      }
+    }
+
+    return accessToken
   }
 
   /**
@@ -31,7 +96,8 @@ export default class TwitchChatService {
     streamerLogin: string,
     accessToken: string,
     pollInstanceId: string,
-    optionsCount: number
+    optionsCount: number,
+    pollType: 'STANDARD' | 'UNIQUE' = 'STANDARD'
   ): Promise<void> {
     const key = `${streamerId}:${pollInstanceId}`
 
@@ -62,6 +128,7 @@ export default class TwitchChatService {
       streamerLogin,
       pollInstanceId,
       optionsCount,
+      pollType,
       active: true,
     }
 
@@ -78,7 +145,7 @@ export default class TwitchChatService {
       logger.info({
         event: 'chat_client_connected',
         streamer_id: streamerId,
-        poll_instance_id: pollInstanceId,
+        pollInstanceId: pollInstanceId,
         address,
         port,
       })
@@ -88,7 +155,7 @@ export default class TwitchChatService {
       logger.warn({
         event: 'chat_client_disconnected',
         streamer_id: streamerId,
-        poll_instance_id: pollInstanceId,
+        pollInstanceId: pollInstanceId,
         reason,
       })
     })
@@ -97,7 +164,7 @@ export default class TwitchChatService {
       logger.info({
         event: 'chat_client_reconnecting',
         streamer_id: streamerId,
-        poll_instance_id: pollInstanceId,
+        pollInstanceId: pollInstanceId,
       })
     })
 
@@ -106,19 +173,78 @@ export default class TwitchChatService {
       await client.connect()
       logger.info({
         event: 'chat_poll_started',
-        poll_instance_id: pollInstanceId,
+        pollInstanceId: pollInstanceId,
         streamer_id: streamerId,
-        options_count: optionsCount,
+        optionsCount: optionsCount,
       })
     } catch (error) {
       logger.error({
         event: 'chat_connection_failed',
-        poll_instance_id: pollInstanceId,
+        pollInstanceId: pollInstanceId,
         streamer_id: streamerId,
         error: error instanceof Error ? error.message : String(error),
       })
       this.clients.delete(key)
       throw error
+    }
+  }
+
+  /**
+   * Démarre un sondage via le chat pour un streamer non-affilié
+   */
+  async startChatPoll(
+    streamerId: string,
+    pollInstanceId: string,
+    title: string,
+    options: string[],
+    durationSeconds: number,
+    pollType: 'STANDARD' | 'UNIQUE' = 'STANDARD'
+  ): Promise<void> {
+    // Récupérer les infos du streamer depuis la base
+    const { streamer: streamerModel } = await import('#models/streamer')
+    const streamer = await streamerModel.find(streamerId)
+
+    if (!streamer) {
+      throw new Error(`Streamer ${streamerId} not found`)
+    }
+
+    // Valider et rafraîchir le token si nécessaire
+    const accessToken = await this.ensureValidAccessToken(streamerId)
+
+    // Connecter le client IRC
+    await this.connectToPoll(
+      streamerId,
+      streamer.twitchLogin,
+      accessToken,
+      pollInstanceId,
+      options.length,
+      pollType
+    )
+
+    // Envoyer le message d'annonce du sondage dans le chat
+    const key = `${streamerId}:${pollInstanceId}`
+    const chatClient = this.clients.get(key)
+
+    if (chatClient && chatClient.client) {
+      const pollMessage = `📊 SONDAGE: ${title} | Votez avec !1, !2, !3... (${durationSeconds}s)`
+      const optionsMessage = options.map((opt, i) => `!${i + 1} = ${opt}`).join(' | ')
+
+      try {
+        await chatClient.client.say(streamer.twitchLogin, pollMessage)
+        await chatClient.client.say(streamer.twitchLogin, optionsMessage)
+        logger.info({
+          message: 'Chat poll announcement sent',
+          pollInstanceId,
+          streamer_id: streamerId,
+        })
+      } catch (error) {
+        logger.error({
+          message: 'Failed to send chat poll announcement',
+          pollInstanceId,
+          streamer_id: streamerId,
+          error: error instanceof Error ? error.message : String(error),
+        })
+      }
     }
   }
 
@@ -133,8 +259,8 @@ export default class TwitchChatService {
       logger.warn(`No IRC client found for ${key}`)
       logger.warn({
         event: 'active_clients_list',
-        active_keys: Array.from(this.clients.keys()),
-        looking_for: key,
+        activeKeys: Array.from(this.clients.keys()),
+        lookingFor: key,
       })
       return
     }
@@ -152,13 +278,13 @@ export default class TwitchChatService {
       logger.info({
         event: 'chat_client_disconnected',
         streamer_id: streamerId,
-        poll_instance_id: pollInstanceId,
+        pollInstanceId: pollInstanceId,
       })
     } catch (error) {
       logger.error({
         event: 'chat_disconnect_failed',
         streamer_id: streamerId,
-        poll_instance_id: pollInstanceId,
+        pollInstanceId: pollInstanceId,
         error: error instanceof Error ? error.message : String(error),
       })
       throw error
@@ -166,35 +292,100 @@ export default class TwitchChatService {
   }
 
   /**
-   * Envoie un message dans le chat d'un streamer
+   * Envoie un message dans le chat d'un streamer (utilise le client existant ou en crée un temporaire)
    */
   async sendMessage(streamerId: string, message: string): Promise<void> {
+    // Essayer d'utiliser un client existant
     const chatClient = this.getClientByStreamerId(streamerId)
-    if (!chatClient) {
-      throw new Error(`No active IRC client for streamer ${streamerId}`)
+
+    if (chatClient) {
+      // Client existant trouvé, l'utiliser
+      const lines = message.split('\n')
+
+      try {
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i].trim()
+          if (line.length === 0) continue
+
+          await chatClient.client.say(`#${chatClient.streamerLogin}`, line)
+
+          // Petit délai entre les messages pour éviter le rate limiting
+          if (i < lines.length - 1) {
+            await new Promise((resolve) => setTimeout(resolve, 50))
+          }
+        }
+      } catch (error) {
+        logger.error({
+          event: 'chat_message_failed',
+          streamer_id: streamerId,
+          error: error instanceof Error ? error.message : String(error),
+        })
+      }
+    } else {
+      // Pas de client existant, envoyer via connexion temporaire
+      await this.sendOneTimeMessage(streamerId, message)
+    }
+  }
+
+  /**
+   * Envoie un message ponctuel via une connexion IRC temporaire
+   */
+  private async sendOneTimeMessage(streamerId: string, message: string): Promise<void> {
+    const { streamer: streamerModel } = await import('#models/streamer')
+    const streamer = await streamerModel.find(streamerId)
+
+    if (!streamer) {
+      throw new Error(`Streamer ${streamerId} not found`)
     }
 
-    const lines = message.split('\n')
+    // Valider et rafraîchir le token si nécessaire
+    const accessToken = await this.ensureValidAccessToken(streamerId)
+
+    // Créer un client temporaire
+    const client = new tmi.Client({
+      options: { debug: false },
+      connection: {
+        reconnect: false,
+        secure: true,
+      },
+      identity: {
+        username: streamer.twitchLogin,
+        password: `oauth:${accessToken}`,
+      },
+      channels: [streamer.twitchLogin],
+    })
 
     try {
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i].trim()
-        if (line.length === 0) continue
+      await client.connect()
 
-        await chatClient.client.say(`#${chatClient.streamerLogin}`, line)
-
-        // Petit délai entre les messages pour éviter le rate limiting
-        if (i < lines.length - 1) {
-          await new Promise((resolve) => setTimeout(resolve, 50))
+      const lines = message.split('\n')
+      for (const line of lines) {
+        const trimmed = line.trim()
+        if (trimmed.length > 0) {
+          await client.say(streamer.twitchLogin, trimmed)
+          await new Promise((resolve) => setTimeout(resolve, 100))
         }
       }
+
+      await client.disconnect()
+
+      logger.debug({
+        event: 'one_time_message_sent',
+        streamer_id: streamerId,
+        message,
+      })
     } catch (error) {
       logger.error({
-        event: 'chat_message_failed',
+        event: 'one_time_message_failed',
         streamer_id: streamerId,
         error: error instanceof Error ? error.message : String(error),
       })
-      // Ne pas throw pour éviter de bloquer le reste du système
+
+      try {
+        await client.disconnect()
+      } catch {
+        // Ignorer les erreurs de déconnexion
+      }
     }
   }
 
@@ -202,7 +393,7 @@ export default class TwitchChatService {
    * Handler pour les messages IRC reçus
    */
   private async handleMessage(
-    channel: string,
+    _channel: string,
     tags: tmi.ChatUserstate,
     message: string,
     chatClient: ChatPollClient
@@ -214,40 +405,108 @@ export default class TwitchChatService {
     const optionIndex = this.parseVote(message, chatClient.optionsCount)
     if (optionIndex === null) return
 
-    // Incrémenter le vote
-    try {
-      await this.incrementVote(chatClient.pollInstanceId, chatClient.streamerId, optionIndex)
+    const username = tags.username || 'anonymous'
 
-      logger.debug({
-        event: 'chat_vote_received',
-        poll_instance_id: chatClient.pollInstanceId,
-        streamer_id: chatClient.streamerId,
-        option_index: optionIndex,
-        username: tags.username,
-      })
+    try {
+      if (chatClient.pollType === 'UNIQUE') {
+        // Mode vote UNIQUE (simple) - un seul vote par utilisateur
+        const hasVoted = await this.redisService.hasUserVoted(
+          chatClient.pollInstanceId,
+          chatClient.streamerId,
+          username
+        )
+
+        if (hasVoted) {
+          // L'utilisateur a déjà voté - vérifier s'il change son vote
+          const previousVote = await this.redisService.getUserVote(
+            chatClient.pollInstanceId,
+            chatClient.streamerId,
+            username
+          )
+
+          if (previousVote !== null && previousVote !== optionIndex) {
+            // Changement de vote
+            await this.redisService.changeUserVote(
+              chatClient.pollInstanceId,
+              chatClient.streamerId,
+              username,
+              previousVote,
+              optionIndex
+            )
+
+            logger.debug({
+              event: 'chat_vote_changed',
+              pollInstanceId: chatClient.pollInstanceId,
+              streamer_id: chatClient.streamerId,
+              username,
+              oldOption: previousVote,
+              newOption: optionIndex,
+            })
+          } else {
+            // Même vote - ignorer
+            logger.debug({
+              event: 'chat_vote_duplicate_ignored',
+              pollInstanceId: chatClient.pollInstanceId,
+              streamer_id: chatClient.streamerId,
+              username,
+              optionIndex,
+            })
+          }
+          return
+        }
+
+        // Premier vote de cet utilisateur
+        await this.redisService.recordUserVote(
+          chatClient.pollInstanceId,
+          chatClient.streamerId,
+          username,
+          optionIndex
+        )
+        await this.incrementVote(chatClient.pollInstanceId, chatClient.streamerId, optionIndex)
+
+        logger.debug({
+          event: 'chat_vote_unique_received',
+          pollInstanceId: chatClient.pollInstanceId,
+          streamer_id: chatClient.streamerId,
+          username,
+          optionIndex,
+        })
+      } else {
+        // Mode vote STANDARD (multiple) - votes illimités
+        await this.incrementVote(chatClient.pollInstanceId, chatClient.streamerId, optionIndex)
+
+        logger.debug({
+          event: 'chat_vote_standard_received',
+          pollInstanceId: chatClient.pollInstanceId,
+          streamer_id: chatClient.streamerId,
+          username,
+          optionIndex,
+        })
+      }
     } catch (error) {
       logger.error({
         event: 'chat_vote_increment_failed',
-        poll_instance_id: chatClient.pollInstanceId,
+        pollInstanceId: chatClient.pollInstanceId,
         streamer_id: chatClient.streamerId,
-        option_index: optionIndex,
+        username,
+        optionIndex,
         error: error instanceof Error ? error.message : String(error),
       })
     }
   }
 
   /**
-   * Parse un message de vote (1, 2, 3, etc.)
+   * Parse un message de vote (!1, !2, !3, etc. ou 1, 2, 3...)
    * @returns Index de l'option (0-indexed) ou null si invalide
    */
   private parseVote(message: string, optionsCount: number): number | null {
     const trimmed = message.trim()
 
-    // Regex strict : uniquement un chiffre
-    const match = /^([0-9]+)$/.exec(trimmed)
+    // Accepter les formats: !1, !2, !3 OU 1, 2, 3
+    const match = /^!?([0-9]+)$/.exec(trimmed)
     if (!match) return null
 
-    const voteNumber = parseInt(match[1], 10)
+    const voteNumber = Number.parseInt(match[1], 10)
 
     // Valider que c'est une option valide (1-indexed)
     if (voteNumber < 1 || voteNumber > optionsCount) return null
@@ -270,7 +529,7 @@ export default class TwitchChatService {
     } catch (redisError) {
       logger.error({
         event: 'redis_error_fallback_memory',
-        poll_instance_id: pollInstanceId,
+        pollInstanceId: pollInstanceId,
         streamer_id: streamerId,
         error: redisError instanceof Error ? redisError.message : String(redisError),
       })
@@ -287,7 +546,7 @@ export default class TwitchChatService {
    * Récupère un client par streamerId (cherche dans tous les polls actifs)
    */
   private getClientByStreamerId(streamerId: string): ChatPollClient | null {
-    for (const [key, client] of this.clients.entries()) {
+    for (const [_key, client] of this.clients.entries()) {
       if (client.streamerId === streamerId && client.active) {
         return client
       }
@@ -304,7 +563,7 @@ export default class TwitchChatService {
     } catch (redisError) {
       logger.warn({
         event: 'redis_unavailable_using_memory',
-        poll_instance_id: pollInstanceId,
+        pollInstanceId: pollInstanceId,
         streamer_id: streamerId,
       })
       const key = `${pollInstanceId}:${streamerId}`
@@ -312,3 +571,5 @@ export default class TwitchChatService {
     }
   }
 }
+
+export { TwitchChatService as twitchChatService }

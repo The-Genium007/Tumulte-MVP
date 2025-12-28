@@ -1,12 +1,12 @@
 import { inject } from '@adonisjs/core'
 import type { HttpContext } from '@adonisjs/core/http'
+import logger from '@adonisjs/core/services/logger'
 import { PollInstanceRepository } from '#repositories/poll_instance_repository'
 import { CampaignRepository } from '#repositories/campaign_repository'
 import { PollLifecycleService } from '#services/polls/poll_lifecycle_service'
 import { PollAggregationService } from '#services/polls/poll_aggregation_service'
 import { PollInstanceDto } from '#dtos/polls/poll_instance_dto'
 import { PollResultsDto } from '#dtos/polls/poll_results_dto'
-import { validateRequest } from '#middleware/validate_middleware'
 import { launchPollSchema } from '#validators/polls/launch_poll_validator'
 
 /**
@@ -26,17 +26,56 @@ export default class PollsController {
    * POST /api/v2/mj/campaigns/:campaignId/polls/launch
    */
   async launch({ auth, params, request, response }: HttpContext) {
-    await validateRequest(launchPollSchema)({ request, response } as HttpContext, async () => {})
+    // Valider les données de la requête
+    const validationResult = await launchPollSchema.safeParseAsync(request.all())
+
+    if (!validationResult.success) {
+      return response.badRequest({
+        error: 'Validation failed',
+        details: validationResult.error.errors.map((err) => ({
+          field: err.path.join('.'),
+          message: err.message,
+          code: err.code,
+        })),
+      })
+    }
 
     const userId = auth.user!.id
 
     // Vérifier l'ownership de la campagne
     const isOwner = await this.campaignRepository.isOwner(params.campaignId, userId)
     if (!isOwner) {
+      logger.warn({
+        event: 'poll_launch_forbidden',
+        userId,
+        campaignId: params.campaignId,
+        reason: 'User is not campaign owner',
+      })
       return response.forbidden({ error: 'Not authorized to access this campaign' })
     }
 
-    const data = request.only(['title', 'options', 'durationSeconds', 'templateId'])
+    const data = request.only([
+      'title',
+      'options',
+      'durationSeconds',
+      'templateId',
+      'type',
+      'channelPointsEnabled',
+      'channelPointsAmount',
+    ])
+
+    logger.info({
+      event: 'poll_launch_initiated',
+      userId,
+      campaignId: params.campaignId,
+      title: data.title,
+      optionsCount: data.options.length,
+      durationSeconds: data.durationSeconds || 60,
+      templateId: data.templateId || null,
+      type: data.type || 'STANDARD',
+      channelPointsEnabled: data.channelPointsEnabled || false,
+      channelPointsAmount: data.channelPointsAmount || null,
+    })
 
     // Créer l'instance de poll
     const pollInstance = await this.pollInstanceRepository.create({
@@ -46,6 +85,16 @@ export default class PollsController {
       title: data.title,
       options: data.options,
       durationSeconds: data.durationSeconds || 60,
+      type: data.type || 'STANDARD',
+      channelPointsEnabled: data.channelPointsEnabled || false,
+      channelPointsAmount: data.channelPointsAmount || null,
+    })
+
+    logger.info({
+      event: 'poll_instance_created',
+      pollInstanceId: pollInstance.id,
+      campaignId: params.campaignId,
+      status: pollInstance.status,
     })
 
     // Lancer le poll (création Twitch + démarrage polling)
@@ -55,12 +104,27 @@ export default class PollsController {
       // Recharger pour avoir les données à jour
       const updatedInstance = await this.pollInstanceRepository.findByIdWithLinks(pollInstance.id)
 
+      logger.info({
+        event: 'poll_launch_successful',
+        pollInstanceId: pollInstance.id,
+        campaignId: params.campaignId,
+        channelLinksCount: updatedInstance!.channelLinks?.length || 0,
+      })
+
       return response.created({
         data: PollInstanceDto.fromModel(updatedInstance!),
       })
     } catch (error) {
-      // En cas d'erreur, marquer le poll comme failed
-      await this.pollInstanceRepository.updateStatus(pollInstance.id, 'FAILED')
+      logger.error({
+        event: 'poll_launch_failed',
+        pollInstanceId: pollInstance.id,
+        campaignId: params.campaignId,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      })
+
+      // En cas d'erreur, marquer le poll comme ended
+      await this.pollInstanceRepository.setEnded(pollInstance.id)
 
       return response.internalServerError({
         error: 'Failed to launch poll',

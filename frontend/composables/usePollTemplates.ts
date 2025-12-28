@@ -39,6 +39,7 @@ export const usePollTemplates = () => {
       label: string;
       title: string;
       options: string[];
+      // eslint-disable-next-line @typescript-eslint/naming-convention
       duration_seconds: number;
     },
     campaignId?: string,
@@ -73,6 +74,7 @@ export const usePollTemplates = () => {
       label: string;
       title: string;
       options: string[];
+      // eslint-disable-next-line @typescript-eslint/naming-convention
       duration_seconds: number;
     }>,
     campaignId?: string,
@@ -135,6 +137,7 @@ export const usePollTemplates = () => {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
+         
         body: JSON.stringify({ template_id: templateId }),
       });
       if (!response.ok) throw new Error("Failed to launch poll");

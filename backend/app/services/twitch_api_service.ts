@@ -3,20 +3,22 @@ import logger from '@adonisjs/core/services/logger'
 
 interface TwitchChannel {
   id: string
-  broadcaster_login: string
-  display_name: string
-  thumbnail_url: string
+  broadcasterLogin: string
+  displayName: string
+  thumbnailUrl: string
 }
 
 interface TwitchUserInfo {
   id: string
   login: string
-  display_name: string
+  displayName: string
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   profile_image_url: string
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   broadcaster_type: string
 }
 
-export default class TwitchApiService {
+class TwitchApiService {
   private appAccessToken: string | null = null
   private tokenExpiry: number = 0
 
@@ -44,9 +46,9 @@ export default class TwitchApiService {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: new URLSearchParams({
-          client_id: clientId,
-          client_secret: clientSecret,
-          grant_type: 'client_credentials',
+          clientId: clientId,
+          clientSecret: clientSecret,
+          grantType: 'client_credentials',
         }),
       })
 
@@ -55,7 +57,9 @@ export default class TwitchApiService {
       }
 
       const data = (await response.json()) as {
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         access_token: string
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         expires_in: number
       }
 
@@ -83,7 +87,8 @@ export default class TwitchApiService {
     Array<{
       id: string
       login: string
-      display_name: string
+      displayName: string
+      // eslint-disable-next-line @typescript-eslint/naming-convention
       profile_image_url: string
     }>
   > {
@@ -114,9 +119,10 @@ export default class TwitchApiService {
 
       return data.data.map((channel: TwitchChannel) => ({
         id: channel.id,
-        login: channel.broadcaster_login,
-        display_name: channel.display_name,
-        profile_image_url: channel.thumbnail_url,
+        login: channel.broadcasterLogin,
+        displayName: channel.displayName,
+
+        profile_image_url: channel.thumbnailUrl,
       }))
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
@@ -165,3 +171,5 @@ export default class TwitchApiService {
     return results
   }
 }
+
+export { TwitchApiService as twitchApiService }

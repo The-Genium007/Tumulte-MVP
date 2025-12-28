@@ -1,5 +1,5 @@
 import logger from '@adonisjs/core/services/logger'
-import TwitchChatService from './twitch_chat_service.js'
+import { twitchChatService as TwitchChatService } from './twitch_chat_service.js'
 
 interface CountdownSchedule {
   pollInstanceId: string
@@ -11,7 +11,7 @@ interface CountdownSchedule {
 /**
  * Service pour gérer les messages de countdown automatiques dans les polls chat
  */
-export default class TwitchChatCountdownService {
+class TwitchChatCountdownService {
   private schedules: Map<string, CountdownSchedule> = new Map()
   private chatService: TwitchChatService
 
@@ -62,10 +62,10 @@ export default class TwitchChatCountdownService {
 
     logger.info({
       event: 'countdown_scheduled',
-      poll_instance_id: pollInstanceId,
-      duration_seconds: durationSeconds,
-      streamers_count: streamerIds.length,
-      messages_count: timeouts.length,
+      pollInstanceId: pollInstanceId,
+      durationSeconds: durationSeconds,
+      streamersCount: streamerIds.length,
+      messagesCount: timeouts.length,
     })
   }
 
@@ -77,7 +77,7 @@ export default class TwitchChatCountdownService {
     if (!schedule) {
       logger.warn({
         event: 'countdown_not_found',
-        poll_instance_id: pollInstanceId,
+        pollInstanceId: pollInstanceId,
       })
       return
     }
@@ -88,8 +88,8 @@ export default class TwitchChatCountdownService {
 
     logger.info({
       event: 'countdown_cancelled',
-      poll_instance_id: pollInstanceId,
-      timeouts_cleared: schedule.timeouts.length,
+      pollInstanceId: pollInstanceId,
+      timeoutsCleared: schedule.timeouts.length,
     })
   }
 
@@ -107,9 +107,11 @@ export default class TwitchChatCountdownService {
     logger.debug({
       event: 'countdown_message_sent',
       message,
-      streamers_count: streamerIds.length,
-      success_count: successCount,
-      failure_count: failureCount,
+      streamersCount: streamerIds.length,
+      successCount: successCount,
+      failureCount: failureCount,
     })
   }
 }
+
+export { TwitchChatCountdownService as twitchChatCountdownService }

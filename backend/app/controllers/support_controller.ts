@@ -1,12 +1,10 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import logger from '@adonisjs/core/services/logger'
 import env from '#start/env'
-import Campaign from '#models/campaign'
-import CampaignMembership from '#models/campaign_membership'
-import SupportReportService, {
-  type BackendContext,
-  type FrontendContext,
-} from '#services/support_report_service'
+import { campaign as Campaign } from '#models/campaign'
+import { campaignMembership as CampaignMembership } from '#models/campaign_membership'
+import { supportReportService as SupportReportService } from '#services/support_report_service'
+import type { BackendContext, FrontendContext } from '#services/support_report_service'
 
 export default class SupportController {
   private readonly supportReportService = new SupportReportService()

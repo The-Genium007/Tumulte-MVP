@@ -1,6 +1,6 @@
 import { test } from '@japa/runner'
 import { CampaignRepository } from '#repositories/campaign_repository'
-import Campaign from '#models/campaign'
+import { campaign as Campaign } from '#models/campaign'
 import testUtils from '@adonisjs/core/services/test_utils'
 
 test.group('CampaignRepository', (group) => {

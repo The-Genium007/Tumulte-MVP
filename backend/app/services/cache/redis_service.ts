@@ -7,6 +7,7 @@ import logger from '@adonisjs/core/services/logger'
  */
 export class RedisService {
   // TTL par défaut en secondes
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   private readonly DEFAULT_TTL = 300 // 5 minutes
 
   /**
@@ -200,6 +201,13 @@ export class RedisService {
   }
 
   /**
+   * Clé Redis pour tracker les utilisateurs qui ont voté (vote UNIQUE)
+   */
+  private getChatVotersKey(pollInstanceId: string, streamerId: string): string {
+    return `poll:chat:voters:${pollInstanceId}:${streamerId}`
+  }
+
+  /**
    * Incrémente le compteur de votes pour une option (mode chat)
    */
   async incrementChatVote(
@@ -242,7 +250,7 @@ export class RedisService {
       // Convertir les valeurs string en number
       const result: Record<string, number> = {}
       for (const [option, count] of Object.entries(votes)) {
-        result[option] = parseInt(count as string, 10)
+        result[option] = Number.parseInt(count as string, 10)
       }
 
       return result
@@ -288,15 +296,122 @@ export class RedisService {
   }
 
   /**
+   * Vérifie si un utilisateur a déjà voté (mode UNIQUE)
+   */
+  async hasUserVoted(
+    pollInstanceId: string,
+    streamerId: string,
+    username: string
+  ): Promise<boolean> {
+    try {
+      const key = this.getChatVotersKey(pollInstanceId, streamerId)
+      const voted = await redis.hexists(key, username.toLowerCase())
+      return voted === 1
+    } catch (error) {
+      logger.error({ error, pollInstanceId, streamerId, username }, 'Failed to check user vote')
+      return false
+    }
+  }
+
+  /**
+   * Enregistre le vote d'un utilisateur (mode UNIQUE)
+   */
+  async recordUserVote(
+    pollInstanceId: string,
+    streamerId: string,
+    username: string,
+    optionIndex: number
+  ): Promise<void> {
+    try {
+      const key = this.getChatVotersKey(pollInstanceId, streamerId)
+      await redis.hset(key, username.toLowerCase(), optionIndex.toString())
+
+      logger.debug({ pollInstanceId, streamerId, username, optionIndex }, 'Recorded user vote')
+    } catch (error) {
+      logger.error(
+        { error, pollInstanceId, streamerId, username, optionIndex },
+        'Failed to record user vote'
+      )
+      throw error
+    }
+  }
+
+  /**
+   * Récupère le vote d'un utilisateur (mode UNIQUE)
+   */
+  async getUserVote(
+    pollInstanceId: string,
+    streamerId: string,
+    username: string
+  ): Promise<number | null> {
+    try {
+      const key = this.getChatVotersKey(pollInstanceId, streamerId)
+      const vote = await redis.hget(key, username.toLowerCase())
+      return vote ? Number.parseInt(vote, 10) : null
+    } catch (error) {
+      logger.error({ error, pollInstanceId, streamerId, username }, 'Failed to get user vote')
+      return null
+    }
+  }
+
+  /**
+   * Change le vote d'un utilisateur (mode UNIQUE - changement de choix)
+   */
+  async changeUserVote(
+    pollInstanceId: string,
+    streamerId: string,
+    username: string,
+    oldOptionIndex: number,
+    newOptionIndex: number
+  ): Promise<void> {
+    try {
+      // Décrémenter l'ancienne option
+      const votesKey = this.getChatVotesKey(pollInstanceId, streamerId)
+      await redis.hincrby(votesKey, oldOptionIndex.toString(), -1)
+
+      // Incrémenter la nouvelle option
+      await redis.hincrby(votesKey, newOptionIndex.toString(), 1)
+
+      // Mettre à jour le choix de l'utilisateur
+      const votersKey = this.getChatVotersKey(pollInstanceId, streamerId)
+      await redis.hset(votersKey, username.toLowerCase(), newOptionIndex.toString())
+
+      logger.debug(
+        { pollInstanceId, streamerId, username, oldOptionIndex, newOptionIndex },
+        'Changed user vote'
+      )
+    } catch (error) {
+      logger.error(
+        { error, pollInstanceId, streamerId, username, oldOptionIndex, newOptionIndex },
+        'Failed to change user vote'
+      )
+      throw error
+    }
+  }
+
+  /**
+   * Nettoie les votants d'un poll
+   */
+  async deleteChatVoters(pollInstanceId: string, streamerId: string): Promise<void> {
+    try {
+      const key = this.getChatVotersKey(pollInstanceId, streamerId)
+      await redis.del(key)
+
+      logger.debug({ pollInstanceId, streamerId }, 'Deleted chat voters')
+    } catch (error) {
+      logger.error({ error, pollInstanceId, streamerId }, 'Failed to delete chat voters')
+    }
+  }
+
+  /**
    * Utilitaire: vérifier la connexion Redis
    */
-  async ping(): Promise<boolean> {
+  async ping(): Promise<void> {
     try {
       await redis.ping()
-      return true
     } catch (error) {
       logger.error({ error }, 'Redis ping failed')
-      return false
+      throw new Error('Redis connection failed')
     }
   }
 
@@ -320,3 +435,4 @@ export class RedisService {
 }
 
 export default RedisService
+export { RedisService as redisService }

@@ -11,7 +11,7 @@ function parseVote(message: string, optionsCount: number): number | null {
   const match = /^([0-9]+)$/.exec(trimmed)
   if (!match) return null
 
-  const voteNumber = parseInt(match[1], 10)
+  const voteNumber = Number.parseInt(match[1], 10)
   if (voteNumber < 1 || voteNumber > optionsCount) return null
 
   return voteNumber - 1 // 0-indexed
@@ -69,12 +69,13 @@ async function testRedisVoteCounting() {
   try {
     // Test 1: Vérifier la connexion Redis
     console.log('Test 1: Connexion Redis...')
-    const connected = await redisService.ping()
-    if (!connected) {
+    try {
+      await redisService.ping()
+      console.log('✅ Redis connecté\n')
+    } catch {
       console.log('❌ Redis non disponible')
       return false
     }
-    console.log('✅ Redis connecté\n')
 
     // Test 2: Incrémenter les votes
     console.log('Test 2: Incrémentation des votes...')

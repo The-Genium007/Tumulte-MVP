@@ -21,7 +21,7 @@
             to="https://github.com/The-Genium007/Tumulte/releases"
             target="_blank"
             variant="ghost"
-            color="gray"
+            color="neutral"
             size="sm"
             icon="i-lucide-scroll-text"
             trailing-icon="i-lucide-external-link"
@@ -96,6 +96,11 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useAppVersion } from '~/composables/useAppVersion'
+import { useServiceStatus } from '~/composables/useServiceStatus'
+import { useGitHubStats } from '~/composables/useGitHubStats'
+
 const { version } = useAppVersion()
 const { status } = useServiceStatus()
 const { stats, loading: githubLoading, error: githubError } = useGitHubStats()

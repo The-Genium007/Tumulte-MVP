@@ -34,17 +34,13 @@
               <p class="text-sm text-gray-400 mb-1">Rôle</p>
               <UBadge
                 :label="user?.role === 'MJ' ? 'Maître du Jeu' : 'Streamer'"
-                :color="user?.role === 'MJ' ? 'purple' : 'primary'"
+                :color="user?.role === 'MJ' ? 'primary' : 'info'"
                 variant="soft"
               />
             </div>
             <div>
               <p class="text-sm text-gray-400 mb-1">Email</p>
               <p class="text-lg font-semibold text-white">{{ user?.email || 'Non renseigné' }}</p>
-            </div>
-            <div>
-              <p class="text-sm text-gray-400 mb-1">Créé le</p>
-              <p class="text-lg font-semibold text-white">{{ formatDate(user?.created_at) }}</p>
             </div>
           </div>
 
@@ -123,7 +119,7 @@
                     <p class="text-sm text-gray-400">Intégration parties Roll20</p>
                   </div>
                 </div>
-                <UBadge label="Bientôt" color="blue" variant="soft" />
+                <UBadge label="Bientôt" color="info" variant="soft" />
               </div>
             </div>
 
@@ -138,7 +134,7 @@
                     <p class="text-sm text-gray-400">Synchronisation Foundry</p>
                   </div>
                 </div>
-                <UBadge label="Bientôt" color="blue" variant="soft" />
+                <UBadge label="Bientôt" color="info" variant="soft" />
               </div>
             </div>
 
@@ -153,7 +149,7 @@
                     <p class="text-sm text-gray-400">Compte Alchimie RPG</p>
                   </div>
                 </div>
-                <UBadge label="Bientôt" color="blue" variant="soft" />
+                <UBadge label="Bientôt" color="info" variant="soft" />
               </div>
             </div>
 
@@ -168,7 +164,7 @@
                     <p class="text-sm text-gray-400">Contrôle OBS Studio</p>
                   </div>
                 </div>
-                <UBadge label="Bientôt" color="blue" variant="soft" />
+                <UBadge label="Bientôt" color="info" variant="soft" />
               </div>
             </div>
           </div>
@@ -385,11 +381,16 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuth } from '@/composables/useAuth'
+import { useSettings } from '@/composables/useSettings'
+
 definePageMeta({
   layout: "authenticated" as const,
 });
 
-const router = useRouter()
+const _router = useRouter()
 const toast = useToast()
 const { user, logout } = useAuth()
 const { revokeTwitchAccess, deleteAccount } = useSettings()
@@ -404,21 +405,12 @@ const revokeLoading = ref(false)
 const goBackToDashboard = () => {
   // Rediriger vers le dashboard approprié selon le rôle
   if (user.value?.role === 'MJ') {
-    router.push('/mj')
+    _router.push('/mj')
   } else if (user.value?.role === 'STREAMER') {
-    router.push('/streamer')
+    _router.push('/streamer')
   } else {
-    router.push('/')
+    _router.push('/')
   }
-}
-
-const formatDate = (date: string | undefined) => {
-  if (!date) return 'N/A'
-  return new Date(date).toLocaleDateString('fr-FR', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  })
 }
 
 const handleRevokeTwitch = () => {
@@ -435,10 +427,10 @@ const confirmRevokeTwitch = async () => {
       color: 'success',
     })
     showRevokeModal.value = false
-  } catch (error: any) {
+  } catch (error: unknown) {
     toast.add({
       title: 'Erreur',
-      description: error.message,
+      description: (error as Error).message,
       color: 'error',
     })
   } finally {
@@ -462,11 +454,11 @@ const handleDeleteAccount = async () => {
     showDeleteModal.value = false
     // Déconnecter et rediriger
     await logout()
-    router.push('/')
-  } catch (error: any) {
+    _router.push('/')
+  } catch (error: unknown) {
     toast.add({
       title: 'Erreur',
-      description: error.message,
+      description: (error as Error).message,
       color: 'error',
     })
   } finally {
