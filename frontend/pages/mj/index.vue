@@ -2,9 +2,9 @@
   <div class="min-h-screen py-6">
     <div class="space-y-6">
         <!-- Campaigns and Streamers Grid -->
-        <div v-if="campaignsLoaded && campaigns.length > 0" class="grid grid-cols-3 gap-6">
-          <!-- Campaign List (2/3) -->
-          <UCard class="col-span-2">
+        <div v-if="campaignsLoaded && campaigns.length > 0" class="grid grid-cols-2 gap-6">
+          <!-- Campaign List (1/2) -->
+          <UCard class="flex flex-col">
             <template #header>
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3">
@@ -26,7 +26,7 @@
               </div>
             </template>
 
-            <div class="space-y-2">
+            <div class="space-y-2 overflow-y-auto max-h-[calc(3*5.5rem+1rem)]">
               <div
                 v-for="campaign in sortedCampaigns"
                 :key="campaign.id"
@@ -65,8 +65,8 @@
             </div>
           </UCard>
 
-          <!-- Streamers List (1/3) -->
-          <UCard class="col-span-1">
+          <!-- Streamers List (1/2) -->
+          <UCard class="flex flex-col">
             <template #header>
               <div class="flex items-center gap-3">
                 <UIcon name="i-lucide-users" class="size-6 text-primary-500" />
@@ -116,7 +116,7 @@
             </div>
 
             <!-- Streamers List -->
-            <div v-else class="space-y-3">
+            <div v-else class="space-y-3 overflow-y-auto max-h-[calc(3*5.5rem+1rem)]">
               <div
                 v-for="streamer in selectedCampaignStreamers"
                 :key="streamer.id"
