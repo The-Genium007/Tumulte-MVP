@@ -73,14 +73,35 @@ app.container.bind('pollAggregationService', async () => {
   return app.container.make(mod.pollAggregationService)
 })
 
-app.container.bind('pollPollingService', async () => {
-  const mod = await import('#services/polls/poll_polling_service')
-  return app.container.make(mod.PollPollingService)
+app.container.bind('pollResultsAnnouncementService', async () => {
+  const mod = await import('#services/polls/poll_results_announcement_service')
+  return app.container.make(mod.pollResultsAnnouncementService)
 })
 
-app.container.bind('pollLifecycleService', async () => {
+app.container.singleton('pollPollingService', async () => {
+  const mod = await import('#services/polls/poll_polling_service')
+  const pollChannelLinkRepository = await app.container.make('pollChannelLinkRepository')
+  const twitchPollService = await app.container.make('twitchPollService')
+  const webSocketService = await app.container.make('webSocketService')
+  return new mod.PollPollingService(pollChannelLinkRepository, twitchPollService, webSocketService)
+})
+
+app.container.singleton('pollLifecycleService', async () => {
   const mod = await import('#services/polls/poll_lifecycle_service')
-  return app.container.make(mod.pollLifecycleService)
+  const pollInstanceRepository = await app.container.make('pollInstanceRepository')
+  const pollCreationService = await app.container.make('pollCreationService')
+  const pollPollingService = await app.container.make('pollPollingService')
+  const pollAggregationService = await app.container.make('pollAggregationService')
+  const webSocketService = await app.container.make('webSocketService')
+  const pollResultsAnnouncementService = await app.container.make('pollResultsAnnouncementService')
+  return new mod.pollLifecycleService(
+    pollInstanceRepository,
+    pollCreationService,
+    pollPollingService,
+    pollAggregationService,
+    webSocketService,
+    pollResultsAnnouncementService
+  )
 })
 
 /*
@@ -188,6 +209,9 @@ declare module '@adonisjs/core/types' {
     >
     pollAggregationService: InstanceType<
       typeof import('#services/polls/poll_aggregation_service').PollAggregationService
+    >
+    pollResultsAnnouncementService: InstanceType<
+      typeof import('#services/polls/poll_results_announcement_service').PollResultsAnnouncementService
     >
     pollPollingService: InstanceType<
       typeof import('#services/polls/poll_polling_service').PollPollingService

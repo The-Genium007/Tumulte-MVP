@@ -1,4 +1,3 @@
-import { inject } from '@adonisjs/core'
 import { DateTime } from 'luxon'
 import logger from '@adonisjs/core/services/logger'
 import app from '@adonisjs/core/services/app'
@@ -14,10 +13,15 @@ type PollAggregationService = {
 
 /**
  * Service pour gérer le polling (récupération périodique des votes)
+ *
+ * NOTE: Pas de @inject() car c'est un singleton avec injection manuelle dans container.ts
  */
-@inject()
 export class PollPollingService {
+  private static instanceCount = 0
+  private instanceId: string
   private pollingIntervals: Map<string, NodeJS.Timeout> = new Map()
+  private pollingActive: Set<string> = new Set() // Nouveau : flag actif/inactif pour chaque poll
+  private cyclesInProgress: Set<string> = new Set() // Nouveau : prévient le chevauchement de cycles
   private sentMessages: Map<string, Set<string>> = new Map() // pollInstanceId -> Set de messages envoyés
   private aggregationService?: PollAggregationService
   private onPollEndCallback?: (pollInstance: PollInstance) => Promise<void>
@@ -27,7 +31,15 @@ export class PollPollingService {
     private pollChannelLinkRepository: PollChannelLinkRepository,
     private twitchPollService: TwitchPollService,
     private webSocketService: WebSocketService
-  ) {}
+  ) {
+    PollPollingService.instanceCount++
+    this.instanceId = `PPS-${PollPollingService.instanceCount}-${Date.now()}`
+    logger.info({
+      event: 'poll_polling_service_constructor',
+      instanceId: this.instanceId,
+      totalInstances: PollPollingService.instanceCount,
+    })
+  }
 
   /**
    * Configure le service d'agrégation (évite la dépendance circulaire)
@@ -68,10 +80,14 @@ export class PollPollingService {
       logger.warn({
         event: 'polling_already_running',
         pollInstanceId: pollId,
+        instanceId: this.instanceId,
         message: 'Stopping existing polling before starting new one',
       })
       this.stopPolling(pollId)
     }
+
+    // NOUVEAU : Marquer le polling comme actif
+    this.pollingActive.add(pollId)
 
     // Calculer la date de fin
     const endsAt = pollInstance.startedAt!.plus({ seconds: pollInstance.durationSeconds })
@@ -80,6 +96,7 @@ export class PollPollingService {
     logger.info({
       event: 'polling_started',
       pollInstanceId: pollId,
+      instanceId: this.instanceId,
       campaignId: pollInstance.campaignId,
       durationSeconds: pollInstance.durationSeconds,
       startedAt: pollInstance.startedAt!.toISO(),
@@ -110,15 +127,80 @@ export class PollPollingService {
 
     // Fonction de polling
     const poll = async () => {
+      logger.info({
+        event: 'polling_cycle_start',
+        pollInstanceId: pollId,
+        instanceId: this.instanceId,
+        checks: {
+          isActive: this.pollingActive.has(pollId),
+          hasInterval: this.pollingIntervals.has(pollId),
+          hasCycleInProgress: this.cyclesInProgress.has(pollId),
+        },
+      })
+
+      // ====== NIVEAU 1 : Vérification active flag (PREMIÈRE LIGNE) ======
+      if (!this.pollingActive.has(pollId)) {
+        logger.debug({
+          event: 'polling_cycle_skipped_inactive',
+          pollInstanceId: pollId,
+          instanceId: this.instanceId,
+          reason: 'Polling marked as inactive',
+        })
+        return
+      }
+
+      // ====== NIVEAU 2 : Vérification interval toujours présent ======
+      if (!this.pollingIntervals.has(pollId)) {
+        logger.debug({
+          event: 'polling_cycle_skipped_no_interval',
+          pollInstanceId: pollId,
+          instanceId: this.instanceId,
+          reason: 'Interval was cleared',
+        })
+        return
+      }
+
+      // ====== NIVEAU 3 : Prévenir chevauchement de cycles ======
+      if (this.cyclesInProgress.has(pollId)) {
+        logger.warn({
+          event: 'polling_cycle_overlapped',
+          pollInstanceId: pollId,
+          reason: 'Previous cycle still running, skipping this cycle',
+        })
+        return
+      }
+
+      this.cyclesInProgress.add(pollId)
+
       const cycleStartTime = Date.now()
       pollingCycleCount++
 
       try {
+        // ====== NIVEAU 4 : Re-vérifier active avant chaque section async ======
+        if (!this.pollingActive.has(pollId)) {
+          logger.debug({
+            event: 'polling_stopped_during_cycle',
+            pollInstanceId: pollId,
+            cycle: pollingCycleCount,
+          })
+          return
+        }
+
         const now = DateTime.now()
         const remainingSeconds = Math.round(endsAt.diff(now, 'seconds').seconds)
 
         // Récupérer tous les channel links pour ce poll (nécessaire pour les messages)
         const channelLinks = await this.pollChannelLinkRepository.findByPollInstance(pollId)
+
+        // ====== NIVEAU 5 : Re-vérifier active après chaque await majeur ======
+        if (!this.pollingActive.has(pollId)) {
+          logger.debug({
+            event: 'polling_stopped_after_channel_fetch',
+            pollInstanceId: pollId,
+            cycle: pollingCycleCount,
+          })
+          return
+        }
 
         // Vérifier si le poll est terminé
         if (now >= endsAt) {
@@ -155,6 +237,16 @@ export class PollPollingService {
 
         // Mettre à jour chaque channel link
         for (const link of channelLinks) {
+          // ====== NIVEAU 6 : Vérifier active dans les boucles ======
+          if (!this.pollingActive.has(pollId)) {
+            logger.debug({
+              event: 'polling_stopped_during_link_processing',
+              pollInstanceId: pollId,
+              cycle: pollingCycleCount,
+            })
+            return
+          }
+
           try {
             const pollFetchStart = Date.now()
 
@@ -264,6 +356,16 @@ export class PollPollingService {
           }
         }
 
+        // ====== NIVEAU 7 : Vérifier active avant les opérations finales ======
+        if (!this.pollingActive.has(pollId)) {
+          logger.debug({
+            event: 'polling_stopped_before_messages',
+            pollInstanceId: pollId,
+            cycle: pollingCycleCount,
+          })
+          return
+        }
+
         // Envoyer les messages automatiques dans le chat
         await this.sendAutomaticChatMessages(
           pollId,
@@ -300,15 +402,25 @@ export class PollPollingService {
           error: error instanceof Error ? error.message : String(error),
           stack: error instanceof Error ? error.stack : undefined,
         })
+      } finally {
+        // ====== CRITIQUE : Toujours nettoyer le flag de cycle en cours ======
+        this.cyclesInProgress.delete(pollId)
       }
     }
 
-    // Lancer le premier poll immédiatement
-    await poll()
-
-    // Puis toutes les 3 secondes
+    // IMPORTANT : Créer l'interval AVANT de lancer le premier poll
+    // pour que stopPolling() puisse le trouver même si appelé pendant le premier poll
     const interval = setInterval(poll, 3000)
     this.pollingIntervals.set(pollId, interval)
+
+    // Lancer le premier poll immédiatement (sans await pour ne pas bloquer)
+    poll().catch((error) => {
+      logger.error({
+        event: 'initial_poll_error',
+        pollInstanceId: pollId,
+        error: error instanceof Error ? error.message : String(error),
+      })
+    })
 
     logger.info({
       event: 'polling_interval_configured',
@@ -422,16 +534,46 @@ export class PollPollingService {
    * Arrête le polling pour un poll instance
    */
   stopPolling(pollInstanceId: string): void {
+    logger.info({
+      event: 'stop_polling_called',
+      pollInstanceId,
+      instanceId: this.instanceId,
+      beforeState: {
+        hadInterval: this.pollingIntervals.has(pollInstanceId),
+        wasActive: this.pollingActive.has(pollInstanceId),
+        hadCycleInProgress: this.cyclesInProgress.has(pollInstanceId),
+        allActivePolls: Array.from(this.pollingActive),
+        allIntervals: Array.from(this.pollingIntervals.keys()),
+      },
+    })
+
+    // 1. Marquer comme inactif IMMÉDIATEMENT (avant tout autre nettoyage)
+    this.pollingActive.delete(pollInstanceId)
+
+    // 2. Arrêter l'interval
     const interval = this.pollingIntervals.get(pollInstanceId)
     if (interval) {
       clearInterval(interval)
       this.pollingIntervals.delete(pollInstanceId)
-
-      // Nettoyer les messages envoyés pour ce poll
-      this.sentMessages.delete(pollInstanceId)
-
-      logger.info(`Polling stopped for poll instance ${pollInstanceId}`)
     }
+
+    // 3. Nettoyer les cycles en cours
+    this.cyclesInProgress.delete(pollInstanceId)
+
+    // 4. Nettoyer les messages envoyés
+    this.sentMessages.delete(pollInstanceId)
+
+    logger.info({
+      event: 'polling_stopped',
+      pollInstanceId,
+      instanceId: this.instanceId,
+      hadInterval: !!interval,
+      afterState: {
+        hasInterval: this.pollingIntervals.has(pollInstanceId),
+        isActive: this.pollingActive.has(pollInstanceId),
+        hasCycleInProgress: this.cyclesInProgress.has(pollInstanceId),
+      },
+    })
   }
 
   /**

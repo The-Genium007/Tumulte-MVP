@@ -1,4 +1,4 @@
-import { inject } from '@adonisjs/core'
+import app from '@adonisjs/core/services/app'
 import logger from '@adonisjs/core/services/logger'
 import { pollInstance as PollInstance } from '#models/poll_instance'
 import { PollInstanceRepository } from '#repositories/poll_instance_repository'
@@ -6,18 +6,21 @@ import { PollCreationService } from './poll_creation_service.js'
 import { PollPollingService } from './poll_polling_service.js'
 import { PollAggregationService } from './poll_aggregation_service.js'
 import { webSocketService as WebSocketService } from '../websocket/websocket_service.js'
+import { pollResultsAnnouncementService as PollResultsAnnouncementService } from './poll_results_announcement_service.js'
 
 /**
  * Service pour gérer le cycle de vie des polls (start, cancel, end)
+ *
+ * NOTE: Pas de @inject() car c'est un singleton avec injection manuelle dans container.ts
  */
-@inject()
 export class PollLifecycleService {
   constructor(
     private pollInstanceRepository: PollInstanceRepository,
     private pollCreationService: PollCreationService,
     private pollPollingService: PollPollingService,
     private pollAggregationService: PollAggregationService,
-    private webSocketService: WebSocketService
+    private webSocketService: WebSocketService,
+    private pollResultsAnnouncementService: PollResultsAnnouncementService
   ) {
     // Configurer les callbacks pour éviter la dépendance circulaire
     this.pollPollingService.setAggregationService(this.pollAggregationService)
@@ -77,6 +80,10 @@ export class PollLifecycleService {
     // Envoyer le message d'annulation dans tous les chats
     await this.pollPollingService.sendCancellationMessage(pollInstanceId)
 
+    // Arrêter le countdown
+    const countdownService = await app.container.make('twitchChatCountdownService')
+    countdownService.cancelCountdown(pollInstanceId)
+
     // Arrêter le polling
     this.pollPollingService.stopPolling(pollInstanceId)
 
@@ -131,6 +138,13 @@ export class PollLifecycleService {
 
     // Émettre l'événement WebSocket de fin
     this.webSocketService.emitPollEnd(pollInstanceId, aggregated)
+
+    // Annoncer les résultats dans le chat
+    await this.pollResultsAnnouncementService.announceResults(
+      pollInstance,
+      aggregated,
+      false // not cancelled
+    )
 
     logger.info(
       { pollInstanceId, totalVotes: aggregated.totalVotes },

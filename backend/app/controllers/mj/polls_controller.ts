@@ -1,24 +1,24 @@
 import { inject } from '@adonisjs/core'
 import type { HttpContext } from '@adonisjs/core/http'
 import logger from '@adonisjs/core/services/logger'
+import app from '@adonisjs/core/services/app'
 import { PollInstanceRepository } from '#repositories/poll_instance_repository'
 import { CampaignRepository } from '#repositories/campaign_repository'
-import { PollLifecycleService } from '#services/polls/poll_lifecycle_service'
-import { PollAggregationService } from '#services/polls/poll_aggregation_service'
 import { PollInstanceDto } from '#dtos/polls/poll_instance_dto'
 import { PollResultsDto } from '#dtos/polls/poll_results_dto'
 import { launchPollSchema } from '#validators/polls/launch_poll_validator'
 
 /**
  * Contrôleur pour le lancement et le contrôle des polls (MJ)
+ *
+ * NOTE: pollLifecycleService et pollAggregationService sont résolus via container
+ * car ce sont des singletons sans @inject()
  */
 @inject()
 export default class PollsController {
   constructor(
     private pollInstanceRepository: PollInstanceRepository,
-    private campaignRepository: CampaignRepository,
-    private pollLifecycleService: PollLifecycleService,
-    private pollAggregationService: PollAggregationService
+    private campaignRepository: CampaignRepository
   ) {}
 
   /**
@@ -99,7 +99,8 @@ export default class PollsController {
 
     // Lancer le poll (création Twitch + démarrage polling)
     try {
-      await this.pollLifecycleService.launchPoll(pollInstance.id)
+      const pollLifecycleService = await app.container.make('pollLifecycleService')
+      await pollLifecycleService.launchPoll(pollInstance.id)
 
       // Recharger pour avoir les données à jour
       const updatedInstance = await this.pollInstanceRepository.findByIdWithLinks(pollInstance.id)
@@ -155,7 +156,8 @@ export default class PollsController {
     }
 
     try {
-      await this.pollLifecycleService.cancelPoll(params.id)
+      const pollLifecycleService = await app.container.make('pollLifecycleService')
+      await pollLifecycleService.cancelPoll(params.id)
 
       // Recharger pour avoir les données à jour
       const updatedInstance = await this.pollInstanceRepository.findByIdWithLinks(params.id)
@@ -192,7 +194,8 @@ export default class PollsController {
     }
 
     // Récupérer les résultats agrégés
-    const aggregated = await this.pollAggregationService.getAggregatedVotesWithCache(params.id)
+    const pollAggregationService = await app.container.make('pollAggregationService')
+    const aggregated = await pollAggregationService.getAggregatedVotesWithCache(params.id)
 
     return response.ok({
       data: PollResultsDto.fromAggregated(pollInstance, aggregated),
@@ -278,7 +281,8 @@ export default class PollsController {
     }
 
     // Récupérer les résultats agrégés en temps réel
-    const aggregated = await this.pollAggregationService.getAggregatedVotes(params.id)
+    const pollAggregationService = await app.container.make('pollAggregationService')
+    const aggregated = await pollAggregationService.getAggregatedVotes(params.id)
 
     return response.ok({
       data: {
