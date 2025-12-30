@@ -68,39 +68,49 @@
             <div class="space-y-3">
               <div
                 v-for="status in authorizationStatuses"
-                :key="status.campaign_id"
+                :key="status.campaignId"
                 class="flex items-center justify-between p-4 rounded-lg border"
-                :class="status.is_authorized ? 'border-green-500/50 bg-green-500/5' : 'border-gray-700 bg-gray-800/30'"
+                :class="status.isAuthorized ? 'border-green-500/50 bg-green-500/5' : 'border-gray-700 bg-gray-800/30'"
               >
                 <!-- Campaign name -->
                 <div class="flex-1">
-                  <h3 class="text-lg font-semibold text-white">{{ status.campaign_name }}</h3>
+                  <h3 class="text-lg font-semibold text-white">{{ status.campaignName }}</h3>
                 </div>
 
                 <!-- Authorization button/status -->
                 <div class="flex items-center gap-3">
                   <UButton
-                    v-if="!status.is_authorized"
+                    v-if="!status.isAuthorized"
                     color="primary"
                     size="lg"
                     icon="i-lucide-shield-check"
                     label="Autoriser pour 12 heures"
-                    @click="handleAuthorize(status.campaign_id)"
+                    @click="handleAuthorize(status.campaignId)"
                   />
                   <template v-else>
-                    <UBadge color="success" variant="soft" size="lg" class="px-4 py-2">
+                    <!-- Permanent badge for owners -->
+                    <UBadge v-if="status.isOwner" color="primary" variant="soft" size="lg" class="px-4 py-2">
                       <div class="flex items-center gap-2">
-                        <UIcon name="i-lucide-clock" class="size-4" />
-                        <span class="font-mono text-base">{{ formatTime(status.remaining_seconds || 0) }}</span>
+                        <UIcon name="i-lucide-infinity" class="size-4" />
+                        <span class="font-semibold text-base">Permanent</span>
                       </div>
                     </UBadge>
+                    <!-- Countdown timer for members -->
+                    <UBadge v-else color="success" variant="soft" size="lg" class="px-4 py-2">
+                      <div class="flex items-center gap-2">
+                        <UIcon name="i-lucide-clock" class="size-4" />
+                        <span class="font-mono text-base">{{ formatTime(status.remainingSeconds || 0) }}</span>
+                      </div>
+                    </UBadge>
+                    <!-- Hide revoke button for owners -->
                     <UButton
+                      v-if="!status.isOwner"
                       color="error"
                       variant="soft"
                       size="lg"
                       icon="i-lucide-shield-off"
                       label="Révoquer"
-                      @click="handleRevokeAuth(status.campaign_id)"
+                      @click="handleRevokeAuth(status.campaignId)"
                     />
                   </template>
                 </div>
@@ -235,7 +245,7 @@
 import { ref, onMounted, onUnmounted } from "vue";
 import { useAuth } from "@/composables/useAuth";
 import { useCampaigns } from "@/composables/useCampaigns";
-import type { AuthorizationStatus } from "@/types/api";
+import type { AuthorizationStatus } from "@/types/index";
 
 definePageMeta({
   layout: "authenticated" as const,
@@ -346,11 +356,11 @@ const startCountdown = () => {
 
   countdownInterval = setInterval(() => {
     authorizationStatuses.value = authorizationStatuses.value.map(status => {
-      if (status.is_authorized && status.remaining_seconds !== null && status.remaining_seconds > 0) {
+      if (status.isAuthorized && status.remainingSeconds !== null && status.remainingSeconds > 0) {
         return {
           ...status,
-           
-          remaining_seconds: status.remaining_seconds - 1
+
+          remainingSeconds: status.remainingSeconds - 1
         };
       }
       return status;
@@ -358,7 +368,7 @@ const startCountdown = () => {
 
     // Vérifier si des autorisations ont expiré
     const hasExpired = authorizationStatuses.value.some(
-      status => status.is_authorized && status.remaining_seconds === 0
+      status => status.isAuthorized && status.remainingSeconds === 0
     );
 
     if (hasExpired) {

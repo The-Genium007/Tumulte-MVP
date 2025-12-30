@@ -85,10 +85,11 @@ export default class AuthorizationController {
     const memberships = await this.membershipRepository.findActiveByStreamer(streamer.id)
 
     const statuses = memberships.map((membership) => ({
-      campaign_id: membership.campaignId,
+      campaignId: membership.campaignId,
       campaignName: membership.campaign.name,
+      isOwner: membership.campaign.ownerId === streamer.userId,
       isAuthorized: membership.isPollAuthorizationActive,
-      expires_at: membership.pollAuthorizationExpiresAt?.toISO() || null,
+      expiresAt: membership.pollAuthorizationExpiresAt?.toISO() || null,
       remainingSeconds: membership.authorizationRemainingSeconds,
     }))
 

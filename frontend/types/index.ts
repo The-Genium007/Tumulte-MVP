@@ -112,6 +112,7 @@ export interface StreamerSearchResult {
 export interface AuthorizationStatus {
   campaignId: string;
   campaignName: string;
+  isOwner?: boolean;
   isAuthorized: boolean;
   expiresAt: string | null;
   remainingSeconds: number | null;

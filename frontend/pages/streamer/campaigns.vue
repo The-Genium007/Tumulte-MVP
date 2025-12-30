@@ -49,11 +49,11 @@
                   </p>
                   <div class="flex items-center gap-2 text-sm text-gray-500">
                     <UIcon name="i-lucide-user" class="size-4" />
-                    <span>Invité par <strong class="text-gray-300">{{ invitation.campaign.owner_name }}</strong></span>
+                    <span>Invité par <strong class="text-gray-300">{{ invitation.campaign.ownerName }}</strong></span>
                   </div>
                   <div class="flex items-center gap-2 text-xs text-gray-500 mt-1">
                     <UIcon name="i-lucide-calendar" class="size-3" />
-                    <span>{{ formatDate(invitation.invited_at) }}</span>
+                    <span>{{ formatDate(invitation.invitedAt) }}</span>
                   </div>
                 </div>
                 <div class="flex flex-col gap-2">
@@ -109,29 +109,29 @@
           <div v-else class="space-y-4">
             <UCard
               v-for="status in authorizationStatuses"
-              :key="status.campaign_id"
+              :key="status.campaignId"
               variant="outline"
-              :class="status.is_authorized ? 'border-2 border-green-500/50' : ''"
+              :class="status.isAuthorized ? 'border-2 border-green-500/50' : ''"
             >
               <template #header>
                 <div class="flex justify-between items-center">
                   <div>
-                    <h3 class="text-lg font-semibold text-white">{{ status.campaign_name }}</h3>
-                    <p class="text-sm text-gray-400">ID: {{ status.campaign_id }}</p>
+                    <h3 class="text-lg font-semibold text-white">{{ status.campaignName }}</h3>
                   </div>
                   <UBadge
-                    :color="status.is_authorized ? 'success' : 'neutral'"
-                    :label="status.is_authorized ? 'Autorisé' : 'Non autorisé'"
+                    :color="status.isAuthorized ? 'success' : 'neutral'"
+                    :label="status.isAuthorized ? 'Autorisé' : 'Non autorisé'"
                     size="lg"
                   />
                 </div>
               </template>
 
               <AuthorizationCard
-                :campaign-id="status.campaign_id"
-                :is-authorized="status.is_authorized"
-                :expires-at="status.expires_at"
-                :remaining-seconds="status.remaining_seconds"
+                :campaign-id="status.campaignId"
+                :is-owner="status.isOwner"
+                :is-authorized="status.isAuthorized"
+                :expires-at="status.expiresAt"
+                :remaining-seconds="status.remainingSeconds"
                 @authorize="handleAuthorize"
                 @revoke="handleRevokeAuth"
               />
@@ -189,11 +189,11 @@
                   <div class="space-y-1">
                     <div class="flex items-center gap-2 text-sm text-gray-500">
                       <UIcon name="i-lucide-crown" class="size-4" />
-                      <span>Maître du jeu : <strong class="text-gray-300">{{ campaign.owner_name }}</strong></span>
+                      <span>Maître du jeu : <strong class="text-gray-300">{{ campaign.ownerName }}</strong></span>
                     </div>
                     <div class="flex items-center gap-2 text-xs text-gray-500">
                       <UIcon name="i-lucide-calendar-check" class="size-3" />
-                      <span>Rejoint le {{ formatDate(campaign.joined_at!) }}</span>
+                      <span>Rejoint le {{ formatDate(campaign.joinedAt!) }}</span>
                     </div>
                   </div>
                 </div>
@@ -262,11 +262,9 @@ const mockInvitations: CampaignInvitation[] = [
       id: "mock-campaign-1",
       name: "🎭 Campagne des Ombres Perdues",
       description: "Une aventure épique dans un monde de fantasy sombre où les héros doivent retrouver les fragments d'une ancienne relique.",
-      // eslint-disable-next-line camelcase
-      owner_name: "MaitreJeu_Epic",
+      ownerName: "MaitreJeu_Epic",
     },
-     
-    invited_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // Il y a 2 jours
+    invitedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // Il y a 2 jours
   },
   {
     id: "mock-invitation-2",
@@ -274,11 +272,9 @@ const mockInvitations: CampaignInvitation[] = [
       id: "mock-campaign-2",
       name: "🚀 Space Opera: Les Confins de l'Univers",
       description: "Explorez les galaxies lointaines, combattez des aliens et découvrez les mystères de l'espace profond.",
-      // eslint-disable-next-line camelcase
-      owner_name: "GM_Cosmos",
+      ownerName: "GM_Cosmos",
     },
-     
-    invited_at: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(), // Il y a 5 heures
+    invitedAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(), // Il y a 5 heures
   },
   {
     id: "mock-invitation-3",
@@ -286,11 +282,9 @@ const mockInvitations: CampaignInvitation[] = [
       id: "mock-campaign-3",
       name: "⚔️ Donjons & Dragons : La Quête du Graal",
       description: null,
-      // eslint-disable-next-line camelcase
-      owner_name: "DungeonMaster_Pro",
+      ownerName: "DungeonMaster_Pro",
     },
-     
-    invited_at: new Date(Date.now() - 30 * 60 * 1000).toISOString(), // Il y a 30 minutes
+    invitedAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(), // Il y a 30 minutes
   },
 ];
 

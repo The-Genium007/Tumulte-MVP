@@ -34,8 +34,14 @@
           </div>
         </div>
 
-        <!-- Countdown Timer -->
-        <div class="bg-blue-500/10 px-6 py-3 rounded-lg border border-blue-500/30">
+        <!-- Countdown Timer or Permanent Badge -->
+        <div v-if="isOwner" class="bg-purple-500/10 px-6 py-3 rounded-lg border border-purple-500/30">
+          <p class="text-xs text-gray-400 mb-1">Autorisation</p>
+          <p class="text-2xl font-bold text-purple-500">
+            Permanent
+          </p>
+        </div>
+        <div v-else class="bg-blue-500/10 px-6 py-3 rounded-lg border border-blue-500/30">
           <p class="text-xs text-gray-400 mb-1">Temps restant</p>
           <p class="text-3xl font-bold text-blue-500 tabular-nums">
             {{ formatTime(displaySeconds) }}
@@ -44,6 +50,7 @@
       </div>
 
       <UButton
+        v-if="!isOwner"
         color="error"
         variant="soft"
         icon="i-lucide-shield-off"
@@ -60,6 +67,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 
 const props = defineProps<{
   campaignId: string
+  isOwner?: boolean
   isAuthorized: boolean
   expiresAt: string | null
   remainingSeconds: number | null
