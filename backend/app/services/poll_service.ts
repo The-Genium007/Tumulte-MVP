@@ -36,7 +36,7 @@ class PollService {
     // Si le poll a une campagne, charger les membres ACTIFS de la campagne
     if (pollInstance.campaignId) {
       const memberships = await CampaignMembership.query()
-        .where('campaign_id', pollInstance.campaignId)
+        .where('campaignId', pollInstance.campaignId)
         .where('status', 'ACTIVE')
         .preload('streamer')
 
@@ -46,7 +46,7 @@ class PollService {
       )
     } else {
       // Mode legacy : charger tous les streamers actifs
-      streamers = await Streamer.query().where('is_active', true)
+      streamers = await Streamer.query().where('isActive', true)
       logger.info(`Creating polls for ${streamers.length} streamers (legacy mode)`)
     }
 
@@ -193,7 +193,7 @@ class PollService {
   async removeStreamerFromCampaignPolls(streamerId: string, campaignId: string): Promise<void> {
     // Trouver tous les polls en cours pour cette campagne
     const runningPolls = await PollInstance.query()
-      .where('campaign_id', campaignId)
+      .where('campaignId', campaignId)
       .where('status', 'RUNNING')
 
     logger.info(
@@ -203,8 +203,8 @@ class PollService {
     // Supprimer les channel links pour ce streamer
     for (const poll of runningPolls) {
       await PollChannelLink.query()
-        .where('poll_instance_id', poll.id)
-        .where('streamer_id', streamerId)
+        .where('pollInstanceId', poll.id)
+        .where('streamerId', streamerId)
         .delete()
     }
 
@@ -250,7 +250,7 @@ class PollService {
 
         // Récupérer tous les channel links pour ce poll
         const channelLinks = await PollChannelLink.query()
-          .where('poll_instance_id', pollId)
+          .where('pollInstanceId', pollId)
           .preload('streamer')
 
         // Mettre à jour chaque channel link
@@ -346,7 +346,7 @@ class PollService {
    * Agrège les votes de tous les channel links
    */
   async getAggregatedVotes(pollInstanceId: string): Promise<PollAggregatedVotes> {
-    const channelLinks = await PollChannelLink.query().where('poll_instance_id', pollInstanceId)
+    const channelLinks = await PollChannelLink.query().where('pollInstanceId', pollInstanceId)
 
     const votesByOption: Record<string, number> = {}
     let totalVotes = 0

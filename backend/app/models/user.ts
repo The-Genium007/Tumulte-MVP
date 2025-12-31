@@ -26,7 +26,9 @@ class User extends BaseModel {
   declare updatedAt: DateTime
 
   // Relations
-  @hasOne(() => Streamer)
+  @hasOne(() => Streamer, {
+    foreignKey: 'userId',
+  })
   declare streamer: HasOne<typeof Streamer>
 
   // Token provider pour Remember Me

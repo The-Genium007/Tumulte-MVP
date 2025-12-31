@@ -155,10 +155,13 @@ class TwitchAuthService {
 
     const user = data.data[0]
 
+    // Log pour déboguer ce que Twitch renvoie
+    console.log('Twitch API response:', JSON.stringify(user, null, 2))
+
     return {
       id: user.id,
       login: user.login,
-      displayName: user.display_name,
+      displayName: user.display_name || user.login, // Fallback sur login si display_name est vide
       email: user.email,
 
       profile_image_url: user.profile_image_url,

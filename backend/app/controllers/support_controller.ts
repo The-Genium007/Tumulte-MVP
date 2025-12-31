@@ -28,7 +28,7 @@ export default class SupportController {
     }
 
     if (user.role === 'MJ') {
-      const [aggregate] = await Campaign.query().where('owner_id', user.id).count('* as total')
+      const [aggregate] = await Campaign.query().where('ownerId', user.id).count('* as total')
       backendContext.campaignCount = Number(
         aggregate?.$extras?.total ?? aggregate?.$extras?.count ?? 0
       )
@@ -36,7 +36,7 @@ export default class SupportController {
 
     if (user.streamer) {
       const [aggregate] = await CampaignMembership.query()
-        .where('streamer_id', user.streamer.id)
+        .where('streamerId', user.streamer.id)
         .where('status', 'ACTIVE')
         .count('* as total')
       backendContext.membershipsCount = Number(

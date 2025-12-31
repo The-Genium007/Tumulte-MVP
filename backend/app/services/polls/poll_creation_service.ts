@@ -38,15 +38,15 @@ export class PollCreationService {
     if (pollInstance.campaignId) {
       // Récupérer d'abord tous les membres actifs pour le logging
       const allActiveMemberships = await CampaignMembership.query()
-        .where('campaign_id', pollInstance.campaignId)
+        .where('campaignId', pollInstance.campaignId)
         .where('status', 'ACTIVE')
 
       // Filtrer par autorisation
       const memberships = await CampaignMembership.query()
-        .where('campaign_id', pollInstance.campaignId)
+        .where('campaignId', pollInstance.campaignId)
         .where('status', 'ACTIVE')
-        .whereNotNull('poll_authorization_expires_at')
-        .where('poll_authorization_expires_at', '>', DateTime.now().toSQL())
+        .whereNotNull('pollAuthorizationExpiresAt')
+        .where('pollAuthorizationExpiresAt', '>', DateTime.now().toSQL())
         .preload('streamer')
 
       streamers = memberships.map((m) => m.streamer)
@@ -77,7 +77,7 @@ export class PollCreationService {
       }
     } else {
       // Mode legacy : charger tous les streamers actifs
-      streamers = await Streamer.query().where('is_active', true)
+      streamers = await Streamer.query().where('isActive', true)
       logger.info({
         event: 'streamers_loaded_legacy',
         pollInstanceId: pollInstance.id,
@@ -268,7 +268,7 @@ export class PollCreationService {
   async terminatePollsOnTwitch(pollInstance: PollInstance): Promise<void> {
     // Récupérer tous les channel links pour ce poll
     const channelLinks = await PollChannelLink.query()
-      .where('poll_instance_id', pollInstance.id)
+      .where('pollInstanceId', pollInstance.id)
       .preload('streamer')
 
     logger.info({
@@ -353,7 +353,7 @@ export class PollCreationService {
   async removeStreamerFromCampaignPolls(streamerId: string, campaignId: string): Promise<void> {
     // Trouver tous les polls en cours pour cette campagne
     const runningPolls = await PollInstance.query()
-      .where('campaign_id', campaignId)
+      .where('campaignId', campaignId)
       .where('status', 'RUNNING')
 
     logger.info(
@@ -363,8 +363,8 @@ export class PollCreationService {
     // Supprimer les channel links pour ce streamer
     for (const poll of runningPolls) {
       await PollChannelLink.query()
-        .where('poll_instance_id', poll.id)
-        .where('streamer_id', streamerId)
+        .where('pollInstanceId', poll.id)
+        .where('streamerId', streamerId)
         .delete()
     }
 

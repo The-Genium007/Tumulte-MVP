@@ -138,8 +138,8 @@ export default class AuthController {
       const isMJ = this.twitchAuthService.isMJ(userInfo.id)
       const role = isMJ ? 'MJ' : 'STREAMER'
 
-      // Vérifier si un streamer existe déjà avec ce twitch_user_id
-      let streamer = await Streamer.query().where('twitch_user_id', userInfo.id).first()
+      // Vérifier si un streamer existe déjà avec ce twitchUserId
+      let streamer = await Streamer.query().where('twitchUserId', userInfo.id).first()
 
       let user: User
 

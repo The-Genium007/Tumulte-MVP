@@ -164,6 +164,26 @@ cd backend
 docker compose up -d
 ```
 
+### Créer et mettre à jour la base de données
+
+**Migrations automatiques** : Les migrations de base de données s'exécutent **automatiquement au démarrage** du conteneur backend via le script [docker-entrypoint.sh](backend/docker-entrypoint.sh). Sur Dokploy, à chaque déploiement, la base de données sera automatiquement créée ou mise à jour.
+
+**Commandes manuelles** (si nécessaire) :
+
+```bash
+# Exécuter les migrations manuellement
+docker compose exec backend node ace migration:run
+
+# Vérifier l'état des migrations
+docker compose exec backend node ace migration:status
+
+# Rollback de la dernière migration (en cas de problème)
+docker compose exec backend node ace migration:rollback
+
+# Voir toutes les commandes AdonisJS disponibles
+docker compose exec backend node ace list
+```
+
 ### Frontend (`frontend/docker-compose.yml`)
 
 **Service inclus** :
