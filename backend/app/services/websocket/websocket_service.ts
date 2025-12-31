@@ -64,7 +64,7 @@ class WebSocketService {
 
       if (pollInstance?.campaignId) {
         const memberships = await CampaignMembership.query()
-          .where('campaign_id', pollInstance.campaignId)
+          .where('campaignId', pollInstance.campaignId)
           .where('status', 'ACTIVE')
 
         for (const membership of memberships) {
@@ -207,7 +207,7 @@ class WebSocketService {
 
       if (pollInstance?.campaignId) {
         const memberships = await CampaignMembership.query()
-          .where('campaign_id', pollInstance.campaignId)
+          .where('campaignId', pollInstance.campaignId)
           .where('status', 'ACTIVE')
 
         // S'assurer que toutes les données sont sérialisables

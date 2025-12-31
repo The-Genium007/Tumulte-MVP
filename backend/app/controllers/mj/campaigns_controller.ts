@@ -112,24 +112,24 @@ export default class CampaignsController {
     )
 
     const data = request.only([
-      'twitch_user_id',
-      'twitch_login',
-      'twitch_display_name',
-      'profile_image_url',
+      'twitchUserId',
+      'twitchLogin',
+      'twitchDisplayName',
+      'profileImageUrl',
     ])
 
     // Trouver ou créer le streamer
-    let streamer = await this.streamerRepository.findByTwitchUserId(data.twitch_user_id)
+    let streamer = await this.streamerRepository.findByTwitchUserId(data.twitchUserId)
 
     if (!streamer) {
       // Créer un "streamer fantôme" (pas encore inscrit)
       const { streamer: streamerModel } = await import('#models/streamer')
       streamer = await streamerModel.create({
         userId: null,
-        twitchUserId: data.twitch_user_id,
-        twitchLogin: data.twitch_login,
-        twitchDisplayName: data.twitch_display_name,
-        profileImageUrl: data.profile_image_url || null,
+        twitchUserId: data.twitchUserId,
+        twitchLogin: data.twitchLogin,
+        twitchDisplayName: data.twitchDisplayName,
+        profileImageUrl: data.profileImageUrl || null,
         broadcasterType: '',
         scopes: [],
         isActive: false,
