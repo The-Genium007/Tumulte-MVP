@@ -1,6 +1,5 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import { pollInstance as PollInstance } from '#models/poll_instance'
-import { pollSession as PollSession } from '#models/poll_session'
 import { DateTime } from 'luxon'
 
 export default class ActiveSessionController {
@@ -27,16 +26,6 @@ export default class ActiveSessionController {
       }
     }
 
-    // Récupérer la session associée si c'est un poll de session
-    let session = null
-    if (runningPoll.templateId) {
-      // C'est un poll de template, essayer de trouver la session
-      const template = await runningPoll.related('template').query().first()
-      if (template?.sessionId) {
-        session = await PollSession.find(template.sessionId)
-      }
-    }
-
     // Calculer le temps restant
     const startedAt = runningPoll.startedAt
     const durationSeconds = runningPoll.durationSeconds
@@ -50,13 +39,9 @@ export default class ActiveSessionController {
 
     return {
       data: {
-        activeSession: session
-          ? {
-              id: session.id,
-              name: session.name,
-              defaultDurationSeconds: session.defaultDurationSeconds,
-            }
-          : null,
+        // Note: Pour l'instant, on ne gère pas les sessions dans les polls
+        // Cette fonctionnalité sera ajoutée plus tard
+        activeSession: null,
         currentPoll: {
           id: runningPoll.id,
           title: runningPoll.title,

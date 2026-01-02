@@ -49,6 +49,7 @@ export class PollRepository {
       await Poll.query()
         .where('id', pollId)
         .where('sessionId', sessionId)
+        // eslint-disable-next-line camelcase
         .update({ order_index: i })
     }
   }
