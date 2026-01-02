@@ -106,30 +106,20 @@ export default class CampaignsController {
    * POST /api/v2/mj/campaigns/:id/invite
    */
   async invite({ params, request, response }: HttpContext) {
-    await validateRequest(inviteStreamerSchema)(
-      { request, response } as HttpContext,
-      async () => {}
-    )
-
-    const data = request.only([
-      'twitchUserId',
-      'twitchLogin',
-      'twitchDisplayName',
-      'profileImageUrl',
-    ])
+    const data = inviteStreamerSchema.parse(request.all())
 
     // Trouver ou créer le streamer
-    let streamer = await this.streamerRepository.findByTwitchUserId(data.twitchUserId)
+    let streamer = await this.streamerRepository.findByTwitchUserId(data.twitch_user_id)
 
     if (!streamer) {
       // Créer un "streamer fantôme" (pas encore inscrit)
       const { streamer: streamerModel } = await import('#models/streamer')
       streamer = await streamerModel.create({
         userId: null,
-        twitchUserId: data.twitchUserId,
-        twitchLogin: data.twitchLogin,
-        twitchDisplayName: data.twitchDisplayName,
-        profileImageUrl: data.profileImageUrl || null,
+        twitchUserId: data.twitch_user_id,
+        twitchLogin: data.twitch_login,
+        twitchDisplayName: data.twitch_display_name,
+        profileImageUrl: data.profile_image_url || null,
         broadcasterType: '',
         scopes: [],
         isActive: false,
