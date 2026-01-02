@@ -28,7 +28,7 @@
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <p class="text-sm text-gray-400 mb-1">Nom du compte</p>
-              <p class="text-lg font-semibold text-white">{{ user?.display_name }}</p>
+              <p class="text-lg font-semibold text-white">{{ user?.displayName }}</p>
             </div>
             <div>
               <p class="text-sm text-gray-400 mb-1">Rôle</p>
@@ -50,17 +50,17 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
                 <p class="text-sm text-gray-400 mb-1">Nom Twitch</p>
-                <p class="text-lg font-semibold text-white">{{ user.streamer.twitch_display_name }}</p>
+                <p class="text-lg font-semibold text-white">{{ user.streamer.twitchDisplayName }}</p>
               </div>
               <div>
                 <p class="text-sm text-gray-400 mb-1">Login Twitch</p>
-                <p class="text-lg font-semibold text-white">{{ user.streamer.twitch_login }}</p>
+                <p class="text-lg font-semibold text-white">{{ user.streamer.twitchLogin }}</p>
               </div>
               <div>
                 <p class="text-sm text-gray-400 mb-1">Statut du compte</p>
                 <UBadge
-                  :label="user.streamer.is_active ? 'Actif' : 'Inactif'"
-                  :color="user.streamer.is_active ? 'success' : 'error'"
+                  :label="user.streamer.isActive ? 'Actif' : 'Inactif'"
+                  :color="user.streamer.isActive ? 'success' : 'error'"
                   variant="soft"
                 />
               </div>

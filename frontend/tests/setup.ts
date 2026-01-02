@@ -1,28 +1,41 @@
 import { vi } from "vitest";
 import { config } from "@vue/test-utils";
 
+// Type-safe globalThis for tests
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const g = globalThis as any;
+
+// Export typed mock for use in tests
+export const mockGlobals = {
+  useRuntimeConfig: g.useRuntimeConfig as ReturnType<typeof vi.fn>,
+  useRouter: g.useRouter as ReturnType<typeof vi.fn>,
+  useRoute: g.useRoute as ReturnType<typeof vi.fn>,
+  navigateTo: g.navigateTo as ReturnType<typeof vi.fn>,
+};
+
 // Mock Nuxt auto-imports
-globalThis.useRuntimeConfig = vi.fn(() => ({
+
+g.useRuntimeConfig = vi.fn(() => ({
   public: {
     apiUrl: "http://localhost:3333",
     sseUrl: "http://localhost:3333",
   },
 }));
 
-globalThis.useRouter = vi.fn(() => ({
+g.useRouter = vi.fn(() => ({
   push: vi.fn(),
   replace: vi.fn(),
   back: vi.fn(),
   currentRoute: { value: { path: "/", params: {}, query: {} } },
 }));
 
-globalThis.useRoute = vi.fn(() => ({
+g.useRoute = vi.fn(() => ({
   path: "/",
   params: {},
   query: {},
 }));
 
-globalThis.navigateTo = vi.fn();
+g.navigateTo = vi.fn();
 
 // Mock localStorage
 const localStorageMock = {
@@ -33,7 +46,7 @@ const localStorageMock = {
   length: 0,
   key: vi.fn(),
 };
-globalThis.localStorage = localStorageMock as Storage;
+g.localStorage = localStorageMock as Storage;
 
 // Configure Vue Test Utils
 config.global.mocks = {

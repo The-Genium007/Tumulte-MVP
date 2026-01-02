@@ -1,3 +1,5 @@
+/* eslint-disable camelcase */
+// API expects snake_case for duration_seconds
 import { describe, test, expect, beforeEach, vi } from "vitest";
 import { usePollTemplates } from "~/composables/usePollTemplates";
 import { createMockPollTemplate } from "../../helpers/mockFactory";
@@ -10,7 +12,8 @@ describe("usePollTemplates Composable", () => {
     vi.clearAllMocks();
 
     // Mock useRuntimeConfig
-    vi.mocked(globalThis.useRuntimeConfig).mockReturnValue({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked((globalThis as any).useRuntimeConfig).mockReturnValue({
       public: {
         apiBase: "http://localhost:3333/api/v2",
       },
@@ -127,7 +130,7 @@ describe("usePollTemplates Composable", () => {
       label: "New Template",
       title: "Test Question",
       options: ["Option 1", "Option 2"],
-      durationSeconds: 60,
+      duration_seconds: 60,
     });
 
     expect(fetch).toHaveBeenCalledWith(
@@ -140,7 +143,7 @@ describe("usePollTemplates Composable", () => {
           label: "New Template",
           title: "Test Question",
           options: ["Option 1", "Option 2"],
-          durationSeconds: 60,
+          duration_seconds: 60,
         }),
       },
     );
@@ -164,7 +167,7 @@ describe("usePollTemplates Composable", () => {
         label: "Campaign Template",
         title: "Test",
         options: ["A", "B"],
-        durationSeconds: 30,
+        duration_seconds: 30,
       },
       "campaign-456",
     );
@@ -190,7 +193,7 @@ describe("usePollTemplates Composable", () => {
         label: "Test",
         title: "Test",
         options: [],
-        durationSeconds: 60,
+        duration_seconds: 60,
       }),
     ).rejects.toThrow("Failed to create template");
   });

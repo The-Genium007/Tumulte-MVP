@@ -579,6 +579,7 @@ interface Poll {
   id: string;
   question: string;
   options: string[];
+  type?: string;
 }
 
 interface Session {
@@ -1153,8 +1154,8 @@ const sendPoll = async () => {
           pollStatus.value = 'sent';
           console.log('[WebSocket] pollStatus set to:', pollStatus.value);
 
-          // Utiliser finalVotes au lieu de votesByOption pour poll:end
-          const votesData = ('finalVotes' in data ? (data as { finalVotes: Record<string, number> }).finalVotes : data.votesByOption);
+          // Utiliser votesByOption pour poll:end
+          const votesData = data.votesByOption;
           console.log('[WebSocket] votesData:', votesData);
 
           if (votesData) {
@@ -1369,7 +1370,7 @@ onMounted(async () => {
         pollStatus.value = 'sent';
         console.log('[WebSocket] pollStatus set to:', pollStatus.value);
 
-        const votesData = ('finalVotes' in data ? (data as { finalVotes: Record<string, number> }).finalVotes : data.votesByOption);
+        const votesData = data.votesByOption;
         console.log('[WebSocket] votesData:', votesData);
 
         if (votesData) {

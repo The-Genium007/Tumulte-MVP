@@ -159,12 +159,9 @@ const modalDescription = "Envoi automatique vers le salon des tickets via webhoo
 
 const sessionId = computed(() => getSupportSnapshot().sessionId || "n/a");
 const userLabel = computed(() => {
-   
-  if (authStore.user?.display_name) return authStore.user.display_name;
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  if ((authStore.user as unknown as { streamer?: { twitch_display_name?: string } })?.streamer?.twitch_display_name) {
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    return (authStore.user as unknown as { streamer?: { twitch_display_name?: string } }).streamer!.twitch_display_name;
+  if (authStore.user?.displayName) return authStore.user.displayName;
+  if (authStore.user?.streamer?.twitchDisplayName) {
+    return authStore.user.streamer.twitchDisplayName;
   }
   return "Inconnu";
 });
@@ -203,7 +200,7 @@ const handleSend = async () => {
   } catch (error: unknown) {
     feedback.value = {
       type: "error",
-      message: error?.message || "Envoi impossible pour le moment.",
+      message: (error as Error)?.message || "Envoi impossible pour le moment.",
     };
   } finally {
     isSending.value = false;

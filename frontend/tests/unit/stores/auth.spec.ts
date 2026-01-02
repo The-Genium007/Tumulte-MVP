@@ -12,8 +12,8 @@ vi.mock("vue-router", () => ({
 global.fetch = vi.fn();
 
 // Mock window.location
-delete (window as unknown as { location: unknown }).location;
-window.location = { href: "" } as Location;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(window as any).location = { href: "" };
 
 describe("Auth Store", () => {
   let mockRouter: {
@@ -28,10 +28,13 @@ describe("Auth Store", () => {
       push: vi.fn(),
     };
     const { useRouter } = await import("vue-router");
-    vi.mocked(useRouter).mockReturnValue(mockRouter);
+    vi.mocked(useRouter).mockReturnValue(
+      mockRouter as unknown as ReturnType<typeof useRouter>,
+    );
 
     // Mock useRuntimeConfig
-    vi.mocked(globalThis.useRuntimeConfig).mockReturnValue({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked((globalThis as any).useRuntimeConfig).mockReturnValue({
       public: {
         apiBase: "http://localhost:3333/api/v2",
       },
@@ -83,7 +86,7 @@ describe("Auth Store", () => {
 
   test("fetchMe() should set loading state correctly", async () => {
     const mockUser = createMockUser();
-    let resolveFetch: ((value: Response) => void) | undefined;
+    let resolveFetch!: (value: Response) => void;
     const fetchPromise = new Promise<Response>((resolve) => {
       resolveFetch = resolve;
     });
@@ -100,7 +103,7 @@ describe("Auth Store", () => {
     resolveFetch({
       ok: true,
       json: async () => mockUser,
-    });
+    } as Response);
 
     await fetchMePromise;
 
