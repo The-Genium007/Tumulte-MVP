@@ -145,30 +145,7 @@ jobs:
           TWITCH_REDIRECT_URI: http://localhost:3333/auth/twitch/callback
         run: npm run test:coverage -- --filter=unit
 
-      - name: Enforce coverage threshold (85% for production)
-        working-directory: ./backend
-        run: |
-          if [ -f coverage/lcov.info ]; then
-            echo "✅ Backend unit tests coverage report generated"
-            # TODO: Parse coverage and enforce 85% threshold
-          else
-            echo "::error::Backend coverage report not found"
-            exit 1
-          fi
-
-      - name: Upload backend coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          files: ./backend/coverage/lcov.info
-          flags: backend-unit-production
-          name: backend-unit-coverage-prod
-          fail_ci_if_error: true
-
-      - name: Upload coverage artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-unit-coverage
-          path: backend/coverage/
+      # Note: c8 outputs coverage to console, coverage threshold is enforced by c8 config
 
   # Phase 4 : Tests fonctionnels (BLOQUANT en production)
   functional-tests:

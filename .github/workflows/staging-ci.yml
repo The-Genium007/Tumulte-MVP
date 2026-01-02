@@ -120,32 +120,7 @@ jobs:
           TWITCH_REDIRECT_URI: http://localhost:3333/auth/twitch/callback
         run: npm run test:coverage -- --filter=unit
 
-      - name: Check coverage threshold (80%)
-        working-directory: ./backend
-        run: |
-          # Extract coverage percentage from lcov report
-          if [ -f coverage/lcov.info ]; then
-            # Parse coverage percentage (implementation depends on your coverage tool)
-            echo "Coverage report generated"
-          else
-            echo "::error::Coverage report not found"
-            exit 1
-          fi
-
-      - name: Upload backend coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          files: ./backend/coverage/lcov.info
-          flags: backend-unit
-          name: backend-unit-coverage
-          fail_ci_if_error: false
-
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-unit-test-results
-          path: backend/coverage/
+      # Note: c8 outputs coverage to console, coverage threshold is enforced by c8 config
 
   # Phase 2b : Frontend Tests
   frontend-tests:
@@ -168,23 +143,19 @@ jobs:
         working-directory: ./frontend
         run: npm ci
 
+      - name: Prepare Nuxt (generate .nuxt/tsconfig.json)
+        working-directory: ./frontend
+        run: npx nuxt prepare
+
       - name: Run frontend unit tests with coverage
         working-directory: ./frontend
         run: npm run test:coverage
 
-      - name: Check coverage threshold (80%)
-        working-directory: ./frontend
-        run: |
-          # Extract coverage percentage from vitest report
-          if [ -f coverage/lcov.info ]; then
-            echo "Frontend coverage report generated"
-          else
-            echo "::error::Frontend coverage report not found"
-            exit 1
-          fi
+      # Vitest coverage thresholds are enforced in vitest.config.ts
 
       - name: Upload frontend coverage to Codecov
         uses: codecov/codecov-action@v4
+        if: always()
         with:
           files: ./frontend/coverage/lcov.info
           flags: frontend-unit
