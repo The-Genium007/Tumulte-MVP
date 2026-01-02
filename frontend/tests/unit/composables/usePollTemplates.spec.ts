@@ -127,7 +127,7 @@ describe("usePollTemplates Composable", () => {
       label: "New Template",
       title: "Test Question",
       options: ["Option 1", "Option 2"],
-      duration_seconds: 60,
+      durationSeconds: 60,
     });
 
     expect(fetch).toHaveBeenCalledWith(
@@ -140,7 +140,7 @@ describe("usePollTemplates Composable", () => {
           label: "New Template",
           title: "Test Question",
           options: ["Option 1", "Option 2"],
-          duration_seconds: 60,
+          durationSeconds: 60,
         }),
       },
     );
@@ -164,7 +164,7 @@ describe("usePollTemplates Composable", () => {
         label: "Campaign Template",
         title: "Test",
         options: ["A", "B"],
-        duration_seconds: 30,
+        durationSeconds: 30,
       },
       "campaign-456",
     );
@@ -190,7 +190,7 @@ describe("usePollTemplates Composable", () => {
         label: "Test",
         title: "Test",
         options: [],
-        duration_seconds: 60,
+        durationSeconds: 60,
       }),
     ).rejects.toThrow("Failed to create template");
   });
