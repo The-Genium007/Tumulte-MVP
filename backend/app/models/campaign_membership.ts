@@ -10,25 +10,25 @@ class CampaignMembership extends BaseModel {
   @column({ isPrimary: true })
   declare id: string
 
-  @column()
+  @column({ columnName: 'campaign_id' })
   declare campaignId: string
 
-  @column()
+  @column({ columnName: 'streamer_id' })
   declare streamerId: string
 
   @column()
   declare status: MembershipStatus
 
-  @column.dateTime()
+  @column.dateTime({ columnName: 'invited_at' })
   declare invitedAt: DateTime
 
-  @column.dateTime()
+  @column.dateTime({ columnName: 'accepted_at' })
   declare acceptedAt: DateTime | null
 
-  @column.dateTime()
+  @column.dateTime({ columnName: 'poll_authorization_granted_at' })
   declare pollAuthorizationGrantedAt: DateTime | null
 
-  @column.dateTime()
+  @column.dateTime({ columnName: 'poll_authorization_expires_at' })
   declare pollAuthorizationExpiresAt: DateTime | null
 
   @column.dateTime({ autoCreate: true })

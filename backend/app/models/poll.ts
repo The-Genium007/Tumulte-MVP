@@ -9,7 +9,7 @@ class Poll extends BaseModel {
   @column({ isPrimary: true })
   declare id: string
 
-  @column()
+  @column({ columnName: 'session_id' })
   declare sessionId: string
 
   @column()
