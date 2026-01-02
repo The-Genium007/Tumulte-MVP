@@ -1,7 +1,20 @@
 import { configApp } from '@adonisjs/eslint-config'
 
-export default configApp({}, {
-  rules: {
+export default [
+  ...configApp({}),
+  // Migration files: enforce snake_case for column names
+  {
+    files: ['database/migrations/**/*.ts'],
+    rules: {
+      // In migrations, we MUST use snake_case for all column names (AdonisJS convention)
+      '@typescript-eslint/naming-convention': 'off',
+      'camelcase': 'off',
+    },
+  },
+  // All other files: enforce camelCase
+  {
+    ignores: ['database/migrations/**/*.ts'],
+    rules: {
     // Enforce camelCase naming convention
     'camelcase': ['error', {
       properties: 'always',
@@ -70,9 +83,13 @@ export default configApp({}, {
       },
       {
         selector: 'variable',
-        format: ['camelCase', 'UPPER_CASE'],
+        format: ['camelCase', 'UPPER_CASE', 'PascalCase'],
         leadingUnderscore: 'allow',
         trailingUnderscore: 'allow',
+      },
+      {
+        selector: 'import',
+        format: ['camelCase', 'PascalCase'],
       },
       {
         selector: 'typeLike',
@@ -98,5 +115,6 @@ export default configApp({}, {
         format: null,
       },
     ],
+    },
   },
-})
+]
