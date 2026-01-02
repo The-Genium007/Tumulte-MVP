@@ -40,13 +40,27 @@ export default [
         'redirect_uri',
         'response_type',
         'force_verify',
+        'error_description',
 
         // Twitch API fields
         'twitch_user_id',
         'twitch_login',
         'twitch_display_name',
+        'display_name',
         'profile_image_url',
+        'offline_image_url',
+        'thumbnail_url',
         'broadcaster_type',
+        'broadcaster_id',
+        'broadcaster_name',
+        'broadcaster_login',
+        'view_count',
+        'channel_points_votes',
+        'bits_votes',
+        'bits_voting_enabled',
+        'bits_per_vote',
+        'channel_points_voting_enabled',
+        'channel_points_per_vote',
 
         // Status fields
         'is_active',
@@ -106,7 +120,18 @@ export default [
         filter: {
           // Allow snake_case for API fields, OAuth parameters, and database columns
           regex:
-            '^(created_at|updated_at|deleted_at|access_token|refresh_token|token_type|expires_in|client_id|client_secret|grant_type|redirect_uri|response_type|force_verify|twitch_user_id|twitch_login|twitch_display_name|profile_image_url|broadcaster_type|is_active|user_id|owner_id|streamer_id|campaign_id|membership_id|poll_id|session_id|template_id|instance_id|invited_at|accepted_at|started_at|ended_at|expires_at|granted_at)$',
+            '^(created_at|updated_at|deleted_at|access_token|refresh_token|token_type|expires_in|client_id|client_secret|grant_type|redirect_uri|response_type|force_verify|error_description|twitch_user_id|twitch_login|twitch_display_name|display_name|profile_image_url|offline_image_url|broadcaster_type|broadcaster_id|broadcaster_name|broadcaster_login|view_count|channel_points_votes|bits_votes|bits_voting_enabled|bits_per_vote|channel_points_voting_enabled|channel_points_per_vote|is_active|user_id|owner_id|streamer_id|campaign_id|membership_id|poll_id|session_id|template_id|instance_id|invited_at|accepted_at|started_at|ended_at|expires_at|granted_at)$',
+          match: false,
+        },
+      },
+      {
+        selector: 'typeProperty',
+        format: ['camelCase'],
+        leadingUnderscore: 'allow',
+        filter: {
+          // Allow snake_case for external API response types (Twitch, OAuth)
+          regex:
+            '^(created_at|updated_at|deleted_at|access_token|refresh_token|token_type|expires_in|client_id|client_secret|grant_type|redirect_uri|response_type|force_verify|error_description|twitch_user_id|twitch_login|twitch_display_name|display_name|profile_image_url|offline_image_url|broadcaster_type|broadcaster_id|broadcaster_name|broadcaster_login|view_count|channel_points_votes|bits_votes|bits_voting_enabled|bits_per_vote|channel_points_voting_enabled|channel_points_per_vote|is_active|user_id|owner_id|streamer_id|campaign_id|membership_id|poll_id|session_id|template_id|instance_id|invited_at|accepted_at|started_at|ended_at|expires_at|granted_at)$',
           match: false,
         },
       },

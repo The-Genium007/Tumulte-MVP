@@ -82,14 +82,19 @@ export default defineConfig({
   tests: {
     suites: [
       {
-        files: ['tests/unit/**/*.spec(.ts|.js)'],
+        files: ['tests/unit/**/*.spec.ts'],
         name: 'unit',
-        timeout: 2000,
+        timeout: 5000,
       },
       {
-        files: ['tests/functional/**/*.spec(.ts|.js)'],
+        files: ['tests/functional/**/*.spec.ts'],
         name: 'functional',
         timeout: 30000,
+      },
+      {
+        files: ['tests/e2e/**/*.spec.ts'],
+        name: 'e2e',
+        timeout: 60000,
       },
     ],
     forceExit: false,

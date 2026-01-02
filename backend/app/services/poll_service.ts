@@ -6,7 +6,7 @@ import { streamer as Streamer } from '#models/streamer'
 import { campaignMembership as CampaignMembership } from '#models/campaign_membership'
 import { twitchPollService as TwitchPollService } from './twitch_poll_service.js'
 import { webSocketService as WebSocketService } from './websocket_service.js'
-import { twitchApiService as TwitchApiService } from './twitch_api_service.js'
+import { TwitchApiService } from './twitch_api_service.js'
 
 export interface PollAggregatedVotes {
   pollInstanceId: string

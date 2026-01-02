@@ -189,4 +189,5 @@ class TwitchApiService {
   }
 }
 
-export { TwitchApiService as twitchApiService }
+export default TwitchApiService
+export { TwitchApiService }

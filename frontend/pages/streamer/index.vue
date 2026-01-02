@@ -337,7 +337,14 @@ const loadAuthorizationStatus = async () => {
   loadingAuth.value = true;
   try {
     const data = await getAuthorizationStatus();
-    authorizationStatuses.value = data;
+    // Mapper les données snake_case vers camelCase
+    authorizationStatuses.value = data.map((item) => ({
+      campaignId: item.campaign_id,
+      campaignName: item.campaign_name,
+      isAuthorized: item.is_authorized,
+      expiresAt: item.expires_at,
+      remainingSeconds: item.remaining_seconds,
+    }));
     // Démarrer le compteur après avoir chargé les données
     startCountdown();
   } catch (error) {

@@ -1,0 +1,67 @@
+# Codecov Configuration
+# Documentation: https://docs.codecov.com/docs/codecov-yaml
+
+coverage:
+  precision: 2
+  round: down
+  range: "70...100"
+
+  status:
+    project:
+      default:
+        target: 85%           # Objectif global 85%
+        threshold: 2%         # Tolérance -2%
+        if_ci_failed: error   # Bloquer si CI fail
+
+    patch:
+      default:
+        target: 80%           # Nouveau code: 80%+
+        threshold: 5%
+
+  flags:
+    backend-unit:
+      paths:
+        - backend/app/services/
+        - backend/app/repositories/
+        - backend/app/models/
+        - backend/app/validators/
+        - backend/app/middleware/
+      target: 90%             # Backend critique: 90%+
+
+    backend-unit-production:
+      paths:
+        - backend/app/
+      target: 85%
+
+    frontend-unit:
+      paths:
+        - frontend/stores/
+        - frontend/composables/
+        - frontend/utils/
+      target: 80%
+
+comment:
+  layout: "reach,diff,flags,tree"
+  behavior: default
+  require_changes: false
+  require_base: false
+  require_head: true
+
+ignore:
+  - "**/*.spec.ts"
+  - "**/*.test.ts"
+  - "**/tests/**"
+  - "**/node_modules/**"
+  - "**/.nuxt/**"
+  - "**/.output/**"
+  - "**/build/**"
+  - "**/dist/**"
+  - "**/coverage/**"
+  - "backend/bin/**"
+  - "backend/config/**"
+  - "backend/database/**"
+  - "backend/start/**"
+  - "frontend/pages/**"       # Pages = composition components
+  - "frontend/layouts/**"      # Layouts = composition components
+  - "frontend/app.vue"
+  - "frontend/nuxt.config.ts"

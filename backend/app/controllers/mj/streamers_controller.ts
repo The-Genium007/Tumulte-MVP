@@ -2,7 +2,7 @@ import { inject } from '@adonisjs/core'
 import type { HttpContext } from '@adonisjs/core/http'
 import { StreamerRepository } from '#repositories/streamer_repository'
 import { StreamerDto } from '#dtos/auth/streamer_dto'
-import { twitchApiService as TwitchApiService } from '#services/twitch/twitch_api_service'
+import { TwitchApiService } from '#services/twitch/twitch_api_service'
 
 /**
  * Contrôleur pour la recherche et gestion des streamers (MJ)

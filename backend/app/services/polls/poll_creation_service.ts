@@ -7,7 +7,7 @@ import { pollChannelLink as PollChannelLink } from '#models/poll_channel_link'
 import { streamer as Streamer } from '#models/streamer'
 import { campaignMembership as CampaignMembership } from '#models/campaign_membership'
 import { twitchPollService as TwitchPollService } from '../twitch/twitch_poll_service.js'
-import { twitchApiService as TwitchApiService } from '../twitch/twitch_api_service.js'
+import { TwitchApiService } from '../twitch/twitch_api_service.js'
 
 /**
  * Service pour créer des polls Twitch pour tous les streamers d'une campagne

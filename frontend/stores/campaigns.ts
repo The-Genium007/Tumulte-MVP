@@ -25,6 +25,8 @@ export const useCampaignsStore = defineStore("campaigns", () => {
 
   const hasCampaigns = computed(() => campaigns.value.length > 0);
 
+  const error = computed(() => _error.value);
+
   // Actions
   async function fetchCampaigns() {
     loading.value = true;
