@@ -1,5 +1,5 @@
 import env from '#start/env'
-// eslint-disable-next-line @typescript-eslint/naming-convention
+
 import * as Sentry from '@sentry/node'
 
 const sentryConfig = {
