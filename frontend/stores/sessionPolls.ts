@@ -11,13 +11,15 @@ export interface Poll {
 }
 
 export const useSessionPollsStore = defineStore("sessionPolls", () => {
+  const config = useRuntimeConfig();
+  const API_URL = config.public.apiBase;
+
   const polls = ref<Poll[]>([]);
   const loading = ref(false);
 
   const fetchPolls = async (_campaignId: string, sessionId: string) => {
     loading.value = true;
     try {
-      const API_URL = import.meta.env.VITE_API_URL;
       const response = await fetch(`${API_URL}/mj/sessions/${sessionId}`, {
         credentials: "include",
       });
@@ -45,7 +47,6 @@ export const useSessionPollsStore = defineStore("sessionPolls", () => {
     },
   ) => {
     try {
-      const API_URL = import.meta.env.VITE_API_URL;
       const response = await fetch(
         `${API_URL}/mj/sessions/${sessionId}/polls`,
         {
@@ -75,7 +76,6 @@ export const useSessionPollsStore = defineStore("sessionPolls", () => {
     pollId: string,
   ) => {
     try {
-      const API_URL = import.meta.env.VITE_API_URL;
       const response = await fetch(
         `${API_URL}/mj/sessions/${sessionId}/polls/${pollId}`,
         {

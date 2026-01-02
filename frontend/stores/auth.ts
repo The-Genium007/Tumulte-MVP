@@ -3,10 +3,10 @@ import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
 import type { User } from "@/types";
 
-const API_URL = import.meta.env.VITE_API_URL;
-
 export const useAuthStore = defineStore("auth", () => {
   const _router = useRouter();
+  const config = useRuntimeConfig();
+  const API_URL = config.public.apiBase;
 
   // State
   const user = ref<User | null>(null);

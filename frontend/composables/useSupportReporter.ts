@@ -2,8 +2,6 @@ import { useAuthStore } from "@/stores/auth";
 import { usePollControlStore } from "@/stores/pollControl";
 import { getSupportSnapshot } from "@/utils/supportTelemetry";
 
-const API_URL = import.meta.env.VITE_API_URL;
-
 const buildPerformanceSnapshot = () => {
   if (typeof performance === "undefined") return undefined;
 
@@ -36,6 +34,9 @@ const buildPerformanceSnapshot = () => {
 };
 
 export const useSupportReporter = () => {
+  const config = useRuntimeConfig();
+  const API_URL = config.public.apiBase;
+
   const authStore = useAuthStore();
   const pollControlStore = usePollControlStore();
 

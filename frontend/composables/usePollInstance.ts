@@ -1,8 +1,9 @@
 import type { PollInstance } from "@/types/index";
 
-const API_URL = import.meta.env.VITE_API_URL;
-
 export function usePollInstance() {
+  const config = useRuntimeConfig();
+  const API_URL = config.public.apiBase;
+
   /**
    * Fetch details of a specific poll instance
    */

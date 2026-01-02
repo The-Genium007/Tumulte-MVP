@@ -1,9 +1,10 @@
 import { ref, readonly } from "vue";
 import type { PollTemplate } from "@/types";
 
-const API_URL = import.meta.env.VITE_API_URL;
-
 export const usePollTemplates = () => {
+  const config = useRuntimeConfig();
+  const API_URL = config.public.apiBase;
+
   const templates = ref<PollTemplate[]>([]);
   const loading = ref<boolean>(false);
 
@@ -106,7 +107,10 @@ export const usePollTemplates = () => {
   /**
    * Supprime un template
    */
-  const deleteTemplate = async (id: string, campaignId?: string): Promise<void> => {
+  const deleteTemplate = async (
+    id: string,
+    campaignId?: string,
+  ): Promise<void> => {
     try {
       const url = campaignId
         ? `${API_URL}/mj/campaigns/${campaignId}/templates/${id}`
@@ -127,7 +131,10 @@ export const usePollTemplates = () => {
   /**
    * Lance un sondage à partir d'un template (optionnellement lié à une campagne)
    */
-  const launchPoll = async (templateId: string, campaignId?: string): Promise<void> => {
+  const launchPoll = async (
+    templateId: string,
+    campaignId?: string,
+  ): Promise<void> => {
     try {
       const url = campaignId
         ? `${API_URL}/mj/campaigns/${campaignId}/polls/launch`
@@ -137,7 +144,7 @@ export const usePollTemplates = () => {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-         
+
         body: JSON.stringify({ template_id: templateId }),
       });
       if (!response.ok) throw new Error("Failed to launch poll");

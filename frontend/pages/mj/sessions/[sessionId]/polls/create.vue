@@ -364,6 +364,9 @@ definePageMeta({
   layout: "authenticated" as const,
 });
 
+const config = useRuntimeConfig();
+const API_URL = config.public.apiBase;
+
 const route = useRoute();
 const router = useRouter();
 const toast = useToast();
@@ -478,7 +481,6 @@ const handleDeleteSession = async () => {
   isDeleting.value = true;
 
   try {
-    const API_URL = import.meta.env.VITE_API_URL;
     const response = await fetch(
       `${API_URL}/mj/campaigns/${campaignId.value}/sessions/${sessionId.value}`,
       {
@@ -515,7 +517,6 @@ const handleDeleteSession = async () => {
 // Charger les informations de la session et les sondages
 onMounted(async () => {
   try {
-    const API_URL = import.meta.env.VITE_API_URL;
     const response = await fetch(
       `${API_URL}/mj/sessions/${sessionId.value}`,
       { credentials: "include" }

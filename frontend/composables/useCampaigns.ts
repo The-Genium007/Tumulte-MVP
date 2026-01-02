@@ -6,8 +6,6 @@ import type {
   StreamerSearchResult,
 } from "@/types";
 
-const API_URL = import.meta.env.VITE_API_URL;
-
 export interface CampaignMember {
   id: string;
   status: "PENDING" | "ACTIVE";
@@ -28,6 +26,9 @@ export interface CampaignMember {
 }
 
 export const useCampaigns = () => {
+  const config = useRuntimeConfig();
+  const API_URL = config.public.apiBase;
+
   const campaigns = ref<Campaign[]>([]);
   const selectedCampaign = ref<Campaign | null>(null);
   const loading = ref<boolean>(false);

@@ -257,13 +257,14 @@ definePageMeta({
   }
 });
 
-const API_URL = import.meta.env.VITE_API_URL;
+const config = useRuntimeConfig();
+const API_URL = config.public.apiBase;
 const { user: _user } = useAuth();
 const { fetchInvitations, getAuthorizationStatus, grantAuthorization, revokeAuthorization } = useCampaigns();
 const toast = useToast();
 
 // Dev mode
-const isDev = import.meta.env.MODE === "development";
+const isDev = process.dev;
 
 const overlayUrl = ref<string | null>(null);
 const loadingOverlay = ref(false);

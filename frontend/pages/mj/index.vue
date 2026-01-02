@@ -717,6 +717,8 @@ definePageMeta({
   layout: "authenticated" as const,
 });
 
+const config = useRuntimeConfig();
+const API_URL = config.public.apiBase;
 const route = useRoute();
 const router = useRouter();
 const toast = useToast();
@@ -1041,8 +1043,6 @@ const launchSession = async (session: Session) => {
   }
 
   try {
-    const API_URL = import.meta.env.VITE_API_URL;
-
     // Lancer la session avec Health Check
     const response = await fetch(
       `${API_URL}/mj/campaigns/${selectedCampaignId.value}/sessions/${session.id}/launch`,
@@ -1194,7 +1194,6 @@ const cancelPoll = async () => {
   // Si le sondage est en cours d'envoi, appeler l'API pour annuler
   if (pollStatus.value === 'sending' && currentPollInstanceId.value) {
     try {
-      const API_URL = import.meta.env.VITE_API_URL;
       const response = await fetch(`${API_URL}/mj/polls/${currentPollInstanceId.value}/cancel`, {
         method: 'POST',
         credentials: 'include',
@@ -1243,7 +1242,6 @@ const sendPoll = async () => {
 
   try {
     // Appeler l'API pour lancer le sondage
-    const API_URL = import.meta.env.VITE_API_URL;
     const response = await fetch(`${API_URL}/mj/campaigns/${selectedCampaignId.value}/polls/launch`, {
       method: 'POST',
       credentials: 'include',
@@ -1608,7 +1606,6 @@ watch(selectedCampaignId, async (newId) => {
 const fetchSessions = async (campaignId: string) => {
   sessionsLoading.value = true;
   try {
-    const API_URL = import.meta.env.VITE_API_URL;
     const response = await fetch(`${API_URL}/mj/campaigns/${campaignId}/sessions`, {
       credentials: "include",
     });
@@ -1647,7 +1644,6 @@ const handleCreateSession = async () => {
 
   creating.value = true;
   try {
-    const API_URL = import.meta.env.VITE_API_URL;
     const response = await fetch(
       `${API_URL}/mj/campaigns/${selectedCampaignId.value}/sessions`,
       {
@@ -1691,7 +1687,6 @@ const confirmDeleteSession = async () => {
 
   deleting.value = true;
   try {
-    const API_URL = import.meta.env.VITE_API_URL;
     const response = await fetch(
       `${API_URL}/mj/campaigns/${selectedCampaignId.value}/sessions/${currentSession.value.id}`,
       {
