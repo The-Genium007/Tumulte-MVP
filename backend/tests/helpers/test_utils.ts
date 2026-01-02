@@ -115,10 +115,8 @@ export async function createTestMembership(
     status: overrides.status || 'PENDING',
     invitedAt: overrides.invitedAt || DateTime.now(),
     acceptedAt: overrides.acceptedAt || null,
-    isPollAuthorized: overrides.isPollAuthorized || false,
     pollAuthorizationGrantedAt: overrides.pollAuthorizationGrantedAt || null,
     pollAuthorizationExpiresAt: overrides.pollAuthorizationExpiresAt || null,
-    ...overrides,
   }
 
   return await CampaignMembership.create(membershipData)
@@ -165,19 +163,29 @@ export async function createTestPollInstance(overrides: Partial<any> = {}): Prom
     campaignId = campaign.id
   }
 
+  // Get or create a user for createdBy
+  let createdBy = overrides.createdBy
+  if (!createdBy) {
+    const user = await createTestUser({ role: 'MJ' })
+    createdBy = user.id
+  }
+
   const instanceData = {
     campaignId,
-    question:
+    createdBy,
+    title:
+      overrides.title ||
       overrides.question ||
       faker.helpers.arrayElement(['Vote pour la prochaine action ?', 'Choisis la destination ?']),
     options: overrides.options || ['Oui', 'Non'],
     durationSeconds: overrides.durationSeconds || 60,
+    type: overrides.type || 'STANDARD',
     status: overrides.status || 'PENDING',
-    channelPointsVotingEnabled: overrides.channelPointsVotingEnabled || false,
-    channelPointsPerVote: overrides.channelPointsPerVote || 0,
+    channelPointsEnabled:
+      overrides.channelPointsEnabled || overrides.channelPointsVotingEnabled || false,
+    channelPointsAmount: overrides.channelPointsAmount || overrides.channelPointsPerVote || null,
     startedAt: overrides.startedAt || null,
     endedAt: overrides.endedAt || null,
-    ...overrides,
   }
 
   return await PollInstance.create(instanceData)
@@ -190,7 +198,6 @@ export async function grantPollAuthorization(
   membership: CampaignMembership,
   durationHours: number = 12
 ): Promise<CampaignMembership> {
-  membership.isPollAuthorized = true
   membership.pollAuthorizationGrantedAt = DateTime.now()
   membership.pollAuthorizationExpiresAt = DateTime.now().plus({ hours: durationHours })
   await membership.save()

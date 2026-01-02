@@ -22,7 +22,10 @@ class PollInstance extends BaseModel {
   @column()
   declare title: string
 
-  @column()
+  @column({
+    prepare: (value: string[]) => JSON.stringify(value),
+    consume: (value: string | string[]) => (typeof value === 'string' ? JSON.parse(value) : value),
+  })
   declare options: string[]
 
   @column()
@@ -43,7 +46,11 @@ class PollInstance extends BaseModel {
   @column()
   declare finalTotalVotes: number | null
 
-  @column()
+  @column({
+    prepare: (value: Record<string, number> | null) => (value ? JSON.stringify(value) : null),
+    consume: (value: string | Record<string, number> | null) =>
+      typeof value === 'string' ? JSON.parse(value) : value,
+  })
   declare finalVotesByOption: Record<string, number> | null
 
   @column.dateTime()

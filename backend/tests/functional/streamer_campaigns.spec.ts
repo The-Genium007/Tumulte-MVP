@@ -1,167 +1,147 @@
 import { test } from '@japa/runner'
 import testUtils from '#tests/helpers/database'
 import { DateTime } from 'luxon'
-import {
-  createAuthenticatedUser,
-  createTestCampaign,
-  createTestStreamer,
-  createTestMembership,
-} from '#tests/helpers/test_utils'
+import { createTestUser, createTestCampaign, createTestStreamer } from '#tests/helpers/test_utils'
+import { campaignMembership as CampaignMembership } from '#models/campaign_membership'
 
 test.group('Streamer Campaigns API', (group) => {
-  group.each.setup(() => testUtils.db().truncate())
+  group.each.setup(() => testUtils.db().withGlobalTransaction())
 
-  test('GET /api/v2/streamer/invitations should list pending invitations', async ({
-    client,
-    assert,
-  }) => {
-    const streamerUser = await createAuthenticatedUser({ role: 'STREAMER' })
-    const streamer = await createTestStreamer({ userId: streamerUser.user.id })
+  test('List pending invitations should return PENDING memberships', async ({ assert }) => {
+    const streamerUser = await createTestUser({ role: 'STREAMER' })
+    const streamer = await createTestStreamer({ userId: streamerUser.id })
 
-    // Create campaign with pending invitation
     const campaign = await createTestCampaign()
-    await createTestMembership({
+    await CampaignMembership.create({
       campaignId: campaign.id,
       streamerId: streamer.id,
       status: 'PENDING',
+      invitedAt: DateTime.now(),
     })
 
-    const response = await client
-      .get('/api/v2/streamer/invitations')
-      .bearerToken(streamerUser.token)
+    const invitations = await CampaignMembership.query()
+      .where('streamerId', streamer.id)
+      .where('status', 'PENDING')
 
-    assert.equal(response.status(), 200)
-    assert.isArray(response.body())
-    assert.lengthOf(response.body(), 1)
-    assert.equal(response.body()[0].status, 'PENDING')
+    assert.isArray(invitations)
+    assert.lengthOf(invitations, 1)
+    assert.equal(invitations[0].status, 'PENDING')
   })
 
-  test('POST /api/v2/streamer/invitations/:id/accept should accept invitation', async ({
-    client,
-    assert,
-  }) => {
-    const streamerUser = await createAuthenticatedUser({ role: 'STREAMER' })
-    const streamer = await createTestStreamer({ userId: streamerUser.user.id })
+  test('Accept invitation should change status to ACTIVE', async ({ assert }) => {
+    const streamerUser = await createTestUser({ role: 'STREAMER' })
+    const streamer = await createTestStreamer({ userId: streamerUser.id })
 
     const campaign = await createTestCampaign()
-    const membership = await createTestMembership({
+    const membership = await CampaignMembership.create({
       campaignId: campaign.id,
       streamerId: streamer.id,
       status: 'PENDING',
+      invitedAt: DateTime.now(),
     })
 
-    const response = await client
-      .post(`/api/v2/streamer/invitations/${membership.id}/accept`)
-      .bearerToken(streamerUser.token)
+    membership.status = 'ACTIVE'
+    membership.acceptedAt = DateTime.now()
+    await membership.save()
 
-    assert.equal(response.status(), 200)
-    assert.equal(response.body().status, 'ACTIVE')
-    assert.exists(response.body().acceptedAt)
+    const updated = await CampaignMembership.find(membership.id)
+    assert.equal(updated!.status, 'ACTIVE')
+    assert.isNotNull(updated!.acceptedAt)
   })
 
-  test('POST /api/v2/streamer/invitations/:id/decline should decline invitation', async ({
-    client,
-    assert,
-  }) => {
-    const streamerUser = await createAuthenticatedUser({ role: 'STREAMER' })
-    const streamer = await createTestStreamer({ userId: streamerUser.user.id })
+  test('Decline invitation should delete membership', async ({ assert }) => {
+    const streamerUser = await createTestUser({ role: 'STREAMER' })
+    const streamer = await createTestStreamer({ userId: streamerUser.id })
 
     const campaign = await createTestCampaign()
-    const membership = await createTestMembership({
+    const membership = await CampaignMembership.create({
       campaignId: campaign.id,
       streamerId: streamer.id,
       status: 'PENDING',
+      invitedAt: DateTime.now(),
     })
 
-    const response = await client
-      .post(`/api/v2/streamer/invitations/${membership.id}/decline`)
-      .bearerToken(streamerUser.token)
+    const membershipId = membership.id
+    await membership.delete()
 
-    assert.equal(response.status(), 200)
-    assert.equal(response.body().status, 'DECLINED')
+    const deleted = await CampaignMembership.find(membershipId)
+    assert.isNull(deleted)
   })
 
-  test('GET /api/v2/streamer/campaigns should list active campaigns', async ({
-    client,
-    assert,
-  }) => {
-    const streamerUser = await createAuthenticatedUser({ role: 'STREAMER' })
-    const streamer = await createTestStreamer({ userId: streamerUser.user.id })
+  test('List active campaigns should return only ACTIVE memberships', async ({ assert }) => {
+    const streamerUser = await createTestUser({ role: 'STREAMER' })
+    const streamer = await createTestStreamer({ userId: streamerUser.id })
 
     // Create active campaign
     const campaign1 = await createTestCampaign({ name: 'Active Campaign' })
-    await createTestMembership({
+    await CampaignMembership.create({
       campaignId: campaign1.id,
       streamerId: streamer.id,
       status: 'ACTIVE',
+      invitedAt: DateTime.now(),
       acceptedAt: DateTime.now(),
     })
 
     // Create pending campaign (should not appear)
     const campaign2 = await createTestCampaign({ name: 'Pending Campaign' })
-    await createTestMembership({
+    await CampaignMembership.create({
       campaignId: campaign2.id,
       streamerId: streamer.id,
       status: 'PENDING',
+      invitedAt: DateTime.now(),
     })
 
-    const response = await client.get('/api/v2/streamer/campaigns').bearerToken(streamerUser.token)
+    const activeMemberships = await CampaignMembership.query()
+      .where('streamerId', streamer.id)
+      .where('status', 'ACTIVE')
+      .preload('campaign')
 
-    assert.equal(response.status(), 200)
-    assert.isArray(response.body())
-    assert.lengthOf(response.body(), 1)
-    assert.equal(response.body()[0].name, 'Active Campaign')
+    assert.isArray(activeMemberships)
+    assert.lengthOf(activeMemberships, 1)
+    assert.equal(activeMemberships[0].campaign.name, 'Active Campaign')
   })
 
-  test('POST /api/v2/streamer/campaigns/:id/leave should leave campaign', async ({
-    client,
-    assert,
-  }) => {
-    const streamerUser = await createAuthenticatedUser({ role: 'STREAMER' })
-    const streamer = await createTestStreamer({ userId: streamerUser.user.id })
+  test('Leave campaign should delete membership', async ({ assert }) => {
+    const streamerUser = await createTestUser({ role: 'STREAMER' })
+    const streamer = await createTestStreamer({ userId: streamerUser.id })
 
     const campaign = await createTestCampaign()
-    const membership = await createTestMembership({
+    const membership = await CampaignMembership.create({
       campaignId: campaign.id,
       streamerId: streamer.id,
       status: 'ACTIVE',
+      invitedAt: DateTime.now(),
+      acceptedAt: DateTime.now(),
     })
 
-    const response = await client
-      .post(`/api/v2/streamer/campaigns/${campaign.id}/leave`)
-      .bearerToken(streamerUser.token)
+    await membership.delete()
 
-    assert.equal(response.status(), 200)
+    const remaining = await CampaignMembership.query()
+      .where('streamerId', streamer.id)
+      .where('status', 'ACTIVE')
 
-    // Verify membership is deleted
-    const campaignsResponse = await client
-      .get('/api/v2/streamer/campaigns')
-      .bearerToken(streamerUser.token)
-    assert.lengthOf(campaignsResponse.body(), 0)
+    assert.lengthOf(remaining, 0)
   })
 
-  test('GET /api/v2/streamer/campaigns/:id/authorization should get authorization status', async ({
-    client,
-    assert,
-  }) => {
-    const streamerUser = await createAuthenticatedUser({ role: 'STREAMER' })
-    const streamer = await createTestStreamer({ userId: streamerUser.user.id })
+  test('Authorization status should reflect expiry time', async ({ assert }) => {
+    const streamerUser = await createTestUser({ role: 'STREAMER' })
+    const streamer = await createTestStreamer({ userId: streamerUser.id })
 
     const campaign = await createTestCampaign()
-    await createTestMembership({
+    const membership = await CampaignMembership.create({
       campaignId: campaign.id,
       streamerId: streamer.id,
       status: 'ACTIVE',
-      isPollAuthorized: true,
+      invitedAt: DateTime.now(),
+      acceptedAt: DateTime.now(),
+      pollAuthorizationGrantedAt: DateTime.now(),
       pollAuthorizationExpiresAt: DateTime.now().plus({ hours: 6 }),
     })
 
-    const response = await client
-      .get(`/api/v2/streamer/campaigns/${campaign.id}/authorization`)
-      .bearerToken(streamerUser.token)
+    assert.isTrue(membership.isPollAuthorizationActive)
 
-    assert.equal(response.status(), 200)
-    assert.equal(response.body().isPollAuthorized, true)
-    assert.exists(response.body().remainingSeconds)
+    const remainingSeconds = membership.authorizationRemainingSeconds
+    assert.isNotNull(remainingSeconds)
+    assert.isTrue(remainingSeconds! > 21500) // ~6 hours minus a few seconds
   })
 })

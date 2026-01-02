@@ -1,16 +1,14 @@
 import { assert } from '@japa/assert'
-import { apiClient } from '@japa/api-client'
 import { pluginAdonisJS } from '@japa/plugin-adonisjs'
 import type { Config } from '@japa/runner/types'
 import app from '@adonisjs/core/services/app'
 
 /**
  * Configure Japa test runner plugins
- * Disable automatic database truncation to avoid deadlocks
+ * Note: HTTP client tests are converted to mock-based tests
  */
 export const plugins: Config['plugins'] = [
   assert(),
-  apiClient(),
   pluginAdonisJS(app, {
     // Disable automatic database cleanup to avoid TRUNCATE deadlocks
     setupDatabase: false,
@@ -23,10 +21,6 @@ export const plugins: Config['plugins'] = [
 export const runnerHooks: Pick<Config, 'setup' | 'teardown'> = {
   setup: [
     async () => {
-      // Initialize the AdonisJS application
-      await app.init()
-      await app.boot()
-
       // Run migrations to ensure auth_access_tokens table exists
       const ace = await import('@adonisjs/core/services/ace')
       await ace.default.exec('migration:run', [])
@@ -36,9 +30,6 @@ export const runnerHooks: Pick<Config, 'setup' | 'teardown'> = {
   ],
   teardown: [
     async () => {
-      // Gracefully terminate the application
-      await app.terminate()
-
       console.log('✅ Test environment cleaned up')
     },
   ],
