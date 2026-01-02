@@ -4,6 +4,16 @@ import { fileURLToPath } from "node:url";
 
 export default defineConfig({
   plugins: [vue()],
+  esbuild: {
+    tsconfigRaw: {
+      compilerOptions: {
+        target: "ESNext",
+        module: "ESNext",
+        strict: true,
+        skipLibCheck: true,
+      },
+    },
+  },
   test: {
     globals: true,
     environment: "happy-dom",

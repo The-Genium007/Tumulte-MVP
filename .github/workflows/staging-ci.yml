@@ -103,6 +103,9 @@ jobs:
         working-directory: ./backend
         env:
           NODE_ENV: test
+          PORT: 3333
+          HOST: localhost
+          LOG_LEVEL: silent
           DB_HOST: localhost
           DB_PORT: 5432
           DB_USER: postgres
@@ -112,6 +115,9 @@ jobs:
           REDIS_PORT: 6379
           SESSION_DRIVER: memory
           APP_KEY: test_key_32_characters_long_1234
+          TWITCH_CLIENT_ID: test_client_id
+          TWITCH_CLIENT_SECRET: test_client_secret
+          TWITCH_REDIRECT_URI: http://localhost:3333/auth/twitch/callback
         run: npm run test:coverage -- --filter=unit
 
       - name: Check coverage threshold (80%)
@@ -290,6 +296,9 @@ jobs:
         working-directory: ./backend
         env:
           NODE_ENV: test
+          PORT: 3333
+          HOST: localhost
+          LOG_LEVEL: silent
           DB_HOST: localhost
           DB_PORT: 5432
           DB_USER: postgres
@@ -298,12 +307,18 @@ jobs:
           REDIS_HOST: localhost
           REDIS_PORT: 6379
           APP_KEY: test_key_32_characters_long_1234
+          TWITCH_CLIENT_ID: test_client_id
+          TWITCH_CLIENT_SECRET: test_client_secret
+          TWITCH_REDIRECT_URI: http://localhost:3333/auth/twitch/callback
         run: node ace migration:run --force
 
       - name: Run functional tests
         working-directory: ./backend
         env:
           NODE_ENV: test
+          PORT: 3333
+          HOST: localhost
+          LOG_LEVEL: silent
           DB_HOST: localhost
           DB_PORT: 5432
           DB_USER: postgres
@@ -313,6 +328,9 @@ jobs:
           REDIS_PORT: 6379
           SESSION_DRIVER: memory
           APP_KEY: test_key_32_characters_long_1234
+          TWITCH_CLIENT_ID: test_client_id
+          TWITCH_CLIENT_SECRET: test_client_secret
+          TWITCH_REDIRECT_URI: http://localhost:3333/auth/twitch/callback
         run: npm run test -- --filter=functional
 
       - name: Warning on functional tests failure
