@@ -106,17 +106,7 @@ export default class CampaignsController {
    * POST /api/v2/mj/campaigns/:id/invite
    */
   async invite({ params, request, response }: HttpContext) {
-    await validateRequest(inviteStreamerSchema)(
-      { request, response } as HttpContext,
-      async () => {}
-    )
-
-    const data = request.only([
-      'twitchUserId',
-      'twitchLogin',
-      'twitchDisplayName',
-      'profileImageUrl',
-    ])
+    const data = inviteStreamerSchema.parse(request.all())
 
     // Trouver ou créer le streamer
     let streamer = await this.streamerRepository.findByTwitchUserId(data.twitchUserId)
