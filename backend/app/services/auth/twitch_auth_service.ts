@@ -49,9 +49,9 @@ class TwitchAuthService {
    */
   getAuthorizationUrl(state: string, forceVerify: boolean = true): string {
     const params = new URLSearchParams({
-      clientId: this.clientId,
-      redirectUri: this.redirectUri,
-      responseType: 'code',
+      client_id: this.clientId,
+      redirect_uri: this.redirectUri,
+      response_type: 'code',
       scope: this.scopes.join(' '),
       state,
     })
@@ -239,7 +239,7 @@ class TwitchAuthService {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: new URLSearchParams({
-        clientId: this.clientId,
+        client_id: this.clientId,
         token,
       }),
     })

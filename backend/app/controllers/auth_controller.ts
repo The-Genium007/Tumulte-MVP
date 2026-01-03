@@ -4,7 +4,7 @@ import logger from '@adonisjs/core/services/logger'
 import env from '#start/env'
 import { user as User } from '#models/user'
 import { streamer as Streamer } from '#models/streamer'
-import { twitchAuthService as TwitchAuthService } from '#services/twitch_auth_service'
+import { twitchAuthService as TwitchAuthService } from '#services/auth/twitch_auth_service'
 
 export default class AuthController {
   private readonly twitchAuthService: TwitchAuthService

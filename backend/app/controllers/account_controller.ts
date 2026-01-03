@@ -1,6 +1,6 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import logger from '@adonisjs/core/services/logger'
-import { twitchAuthService as TwitchAuthService } from '#services/twitch_auth_service'
+import { twitchAuthService as TwitchAuthService } from '#services/auth/twitch_auth_service'
 
 export default class AccountController {
   private readonly twitchAuthService: TwitchAuthService

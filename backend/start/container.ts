@@ -30,7 +30,7 @@ app.container.bind('membershipService', async () => {
 
 // Twitch Services
 app.container.bind('twitchAuthService', async () => {
-  const mod = await import('#services/twitch_auth_service')
+  const mod = await import('#services/auth/twitch_auth_service')
   return new mod.twitchAuthService()
 })
 
@@ -187,7 +187,7 @@ declare module '@adonisjs/core/types' {
       typeof import('#services/campaigns/membership_service').MembershipService
     >
     twitchAuthService: InstanceType<
-      typeof import('#services/twitch_auth_service').twitchAuthService
+      typeof import('#services/auth/twitch_auth_service').twitchAuthService
     >
     twitchApiService: InstanceType<
       typeof import('#services/twitch/twitch_api_service').twitchApiService
