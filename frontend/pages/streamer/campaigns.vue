@@ -328,7 +328,6 @@ const loadAuthorizationStatus = async () => {
     authorizationStatuses.value = data.map((item) => ({
       campaignId: item.campaign_id,
       campaignName: item.campaign_name,
-      isOwner: item.is_owner,
       isAuthorized: item.is_authorized,
       expiresAt: item.expires_at,
       remainingSeconds: item.remaining_seconds,
