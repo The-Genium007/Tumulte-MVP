@@ -299,14 +299,9 @@ export default class AuthController {
   }
 
   /**
-   * Change le rôle de l'utilisateur connecté (uniquement en dev)
+   * Change le rôle de l'utilisateur connecté
    */
   async switchRole({ auth, request, response }: HttpContext) {
-    // Restreindre cette fonctionnalité à l'environnement de développement
-    if (env.get('NODE_ENV') !== 'development') {
-      return response.forbidden({ message: 'Cette fonctionnalité est désactivée en production' })
-    }
-
     const user = auth.user!
     const { role } = request.only(['role'])
 
