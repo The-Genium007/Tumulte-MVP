@@ -78,74 +78,6 @@
             </p>
           </div>
 
-          <!-- Points de chaîne (seulement pour vote multiple) -->
-          <Transition
-            enter-active-class="transition duration-200 ease-out"
-            enter-from-class="opacity-0 -translate-y-2"
-            enter-to-class="opacity-100 translate-y-0"
-            leave-active-class="transition duration-150 ease-in"
-            leave-from-class="opacity-100 translate-y-0"
-            leave-to-class="opacity-0 -translate-y-2"
-          >
-            <div v-if="newPoll.type === 'STANDARD'" class="p-4 rounded-lg bg-primary-500/10 border border-primary-500/30 space-y-3">
-              <div class="flex items-center gap-2">
-                <UIcon name="i-lucide-coins" class="size-5 text-primary-400" />
-                <h3 class="text-sm font-semibold text-primary-300">Points de chaîne pour votes multiples</h3>
-              </div>
-
-              <div class="flex items-center gap-3">
-                <UToggle v-model="newPoll.channelPointsEnabled" />
-                <label class="text-sm text-gray-300">
-                  Activer les points de chaîne
-                </label>
-              </div>
-
-              <Transition
-                enter-active-class="transition duration-200 ease-out"
-                enter-from-class="opacity-0 -translate-y-1"
-                enter-to-class="opacity-100 translate-y-0"
-                leave-active-class="transition duration-150 ease-in"
-                leave-from-class="opacity-100 translate-y-0"
-                leave-to-class="opacity-0 -translate-y-1"
-              >
-                <div v-if="newPoll.channelPointsEnabled" class="space-y-2">
-                  <label class="block text-xs font-medium text-gray-400">
-                    Coût en points de chaîne par vote supplémentaire
-                  </label>
-                  <div class="flex items-center gap-2">
-                    <UInput
-                      v-model.number="newPoll.channelPointsAmount"
-                      type="number"
-                      placeholder="50"
-                      min="1"
-                      max="1000000"
-                      size="lg"
-                      class="flex-1"
-                    >
-                      <template #trailing>
-                        <span class="text-xs text-gray-400">points</span>
-                      </template>
-                    </UInput>
-                  </div>
-                  <p class="text-xs text-gray-400">
-                    Le premier vote est gratuit, les suivants coûtent {{ newPoll.channelPointsAmount || 50 }} points
-                  </p>
-                </div>
-              </Transition>
-
-              <div class="bg-gray-800/50 p-3 rounded border border-gray-700">
-                <div class="flex items-start gap-2">
-                  <UIcon name="i-lucide-info" class="size-4 text-blue-400 mt-0.5 shrink-0" />
-                  <p class="text-xs text-gray-400">
-                    <span class="font-semibold text-blue-400">Note :</span>
-                    Les points de chaîne fonctionnent uniquement pour les streamers affiliés/partenaires.
-                    Pour les streamers non-affiliés (vote par chat IRC), cette option sera ignorée.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </Transition>
-
           <!-- Réponses -->
           <div>
             <label class="block text-sm font-medium text-gray-300 mb-2">Réponses (2-5 max)</label>
@@ -173,6 +105,49 @@
               @click="addOption"
             />
           </div>
+
+          <!-- Points de chaîne (seulement pour vote multiple) -->
+          <Transition
+            enter-active-class="transition duration-200 ease-out"
+            enter-from-class="opacity-0 -translate-y-2"
+            enter-to-class="opacity-100 translate-y-0"
+            leave-active-class="transition duration-150 ease-in"
+            leave-from-class="opacity-100 translate-y-0"
+            leave-to-class="opacity-0 -translate-y-2"
+          >
+            <div v-if="newPoll.type === 'STANDARD'" class="p-4 rounded-lg bg-primary-500/10 border border-primary-500/30 space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <UIcon name="i-lucide-coins" class="size-5 text-primary-400" />
+                  <span class="text-sm font-semibold text-primary-300">Points de chaîne par vote</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <UInput
+                    v-model.number="newPoll.channelPointsAmount"
+                    type="number"
+                    :min="1"
+                    :max="1000000"
+                    size="sm"
+                    class="w-24"
+                  />
+                  <span class="text-xs text-gray-400">pts</span>
+                </div>
+              </div>
+              <p class="text-xs text-gray-400">
+                Le premier vote est gratuit, les suivants coûtent {{ newPoll.channelPointsAmount || 50 }} points
+              </p>
+              <div class="bg-gray-800/50 p-3 rounded border border-gray-700">
+                <div class="flex items-start gap-2">
+                  <UIcon name="i-lucide-info" class="size-4 text-blue-400 mt-0.5 shrink-0" />
+                  <p class="text-xs text-gray-400">
+                    <span class="font-semibold text-blue-400">Note :</span>
+                    Les points de chaîne fonctionnent uniquement pour les streamers affiliés/partenaires.
+                    Pour les streamers non-affiliés (vote par chat IRC), cette option sera ignorée.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </Transition>
 
           <!-- Actions -->
           <div class="flex gap-3 pt-4 border-t border-gray-700">
@@ -362,6 +337,7 @@ import { useSessionPollsStore } from "@/stores/sessionPolls";
 
 definePageMeta({
   layout: "authenticated" as const,
+  middleware: ["auth"],
 });
 
 const config = useRuntimeConfig();
@@ -400,6 +376,8 @@ const capitalizeFirst = (str: string): string => {
 
 const handlePollTypeChange = (type: "UNIQUE" | "STANDARD") => {
   newPoll.value.type = type;
+  // Auto-enable channel points for STANDARD (vote multiple)
+  newPoll.value.channelPointsEnabled = type === "STANDARD";
 };
 
 const addOption = () => {
@@ -430,12 +408,14 @@ const handleAddPoll = async () => {
   const validOptions = newPollOptions.value.filter((opt) => opt.trim().length > 0);
 
   try {
+    const isStandard = newPoll.value.type === "STANDARD";
     await pollsStore.addPoll(campaignId.value, sessionId.value, {
       question: newPoll.value.question,
       options: validOptions,
       type: newPoll.value.type,
-      channelPointsEnabled: newPoll.value.channelPointsEnabled,
-      channelPointsAmount: newPoll.value.channelPointsAmount || 50,
+      // Channel points auto-enabled for STANDARD (vote multiple)
+      channelPointsEnabled: isStandard,
+      channelPointsAmount: isStandard ? (newPoll.value.channelPointsAmount || 50) : undefined,
     });
 
     toast.add({

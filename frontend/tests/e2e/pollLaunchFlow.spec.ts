@@ -10,17 +10,17 @@ import { test, expect } from "@playwright/test";
  */
 test.describe("Poll Launch Flow", () => {
   test.describe("Public pages", () => {
-    test("should redirect to login when accessing sessions without auth", async ({
+    test("should redirect to login when accessing poll create without auth", async ({
       page,
     }) => {
-      await page.goto("/mj/campaigns/some-campaign-id/sessions");
+      await page.goto("/mj/sessions/some-session-id/polls/create");
 
       // Should redirect to login
       await page.waitForURL(/\/login/, { timeout: 10000 });
       await expect(page).toHaveURL(/\/login/);
     });
 
-    test("should redirect to login when accessing poll templates without auth", async ({
+    test("should redirect to login when accessing campaign details without auth", async ({
       page,
     }) => {
       await page.goto("/mj/campaigns/some-campaign-id");

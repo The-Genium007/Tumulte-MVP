@@ -168,6 +168,7 @@
 <script setup lang="ts">
 definePageMeta({
   layout: "authenticated" as const,
+  middleware: ["auth"],
 });
 import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";

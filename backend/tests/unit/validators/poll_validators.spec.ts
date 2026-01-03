@@ -212,6 +212,42 @@ test.group('LaunchPollValidator', () => {
 
     assert.isFalse(result.success)
   })
+
+  test('should accept STANDARD poll with channel points enabled', ({ assert }) => {
+    const validData = {
+      title: 'Question with channel points',
+      options: ['Option A', 'Option B'],
+      type: 'STANDARD',
+      channelPointsEnabled: true,
+      channelPointsAmount: 50,
+    }
+
+    const result = launchPollSchema.safeParse(validData)
+
+    assert.isTrue(result.success)
+    if (result.success) {
+      assert.equal(result.data.type, 'STANDARD')
+      assert.isTrue(result.data.channelPointsEnabled)
+      assert.equal(result.data.channelPointsAmount, 50)
+    }
+  })
+
+  test('should accept UNIQUE poll without channel points', ({ assert }) => {
+    const validData = {
+      title: 'Simple unique vote',
+      options: ['Yes', 'No'],
+      type: 'UNIQUE',
+    }
+
+    const result = launchPollSchema.safeParse(validData)
+
+    assert.isTrue(result.success)
+    if (result.success) {
+      assert.equal(result.data.type, 'UNIQUE')
+      assert.isUndefined(result.data.channelPointsEnabled)
+      assert.isUndefined(result.data.channelPointsAmount)
+    }
+  })
 })
 
 test.group('AddPollValidator', () => {

@@ -558,6 +558,7 @@ import { useWebSocket } from "@/composables/useWebSocket";
 
 definePageMeta({
   layout: "authenticated" as const,
+  middleware: ["auth"],
 });
 
 const config = useRuntimeConfig();
@@ -582,7 +583,9 @@ interface Poll {
   id: string;
   question: string;
   options: string[];
-  type?: string;
+  type?: "UNIQUE" | "STANDARD";
+  channelPointsEnabled?: boolean;
+  channelPointsAmount?: number;
 }
 
 interface Session {
@@ -1098,7 +1101,10 @@ const sendPoll = async () => {
         title: currentPoll.value.question,
         options: currentPoll.value.options,
         durationSeconds: pollDuration.value,
-        type: currentPoll.value.type || 'STANDARD', // Vote unique ou multiple
+        type: currentPoll.value.type || 'STANDARD',
+        // Channel points from poll configuration (set in session poll creation)
+        channelPointsEnabled: currentPoll.value.channelPointsEnabled ?? false,
+        channelPointsAmount: currentPoll.value.channelPointsAmount ?? null,
       }),
     });
 

@@ -8,7 +8,7 @@ export const useSettings = () => {
     try {
       const response = await $fetch("/streamer/revoke", {
         method: "POST",
-        baseURL: config.public.apiBaseUrl as string,
+        baseURL: config.public.apiBase as string,
         credentials: "include",
       });
 
@@ -27,7 +27,7 @@ export const useSettings = () => {
     try {
       const response = await $fetch("/account/delete", {
         method: "DELETE",
-        baseURL: config.public.apiBaseUrl as string,
+        baseURL: config.public.apiBase as string,
         credentials: "include",
       });
 

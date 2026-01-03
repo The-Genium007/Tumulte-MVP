@@ -249,12 +249,7 @@ import type { AuthorizationStatus } from "@/types/index";
 
 definePageMeta({
   layout: "authenticated" as const,
-  middleware: async () => {
-    const { user } = useAuth();
-    if (user.value && user.value.role !== 'STREAMER') {
-      return navigateTo('/mj');
-    }
-  }
+  middleware: ["auth", "streamer-only"],
 });
 
 const config = useRuntimeConfig();

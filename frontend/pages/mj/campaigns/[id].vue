@@ -419,6 +419,7 @@ const liveStatus = ref<LiveStatusMap>({});
 
 definePageMeta({
   layout: "authenticated" as const,
+  middleware: ["auth"],
 });
 const members = ref<CampaignMembership[]>([]);
 const loadingMembers = ref(false);

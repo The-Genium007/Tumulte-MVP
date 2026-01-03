@@ -13,24 +13,14 @@ test.describe("Role Switching", () => {
     test("should redirect to login when accessing MJ dashboard without auth", async ({
       page,
     }) => {
-      await page.goto("/mj/dashboard");
+      await page.goto("/mj");
 
       // Should redirect to login
       await page.waitForURL(/\/login/, { timeout: 10000 });
       await expect(page).toHaveURL(/\/login/);
     });
 
-    test("should redirect to login when accessing streamer dashboard without auth", async ({
-      page,
-    }) => {
-      await page.goto("/streamer/dashboard");
-
-      // Should redirect to login
-      await page.waitForURL(/\/login/, { timeout: 10000 });
-      await expect(page).toHaveURL(/\/login/);
-    });
-
-    test("should redirect to login when accessing streamer index without auth", async ({
+    test("should redirect to login when accessing streamer without auth", async ({
       page,
     }) => {
       await page.goto("/streamer");

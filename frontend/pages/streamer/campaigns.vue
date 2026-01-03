@@ -220,17 +220,11 @@
 import { ref, onMounted, computed } from "vue";
 import AuthorizationCard from "@/components/AuthorizationCard.vue";
 import { useCampaigns } from "@/composables/useCampaigns";
-import { useAuth } from "@/composables/useAuth";
 import type { Campaign, CampaignInvitation, AuthorizationStatus } from "@/types";
 
 definePageMeta({
   layout: "authenticated" as const,
-  middleware: async () => {
-    const { user } = useAuth();
-    if (user.value && user.value.role !== 'STREAMER') {
-      return navigateTo('/mj');
-    }
-  }
+  middleware: ["auth", "streamer-only"],
 });
 
 const {

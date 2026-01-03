@@ -388,6 +388,7 @@ import { useSettings } from '@/composables/useSettings'
 
 definePageMeta({
   layout: "authenticated" as const,
+  middleware: ["auth"],
 });
 
 const _router = useRouter()

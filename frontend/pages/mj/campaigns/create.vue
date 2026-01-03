@@ -98,6 +98,7 @@ import { useCampaigns } from "@/composables/useCampaigns";
 
 definePageMeta({
   layout: "authenticated" as const,
+  middleware: ["auth"],
   breadcrumbs: [
     { label: "Campagnes", to: "/mj/campaigns", icon: "i-lucide-folder-kanban" },
     { label: "Nouvelle campagne", to: null, icon: "i-lucide-folder-plus" }
