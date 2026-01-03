@@ -9,6 +9,9 @@
         <!-- Breadcrumbs -->
         <AppBreadcrumbs />
 
+        <!-- Banner de permission notifications push -->
+        <NotificationsPushPermissionBanner />
+
         <!-- Page Content -->
         <slot />
       </div>

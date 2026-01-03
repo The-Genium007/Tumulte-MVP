@@ -162,3 +162,44 @@ export interface LiveStatus {
 }
 
 export type LiveStatusMap = Record<string, LiveStatus>;
+
+// Push Notification types
+export interface PushSubscription {
+  id: string;
+  endpoint: string;
+  deviceName: string | null;
+  userAgent: string | null;
+  createdAt: string;
+  lastUsedAt: string | null;
+}
+
+export interface NotificationPreferences {
+  pushEnabled: boolean;
+  campaignInvitations: boolean;
+  criticalAlerts: boolean;
+  pollStarted: boolean;
+  pollEnded: boolean;
+  campaignMemberJoined: boolean;
+  sessionReminder: boolean;
+}
+
+export type NotificationType =
+  | "campaign:invitation"
+  | "critical:alert"
+  | "poll:started"
+  | "poll:ended"
+  | "campaign:member_joined"
+  | "session:reminder";
+
+export interface PushNotificationPayload {
+  type: NotificationType;
+  title: string;
+  body: string;
+  data?: {
+    url?: string;
+    campaignId?: string;
+    pollInstanceId?: string;
+    sessionId?: string;
+  };
+  timestamp: string;
+}

@@ -210,6 +210,22 @@ router
   .use(middleware.auth({ guards: ['web', 'api'] }))
 
 // ==========================================
+// Routes Notifications Push (accessible à tous les rôles authentifiés)
+// ==========================================
+router
+  .group(() => {
+    router.get('/vapid-public-key', '#controllers/notifications_controller.vapidPublicKey')
+    router.post('/subscribe', '#controllers/notifications_controller.subscribe')
+    router.delete('/subscribe', '#controllers/notifications_controller.unsubscribe')
+    router.get('/subscriptions', '#controllers/notifications_controller.listSubscriptions')
+    router.delete('/subscriptions/:id', '#controllers/notifications_controller.deleteSubscription')
+    router.get('/preferences', '#controllers/notifications_controller.getPreferences')
+    router.put('/preferences', '#controllers/notifications_controller.updatePreferences')
+  })
+  .prefix('/notifications')
+  .use(middleware.auth({ guards: ['web', 'api'] }))
+
+// ==========================================
 // Transmit WebSocket routes
 // ==========================================
 import transmit from '@adonisjs/transmit/services/main'
