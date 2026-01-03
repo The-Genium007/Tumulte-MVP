@@ -452,6 +452,8 @@ jobs:
     name: Frontend E2E Tests (Required)
     runs-on: ubuntu-latest
     needs: build-production
+    # Timeout global pour le job (15 minutes max)
+    timeout-minutes: 15
 
     services:
       postgres:
@@ -536,7 +538,17 @@ jobs:
           TWITCH_CLIENT_ID: test_client_id
           TWITCH_CLIENT_SECRET: test_client_secret
           TWITCH_REDIRECT_URI: http://localhost:3333/auth/twitch/callback
-        run: npm run start &
+        run: |
+          npm run start &
+          # Attendre que le backend soit prêt (max 60 secondes)
+          for i in {1..30}; do
+            if curl -s http://localhost:3333/health > /dev/null 2>&1; then
+              echo "Backend is ready!"
+              break
+            fi
+            echo "Waiting for backend... ($i/30)"
+            sleep 2
+          done
 
       # Frontend E2E
       - name: Install frontend dependencies
@@ -545,12 +557,13 @@ jobs:
 
       - name: Install Playwright
         working-directory: ./frontend
-        run: npx playwright install --with-deps
+        run: npx playwright install --with-deps chromium
 
       - name: Run E2E tests
         working-directory: ./frontend
         env:
           NUXT_PUBLIC_API_URL: http://localhost:3333
+          CI: true
         run: npm run test:e2e
 
       - name: Upload Playwright report
