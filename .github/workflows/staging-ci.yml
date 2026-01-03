@@ -281,7 +281,7 @@ jobs:
           TWITCH_CLIENT_ID: test_client_id
           TWITCH_CLIENT_SECRET: test_client_secret
           TWITCH_REDIRECT_URI: http://localhost:3333/auth/twitch/callback
-        run: node ace migration:run --force
+        run: node --loader ts-node-maintained/esm bin/console.ts migration:run --force
 
       - name: Run functional tests
         working-directory: ./backend
