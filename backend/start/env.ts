@@ -61,4 +61,21 @@ export default await Env.create(new URL('../', import.meta.url), {
   */
   DISCORD_SUPPORT_WEBHOOK_URL: Env.schema.string.optional(),
   DISCORD_SUPPORT_ROLE_ID: Env.schema.string.optional(),
+
+  /*
+  |----------------------------------------------------------
+  | Variables for configuring Twitch OAuth
+  |----------------------------------------------------------
+  */
+  TWITCH_CLIENT_ID: Env.schema.string(),
+  TWITCH_CLIENT_SECRET: Env.schema.string(),
+  TWITCH_REDIRECT_URI: Env.schema.string(),
+  MJ_TWITCH_IDS: Env.schema.string.optional(),
+
+  /*
+  |----------------------------------------------------------
+  | Frontend URL (for CORS and redirects)
+  |----------------------------------------------------------
+  */
+  FRONTEND_URL: Env.schema.string(),
 })

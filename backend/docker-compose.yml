@@ -1,6 +1,8 @@
 services:
   # Backend - AdonisJS API + WebSocket
-  backend:
+  # Service name includes environment suffix to avoid conflicts between staging/production
+  backend-${NODE_ENV:-production}:
+    container_name: tumulte-backend-${NODE_ENV:-production}
     build:
       context: .
       dockerfile: Dockerfile
@@ -8,7 +10,7 @@ services:
     image: ${IMAGE_NAME:-tumulte-backend}:${IMAGE_TAG:-latest}
     environment:
       # Application
-      NODE_ENV: production
+      NODE_ENV: ${NODE_ENV:-production}
       PORT: 3333
       HOST: 0.0.0.0
       APP_KEY: ${APP_KEY}

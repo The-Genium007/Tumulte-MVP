@@ -1,6 +1,8 @@
 services:
   # Frontend - Nuxt dashboard
-  frontend:
+  # Service name includes environment suffix to avoid conflicts between staging/production
+  frontend-${NODE_ENV:-production}:
+    container_name: tumulte-frontend-${NODE_ENV:-production}
     build:
       context: .
       dockerfile: Dockerfile
@@ -10,7 +12,7 @@ services:
     image: ${IMAGE_NAME:-tumulte-frontend}:${IMAGE_TAG:-latest}
     environment:
       # Application
-      NODE_ENV: production
+      NODE_ENV: ${NODE_ENV:-production}
       PORT: 3000
       HOST: 0.0.0.0
 
