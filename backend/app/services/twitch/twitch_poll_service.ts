@@ -11,15 +11,21 @@ interface TwitchPollChoice {
   bits_votes?: number
 }
 
+// Twitch API returns snake_case
 interface TwitchPoll {
   id: string
-  broadcasterId: string
-  broadcasterName: string
-  broadcasterLogin: string
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  broadcaster_id: string
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  broadcaster_name: string
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  broadcaster_login: string
   title: string
   choices: TwitchPollChoice[]
-  channelPointsVotingEnabled: boolean
-  channelPointsPerVote: number
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  channel_points_voting_enabled: boolean
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  channel_points_per_vote: number
   status: 'ACTIVE' | 'COMPLETED' | 'TERMINATED' | 'ARCHIVED' | 'MODERATED' | 'INVALID'
   duration: number
   // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -56,8 +62,9 @@ class TwitchPollService {
     id: string
     status: string
   }> {
-    const body: any = {
-      broadcasterId: broadcasterUserId,
+    // Twitch API requires snake_case parameters
+    const body: Record<string, unknown> = {
+      broadcaster_id: broadcasterUserId,
       title,
       choices: choices.map((choice) => ({ title: choice })),
       duration: durationSeconds,
@@ -65,8 +72,8 @@ class TwitchPollService {
 
     // Ajouter les points de chaîne si activés
     if (channelPointsEnabled && channelPointsPerVote && channelPointsPerVote > 0) {
-      body.channelPointsVotingEnabled = true
-      body.channelPointsPerVote = channelPointsPerVote
+      body.channel_points_voting_enabled = true
+      body.channel_points_per_vote = channelPointsPerVote
     }
 
     const response = await fetch('https://api.twitch.tv/helix/polls', {
@@ -122,7 +129,7 @@ class TwitchPollService {
     }>
   }> {
     const params = new URLSearchParams({
-      broadcasterId: broadcasterId,
+      broadcaster_id: broadcasterId,
       id: pollId,
     })
 
@@ -179,7 +186,7 @@ class TwitchPollService {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        broadcasterId: broadcasterId,
+        broadcaster_id: broadcasterId,
         id: pollId,
         status,
       }),

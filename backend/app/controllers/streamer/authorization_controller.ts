@@ -5,7 +5,7 @@ import logger from '@adonisjs/core/services/logger'
 import { AuthorizationService } from '#services/campaigns/authorization_service'
 import { StreamerRepository } from '#repositories/streamer_repository'
 import { CampaignMembershipRepository } from '#repositories/campaign_membership_repository'
-import { twitchAuthService as TwitchAuthService } from '#services/twitch_auth_service'
+import { twitchAuthService as TwitchAuthService } from '#services/auth/twitch_auth_service'
 
 /**
  * Contrôleur pour la gestion des autorisations de sondages (Streamer)
