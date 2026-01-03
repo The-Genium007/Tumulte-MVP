@@ -1,6 +1,6 @@
 <template>
   <UAlert
-    v-if="shouldShowBanner"
+    v-if="showBanner"
     color="info"
     variant="soft"
     icon="i-lucide-bell"
@@ -22,6 +22,7 @@
           Activer
         </UButton>
         <UButton
+          v-if="!persistent"
           color="neutral"
           variant="ghost"
           size="sm"
@@ -38,16 +39,41 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { usePushNotifications } from "@/composables/usePushNotifications";
+
+const props = defineProps<{
+  persistent?: boolean;
+}>();
 
 const {
   loading,
   permissionStatus,
+  isSupported,
+  isCurrentBrowserSubscribed,
+  isPermissionDenied,
   subscribe,
   shouldShowBanner,
   dismissPermissionBanner,
+  checkCurrentBrowserSubscription,
 } = usePushNotifications();
+
+// En mode persistent : afficher tant que le navigateur n'est pas inscrit
+// En mode normal : utiliser la logique existante (dismissable)
+const showBanner = computed(() => {
+  if (props.persistent) {
+    // Mode persistent : visible si supporté, non inscrit et permission non refusée
+    return isSupported.value && !isCurrentBrowserSubscribed.value && !isPermissionDenied.value;
+  }
+  return shouldShowBanner.value;
+});
+
+// S'assurer que l'état du navigateur est à jour en mode persistent
+onMounted(async () => {
+  if (props.persistent) {
+    await checkCurrentBrowserSubscription();
+  }
+});
 
 const showDeniedModal = ref(false);
 
@@ -59,7 +85,13 @@ const handleEnable = async () => {
     showDeniedModal.value = true;
   }
 
-  dismissPermissionBanner();
+  // En mode persistent, on met à jour l'état du navigateur pour faire disparaître le banner
+  // En mode normal, on dismiss simplement le banner
+  if (props.persistent) {
+    await checkCurrentBrowserSubscription();
+  } else {
+    dismissPermissionBanner();
+  }
 };
 
 const handleDismiss = () => {

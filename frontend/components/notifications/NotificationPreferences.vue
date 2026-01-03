@@ -42,7 +42,7 @@
             <p class="font-medium text-white">Notifications push</p>
             <p class="text-sm text-gray-400">
               {{
-                isSubscribed
+                isCurrentBrowserSubscribed
                   ? "Actif sur cet appareil"
                   : "Non actif sur cet appareil"
               }}
@@ -111,7 +111,7 @@
 
         <!-- Bouton pour activer sur cet appareil -->
         <div
-          v-if="isSupported && !isSubscribed && localPreferences.pushEnabled"
+          v-if="isSupported && !isCurrentBrowserSubscribed && localPreferences.pushEnabled"
         >
           <UButton color="primary" :loading="loading" @click="handleSubscribe">
             <UIcon name="i-lucide-bell-plus" class="mr-2" />
@@ -133,13 +133,14 @@ const {
   preferences,
   loading,
   isSupported,
-  isSubscribed,
+  isCurrentBrowserSubscribed,
   isPermissionDenied,
   fetchSubscriptions,
   fetchPreferences,
   updatePreferences,
   subscribe,
   deleteSubscription,
+  checkCurrentBrowserSubscription,
 } = usePushNotifications();
 
 const localPreferences = reactive<NotificationPreferences>({
@@ -193,6 +194,8 @@ watch(
 onMounted(async () => {
   try {
     await Promise.all([fetchPreferences(), fetchSubscriptions()]);
+    // Vérifier si le navigateur actuel est inscrit
+    await checkCurrentBrowserSubscription();
   } catch (error) {
     console.error("Failed to fetch notification settings:", error);
   }
@@ -202,8 +205,10 @@ const handleGlobalToggle = async (value: boolean) => {
   localPreferences.pushEnabled = value;
   await updatePreferences({ pushEnabled: value });
 
-  if (value && !isSubscribed.value) {
+  if (value && !isCurrentBrowserSubscribed.value) {
     await subscribe();
+    // Après inscription, mettre à jour l'état du navigateur actuel
+    await checkCurrentBrowserSubscription();
   }
 };
 
@@ -217,6 +222,8 @@ const handleUpdate = async (
 
 const handleSubscribe = async () => {
   await subscribe();
+  // Après inscription, mettre à jour l'état du navigateur actuel
+  await checkCurrentBrowserSubscription();
 };
 
 const handleDeleteDevice = async (id: string) => {

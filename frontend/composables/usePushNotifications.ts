@@ -20,6 +20,7 @@ export function usePushNotifications() {
     canRequestPermission,
     isPermissionDenied,
     shouldShowBanner,
+    isCurrentBrowserSubscribed,
   } = storeToRefs(store);
 
   // Initialiser le statut de permission au montage
@@ -42,6 +43,7 @@ export function usePushNotifications() {
     canRequestPermission,
     isPermissionDenied,
     shouldShowBanner,
+    isCurrentBrowserSubscribed,
 
     // Actions
     subscribe: store.subscribe,
@@ -54,5 +56,6 @@ export function usePushNotifications() {
     dismissPermissionBanner: store.dismissPermissionBanner,
     resetBannerDismissal: store.resetBannerDismissal,
     checkPermissionStatus: store.checkPermissionStatus,
+    checkCurrentBrowserSubscription: store.checkCurrentBrowserSubscription,
   };
 }

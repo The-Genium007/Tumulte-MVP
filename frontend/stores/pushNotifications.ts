@@ -41,6 +41,7 @@ export const usePushNotificationsStore = defineStore(
     const loading = ref(false);
     const permissionStatus = ref<NotificationPermission>("default");
     const bannerDismissed = ref(false);
+    const currentBrowserEndpoint = ref<string | null>(null);
 
     // Computed
     const isSupported = computed(
@@ -61,6 +62,14 @@ export const usePushNotificationsStore = defineStore(
     const isPermissionDenied = computed(
       () => permissionStatus.value === "denied",
     );
+
+    // Vérifie si le navigateur actuel est inscrit (compare l'endpoint du navigateur avec la liste des subscriptions)
+    const isCurrentBrowserSubscribed = computed(() => {
+      if (!currentBrowserEndpoint.value) return false;
+      return subscriptions.value.some(
+        (sub) => sub.endpoint === currentBrowserEndpoint.value,
+      );
+    });
 
     // Actions
     async function fetchVapidPublicKey(): Promise<string> {
@@ -267,6 +276,32 @@ export const usePushNotificationsStore = defineStore(
       }
     }
 
+    /**
+     * Vérifie si le navigateur actuel a une subscription push active
+     * et stocke l'endpoint pour comparaison
+     */
+    async function checkCurrentBrowserSubscription(): Promise<void> {
+      if (!isSupported.value) {
+        currentBrowserEndpoint.value = null;
+        return;
+      }
+
+      try {
+        const registration = await navigator.serviceWorker.ready;
+        const pushSubscription =
+          await registration.pushManager.getSubscription();
+
+        if (pushSubscription) {
+          currentBrowserEndpoint.value = pushSubscription.endpoint;
+        } else {
+          currentBrowserEndpoint.value = null;
+        }
+      } catch (error) {
+        console.error("Failed to check browser subscription:", error);
+        currentBrowserEndpoint.value = null;
+      }
+    }
+
     return {
       // State
       vapidPublicKey,
@@ -283,6 +318,7 @@ export const usePushNotificationsStore = defineStore(
       canRequestPermission,
       isPermissionDenied,
       shouldShowBanner,
+      isCurrentBrowserSubscribed,
 
       // Actions
       fetchVapidPublicKey,
@@ -296,6 +332,7 @@ export const usePushNotificationsStore = defineStore(
       shouldShowPermissionBanner,
       dismissPermissionBanner,
       resetBannerDismissal,
+      checkCurrentBrowserSubscription,
     };
   },
 );
