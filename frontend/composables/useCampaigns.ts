@@ -332,6 +332,8 @@ export const useCampaigns = () => {
       // eslint-disable-next-line @typescript-eslint/naming-convention
       campaign_name: string;
       // eslint-disable-next-line @typescript-eslint/naming-convention
+      is_owner: boolean;
+      // eslint-disable-next-line @typescript-eslint/naming-convention
       is_authorized: boolean;
       // eslint-disable-next-line @typescript-eslint/naming-convention
       expires_at: string | null;
