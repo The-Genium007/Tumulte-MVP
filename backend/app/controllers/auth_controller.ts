@@ -1,4 +1,5 @@
 import type { HttpContext } from '@adonisjs/core/http'
+import { inject } from '@adonisjs/core'
 import { randomBytes } from 'node:crypto'
 import logger from '@adonisjs/core/services/logger'
 import env from '#start/env'
@@ -6,12 +7,22 @@ import { user as User } from '#models/user'
 import { streamer as Streamer } from '#models/streamer'
 import { twitchAuthService as TwitchAuthService } from '#services/auth/twitch_auth_service'
 
-export default class AuthController {
-  private readonly twitchAuthService: TwitchAuthService
+// Regex pour valider le format du state OAuth (64 caractères hex)
+const STATE_REGEX = /^[a-f0-9]{64}$/
 
-  constructor() {
-    this.twitchAuthService = new TwitchAuthService()
+/**
+ * Extrait un message d'erreur sûr depuis une erreur inconnue
+ */
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message
   }
+  return 'Unknown error'
+}
+
+@inject()
+export default class AuthController {
+  constructor(private readonly twitchAuthService: TwitchAuthService) {}
 
   /**
    * Masque une valeur sensible en logs
@@ -20,6 +31,30 @@ export default class AuthController {
     if (!value) return 'undefined'
     if (value.length <= 6) return `${value.slice(0, 2)}***`
     return `${value.slice(0, 2)}***${value.slice(-4)}`
+  }
+
+  /**
+   * Formate la réponse utilisateur (évite la duplication)
+   */
+  private formatUserResponse(user: User) {
+    return {
+      id: user.id,
+      role: user.role,
+      displayName: user.displayName,
+      email: user.email,
+      streamer: user.streamer
+        ? {
+            id: user.streamer.id,
+            userId: user.streamer.userId,
+            twitchUserId: user.streamer.twitchUserId,
+            twitchDisplayName: user.streamer.twitchDisplayName,
+            twitchLogin: user.streamer.twitchLogin,
+            profileImageUrl: user.streamer.profileImageUrl,
+            isActive: user.streamer.isActive,
+            broadcasterType: user.streamer.broadcasterType,
+          }
+        : null,
+    }
   }
 
   /**
@@ -75,18 +110,29 @@ export default class AuthController {
     const state = request.input('state')
     const storedState = session.get('oauth_state')
 
+    // Validation des paramètres OAuth
+    if (!code || typeof code !== 'string' || code.length === 0) {
+      logger.warn('OAuth callback: missing or invalid code parameter')
+      return response.redirect(`${env.get('FRONTEND_URL')}/login?error=invalid_code`)
+    }
+
+    if (!state || typeof state !== 'string' || !STATE_REGEX.test(state)) {
+      logger.warn('OAuth callback: missing or invalid state parameter')
+      return response.redirect(`${env.get('FRONTEND_URL')}/login?error=invalid_state`)
+    }
+
     logger.info({
       message: 'OAuth callback received',
       hasCode: Boolean(code),
-      state,
-      storedState: storedState,
+      stateValid: STATE_REGEX.test(state),
+      storedStateExists: Boolean(storedState),
       redirectUri: env.get('TWITCH_REDIRECT_URI'),
       clientId: env.get('TWITCH_CLIENT_ID'),
     })
 
     // Valider le state CSRF
-    if (!state || !storedState || state !== storedState) {
-      logger.warn('OAuth callback: invalid state')
+    if (!storedState || state !== storedState) {
+      logger.warn('OAuth callback: state mismatch')
       return response.redirect(`${env.get('FRONTEND_URL')}/login?error=invalid_state`)
     }
 
@@ -218,11 +264,10 @@ export default class AuthController {
       })
 
       return response.redirect(redirectUrl)
-    } catch (error) {
+    } catch (error: unknown) {
       logger.error({
         message: 'OAuth callback failed',
-        error: error?.message,
-        stack: error?.stack,
+        error: getErrorMessage(error),
         redirectUri: env.get('TWITCH_REDIRECT_URI'),
         clientId: env.get('TWITCH_CLIENT_ID'),
       })
@@ -250,30 +295,18 @@ export default class AuthController {
     // Charger le streamer pour tous les utilisateurs (MJ et STREAMER)
     await user.load((loader) => loader.load('streamer'))
 
-    return {
-      id: user.id,
-      role: user.role,
-      displayName: user.displayName,
-      email: user.email,
-      streamer: user.streamer
-        ? {
-            id: user.streamer.id,
-            userId: user.streamer.userId,
-            twitchUserId: user.streamer.twitchUserId,
-            twitchDisplayName: user.streamer.twitchDisplayName,
-            twitchLogin: user.streamer.twitchLogin,
-            profileImageUrl: user.streamer.profileImageUrl,
-            isActive: user.streamer.isActive,
-            broadcasterType: user.streamer.broadcasterType,
-          }
-        : null,
-    }
+    return this.formatUserResponse(user)
   }
 
   /**
    * Change le rôle de l'utilisateur connecté (uniquement en dev)
    */
   async switchRole({ auth, request, response }: HttpContext) {
+    // Restreindre cette fonctionnalité à l'environnement de développement
+    if (env.get('NODE_ENV') !== 'development') {
+      return response.forbidden({ message: 'Cette fonctionnalité est désactivée en production' })
+    }
+
     const user = auth.user!
     const { role } = request.only(['role'])
 
@@ -299,23 +332,6 @@ export default class AuthController {
     // Charger le streamer pour tous les utilisateurs (MJ et STREAMER)
     await user.load((loader) => loader.load('streamer'))
 
-    return {
-      id: user.id,
-      role: user.role,
-      displayName: user.displayName,
-      email: user.email,
-      streamer: user.streamer
-        ? {
-            id: user.streamer.id,
-            userId: user.streamer.userId,
-            twitchUserId: user.streamer.twitchUserId,
-            twitchDisplayName: user.streamer.twitchDisplayName,
-            twitchLogin: user.streamer.twitchLogin,
-            profileImageUrl: user.streamer.profileImageUrl,
-            isActive: user.streamer.isActive,
-            broadcasterType: user.streamer.broadcasterType,
-          }
-        : null,
-    }
+    return this.formatUserResponse(user)
   }
 }

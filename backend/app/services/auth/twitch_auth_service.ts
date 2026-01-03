@@ -1,4 +1,17 @@
 import env from '#start/env'
+import logger from '@adonisjs/core/services/logger'
+
+// Timeout pour les appels API Twitch (10 secondes)
+const FETCH_TIMEOUT_MS = 10000
+
+/**
+ * Crée un signal d'abort avec timeout pour les appels fetch
+ */
+function createTimeoutSignal(ms: number): AbortSignal {
+  const controller = new AbortController()
+  setTimeout(() => controller.abort(), ms)
+  return controller.signal
+}
 
 interface TwitchTokenResponse {
   // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -103,11 +116,13 @@ class TwitchAuthService {
         grant_type: 'authorization_code',
         redirect_uri: this.redirectUri,
       }),
+      signal: createTimeoutSignal(FETCH_TIMEOUT_MS),
     })
 
     if (!response.ok) {
-      const error = await response.text()
-      throw new Error(`Failed to exchange code for tokens: ${error}`)
+      const errorText = await response.text()
+      logger.error({ status: response.status, error: errorText }, 'Twitch token exchange failed')
+      throw new Error('Failed to exchange authorization code')
     }
 
     const data = (await response.json()) as TwitchTokenResponse
@@ -140,11 +155,13 @@ class TwitchAuthService {
         'Authorization': `Bearer ${accessToken}`,
         'Client-Id': this.clientId,
       },
+      signal: createTimeoutSignal(FETCH_TIMEOUT_MS),
     })
 
     if (!response.ok) {
-      const error = await response.text()
-      throw new Error(`Failed to get user info: ${error}`)
+      const errorText = await response.text()
+      logger.error({ status: response.status, error: errorText }, 'Twitch get user info failed')
+      throw new Error('Failed to get user info from Twitch')
     }
 
     const data = (await response.json()) as TwitchUserResponse
@@ -154,9 +171,6 @@ class TwitchAuthService {
     }
 
     const user = data.data[0]
-
-    // Log pour déboguer ce que Twitch renvoie
-    console.log('Twitch API response:', JSON.stringify(user, null, 2))
 
     return {
       id: user.id,
@@ -192,11 +206,13 @@ class TwitchAuthService {
         grant_type: 'refresh_token',
         refresh_token: refreshToken,
       }),
+      signal: createTimeoutSignal(FETCH_TIMEOUT_MS),
     })
 
     if (!response.ok) {
-      const error = await response.text()
-      throw new Error(`Failed to refresh token: ${error}`)
+      const errorText = await response.text()
+      logger.error({ status: response.status, error: errorText }, 'Twitch token refresh failed')
+      throw new Error('Failed to refresh access token')
     }
 
     const data = (await response.json()) as TwitchTokenResponse
@@ -242,11 +258,13 @@ class TwitchAuthService {
         client_id: this.clientId,
         token,
       }),
+      signal: createTimeoutSignal(FETCH_TIMEOUT_MS),
     })
 
     if (!response.ok) {
-      const error = await response.text()
-      throw new Error(`Failed to revoke token: ${error}`)
+      const errorText = await response.text()
+      logger.error({ status: response.status, error: errorText }, 'Twitch token revoke failed')
+      throw new Error('Failed to revoke token')
     }
   }
 

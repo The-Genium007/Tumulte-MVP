@@ -1,13 +1,21 @@
+import { inject } from '@adonisjs/core'
 import type { HttpContext } from '@adonisjs/core/http'
 import logger from '@adonisjs/core/services/logger'
 import { twitchAuthService as TwitchAuthService } from '#services/auth/twitch_auth_service'
 
-export default class AccountController {
-  private readonly twitchAuthService: TwitchAuthService
-
-  constructor() {
-    this.twitchAuthService = new TwitchAuthService()
+/**
+ * Extrait un message d'erreur sûr depuis une erreur inconnue
+ */
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message
   }
+  return 'Unknown error'
+}
+
+@inject()
+export default class AccountController {
+  constructor(private readonly twitchAuthService: TwitchAuthService) {}
 
   /**
    * Anonymise le compte utilisateur et toutes ses données associées
@@ -40,7 +48,7 @@ export default class AccountController {
           } catch (error) {
             // Log l'erreur mais continue l'anonymisation même si la révocation échoue
             logger.warn(
-              `Failed to revoke Twitch token for streamer ${streamer.id}: ${error.message}`
+              `Failed to revoke Twitch token for streamer ${streamer.id}: ${getErrorMessage(error)}`
             )
           }
 
@@ -67,7 +75,7 @@ export default class AccountController {
         message: 'Compte supprimé et données anonymisées avec succès',
       })
     } catch (error) {
-      logger.error(`Failed to anonymize account for user ${user.id}: ${error.message}`)
+      logger.error(`Failed to anonymize account for user ${user.id}: ${getErrorMessage(error)}`)
       return response.internalServerError({
         error: 'Échec de la suppression du compte',
       })
