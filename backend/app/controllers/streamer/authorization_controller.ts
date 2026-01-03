@@ -7,6 +7,16 @@ import { StreamerRepository } from '#repositories/streamer_repository'
 import { CampaignMembershipRepository } from '#repositories/campaign_membership_repository'
 import { twitchAuthService as TwitchAuthService } from '#services/auth/twitch_auth_service'
 
+// Regex pour valider un UUID v4
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
+/**
+ * Valide qu'une chaîne est un UUID v4 valide
+ */
+function isValidUuid(value: unknown): value is string {
+  return typeof value === 'string' && UUID_REGEX.test(value)
+}
+
 /**
  * Contrôleur pour la gestion des autorisations de sondages (Streamer)
  */
