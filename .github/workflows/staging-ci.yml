@@ -277,6 +277,7 @@ jobs:
           DB_DATABASE: twitch_polls_test
           REDIS_HOST: localhost
           REDIS_PORT: 6379
+          SESSION_DRIVER: memory
           APP_KEY: test_key_32_characters_long_1234
           TWITCH_CLIENT_ID: test_client_id
           TWITCH_CLIENT_SECRET: test_client_secret
