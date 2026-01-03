@@ -1,8 +1,7 @@
 services:
   # Frontend - Nuxt dashboard
-  # Service name includes environment suffix to avoid conflicts between staging/production
-  frontend-${NODE_ENV:-production}:
-    container_name: tumulte-frontend-${NODE_ENV:-production}
+  frontend:
+    container_name: ${COMPOSE_PROJECT_NAME:-tumulte}-frontend
     build:
       context: .
       dockerfile: Dockerfile
