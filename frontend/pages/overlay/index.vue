@@ -75,27 +75,32 @@ onMounted(async () => {
 
   // S'abonner au canal spécifique du streamer
   const unsubscribe = subscribeToStreamerPolls(props.streamerId, {
-    onStart: (data) => {
+    onPollStart: (data) => {
       console.log("Poll started:", data);
 
       // Vérifier que le poll appartient à une campagne active
-      if (data.campaign_id && !activeCampaigns.value.includes(data.campaign_id)) {
-        console.log(`Ignoring poll from inactive campaign: ${data.campaign_id}`);
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      const campaignId = (data as unknown as { campaign_id?: string }).campaign_id;
+      if (campaignId && !activeCampaigns.value.includes(campaignId)) {
+        console.log(`Ignoring poll from inactive campaign: ${campaignId}`);
         return;
       }
 
       activePoll.value = data;
-      startTimer(data.endsAt);
+      const endsAt = data.endsAt;
+      if (endsAt) {
+        startTimer(endsAt);
+      }
     },
 
-    onUpdate: (data) => {
+    onPollUpdate: (data) => {
       // Ne mettre à jour que si c'est le poll actif
       if (activePoll.value?.pollInstanceId === data.pollInstanceId) {
         percentages.value = data.percentages;
       }
     },
 
-    onEnd: (data) => {
+    onPollEnd: (data) => {
       // Ne terminer que si c'est le poll actif
       if (activePoll.value?.pollInstanceId === data.pollInstanceId) {
         console.log("Poll ended:", data);
@@ -138,7 +143,8 @@ onMounted(async () => {
   });
 });
 
-const startTimer = (endsAt: string) => {
+const startTimer = (endsAt: string | undefined) => {
+  if (!endsAt) return;
   if (timerInterval) {
     clearInterval(timerInterval);
   }

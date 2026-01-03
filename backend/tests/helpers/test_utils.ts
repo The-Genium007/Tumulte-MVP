@@ -6,7 +6,6 @@ import { pollTemplate as PollTemplate } from '#models/poll_template'
 import { pollInstance as PollInstance } from '#models/poll_instance'
 import { campaignMembership as CampaignMembership } from '#models/campaign_membership'
 import { DateTime } from 'luxon'
-import hash from '@adonisjs/core/services/hash'
 
 /**
  * Factory: Create a test user with optional overrides

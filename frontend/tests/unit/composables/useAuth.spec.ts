@@ -19,7 +19,8 @@ describe("useAuth Composable", () => {
     vi.clearAllMocks();
 
     // Mock useRuntimeConfig
-    vi.mocked(globalThis.useRuntimeConfig).mockReturnValue({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked((globalThis as any).useRuntimeConfig).mockReturnValue({
       public: {
         apiBase: "http://localhost:3333/api/v2",
       },

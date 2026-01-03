@@ -6,8 +6,8 @@ import type { AxiosError } from "axios";
 vi.mock("axios");
 
 // Mock window.location
-delete (window as unknown as { location: unknown }).location;
-window.location = { href: "" } as Location;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(window as any).location = { href: "" };
 
 // Mock process.client
 (global as { process: { client: boolean } }).process = {
@@ -36,7 +36,8 @@ describe("HTTP Client", () => {
     vi.clearAllMocks();
 
     // Mock useRuntimeConfig
-    vi.mocked(globalThis.useRuntimeConfig).mockReturnValue({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked((globalThis as any).useRuntimeConfig).mockReturnValue({
       public: {
         apiBase: "http://localhost:3333/api/v2",
       },
@@ -59,8 +60,11 @@ describe("HTTP Client", () => {
         response: {
           use: vi.fn((successCallback, errorCallback) => {
             // Store callbacks for testing
-            mockAxiosInstance.interceptors.response._errorCallback =
-              errorCallback;
+            (
+              mockAxiosInstance.interceptors.response as {
+                _errorCallback?: unknown;
+              }
+            )._errorCallback = errorCallback;
             return { successCallback, errorCallback };
           }),
         },

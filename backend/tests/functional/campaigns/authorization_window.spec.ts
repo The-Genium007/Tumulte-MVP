@@ -5,7 +5,6 @@ test.group('Campaign Authorization Window - Functional Tests', (group) => {
   group.each.setup(() => testUtils.db().withGlobalTransaction())
 
   test('POST /api/v2/mj/campaigns/:id/members/:memberId/grant-authorization should grant 12h window', async ({
-    client,
     assert,
   }) => {
     // TODO: Créer campagne + membership ACTIVE
@@ -17,7 +16,6 @@ test.group('Campaign Authorization Window - Functional Tests', (group) => {
   })
 
   test('POST /api/v2/mj/campaigns/:id/members/:memberId/grant-authorization should extend existing window', async ({
-    client,
     assert,
   }) => {
     // TODO: Créer membership avec autorisation existante (expires dans 2h)
@@ -28,7 +26,6 @@ test.group('Campaign Authorization Window - Functional Tests', (group) => {
   })
 
   test('POST /api/v2/mj/campaigns/:id/members/:memberId/revoke-authorization should revoke authorization', async ({
-    client,
     assert,
   }) => {
     // TODO: Créer membership avec autorisation
@@ -40,7 +37,6 @@ test.group('Campaign Authorization Window - Functional Tests', (group) => {
   })
 
   test('POST /api/v2/mj/campaigns/:id/members/:memberId/revoke-authorization should not affect permanent auth (owner)', async ({
-    client,
     assert,
   }) => {
     // TODO: Créer owner membership (permanent auth = expires dans 100 ans)
@@ -51,7 +47,6 @@ test.group('Campaign Authorization Window - Functional Tests', (group) => {
   })
 
   test('GET /api/v2/mj/campaigns/:id/members should show authorization status', async ({
-    client,
     assert,
   }) => {
     // TODO: Créer campagne avec 3 membres:
@@ -65,7 +60,6 @@ test.group('Campaign Authorization Window - Functional Tests', (group) => {
   })
 
   test('GET /api/v2/mj/campaigns/:id/members/:memberId/authorization should show remaining time', async ({
-    client,
     assert,
   }) => {
     // TODO: Créer membership avec auth expires dans 3h
@@ -76,7 +70,6 @@ test.group('Campaign Authorization Window - Functional Tests', (group) => {
   })
 
   test('GET /api/v2/mj/campaigns/:id/members/:memberId/authorization should return null if no auth', async ({
-    client,
     assert,
   }) => {
     // TODO: Créer membership sans auth
@@ -87,7 +80,6 @@ test.group('Campaign Authorization Window - Functional Tests', (group) => {
   })
 
   test('GET /api/v2/mj/campaigns/:id/members/:memberId/authorization should return expired if past 12h', async ({
-    client,
     assert,
   }) => {
     // TODO: Créer membership avec auth expiré (expires = now - 1h)
@@ -98,7 +90,6 @@ test.group('Campaign Authorization Window - Functional Tests', (group) => {
   })
 
   test('POST /api/v2/mj/campaigns/:id/polls/launch should succeed within 12h window', async ({
-    client,
     assert,
   }) => {
     // TODO: Créer campagne + streamer avec auth valide (expires dans 6h)
@@ -109,7 +100,6 @@ test.group('Campaign Authorization Window - Functional Tests', (group) => {
   })
 
   test('POST /api/v2/mj/campaigns/:id/polls/launch should fail after 12h expiry', async ({
-    client,
     assert,
   }) => {
     // TODO: Créer campagne + streamer avec auth expirée (expires = now - 1h)
@@ -120,7 +110,6 @@ test.group('Campaign Authorization Window - Functional Tests', (group) => {
   })
 
   test('POST /api/v2/mj/campaigns/:id/polls/launch should always succeed for owner', async ({
-    client,
     assert,
   }) => {
     // TODO: Créer campagne
@@ -131,7 +120,6 @@ test.group('Campaign Authorization Window - Functional Tests', (group) => {
   })
 
   test('POST /api/v2/mj/campaigns/:id/members/:memberId/grant-authorization should require MJ role', async ({
-    client,
     assert,
   }) => {
     // TODO: User avec role STREAMER
@@ -142,7 +130,6 @@ test.group('Campaign Authorization Window - Functional Tests', (group) => {
   })
 
   test('POST /api/v2/mj/campaigns/:id/members/:memberId/grant-authorization should require campaign ownership', async ({
-    client,
     assert,
   }) => {
     // TODO: User MJ mais pas owner de cette campagne
@@ -153,7 +140,6 @@ test.group('Campaign Authorization Window - Functional Tests', (group) => {
   })
 
   test('POST /api/v2/mj/campaigns/:id/members/:memberId/grant-authorization should reject PENDING membership', async ({
-    client,
     assert,
   }) => {
     // TODO: Créer membership status = PENDING
@@ -164,7 +150,6 @@ test.group('Campaign Authorization Window - Functional Tests', (group) => {
   })
 
   test('GET /api/v2/mj/campaigns/:id/authorized-streamers should list only authorized members', async ({
-    client,
     assert,
   }) => {
     // TODO: Créer campagne avec 5 membres:

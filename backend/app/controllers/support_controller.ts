@@ -15,7 +15,7 @@ export default class SupportController {
       return response.unauthorized({ error: 'Unauthenticated' })
     }
 
-    await user.load('streamer')
+    await user.load((loader) => loader.load('streamer'))
 
     const body = request.body() ?? {}
     const description = typeof body.description === 'string' ? body.description : ''

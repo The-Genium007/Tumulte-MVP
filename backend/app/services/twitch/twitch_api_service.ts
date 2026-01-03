@@ -137,7 +137,7 @@ class TwitchApiService {
       return data.data.map((channel: TwitchChannel) => ({
         id: channel.id,
         login: channel.broadcaster_login,
-        display_name: channel.display_name, // eslint-disable-line camelcase
+        display_name: channel.display_name,
         profile_image_url: profileImages.get(channel.id) || '',
         broadcaster_type: channel.broadcaster_type,
       }))
@@ -190,4 +190,4 @@ class TwitchApiService {
 }
 
 export default TwitchApiService
-export { TwitchApiService }
+export { TwitchApiService, TwitchApiService as twitchApiService }

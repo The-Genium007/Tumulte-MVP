@@ -1,7 +1,10 @@
+/* eslint-disable @typescript-eslint/no-this-alias */
+// Tests need to capture 'this' from mock constructors to simulate EventSource behavior
 import { describe, test, expect, beforeEach, vi, afterEach } from "vitest";
 import { useWebSocket } from "~/composables/useWebSocket";
 
-// Mock EventSource
+/* eslint-disable @typescript-eslint/naming-convention */
+// Mock EventSource - static properties match browser API naming
 class MockEventSource {
   static CONNECTING = 0;
   static OPEN = 1;
@@ -9,7 +12,6 @@ class MockEventSource {
 
   url: string;
   readyState: number = MockEventSource.CONNECTING;
-  // eslint-disable-next-line @typescript-eslint/naming-convention
   private eventListeners: Map<string, ((event: unknown) => void)[]> = new Map();
 
   constructor(url: string) {
@@ -58,6 +60,8 @@ class MockEventSource {
   }
 }
 
+/* eslint-enable @typescript-eslint/naming-convention */
+
 global.EventSource = MockEventSource as unknown as typeof EventSource;
 
 // Mock fetch globally
@@ -72,13 +76,12 @@ Object.defineProperty(globalThis, "crypto", {
 });
 
 describe("useWebSocket Composable", () => {
-  let mockEventSource: MockEventSource;
-
   beforeEach(() => {
     vi.clearAllMocks();
 
     // Mock useRuntimeConfig
-    vi.mocked(globalThis.useRuntimeConfig).mockReturnValue({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked((globalThis as any).useRuntimeConfig).mockReturnValue({
       public: {
         apiBase: "http://localhost:3333/api/v2",
       },

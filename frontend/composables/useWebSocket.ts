@@ -1,26 +1,5 @@
 import { ref, readonly } from "vue";
-
-interface PollStartEvent {
-  pollInstanceId: string;
-  question: string;
-  options: string[];
-  durationSeconds: number;
-}
-
-interface PollUpdateEvent {
-  pollInstanceId: string;
-  votesByOption: Record<string, number>;
-  totalVotes: number;
-  percentages: Record<string, number>;
-}
-
-interface PollEndEvent {
-  pollInstanceId: string;
-  finalVotes: Record<string, number>;
-  totalVotes: number;
-  percentages: Record<string, number>;
-  winnerIndex: number | null;
-}
+import type { PollStartEvent, PollUpdateEvent, PollEndEvent } from "@/types";
 
 /**
  * Client SSE natif pour remplacer @adonisjs/transmit-client
@@ -456,6 +435,7 @@ export const useWebSocket = () => {
     streamerId: string,
     callbacks: {
       onPollStart?: (data: PollStartEvent) => void;
+      onPollUpdate?: (data: PollUpdateEvent) => void;
       onPollEnd?: (data: PollEndEvent) => void;
       // eslint-disable-next-line @typescript-eslint/naming-convention
       onJoinedCampaign?: (data: { campaign_id: string }) => void;
@@ -479,6 +459,11 @@ export const useWebSocket = () => {
         case "poll:start":
           if (callbacks.onPollStart) {
             callbacks.onPollStart(message.data as PollStartEvent);
+          }
+          break;
+        case "poll:update":
+          if (callbacks.onPollUpdate) {
+            callbacks.onPollUpdate(message.data as PollUpdateEvent);
           }
           break;
         case "poll:end":

@@ -2,7 +2,6 @@ import { test } from '@japa/runner'
 import testUtils from '#tests/helpers/database'
 import { streamer as Streamer } from '#models/streamer'
 import { createTestUser } from '#tests/helpers/test_utils'
-import encryption from '@adonisjs/core/services/encryption'
 
 test.group('Streamer Model - Token Encryption', (group) => {
   group.each.setup(() => testUtils.db().truncate())

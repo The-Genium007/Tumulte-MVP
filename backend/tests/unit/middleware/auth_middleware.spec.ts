@@ -6,7 +6,7 @@ import type { NextFn } from '@adonisjs/core/types/http'
 test.group('AuthMiddleware - Authentication Enforcement', () => {
   test('should call authenticateUsing with provided guards', async ({ assert }) => {
     const middleware = new AuthMiddleware()
-    let authenticateCalledWith: { guards?: string[]; loginRoute?: string } | null = null
+    let authenticateCalledWith: { guards?: string[]; loginRoute?: string } | undefined
 
     const mockContext = {
       auth: {
@@ -20,7 +20,7 @@ test.group('AuthMiddleware - Authentication Enforcement', () => {
 
     await middleware.handle(mockContext, next, { guards: ['web'] })
 
-    assert.isNotNull(authenticateCalledWith)
+    assert.isDefined(authenticateCalledWith)
     assert.deepEqual(authenticateCalledWith?.guards, ['web'])
     assert.equal(authenticateCalledWith?.loginRoute, '/login')
   })

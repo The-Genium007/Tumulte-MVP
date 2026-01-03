@@ -88,8 +88,8 @@ export class PollInstanceRepository {
     await PollInstance.query()
       .where('id', pollId)
       .update({
-        final_total_votes: totalVotes,
-        final_votes_by_option: JSON.stringify(votesByOption) as any,
+        finalTotalVotes: totalVotes,
+        finalVotesByOption: JSON.stringify(votesByOption) as any,
       })
   }
 }

@@ -33,7 +33,7 @@ test.group('Overlay API (Public)', (group) => {
   test('PollInstance with RUNNING status should be retrievable', async ({ assert }) => {
     const campaign = await createTestCampaign()
 
-    const poll = await createTestPollInstance({
+    await createTestPollInstance({
       campaignId: campaign.id,
       title: 'Active Poll Question?',
       options: ['Yes', 'No', 'Maybe'],

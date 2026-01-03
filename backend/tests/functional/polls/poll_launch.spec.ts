@@ -5,7 +5,6 @@ test.group('Poll Launch - Functional Tests', (group) => {
   group.each.setup(() => testUtils.db().withGlobalTransaction())
 
   test('POST /api/v2/mj/campaigns/:id/polls/launch should launch poll successfully', async ({
-    client,
     assert,
   }) => {
     // TODO: Créer user MJ authentifié
@@ -19,7 +18,6 @@ test.group('Poll Launch - Functional Tests', (group) => {
   })
 
   test('POST /api/v2/mj/campaigns/:id/polls/launch should reject if user not owner', async ({
-    client,
     assert,
   }) => {
     // TODO: Créer user MJ
@@ -31,7 +29,6 @@ test.group('Poll Launch - Functional Tests', (group) => {
   })
 
   test('POST /api/v2/mj/campaigns/:id/polls/launch should reject if no authorization window', async ({
-    client,
     assert,
   }) => {
     // TODO: Créer campagne
@@ -43,7 +40,6 @@ test.group('Poll Launch - Functional Tests', (group) => {
   })
 
   test('POST /api/v2/mj/campaigns/:id/polls/launch should accept if within 12h window', async ({
-    client,
     assert,
   }) => {
     // TODO: Créer campagne
@@ -55,7 +51,6 @@ test.group('Poll Launch - Functional Tests', (group) => {
   })
 
   test('POST /api/v2/mj/campaigns/:id/polls/launch should accept if owner (permanent auth)', async ({
-    client,
     assert,
   }) => {
     // TODO: Créer campagne
@@ -66,7 +61,6 @@ test.group('Poll Launch - Functional Tests', (group) => {
   })
 
   test('POST /api/v2/mj/campaigns/:id/polls/launch should create poll instance in DB', async ({
-    client,
     assert,
   }) => {
     // TODO: Setup campaign + auth
@@ -78,7 +72,6 @@ test.group('Poll Launch - Functional Tests', (group) => {
   })
 
   test('POST /api/v2/mj/campaigns/:id/polls/launch should create channel links', async ({
-    client,
     assert,
   }) => {
     // TODO: Créer campagne avec 3 streamers autorisés
@@ -90,7 +83,6 @@ test.group('Poll Launch - Functional Tests', (group) => {
   })
 
   test('POST /api/v2/mj/campaigns/:id/polls/launch should validate poll data', async ({
-    client,
     assert,
   }) => {
     // TODO: Setup campaign
@@ -101,7 +93,6 @@ test.group('Poll Launch - Functional Tests', (group) => {
   })
 
   test('POST /api/v2/mj/campaigns/:id/polls/launch should reject if campaign not found', async ({
-    client,
     assert,
   }) => {
     // TODO: User authentifié
@@ -112,7 +103,6 @@ test.group('Poll Launch - Functional Tests', (group) => {
   })
 
   test('POST /api/v2/mj/campaigns/:id/polls/launch should reject unauthenticated requests', async ({
-    client,
     assert,
   }) => {
     // TODO: Requête SANS token auth
@@ -122,7 +112,6 @@ test.group('Poll Launch - Functional Tests', (group) => {
   })
 
   test('POST /api/v2/mj/campaigns/:id/polls/cancel should cancel running poll', async ({
-    client,
     assert,
   }) => {
     // TODO: Créer poll RUNNING
@@ -134,7 +123,6 @@ test.group('Poll Launch - Functional Tests', (group) => {
   })
 
   test('POST /api/v2/mj/campaigns/:id/polls/cancel should reject if poll not running', async ({
-    client,
     assert,
   }) => {
     // TODO: Créer poll ENDED
@@ -144,10 +132,7 @@ test.group('Poll Launch - Functional Tests', (group) => {
     assert.isTrue(true) // Placeholder
   })
 
-  test('GET /api/v2/mj/campaigns/:id/polls should list polls for campaign', async ({
-    client,
-    assert,
-  }) => {
+  test('GET /api/v2/mj/campaigns/:id/polls should list polls for campaign', async ({ assert }) => {
     // TODO: Créer campagne avec 3 polls
     // TODO: GET /polls
     // TODO: Vérifier array de 3 éléments
@@ -156,10 +141,7 @@ test.group('Poll Launch - Functional Tests', (group) => {
     assert.isTrue(true) // Placeholder
   })
 
-  test('GET /api/v2/mj/campaigns/:id/polls/:pollId should get poll details', async ({
-    client,
-    assert,
-  }) => {
+  test('GET /api/v2/mj/campaigns/:id/polls/:pollId should get poll details', async ({ assert }) => {
     // TODO: Créer poll
     // TODO: GET /polls/:pollId
     // TODO: Vérifier détails complets (question, options, status, results)
@@ -168,7 +150,6 @@ test.group('Poll Launch - Functional Tests', (group) => {
   })
 
   test('GET /api/v2/mj/campaigns/:id/polls/:pollId/results should get aggregated results', async ({
-    client,
     assert,
   }) => {
     // TODO: Créer poll ENDED avec résultats

@@ -1,24 +1,17 @@
 import { assert } from '@japa/assert'
 import { pluginAdonisJS } from '@japa/plugin-adonisjs'
-import type { Config } from '@japa/runner/types'
 import app from '@adonisjs/core/services/app'
 
 /**
  * Configure Japa test runner plugins
  * Note: HTTP client tests are converted to mock-based tests
  */
-export const plugins: Config['plugins'] = [
-  assert(),
-  pluginAdonisJS(app, {
-    // Disable automatic database cleanup to avoid TRUNCATE deadlocks
-    setupDatabase: false,
-  }),
-]
+export const plugins = [assert(), pluginAdonisJS(app)]
 
 /**
  * Global test runner hooks
  */
-export const runnerHooks: Pick<Config, 'setup' | 'teardown'> = {
+export const runnerHooks = {
   setup: [
     async () => {
       // Run migrations to ensure auth_access_tokens table exists
@@ -38,14 +31,14 @@ export const runnerHooks: Pick<Config, 'setup' | 'teardown'> = {
 /**
  * Configure test reporters
  */
-export const reporters: Config['reporters'] = {
+export const reporters = {
   activated: ['spec'],
 }
 
 /**
  * Configure test suites
  */
-export const suites: Config['suites'] = [
+export const suites = [
   {
     name: 'unit',
     files: ['tests/unit/**/*.spec.ts'],
@@ -62,16 +55,3 @@ export const suites: Config['suites'] = [
     timeout: 60000,
   },
 ]
-
-/**
- * Configure test execution
- * Force sequential execution to avoid database TRUNCATE deadlocks
- */
-export const executors: Config['executors'] = {
-  default: async (testFiles, runner) => {
-    // Execute test files sequentially (one at a time)
-    for (const testFile of testFiles) {
-      await runner.runTest(testFile)
-    }
-  },
-}

@@ -9,9 +9,9 @@ on:
       - staging
 
 jobs:
-  # Phase 1 : Type-check et Lint (le plus rapide)
-  quality-checks:
-    name: Quality Checks (TypeCheck + Lint)
+  # Phase 1 : Quality Checks (parallèle backend/frontend)
+  backend-quality:
+    name: Backend Quality (TypeCheck + Lint)
     runs-on: ubuntu-latest
 
     steps:
@@ -23,11 +23,8 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: |
-            backend/package-lock.json
-            frontend/package-lock.json
+          cache-dependency-path: backend/package-lock.json
 
-      # Backend Quality
       - name: Install backend dependencies
         working-directory: ./backend
         run: npm ci
@@ -40,7 +37,21 @@ jobs:
         working-directory: ./backend
         run: npm run lint
 
-      # Frontend Quality
+  frontend-quality:
+    name: Frontend Quality (TypeCheck + Lint)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
       - name: Install frontend dependencies
         working-directory: ./frontend
         run: npm ci
@@ -53,11 +64,11 @@ jobs:
         working-directory: ./frontend
         run: npm run lint
 
-  # Phase 2 : Tests unitaires
-  unit-tests:
-    name: Unit Tests
+  # Phase 2 : Tests unitaires (parallèle backend/frontend)
+  backend-unit-tests:
+    name: Backend Unit Tests
     runs-on: ubuntu-latest
-    needs: quality-checks
+    needs: backend-quality
 
     services:
       postgres:
@@ -103,6 +114,9 @@ jobs:
         working-directory: ./backend
         env:
           NODE_ENV: test
+          PORT: 3333
+          HOST: localhost
+          LOG_LEVEL: silent
           DB_HOST: localhost
           DB_PORT: 5432
           DB_USER: postgres
@@ -112,40 +126,17 @@ jobs:
           REDIS_PORT: 6379
           SESSION_DRIVER: memory
           APP_KEY: test_key_32_characters_long_1234
+          TWITCH_CLIENT_ID: test_client_id
+          TWITCH_CLIENT_SECRET: test_client_secret
+          TWITCH_REDIRECT_URI: http://localhost:3333/auth/twitch/callback
         run: npm run test:coverage -- --filter=unit
 
-      - name: Check coverage threshold (80%)
-        working-directory: ./backend
-        run: |
-          # Extract coverage percentage from lcov report
-          if [ -f coverage/lcov.info ]; then
-            # Parse coverage percentage (implementation depends on your coverage tool)
-            echo "Coverage report generated"
-          else
-            echo "::error::Coverage report not found"
-            exit 1
-          fi
+      # Note: c8 outputs coverage to console, coverage threshold is enforced by c8 config
 
-      - name: Upload backend coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          files: ./backend/coverage/lcov.info
-          flags: backend-unit
-          name: backend-unit-coverage
-          fail_ci_if_error: false
-
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-unit-test-results
-          path: backend/coverage/
-
-  # Phase 2b : Frontend Tests
-  frontend-tests:
-    name: Frontend Tests
+  frontend-unit-tests:
+    name: Frontend Unit Tests
     runs-on: ubuntu-latest
-    needs: quality-checks
+    needs: frontend-quality
 
     steps:
       - name: Checkout code
@@ -162,23 +153,19 @@ jobs:
         working-directory: ./frontend
         run: npm ci
 
+      - name: Prepare Nuxt (generate .nuxt/tsconfig.json)
+        working-directory: ./frontend
+        run: npx nuxt prepare
+
       - name: Run frontend unit tests with coverage
         working-directory: ./frontend
         run: npm run test:coverage
 
-      - name: Check coverage threshold (80%)
-        working-directory: ./frontend
-        run: |
-          # Extract coverage percentage from vitest report
-          if [ -f coverage/lcov.info ]; then
-            echo "Frontend coverage report generated"
-          else
-            echo "::error::Frontend coverage report not found"
-            exit 1
-          fi
+      # Vitest coverage thresholds are enforced in vitest.config.ts
 
       - name: Upload frontend coverage to Codecov
         uses: codecov/codecov-action@v4
+        if: always()
         with:
           files: ./frontend/coverage/lcov.info
           flags: frontend-unit
@@ -196,7 +183,7 @@ jobs:
   build:
     name: Build Backend & Frontend
     runs-on: ubuntu-latest
-    needs: [unit-tests, frontend-tests]
+    needs: [backend-unit-tests, frontend-unit-tests]
 
     steps:
       - name: Checkout code
@@ -240,8 +227,8 @@ jobs:
           path: frontend/.output/
 
   # Phase 4 : Tests fonctionnels (non-bloquant, warning seulement)
-  functional-tests:
-    name: Functional Tests (Warning Only)
+  backend-functional-tests:
+    name: Backend Functional Tests (Warning Only)
     runs-on: ubuntu-latest
     needs: build
     continue-on-error: true  # Ne bloque pas le merge si ça échoue
@@ -290,20 +277,9 @@ jobs:
         working-directory: ./backend
         env:
           NODE_ENV: test
-          DB_HOST: localhost
-          DB_PORT: 5432
-          DB_USER: postgres
-          DB_PASSWORD: postgres
-          DB_DATABASE: twitch_polls_test
-          REDIS_HOST: localhost
-          REDIS_PORT: 6379
-          APP_KEY: test_key_32_characters_long_1234
-        run: node ace migration:run --force
-
-      - name: Run functional tests
-        working-directory: ./backend
-        env:
-          NODE_ENV: test
+          PORT: 3333
+          HOST: localhost
+          LOG_LEVEL: silent
           DB_HOST: localhost
           DB_PORT: 5432
           DB_USER: postgres
@@ -313,6 +289,30 @@ jobs:
           REDIS_PORT: 6379
           SESSION_DRIVER: memory
           APP_KEY: test_key_32_characters_long_1234
+          TWITCH_CLIENT_ID: test_client_id
+          TWITCH_CLIENT_SECRET: test_client_secret
+          TWITCH_REDIRECT_URI: http://localhost:3333/auth/twitch/callback
+        run: node --loader ts-node-maintained/esm bin/console.ts migration:run --force
+
+      - name: Run functional tests
+        working-directory: ./backend
+        env:
+          NODE_ENV: test
+          PORT: 3333
+          HOST: localhost
+          LOG_LEVEL: silent
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: postgres
+          DB_PASSWORD: postgres
+          DB_DATABASE: twitch_polls_test
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          SESSION_DRIVER: memory
+          APP_KEY: test_key_32_characters_long_1234
+          TWITCH_CLIENT_ID: test_client_id
+          TWITCH_CLIENT_SECRET: test_client_secret
+          TWITCH_REDIRECT_URI: http://localhost:3333/auth/twitch/callback
         run: npm run test -- --filter=functional
 
       - name: Warning on functional tests failure

@@ -9,9 +9,9 @@ on:
       - main
 
 jobs:
-  # Phase 1 : Quality Checks
-  quality-checks:
-    name: Quality Checks
+  # Phase 1 : Quality Checks (parallèle backend/frontend)
+  backend-quality:
+    name: Backend Quality (TypeCheck + Lint)
     runs-on: ubuntu-latest
 
     steps:
@@ -23,11 +23,8 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: |
-            backend/package-lock.json
-            frontend/package-lock.json
+          cache-dependency-path: backend/package-lock.json
 
-      # Backend
       - name: Install backend dependencies
         working-directory: ./backend
         run: npm ci
@@ -40,7 +37,21 @@ jobs:
         working-directory: ./backend
         run: npm run lint
 
-      # Frontend
+  frontend-quality:
+    name: Frontend Quality (TypeCheck + Lint)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
       - name: Install frontend dependencies
         working-directory: ./frontend
         run: npm ci
@@ -57,7 +68,7 @@ jobs:
   security-audit:
     name: Security Audit
     runs-on: ubuntu-latest
-    needs: quality-checks
+    needs: [backend-quality, frontend-quality]
 
     steps:
       - name: Checkout code
@@ -78,11 +89,11 @@ jobs:
         run: |
           npm audit --audit-level=moderate || echo "::warning::Frontend has security vulnerabilities"
 
-  # Phase 3 : Tests unitaires (BLOQUANT)
-  unit-tests:
-    name: Unit Tests (Required)
+  # Phase 3 : Tests unitaires (parallèle backend/frontend, BLOQUANT)
+  backend-unit-tests:
+    name: Backend Unit Tests (Required)
     runs-on: ubuntu-latest
-    needs: quality-checks
+    needs: backend-quality
 
     services:
       postgres:
@@ -128,6 +139,9 @@ jobs:
         working-directory: ./backend
         env:
           NODE_ENV: test
+          PORT: 3333
+          HOST: localhost
+          LOG_LEVEL: silent
           DB_HOST: localhost
           DB_PORT: 5432
           DB_USER: postgres
@@ -137,38 +151,64 @@ jobs:
           REDIS_PORT: 6379
           SESSION_DRIVER: memory
           APP_KEY: test_key_32_characters_long_1234
+          TWITCH_CLIENT_ID: test_client_id
+          TWITCH_CLIENT_SECRET: test_client_secret
+          TWITCH_REDIRECT_URI: http://localhost:3333/auth/twitch/callback
         run: npm run test:coverage -- --filter=unit
 
-      - name: Enforce coverage threshold (85% for production)
-        working-directory: ./backend
-        run: |
-          if [ -f coverage/lcov.info ]; then
-            echo "✅ Backend unit tests coverage report generated"
-            # TODO: Parse coverage and enforce 85% threshold
-          else
-            echo "::error::Backend coverage report not found"
-            exit 1
-          fi
+      # Note: c8 outputs coverage to console, coverage threshold is enforced by c8 config
 
-      - name: Upload backend coverage to Codecov
-        uses: codecov/codecov-action@v4
+  frontend-unit-tests:
+    name: Frontend Unit Tests (Required)
+    runs-on: ubuntu-latest
+    needs: frontend-quality
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          files: ./backend/coverage/lcov.info
-          flags: backend-unit-production
-          name: backend-unit-coverage-prod
-          fail_ci_if_error: true
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
 
-      - name: Upload coverage artifacts
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Prepare Nuxt (generate .nuxt/tsconfig.json)
+        working-directory: ./frontend
+        run: npx nuxt prepare
+
+      - name: Run frontend unit tests with coverage
+        working-directory: ./frontend
+        run: npm run test:coverage
+
+      # Vitest coverage thresholds are enforced in vitest.config.ts
+
+      - name: Upload frontend coverage to Codecov
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          files: ./frontend/coverage/lcov.info
+          flags: frontend-unit
+          name: frontend-unit-coverage
+          fail_ci_if_error: false
+
+      - name: Upload frontend test results
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: backend-unit-coverage
-          path: backend/coverage/
+          name: frontend-unit-test-results
+          path: frontend/coverage/
 
-  # Phase 4 : Tests fonctionnels (BLOQUANT en production)
-  functional-tests:
-    name: Functional Tests (Required)
+  # Phase 4 : Tests fonctionnels backend (BLOQUANT en production)
+  backend-functional-tests:
+    name: Backend Functional Tests (Required)
     runs-on: ubuntu-latest
-    needs: unit-tests
+    needs: backend-unit-tests
 
     services:
       postgres:
@@ -214,20 +254,9 @@ jobs:
         working-directory: ./backend
         env:
           NODE_ENV: test
-          DB_HOST: localhost
-          DB_PORT: 5432
-          DB_USER: postgres
-          DB_PASSWORD: postgres
-          DB_DATABASE: twitch_polls_test
-          REDIS_HOST: localhost
-          REDIS_PORT: 6379
-          APP_KEY: test_key_32_characters_long_1234
-        run: node ace migration:run --force
-
-      - name: Run functional tests
-        working-directory: ./backend
-        env:
-          NODE_ENV: test
+          PORT: 3333
+          HOST: localhost
+          LOG_LEVEL: silent
           DB_HOST: localhost
           DB_PORT: 5432
           DB_USER: postgres
@@ -237,6 +266,30 @@ jobs:
           REDIS_PORT: 6379
           SESSION_DRIVER: memory
           APP_KEY: test_key_32_characters_long_1234
+          TWITCH_CLIENT_ID: test_client_id
+          TWITCH_CLIENT_SECRET: test_client_secret
+          TWITCH_REDIRECT_URI: http://localhost:3333/auth/twitch/callback
+        run: node --loader ts-node-maintained/esm bin/console.ts migration:run --force
+
+      - name: Run functional tests
+        working-directory: ./backend
+        env:
+          NODE_ENV: test
+          PORT: 3333
+          HOST: localhost
+          LOG_LEVEL: silent
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: postgres
+          DB_PASSWORD: postgres
+          DB_DATABASE: twitch_polls_test
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          SESSION_DRIVER: memory
+          APP_KEY: test_key_32_characters_long_1234
+          TWITCH_CLIENT_ID: test_client_id
+          TWITCH_CLIENT_SECRET: test_client_secret
+          TWITCH_REDIRECT_URI: http://localhost:3333/auth/twitch/callback
         run: npm run test -- --filter=functional
 
       - name: Upload functional test coverage
@@ -249,7 +302,7 @@ jobs:
   backend-e2e-tests:
     name: Backend E2E Tests (Required)
     runs-on: ubuntu-latest
-    needs: unit-tests
+    needs: backend-unit-tests
 
     services:
       postgres:
@@ -295,20 +348,9 @@ jobs:
         working-directory: ./backend
         env:
           NODE_ENV: test
-          DB_HOST: localhost
-          DB_PORT: 5432
-          DB_USER: postgres
-          DB_PASSWORD: postgres
-          DB_DATABASE: twitch_polls_test
-          REDIS_HOST: localhost
-          REDIS_PORT: 6379
-          APP_KEY: test_key_32_characters_long_1234
-        run: node ace migration:run --force
-
-      - name: Run E2E tests
-        working-directory: ./backend
-        env:
-          NODE_ENV: test
+          PORT: 3333
+          HOST: localhost
+          LOG_LEVEL: silent
           DB_HOST: localhost
           DB_PORT: 5432
           DB_USER: postgres
@@ -318,6 +360,30 @@ jobs:
           REDIS_PORT: 6379
           SESSION_DRIVER: memory
           APP_KEY: test_key_32_characters_long_1234
+          TWITCH_CLIENT_ID: test_client_id
+          TWITCH_CLIENT_SECRET: test_client_secret
+          TWITCH_REDIRECT_URI: http://localhost:3333/auth/twitch/callback
+        run: node --loader ts-node-maintained/esm bin/console.ts migration:run --force
+
+      - name: Run E2E tests
+        working-directory: ./backend
+        env:
+          NODE_ENV: test
+          PORT: 3333
+          HOST: localhost
+          LOG_LEVEL: silent
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: postgres
+          DB_PASSWORD: postgres
+          DB_DATABASE: twitch_polls_test
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          SESSION_DRIVER: memory
+          APP_KEY: test_key_32_characters_long_1234
+          TWITCH_CLIENT_ID: test_client_id
+          TWITCH_CLIENT_SECRET: test_client_secret
+          TWITCH_REDIRECT_URI: http://localhost:3333/auth/twitch/callback
         run: npm run test -- --filter=e2e
 
       - name: Upload E2E test results
@@ -331,7 +397,7 @@ jobs:
   build-production:
     name: Build Production
     runs-on: ubuntu-latest
-    needs: [functional-tests, backend-e2e-tests, security-audit]
+    needs: [backend-functional-tests, backend-e2e-tests, frontend-unit-tests, security-audit]
 
     steps:
       - name: Checkout code
@@ -381,12 +447,11 @@ jobs:
             frontend/.output/
             backend/build/
 
-  # Phase 6 : Tests E2E Frontend (si configurés avec Playwright)
-  e2e-tests:
-    name: E2E Tests (Frontend)
+  # Phase 6 : Tests E2E Frontend (BLOQUANT en production)
+  frontend-e2e-tests:
+    name: Frontend E2E Tests (Required)
     runs-on: ubuntu-latest
     needs: build-production
-    continue-on-error: true  # Optionnel pour l'instant
 
     services:
       postgres:
@@ -397,11 +462,21 @@ jobs:
           POSTGRES_DB: twitch_polls_test
         ports:
           - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
       redis:
         image: redis:7-alpine
         ports:
           - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - name: Checkout code
@@ -425,6 +500,9 @@ jobs:
         working-directory: ./backend
         env:
           NODE_ENV: test
+          PORT: 3333
+          HOST: localhost
+          LOG_LEVEL: silent
           DB_HOST: localhost
           DB_PORT: 5432
           DB_USER: postgres
@@ -432,13 +510,20 @@ jobs:
           DB_DATABASE: twitch_polls_test
           REDIS_HOST: localhost
           REDIS_PORT: 6379
+          SESSION_DRIVER: memory
           APP_KEY: test_key_32_characters_long_1234
-        run: node ace migration:run --force
+          TWITCH_CLIENT_ID: test_client_id
+          TWITCH_CLIENT_SECRET: test_client_secret
+          TWITCH_REDIRECT_URI: http://localhost:3333/auth/twitch/callback
+        run: node --loader ts-node-maintained/esm bin/console.ts migration:run --force
 
       - name: Start backend server
         working-directory: ./backend
         env:
           NODE_ENV: test
+          PORT: 3333
+          HOST: localhost
+          LOG_LEVEL: silent
           DB_HOST: localhost
           DB_PORT: 5432
           DB_USER: postgres
@@ -446,8 +531,11 @@ jobs:
           DB_DATABASE: twitch_polls_test
           REDIS_HOST: localhost
           REDIS_PORT: 6379
+          SESSION_DRIVER: memory
           APP_KEY: test_key_32_characters_long_1234
-          PORT: 3333
+          TWITCH_CLIENT_ID: test_client_id
+          TWITCH_CLIENT_SECRET: test_client_secret
+          TWITCH_REDIRECT_URI: http://localhost:3333/auth/twitch/callback
         run: npm run start &
 
       # Frontend E2E
@@ -463,7 +551,7 @@ jobs:
         working-directory: ./frontend
         env:
           NUXT_PUBLIC_API_URL: http://localhost:3333
-        run: npm run test:e2e || echo "::warning::E2E tests not configured yet"
+        run: npm run test:e2e
 
       - name: Upload Playwright report
         if: always()
@@ -474,17 +562,21 @@ jobs:
 
   # Phase finale : Summary
   deployment-ready:
-    name: ✅ Ready for Production
+    name: Ready for Production
     runs-on: ubuntu-latest
-    needs: [quality-checks, security-audit, unit-tests, functional-tests, build-production]
+    needs: [backend-quality, frontend-quality, security-audit, backend-unit-tests, frontend-unit-tests, backend-functional-tests, backend-e2e-tests, build-production, frontend-e2e-tests]
     if: success()
 
     steps:
       - name: Success message
         run: |
-          echo "::notice::🚀 All checks passed! Ready for production deployment."
-          echo "✅ Quality checks: PASSED"
-          echo "✅ Security audit: PASSED"
-          echo "✅ Unit tests: PASSED"
-          echo "✅ Functional tests: PASSED"
-          echo "✅ Production build: PASSED"
+          echo "::notice::All checks passed! Ready for production deployment."
+          echo "Backend Quality: PASSED"
+          echo "Frontend Quality: PASSED"
+          echo "Security audit: PASSED"
+          echo "Backend Unit tests: PASSED"
+          echo "Frontend Unit tests: PASSED"
+          echo "Backend Functional tests: PASSED"
+          echo "Backend E2E tests: PASSED"
+          echo "Production build: PASSED"
+          echo "Frontend E2E tests: PASSED"

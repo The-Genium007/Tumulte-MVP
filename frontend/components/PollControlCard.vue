@@ -16,7 +16,7 @@
 
         <!-- Chrono (si en cours) -->
         <div
-          v-if="status === 'sending' && countdown > 0"
+          v-if="(status === 'sending' || status === 'running') && countdown > 0"
           class="flex items-center gap-2 px-4 py-2 bg-primary-500/10 rounded-lg border border-primary-500/30"
         >
           <UIcon name="i-lucide-clock" class="size-5 text-primary-500" />
@@ -74,7 +74,7 @@
 
         <!-- Badge d'état -->
         <UBadge
-          v-if="status === 'sending'"
+          v-if="status === 'sending' || status === 'running'"
           label="En cours"
           color="warning"
           variant="soft"
@@ -97,19 +97,19 @@
 
         <!-- Bouton fermer/annuler intelligent -->
         <UButton
-          :color="status === 'sending' ? 'error' : 'neutral'"
+          :color="status === 'sending' || status === 'running' ? 'error' : 'neutral'"
           variant="solid"
           icon="i-lucide-x"
           size="sm"
           square
-          :class="status === 'sending' ? 'border-2 border-red-500' : 'border border-gray-500'"
+          :class="status === 'sending' || status === 'running' ? 'border-2 border-red-500' : 'border border-gray-500'"
           @click="$emit('close')"
         />
       </div>
     </div>
 
     <!-- Options et Résultats -->
-    <div v-if="(status === 'sending' || status === 'pending' || results) && status !== 'cancelled'" class="mt-6 pt-6 border-t border-gray-700">
+    <div v-if="(status === 'sending' || status === 'running' || status === 'pending' || results) && status !== 'cancelled'" class="mt-6 pt-6 border-t border-gray-700">
       <div class="grid grid-cols-3 gap-3">
         <div
           v-for="(option, index) in allOptions"
@@ -176,7 +176,13 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import type { Poll } from '@/types/api';
+
+// Simplified poll type - only what this component needs
+interface SimplePoll {
+  id: string;
+  question: string;
+  options: string[];
+}
 
 interface PollResult {
   option: string;
@@ -189,10 +195,10 @@ interface PollResultsData {
 }
 
 interface Props {
-  poll: Poll | null;
+  poll: SimplePoll | null;
   currentIndex: number;
   totalPolls: number;
-  status: 'idle' | 'pending' | 'sending' | 'sent' | 'cancelled';
+  status: 'idle' | 'pending' | 'sending' | 'running' | 'sent' | 'cancelled';
   countdown: number;
   results?: PollResultsData | null;
 }

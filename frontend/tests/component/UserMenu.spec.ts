@@ -88,8 +88,9 @@ describe("UserMenu Component", () => {
     mockPush.mockClear();
 
     // Mock useRouter globally
-    vi.mocked(globalThis.useRouter).mockReturnValue(
-      mockRouter as ReturnType<typeof useRouter>,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked((globalThis as any).useRouter).mockReturnValue(
+      mockRouter as unknown as ReturnType<typeof useRouter>,
     );
   });
 

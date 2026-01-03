@@ -168,6 +168,7 @@ export default [
       "node_modules/**",
       ".nuxt/**",
       ".output/**",
+      "coverage/**",
       "nuxt.config.ts",
       "tailwind.config.ts"
     ]

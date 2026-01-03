@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach, vi } from "vitest";
 import { setActivePinia, createPinia } from "pinia";
 import { useCampaignsStore } from "~/stores/campaigns";
-import { createMockCampaign } from "../../helpers/mockFactory";
+import { createMockApiCampaign } from "../../helpers/mockFactory";
 
 // Mock campaigns repository
 vi.mock("~/api/repositories/campaigns_repository", () => ({
@@ -32,8 +32,8 @@ describe("Campaigns Store", () => {
 
   test("fetchCampaigns() should load campaigns list", async () => {
     const mockCampaigns = [
-      createMockCampaign({ id: "1", name: "Campaign 1" }),
-      createMockCampaign({ id: "2", name: "Campaign 2" }),
+      createMockApiCampaign({ id: "1", name: "Campaign 1" }),
+      createMockApiCampaign({ id: "2", name: "Campaign 2" }),
     ];
 
     const { campaignsRepository } =
@@ -62,7 +62,10 @@ describe("Campaigns Store", () => {
   });
 
   test("createCampaign() should create and add to list", async () => {
-    const newCampaign = createMockCampaign({ id: "new", name: "New Campaign" });
+    const newCampaign = createMockApiCampaign({
+      id: "new",
+      name: "New Campaign",
+    });
 
     const { campaignsRepository } =
       await import("~/api/repositories/campaigns_repository");
@@ -83,8 +86,8 @@ describe("Campaigns Store", () => {
   });
 
   test("updateCampaign() should update campaign in list", async () => {
-    const existing = createMockCampaign({ id: "1", name: "Old Name" });
-    const updated = createMockCampaign({ id: "1", name: "New Name" });
+    const existing = createMockApiCampaign({ id: "1", name: "Old Name" });
+    const updated = createMockApiCampaign({ id: "1", name: "New Name" });
 
     const { campaignsRepository } =
       await import("~/api/repositories/campaigns_repository");
@@ -99,8 +102,8 @@ describe("Campaigns Store", () => {
   });
 
   test("deleteCampaign() should remove from list", async () => {
-    const campaign1 = createMockCampaign({ id: "1" });
-    const campaign2 = createMockCampaign({ id: "2" });
+    const campaign1 = createMockApiCampaign({ id: "1" });
+    const campaign2 = createMockApiCampaign({ id: "2" });
 
     const { campaignsRepository } =
       await import("~/api/repositories/campaigns_repository");
@@ -119,7 +122,7 @@ describe("Campaigns Store", () => {
   });
 
   test("deleteCampaign() should clear selectedCampaign if same", async () => {
-    const campaign = createMockCampaign({ id: "1" });
+    const campaign = createMockApiCampaign({ id: "1" });
 
     const { campaignsRepository } =
       await import("~/api/repositories/campaigns_repository");
@@ -141,9 +144,9 @@ describe("Campaigns Store", () => {
     const { campaignsRepository } =
       await import("~/api/repositories/campaigns_repository");
     const mockCampaigns = [
-      createMockCampaign({ id: "1", activeMemberCount: 3 }),
-      createMockCampaign({ id: "2", activeMemberCount: 0 }),
-      createMockCampaign({ id: "3", activeMemberCount: 5 }),
+      createMockApiCampaign({ id: "1", activeMemberCount: 3 }),
+      createMockApiCampaign({ id: "2", activeMemberCount: 0 }),
+      createMockApiCampaign({ id: "3", activeMemberCount: 5 }),
     ];
     vi.mocked(campaignsRepository.list).mockResolvedValueOnce(mockCampaigns);
 
@@ -157,7 +160,7 @@ describe("Campaigns Store", () => {
   test("hasCampaigns getter should return true when campaigns exist", async () => {
     const { campaignsRepository } =
       await import("~/api/repositories/campaigns_repository");
-    const mockCampaigns = [createMockCampaign()];
+    const mockCampaigns = [createMockApiCampaign()];
     vi.mocked(campaignsRepository.list).mockResolvedValueOnce(mockCampaigns);
 
     const store = useCampaignsStore();

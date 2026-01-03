@@ -1,7 +1,11 @@
 /**
  * Mock Twitch API for testing
  * Provides fake responses for all Twitch API endpoints
+ *
+ * Note: Twitch API uses snake_case for all response fields
  */
+
+/* eslint-disable @typescript-eslint/naming-convention */
 
 export interface TwitchOAuthTokenResponse {
   access_token: string
@@ -48,6 +52,8 @@ export interface TwitchPoll {
   ended_at?: string
 }
 
+/* eslint-enable @typescript-eslint/naming-convention */
+
 /**
  * Mock Twitch OAuth token exchange
  */
@@ -64,7 +70,7 @@ export function mockOAuthTokenExchange(code: string): TwitchOAuthTokenResponse {
 /**
  * Mock Twitch token refresh
  */
-export function mockTokenRefresh(refreshToken: string): TwitchOAuthTokenResponse {
+export function mockTokenRefresh(_refreshToken: string): TwitchOAuthTokenResponse {
   return {
     access_token: `mock_refreshed_access_token_${Date.now()}`,
     refresh_token: `mock_new_refresh_token_${Date.now()}`,

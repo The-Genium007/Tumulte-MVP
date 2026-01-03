@@ -3,8 +3,15 @@ import { mount } from "@vue/test-utils";
 import { ref } from "vue";
 import AppBreadcrumbs from "~/components/AppBreadcrumbs.vue";
 
+// Breadcrumb type
+interface Breadcrumb {
+  label: string;
+  to?: string;
+  icon?: string;
+}
+
 // Mock composable
-const mockBreadcrumbs = ref([]);
+const mockBreadcrumbs = ref<Breadcrumb[]>([]);
 const mockHasBreadcrumbs = ref(false);
 
 vi.mock("~/composables/useBreadcrumbs", () => ({

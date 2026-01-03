@@ -1,3 +1,5 @@
+/* eslint-disable camelcase */
+// API expects snake_case for duration_seconds
 import { describe, test, expect, beforeEach, vi } from "vitest";
 import { usePollTemplates } from "~/composables/usePollTemplates";
 import { createMockPollTemplate } from "../../helpers/mockFactory";
@@ -10,7 +12,8 @@ describe("usePollTemplates Composable", () => {
     vi.clearAllMocks();
 
     // Mock useRuntimeConfig
-    vi.mocked(globalThis.useRuntimeConfig).mockReturnValue({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked((globalThis as any).useRuntimeConfig).mockReturnValue({
       public: {
         apiBase: "http://localhost:3333/api/v2",
       },

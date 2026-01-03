@@ -6,6 +6,7 @@ import type {
   PollInstance,
   StreamerSearchResult,
 } from "~/types";
+import type { Campaign as ApiCampaign } from "~/types/api";
 
 /**
  * Create mock user for tests
@@ -32,7 +33,7 @@ export function createMockUser(overrides: Partial<User> = {}): User {
 }
 
 /**
- * Create mock campaign for tests
+ * Create mock campaign for tests (UI type)
  */
 export function createMockCampaign(
   overrides: Partial<Campaign> = {},
@@ -45,6 +46,25 @@ export function createMockCampaign(
     activeMemberCount: 1,
     ownerName: "Test Owner",
     createdAt: new Date().toISOString(),
+    ...overrides,
+  };
+}
+
+/**
+ * Create mock campaign for tests (API type - for store tests)
+ */
+export function createMockApiCampaign(
+  overrides: Partial<ApiCampaign> = {},
+): ApiCampaign {
+  return {
+    id: "campaign-123",
+    ownerId: "user-123",
+    name: "Test Campaign",
+    description: "A test campaign",
+    memberCount: 1,
+    activeMemberCount: 1,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
     ...overrides,
   };
 }

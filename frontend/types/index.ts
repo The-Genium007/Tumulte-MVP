@@ -75,6 +75,7 @@ export interface PollTemplate {
   durationSeconds: number;
   isDefault: boolean;
   createdAt: string;
+  campaignId?: string;
 }
 
 export interface PollInstance {
@@ -84,7 +85,7 @@ export interface PollInstance {
   title: string;
   options: string[];
   durationSeconds: number;
-  status: "PENDING" | "RUNNING" | "ENDED";
+  status: "PENDING" | "RUNNING" | "ENDED" | "CANCELLED";
   startedAt: string | null;
   endedAt: string | null;
   finalTotalVotes?: number | null;

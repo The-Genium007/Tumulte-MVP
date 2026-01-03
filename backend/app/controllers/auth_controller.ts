@@ -145,7 +145,7 @@ export default class AuthController {
 
       if (streamer) {
         // Mettre à jour les tokens et infos du streamer
-        await streamer.load('user')
+        await streamer.load((loader) => loader.load('user'))
         user = streamer.user
 
         // Mettre à jour le display_name si changé
@@ -248,7 +248,7 @@ export default class AuthController {
     const user = auth.user!
 
     // Charger le streamer pour tous les utilisateurs (MJ et STREAMER)
-    await user.load('streamer')
+    await user.load((loader) => loader.load('streamer'))
 
     return {
       id: user.id,
@@ -284,7 +284,7 @@ export default class AuthController {
 
     // Si on passe à STREAMER, vérifier qu'un streamer existe
     if (role === 'STREAMER') {
-      await user.load('streamer')
+      await user.load((loader) => loader.load('streamer'))
       if (!user.streamer) {
         return response.badRequest({ message: 'Aucun profil streamer associé à cet utilisateur' })
       }
@@ -297,7 +297,7 @@ export default class AuthController {
     logger.info(`User ${user.id} switched role to ${role}`)
 
     // Charger le streamer pour tous les utilisateurs (MJ et STREAMER)
-    await user.load('streamer')
+    await user.load((loader) => loader.load('streamer'))
 
     return {
       id: user.id,

@@ -48,8 +48,8 @@ export class PollChannelLinkRepository {
     await PollChannelLink.query()
       .where('id', linkId)
       .update({
-        votes_by_option: JSON.stringify(votesByOption) as any,
-        total_votes: totalVotes,
+        votesByOption: JSON.stringify(votesByOption) as any,
+        totalVotes: totalVotes,
       })
   }
 

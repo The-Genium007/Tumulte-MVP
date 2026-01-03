@@ -28,7 +28,7 @@ export default class AccountController {
 
       // Si l'utilisateur est un streamer, anonymiser et désactiver les données Twitch
       if (user.role === 'STREAMER') {
-        await user.load('streamer')
+        await user.load((loader) => loader.load('streamer'))
 
         if (user.streamer) {
           const streamer = user.streamer

@@ -58,9 +58,10 @@ export const useRoleSwitch = () => {
         color: "success",
       });
     } catch (error: unknown) {
+      const errorData = error as { data?: { message?: string } };
       toast.add({
         title: "Erreur",
-        description: error.data?.message || "Impossible de changer de rôle",
+        description: errorData.data?.message || "Impossible de changer de rôle",
         color: "error",
       });
 
