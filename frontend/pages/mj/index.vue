@@ -574,6 +574,7 @@ import { useCampaigns, type CampaignMember } from "@/composables/useCampaigns";
 import { usePollControlStore } from "@/stores/pollControl";
 import { useReadiness } from "@/composables/useReadiness";
 import { useWebSocket } from "@/composables/useWebSocket";
+import { useSupportTrigger } from "@/composables/useSupportTrigger";
 
 definePageMeta({
   layout: "authenticated" as const,
@@ -590,6 +591,7 @@ const {
   launchPoll,
 } = usePollTemplates();
 const { campaigns, fetchCampaigns, selectedCampaign, getCampaignMembers, getLiveStatus } = useCampaigns();
+const { triggerSupportForError } = useSupportTrigger();
 
 // WebSocket setup
 const { subscribeToPoll } = useWebSocket();
@@ -896,6 +898,7 @@ const launchSession = async (session: Session) => {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Erreur inconnue";
     console.error('[Session Launch] Error:', errorMessage);
+    triggerSupportForError("session_launch", error);
   }
 };
 
@@ -993,6 +996,7 @@ const cancelPoll = async () => {
       }
     } catch (error) {
       console.error('Failed to cancel poll:', error);
+      triggerSupportForError("poll_cancel", error);
     }
   }
 
@@ -1362,8 +1366,8 @@ const fetchSessions = async (campaignId: string) => {
     if (!response.ok) throw new Error("Failed to fetch sessions");
     const data = await response.json();
     sessions.value = data.data;
-  } catch {
-    // Error handled silently
+  } catch (error) {
+    triggerSupportForError("session_fetch", error);
   } finally {
     sessionsLoading.value = false;
   }
@@ -1397,8 +1401,8 @@ const handleCreateSession = async () => {
     newSession.defaultDurationSeconds = 60;
 
     await fetchSessions(selectedCampaignId.value);
-  } catch {
-    // Error handled silently
+  } catch (error) {
+    triggerSupportForError("session_create", error);
   } finally {
     creating.value = false;
   }
@@ -1427,8 +1431,8 @@ const confirmDeleteSession = async () => {
     currentSession.value = null;
 
     await fetchSessions(selectedCampaignId.value);
-  } catch {
-    // Error handled silently
+  } catch (error) {
+    triggerSupportForError("session_delete", error);
   } finally {
     deleting.value = false;
   }

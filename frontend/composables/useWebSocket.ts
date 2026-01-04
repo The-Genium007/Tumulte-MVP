@@ -5,6 +5,7 @@ import type {
   PollEndEvent,
   ReadinessChangeEvent,
 } from "@/types";
+import { useSupportTrigger } from "@/composables/useSupportTrigger";
 
 /**
  * Client SSE natif pour remplacer @adonisjs/transmit-client
@@ -288,6 +289,7 @@ class NativeSSEClient {
 export const useWebSocket = () => {
   const config = useRuntimeConfig();
   const API_URL = config.public.apiBase;
+  const { triggerSupportForError } = useSupportTrigger();
 
   const connected = ref(false);
   const client = ref<NativeSSEClient | null>(null);
@@ -365,6 +367,7 @@ export const useWebSocket = () => {
         clientExists: !!client.value,
         channel,
       });
+      triggerSupportForError("websocket_subscribe", error);
       throw error;
     }
 
@@ -424,6 +427,7 @@ export const useWebSocket = () => {
           `[WebSocket] Failed to create subscription for channel ${channel}:`,
           error,
         );
+        triggerSupportForError("websocket_connect", error);
       });
 
     // Retourner une fonction de nettoyage asynchrone
@@ -505,6 +509,7 @@ export const useWebSocket = () => {
           `[WebSocket] Failed to create subscription for streamer channel ${channel}:`,
           error,
         );
+        triggerSupportForError("websocket_subscribe", error);
       });
 
     return async () => {
@@ -566,6 +571,7 @@ export const useWebSocket = () => {
           `[WebSocket] Failed to create subscription for readiness channel ${channel}:`,
           error,
         );
+        triggerSupportForError("websocket_subscribe", error);
       });
 
     return async () => {

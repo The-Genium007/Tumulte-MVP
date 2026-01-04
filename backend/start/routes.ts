@@ -213,6 +213,7 @@ router
 router
   .group(() => {
     router.post('/report', [supportController, 'report'])
+    router.get('/logs', [supportController, 'getLogs'])
   })
   .prefix('/support')
   .use(middleware.auth({ guards: ['web', 'api'] }))

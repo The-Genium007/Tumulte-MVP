@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
 import type { PushSubscription, NotificationPreferences } from "@/types";
+import { useSupportTrigger } from "@/composables/useSupportTrigger";
 
 /**
  * Helper pour convertir une clé base64 URL-safe en Uint8Array
@@ -33,6 +34,7 @@ export const usePushNotificationsStore = defineStore(
   () => {
     const config = useRuntimeConfig();
     const API_URL = config.public.apiBase;
+    const { triggerSupportForError } = useSupportTrigger();
 
     // State
     const vapidPublicKey = ref<string | null>(null);
@@ -92,47 +94,62 @@ export const usePushNotificationsStore = defineStore(
     }
 
     async function fetchSubscriptions(): Promise<void> {
-      const response = await fetch(`${API_URL}/notifications/subscriptions`, {
-        credentials: "include",
-      });
+      try {
+        const response = await fetch(`${API_URL}/notifications/subscriptions`, {
+          credentials: "include",
+        });
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch subscriptions");
+        if (!response.ok) {
+          throw new Error("Failed to fetch subscriptions");
+        }
+
+        const data = await response.json();
+        subscriptions.value = data.data;
+      } catch (error) {
+        triggerSupportForError("push_subscriptions_fetch", error);
+        throw error;
       }
-
-      const data = await response.json();
-      subscriptions.value = data.data;
     }
 
     async function fetchPreferences(): Promise<void> {
-      const response = await fetch(`${API_URL}/notifications/preferences`, {
-        credentials: "include",
-      });
+      try {
+        const response = await fetch(`${API_URL}/notifications/preferences`, {
+          credentials: "include",
+        });
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch preferences");
+        if (!response.ok) {
+          throw new Error("Failed to fetch preferences");
+        }
+
+        const data = await response.json();
+        preferences.value = data.data;
+      } catch (error) {
+        triggerSupportForError("push_preferences_update", error);
+        throw error;
       }
-
-      const data = await response.json();
-      preferences.value = data.data;
     }
 
     async function updatePreferences(
       updates: Partial<NotificationPreferences>,
     ): Promise<void> {
-      const response = await fetch(`${API_URL}/notifications/preferences`, {
-        method: "PUT",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updates),
-      });
+      try {
+        const response = await fetch(`${API_URL}/notifications/preferences`, {
+          method: "PUT",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updates),
+        });
 
-      if (!response.ok) {
-        throw new Error("Failed to update preferences");
+        if (!response.ok) {
+          throw new Error("Failed to update preferences");
+        }
+
+        const data = await response.json();
+        preferences.value = data.data;
+      } catch (error) {
+        triggerSupportForError("push_preferences_update", error);
+        throw error;
       }
-
-      const data = await response.json();
-      preferences.value = data.data;
     }
 
     async function subscribe(deviceName?: string): Promise<boolean> {
@@ -192,6 +209,7 @@ export const usePushNotificationsStore = defineStore(
         return true;
       } catch (error) {
         console.error("Failed to subscribe to push notifications:", error);
+        triggerSupportForError("push_subscribe", error);
         return false;
       } finally {
         loading.value = false;
@@ -223,6 +241,7 @@ export const usePushNotificationsStore = defineStore(
         return true;
       } catch (error) {
         console.error("Failed to unsubscribe:", error);
+        triggerSupportForError("push_unsubscribe", error);
         return false;
       } finally {
         loading.value = false;
@@ -230,12 +249,17 @@ export const usePushNotificationsStore = defineStore(
     }
 
     async function deleteSubscription(id: string): Promise<void> {
-      await fetch(`${API_URL}/notifications/subscriptions/${id}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
+      try {
+        await fetch(`${API_URL}/notifications/subscriptions/${id}`, {
+          method: "DELETE",
+          credentials: "include",
+        });
 
-      await fetchSubscriptions();
+        await fetchSubscriptions();
+      } catch (error) {
+        triggerSupportForError("push_subscription_delete", error);
+        throw error;
+      }
     }
 
     function checkPermissionStatus(): void {

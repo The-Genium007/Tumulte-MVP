@@ -2,11 +2,13 @@ import { defineStore } from "pinia";
 import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
 import type { User } from "@/types";
+import { useSupportTrigger } from "@/composables/useSupportTrigger";
 
 export const useAuthStore = defineStore("auth", () => {
   const _router = useRouter();
   const config = useRuntimeConfig();
   const API_URL = config.public.apiBase;
+  const { triggerSupportForError } = useSupportTrigger();
 
   // State
   const user = ref<User | null>(null);
@@ -32,6 +34,7 @@ export const useAuthStore = defineStore("auth", () => {
       user.value = await response.json();
     } catch (error) {
       user.value = null;
+      triggerSupportForError("auth_fetch_me", error);
       throw error;
     } finally {
       loading.value = false;
@@ -53,6 +56,7 @@ export const useAuthStore = defineStore("auth", () => {
       _router.push({ name: "login" });
     } catch (error) {
       console.error("Logout failed:", error);
+      triggerSupportForError("auth_logout", error);
       throw error;
     }
   }
@@ -82,6 +86,7 @@ export const useAuthStore = defineStore("auth", () => {
       }
     } catch (error) {
       console.error("Switch role failed:", error);
+      triggerSupportForError("auth_switch_role", error);
       throw error;
     }
   }
