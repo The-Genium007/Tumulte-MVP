@@ -64,6 +64,14 @@ router
     router.post('/campaigns/:id/invite', '#controllers/mj/campaigns_controller.invite')
     router.get('/campaigns/:id/members', '#controllers/mj/campaigns_controller.listMembers')
     router.get('/campaigns/:id/live-status', '#controllers/mj/campaigns_controller.liveStatus')
+    router.get(
+      '/campaigns/:id/streamers/readiness',
+      '#controllers/mj/campaigns_controller.streamersReadiness'
+    )
+    router.post(
+      '/campaigns/:id/notify-unready',
+      '#controllers/mj/campaigns_controller.notifyUnready'
+    )
     router.delete(
       '/campaigns/:id/members/:memberId',
       '#controllers/mj/campaigns_controller.removeMember'

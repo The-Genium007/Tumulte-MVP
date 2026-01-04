@@ -555,6 +555,13 @@
           </div>
         </Transition>
       </Teleport>
+
+      <!-- Waiting List Modal (streamers not ready) -->
+      <WaitingListModal
+        :live-statuses="liveStatus"
+        @launched="handleWaitingListLaunched"
+        @cancelled="() => {}"
+      />
   </div>
 </template>
 
@@ -565,6 +572,7 @@ import { useRoute, useRouter } from "vue-router";
 import { usePollTemplates } from "@/composables/usePollTemplates";
 import { useCampaigns, type CampaignMember } from "@/composables/useCampaigns";
 import { usePollControlStore } from "@/stores/pollControl";
+import { useReadiness } from "@/composables/useReadiness";
 import { useWebSocket } from "@/composables/useWebSocket";
 
 definePageMeta({
@@ -587,6 +595,9 @@ const { campaigns, fetchCampaigns, selectedCampaign, getCampaignMembers, getLive
 const { subscribeToPoll } = useWebSocket();
 // Note: currentPollInstanceId est maintenant dans le store Pinia
 const pollSubscriptionCleanup = ref<(() => void) | null>(null);
+
+// Readiness (for waiting list modal)
+const { launchSession: launchSessionWithReadiness } = useReadiness();
 
 // Interfaces
 interface Poll {
@@ -852,37 +863,20 @@ const launchSession = async (session: Session) => {
   }
 
   try {
-    // Lancer la session avec Health Check
-    const response = await fetch(
-      `${API_URL}/mj/campaigns/${selectedCampaignId.value}/sessions/${session.id}/launch`,
-      {
-        method: "POST",
-        credentials: "include",
-      }
-    );
+    // Utiliser le composable useReadiness pour lancer avec gestion de la waiting list
+    const result = await launchSessionWithReadiness(selectedCampaignId.value, session.id);
 
-    // Si le health check échoue (503), afficher la modal d'erreur
-    if (response.status === 503) {
-      const errorData = await response.json();
-      const healthCheck = errorData.healthCheck;
-
-      // Récupérer les noms des streamers avec tokens expirés
-      const invalidStreamers = healthCheck?.services?.tokens?.invalidStreamers || [];
-      const streamerNames = invalidStreamers.map((s: { displayName: string }) => s.displayName);
-
-      if (streamerNames.length > 0) {
-        showHealthCheckError.value = true;
-        expiredStreamersNames.value = streamerNames;
-      }
+    // Si échec (waiting list ouverte), on arrête là
+    if (!result.success) {
+      console.log('[Session Launch] Waiting list modal opened');
       return;
     }
 
-    if (!response.ok) throw new Error("Failed to launch session");
-    const data = await response.json();
+    // Succès - configurer la session active
+    const responseData = result.data as { polls: Poll[] };
+    const polls = responseData?.polls || [];
 
-    const polls = data.data.polls || [];
-
-    // Vérifier s'il y a au moins un sondage (normalement géré côté backend)
+    // Vérifier s'il y a au moins un sondage
     if (polls.length === 0) {
       return;
     }
@@ -902,6 +896,14 @@ const launchSession = async (session: Session) => {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Erreur inconnue";
     console.error('[Session Launch] Error:', errorMessage);
+  }
+};
+
+// Handler quand la waiting list réussit à lancer
+const handleWaitingListLaunched = () => {
+  // Recharger les sessions pour mettre à jour l'état
+  if (selectedCampaignId.value) {
+    fetchSessions(selectedCampaignId.value);
   }
 };
 

@@ -6,6 +6,7 @@ import { PollSessionRepository } from '#repositories/poll_session_repository'
 import { PollRepository } from '#repositories/poll_repository'
 import { CampaignRepository } from '#repositories/campaign_repository'
 import { HealthCheckService } from '#services/health_check_service'
+import { ReadinessService } from '#services/campaigns/readiness_service'
 import { PushNotificationService } from '#services/notifications/push_notification_service'
 import { PollSessionDto } from '#dtos/polls/poll_session_dto'
 import { PollDto } from '#dtos/polls/poll_dto'
@@ -22,7 +23,8 @@ export default class PollSessionsController {
     private pollSessionRepository: PollSessionRepository,
     private pollRepository: PollRepository,
     private campaignRepository: CampaignRepository,
-    private healthCheckService: HealthCheckService
+    private healthCheckService: HealthCheckService,
+    private readinessService: ReadinessService
   ) {}
 
   /**
@@ -116,6 +118,12 @@ export default class PollSessionsController {
     const healthCheck = await this.healthCheckService.performHealthCheck(campaignId, userId)
 
     if (!healthCheck.healthy) {
+      // Récupérer les détails de readiness si le check tokens a échoué
+      let readinessDetails = null
+      if (!healthCheck.services.tokens.valid) {
+        readinessDetails = await this.readinessService.getCampaignReadiness(campaignId)
+      }
+
       logger.error(
         {
           event: 'session_launch_blocked',
@@ -123,6 +131,7 @@ export default class PollSessionsController {
           campaignId,
           sessionId,
           healthCheck,
+          readinessDetails,
         },
         'Health check failed, blocking session launch'
       )
@@ -130,6 +139,7 @@ export default class PollSessionsController {
       return response.status(503).json({
         error: 'System health check failed. Cannot launch session.',
         healthCheck,
+        readinessDetails,
       })
     }
 

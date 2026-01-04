@@ -203,3 +203,38 @@ export interface PushNotificationPayload {
   };
   timestamp: string;
 }
+
+// Streamer Readiness types (for waiting list)
+export type ReadinessIssue =
+  | "token_expired"
+  | "token_refresh_failed"
+  | "authorization_missing"
+  | "authorization_expired"
+  | "streamer_inactive";
+
+export interface StreamerReadiness {
+  streamerId: string;
+  streamerName: string;
+  streamerAvatar: string | null;
+  twitchUserId: string;
+  isReady: boolean;
+  issues: ReadinessIssue[];
+  tokenValid: boolean;
+  authorizationActive: boolean;
+  authorizationExpiresAt: string | null;
+}
+
+export interface CampaignReadiness {
+  campaignId: string;
+  allReady: boolean;
+  readyCount: number;
+  totalCount: number;
+  streamers: StreamerReadiness[];
+}
+
+export interface ReadinessChangeEvent {
+  streamerId: string;
+  streamerName: string;
+  isReady: boolean;
+  timestamp: string;
+}

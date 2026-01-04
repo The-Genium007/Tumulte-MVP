@@ -8,6 +8,7 @@ export type NotificationType =
   | 'poll:ended'
   | 'campaign:member_joined'
   | 'session:reminder'
+  | 'session:start_blocked'
   | 'token:refresh_failed'
 
 /**
@@ -29,6 +30,7 @@ export const notificationTypeToPreference: Record<
   'poll:ended': 'pollEnded',
   'campaign:member_joined': 'campaignMemberJoined',
   'session:reminder': 'sessionReminder',
+  'session:start_blocked': 'sessionReminder', // Réutilise la préférence sessionReminder
   'token:refresh_failed': 'tokenRefreshFailed',
 }
 
@@ -69,6 +71,7 @@ export function getDefaultUrgency(type: NotificationType): NotificationUrgency {
       return 'high'
     case 'poll:started':
     case 'poll:ended':
+    case 'session:start_blocked':
       return 'normal'
     case 'campaign:invitation':
     case 'campaign:member_joined':

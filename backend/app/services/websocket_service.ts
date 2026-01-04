@@ -164,6 +164,33 @@ class WebSocketService {
 
     logger.info(`WebSocket: streamer:left-campaign emitted for streamer ${streamerId}`)
   }
+
+  /**
+   * Émet un événement de changement de readiness d'un streamer
+   * Utilisé pour la waiting list en temps réel
+   */
+  emitStreamerReadinessChange(
+    campaignId: string,
+    streamerId: string,
+    isReady: boolean,
+    streamerName: string
+  ): void {
+    const channel = `campaign:${campaignId}:readiness`
+
+    transmit.broadcast(channel, {
+      event: isReady ? 'streamer:ready' : 'streamer:not-ready',
+      data: {
+        streamerId,
+        streamerName,
+        isReady,
+        timestamp: new Date().toISOString(),
+      },
+    })
+
+    logger.info(
+      `WebSocket: ${isReady ? 'streamer:ready' : 'streamer:not-ready'} emitted for ${streamerName} on campaign ${campaignId}`
+    )
+  }
 }
 
 export { WebSocketService as webSocketService }
