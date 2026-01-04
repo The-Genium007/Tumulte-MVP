@@ -129,6 +129,7 @@ jobs:
           TWITCH_CLIENT_ID: test_client_id
           TWITCH_CLIENT_SECRET: test_client_secret
           TWITCH_REDIRECT_URI: http://localhost:3333/auth/twitch/callback
+          FRONTEND_URL: http://localhost:3000
         run: npm run test:coverage -- --filter=unit
 
       # Note: c8 outputs coverage to console, coverage threshold is enforced by c8 config
@@ -292,6 +293,7 @@ jobs:
           TWITCH_CLIENT_ID: test_client_id
           TWITCH_CLIENT_SECRET: test_client_secret
           TWITCH_REDIRECT_URI: http://localhost:3333/auth/twitch/callback
+          FRONTEND_URL: http://localhost:3000
         run: node --loader ts-node-maintained/esm bin/console.ts migration:run --force
 
       - name: Run functional tests
@@ -313,6 +315,7 @@ jobs:
           TWITCH_CLIENT_ID: test_client_id
           TWITCH_CLIENT_SECRET: test_client_secret
           TWITCH_REDIRECT_URI: http://localhost:3333/auth/twitch/callback
+          FRONTEND_URL: http://localhost:3000
         run: npm run test -- --filter=functional
 
       - name: Warning on functional tests failure
