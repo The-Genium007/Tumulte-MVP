@@ -2,7 +2,7 @@ import { defineStore } from "pinia";
 import { ref, computed } from "vue";
 import type {
   CampaignReadiness,
-  StreamerReadiness,
+  StreamerReadiness as _StreamerReadiness,
   ReadinessChangeEvent,
 } from "@/types";
 

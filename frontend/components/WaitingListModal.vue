@@ -111,7 +111,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted } from "vue";
+import { ref, watch, onMounted, onUnmounted, computed } from "vue";
 import { useStreamerReadinessStore } from "@/stores/streamerReadiness";
 import { useReadiness } from "@/composables/useReadiness";
 import { useWebSocket } from "@/composables/useWebSocket";

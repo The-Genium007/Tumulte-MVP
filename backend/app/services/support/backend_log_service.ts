@@ -22,10 +22,10 @@ export interface BackendLogEntry {
  */
 export class BackendLogService {
   // Limite de logs par utilisateur (circular buffer)
-  private readonly MAX_LOGS = 100
+  private readonly maxLogs = 100
 
   // TTL des logs en secondes (1 heure)
-  private readonly TTL_SECONDS = 3600
+  private readonly ttlSeconds = 3600
 
   /**
    * Génère la clé Redis pour les logs d'un utilisateur
@@ -46,10 +46,10 @@ export class BackendLogService {
       await redis.lpush(key, JSON.stringify(entry))
 
       // Garder seulement les N derniers (LTRIM)
-      await redis.ltrim(key, 0, this.MAX_LOGS - 1)
+      await redis.ltrim(key, 0, this.maxLogs - 1)
 
       // Renouveler le TTL
-      await redis.expire(key, this.TTL_SECONDS)
+      await redis.expire(key, this.ttlSeconds)
 
       logger.debug(
         { userId, requestId: entry.requestId, level: entry.level },

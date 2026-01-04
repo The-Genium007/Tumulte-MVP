@@ -186,9 +186,9 @@ test.group('BackendLogService - Integration', (group) => {
       durationMs: 100,
     })
 
-    await service.pushLog(streamer.userId.toString(), logEntry)
+    await service.pushLog(streamer.userId!.toString(), logEntry)
 
-    const logs = await service.getUserLogs(streamer.userId.toString())
+    const logs = await service.getUserLogs(streamer.userId!.toString())
 
     assert.lengthOf(logs, 1)
     assert.equal(logs[0].requestId, 'streamer-req')

@@ -271,7 +271,7 @@ class TwitchPollService {
 
       // Extract Retry-After header for 429 responses
       const retryAfterHeader = response.headers.get('Retry-After')
-      const retryAfterSeconds = retryAfterHeader ? parseInt(retryAfterHeader, 10) : undefined
+      const retryAfterSeconds = retryAfterHeader ? Number.parseInt(retryAfterHeader, 10) : undefined
 
       if (!response.ok) {
         const errorText = await response.text()
@@ -347,7 +347,7 @@ class TwitchPollService {
       })
 
       const retryAfterHeader = response.headers.get('Retry-After')
-      const retryAfterSeconds = retryAfterHeader ? parseInt(retryAfterHeader, 10) : undefined
+      const retryAfterSeconds = retryAfterHeader ? Number.parseInt(retryAfterHeader, 10) : undefined
 
       if (!response.ok) {
         const errorText = await response.text()
@@ -424,7 +424,7 @@ class TwitchPollService {
       })
 
       const retryAfterHeader = response.headers.get('Retry-After')
-      const retryAfterSeconds = retryAfterHeader ? parseInt(retryAfterHeader, 10) : undefined
+      const retryAfterSeconds = retryAfterHeader ? Number.parseInt(retryAfterHeader, 10) : undefined
 
       if (!response.ok) {
         const errorText = await response.text()

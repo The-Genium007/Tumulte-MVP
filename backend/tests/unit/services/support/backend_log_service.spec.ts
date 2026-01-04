@@ -106,7 +106,7 @@ test.group('BackendLogService - createLogEntry static method', () => {
 
     // Should be valid ISO string
     const parsed = new Date(entry.timestamp)
-    assert.isFalse(isNaN(parsed.getTime()))
+    assert.isFalse(Number.isNaN(parsed.getTime()))
   })
 })
 

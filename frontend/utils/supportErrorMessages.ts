@@ -3,6 +3,8 @@
  * Version Alpha - Couverture complète de toutes les interactions et processus
  */
 
+/* eslint-disable camelcase */
+
 export type SupportActionType =
   // ===== AUTHENTIFICATION (5) =====
   | "auth_login"
