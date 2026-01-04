@@ -2,6 +2,9 @@
 
     <div class="min-h-screen py-6">
       <div class="space-y-6">
+        <!-- Banner notifications push (persistent - disparaît uniquement quand le navigateur est enregistré) -->
+        <NotificationsPushPermissionBanner persistent />
+
         <!-- Alert pour invitations en attente -->
         <UCard v-if="invitationCount > 0">
           <UAlert
@@ -70,7 +73,7 @@
                 v-for="status in authorizationStatuses"
                 :key="status.campaignId"
                 class="flex items-center justify-between p-4 rounded-lg border"
-                :class="status.isAuthorized ? 'border-green-500/50 bg-green-500/5' : 'border-gray-700 bg-gray-800/30'"
+                :class="(status.isOwner || status.isAuthorized) ? 'border-green-500/50 bg-green-500/5' : 'border-gray-700 bg-gray-800/30'"
               >
                 <!-- Campaign name -->
                 <div class="flex-1">
@@ -79,8 +82,9 @@
 
                 <!-- Authorization button/status -->
                 <div class="flex items-center gap-3">
+                  <!-- Owners are always authorized, members need to authorize -->
                   <UButton
-                    v-if="!status.isAuthorized"
+                    v-if="!status.isOwner && !status.isAuthorized"
                     color="primary"
                     size="lg"
                     icon="i-lucide-shield-check"
@@ -256,7 +260,6 @@ const config = useRuntimeConfig();
 const API_URL = config.public.apiBase;
 const { user: _user } = useAuth();
 const { fetchInvitations, getAuthorizationStatus, grantAuthorization, revokeAuthorization } = useCampaigns();
-const toast = useToast();
 
 // Dev mode
 const isDev = import.meta.dev;
@@ -282,11 +285,7 @@ const fetchOverlayUrl = async () => {
     const data = await response.json();
     overlayUrl.value = data.data.overlay_url;
   } catch {
-    toast.add({
-      title: "Erreur",
-      description: "Impossible de générer l'URL de l'overlay",
-      color: "error",
-    });
+    // Error silently handled
   } finally {
     loadingOverlay.value = false;
   }
@@ -301,11 +300,7 @@ const copyOverlayUrl = async () => {
         copySuccess.value = false;
       }, 3000);
     } catch {
-      toast.add({
-        title: "Erreur",
-        description: "Impossible de copier l'URL",
-        color: "error",
-      });
+      // Error silently handled
     }
   }
 };
@@ -336,6 +331,7 @@ const loadAuthorizationStatus = async () => {
     authorizationStatuses.value = data.map((item) => ({
       campaignId: item.campaign_id,
       campaignName: item.campaign_name,
+      isOwner: item.is_owner,
       isAuthorized: item.is_authorized,
       expiresAt: item.expires_at,
       remainingSeconds: item.remaining_seconds,
@@ -392,36 +388,18 @@ const startRefreshInterval = () => {
 const handleAuthorize = async (campaignId: string) => {
   try {
     await grantAuthorization(campaignId);
-    toast.add({
-      title: "Autorisation accordée",
-      description: "Les sondages peuvent maintenant être lancés sur votre chaîne pour les 12 prochaines heures",
-      color: "success",
-    });
     await loadAuthorizationStatus();
   } catch {
-    toast.add({
-      title: "Erreur",
-      description: "Impossible d'accorder l'autorisation",
-      color: "error",
-    });
+    // Error silently handled
   }
 };
 
 const handleRevokeAuth = async (campaignId: string) => {
   try {
     await revokeAuthorization(campaignId);
-    toast.add({
-      title: "Autorisation révoquée",
-      description: "Les sondages ne pourront plus être lancés sur votre chaîne",
-      color: "success",
-    });
     await loadAuthorizationStatus();
   } catch {
-    toast.add({
-      title: "Erreur",
-      description: "Impossible de révoquer l'autorisation",
-      color: "error",
-    });
+    // Error silently handled
   }
 };
 

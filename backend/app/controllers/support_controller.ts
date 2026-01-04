@@ -5,9 +5,11 @@ import { campaign as Campaign } from '#models/campaign'
 import { campaignMembership as CampaignMembership } from '#models/campaign_membership'
 import { supportReportService as SupportReportService } from '#services/support_report_service'
 import type { BackendContext, FrontendContext } from '#services/support_report_service'
+import { backendLogService } from '#services/support/backend_log_service'
 
 export default class SupportController {
   private readonly supportReportService = new SupportReportService()
+  private readonly backendLogService = backendLogService
 
   async report({ auth, request, response }: HttpContext) {
     const user = auth.user
@@ -75,6 +77,45 @@ export default class SupportController {
 
       return response.internalServerError({
         error: 'Unable to send support report',
+      })
+    }
+  }
+
+  /**
+   * Récupère les logs backend de l'utilisateur connecté
+   * GET /support/logs
+   */
+  async getLogs({ auth, request, response }: HttpContext) {
+    const user = auth.user
+    if (!user) {
+      return response.unauthorized({ error: 'Unauthenticated' })
+    }
+
+    // Paramètre optionnel pour limiter le nombre de logs
+    const limit = Math.min(Number(request.input('limit', 50)), 100)
+
+    try {
+      const logs = await this.backendLogService.getUserLogs(user.id.toString(), limit)
+
+      return response.ok({
+        data: {
+          logs,
+          userContext: {
+            userId: user.id,
+            role: user.role,
+            displayName: user.displayName,
+          },
+        },
+      })
+    } catch (error) {
+      logger.error({
+        message: 'Failed to get support logs',
+        userId: user.id,
+        error: error?.message,
+      })
+
+      return response.internalServerError({
+        error: 'Unable to retrieve support logs',
       })
     }
   }

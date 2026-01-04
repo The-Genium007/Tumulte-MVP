@@ -15,6 +15,19 @@ interface PollStartEvent {
   [key: string]: any
 }
 
+interface RetryNotificationEvent {
+  service: string
+  operation: string
+  attempt: number
+  maxAttempts: number
+  error?: string
+  pollInstanceId?: string
+  circuitBreakerTriggered?: boolean
+  delayMs?: number
+  timestamp: string
+  [key: string]: any
+}
+
 interface PollUpdateEvent {
   pollInstanceId: string
   votesByOption: Record<string, number>
@@ -163,6 +176,136 @@ class WebSocketService {
     })
 
     logger.info(`WebSocket: streamer:left-campaign emitted for streamer ${streamerId}`)
+  }
+
+  /**
+   * Émet un événement de changement de readiness d'un streamer
+   * Utilisé pour la waiting list en temps réel
+   */
+  emitStreamerReadinessChange(
+    campaignId: string,
+    streamerId: string,
+    isReady: boolean,
+    streamerName: string
+  ): void {
+    const channel = `campaign:${campaignId}:readiness`
+
+    transmit.broadcast(channel, {
+      event: isReady ? 'streamer:ready' : 'streamer:not-ready',
+      data: {
+        streamerId,
+        streamerName,
+        isReady,
+        timestamp: new Date().toISOString(),
+      },
+    })
+
+    logger.info(
+      `WebSocket: ${isReady ? 'streamer:ready' : 'streamer:not-ready'} emitted for ${streamerName} on campaign ${campaignId}`
+    )
+  }
+
+  /**
+   * Émet une notification de retry API vers le MJ
+   * Permet au MJ de voir en temps réel les tentatives de retry
+   */
+  emitRetryNotification(
+    campaignId: string,
+    data: {
+      service: string
+      operation: string
+      attempt: number
+      maxAttempts: number
+      error?: string
+      pollInstanceId?: string
+      circuitBreakerTriggered?: boolean
+      delayMs?: number
+    }
+  ): void {
+    const channel = `campaign:${campaignId}:notifications`
+
+    const event: RetryNotificationEvent = {
+      service: data.service,
+      operation: data.operation,
+      attempt: data.attempt,
+      maxAttempts: data.maxAttempts,
+      error: data.error,
+      pollInstanceId: data.pollInstanceId,
+      circuitBreakerTriggered: data.circuitBreakerTriggered,
+      delayMs: data.delayMs,
+      timestamp: new Date().toISOString(),
+    }
+
+    transmit.broadcast(channel, {
+      event: 'api:retry',
+      data: event,
+    })
+
+    const logLevel = data.circuitBreakerTriggered ? 'warn' : 'info'
+    logger[logLevel](
+      `WebSocket: api:retry emitted for ${data.service}:${data.operation} ` +
+        `(attempt ${data.attempt}/${data.maxAttempts}) on campaign ${campaignId}`
+    )
+  }
+
+  /**
+   * Émet une notification de succès après retry
+   */
+  emitRetrySuccess(
+    campaignId: string,
+    data: {
+      service: string
+      operation: string
+      totalAttempts: number
+      totalDurationMs: number
+      pollInstanceId?: string
+    }
+  ): void {
+    const channel = `campaign:${campaignId}:notifications`
+
+    transmit.broadcast(channel, {
+      event: 'api:retry-success',
+      data: {
+        ...data,
+        timestamp: new Date().toISOString(),
+      },
+    })
+
+    logger.info(
+      `WebSocket: api:retry-success emitted for ${data.service}:${data.operation} ` +
+        `(${data.totalAttempts} attempts, ${data.totalDurationMs}ms) on campaign ${campaignId}`
+    )
+  }
+
+  /**
+   * Émet une notification d'échec définitif après épuisement des retries
+   */
+  emitRetryExhausted(
+    campaignId: string,
+    data: {
+      service: string
+      operation: string
+      totalAttempts: number
+      totalDurationMs: number
+      error: string
+      pollInstanceId?: string
+      circuitBreakerTriggered?: boolean
+    }
+  ): void {
+    const channel = `campaign:${campaignId}:notifications`
+
+    transmit.broadcast(channel, {
+      event: 'api:retry-exhausted',
+      data: {
+        ...data,
+        timestamp: new Date().toISOString(),
+      },
+    })
+
+    logger.error(
+      `WebSocket: api:retry-exhausted emitted for ${data.service}:${data.operation} ` +
+        `(${data.totalAttempts} attempts, ${data.totalDurationMs}ms) on campaign ${campaignId}: ${data.error}`
+    )
   }
 }
 

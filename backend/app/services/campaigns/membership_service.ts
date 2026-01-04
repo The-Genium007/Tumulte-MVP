@@ -2,6 +2,7 @@ import { inject } from '@adonisjs/core'
 import logger from '@adonisjs/core/services/logger'
 import { campaignMembership as CampaignMembership } from '#models/campaign_membership'
 import { DateTime } from 'luxon'
+import { PushNotificationService } from '#services/notifications/push_notification_service'
 
 /**
  * Service pour gérer les membres des campagnes
@@ -29,10 +30,41 @@ export class MembershipService {
       invitedAt: DateTime.now(),
     })
 
-    // Précharger la relation campaign pour le DTO
-    await membership.load('campaign')
+    // Précharger les relations pour le DTO et la notification
+    await membership.load('campaign', (query) => {
+      query.preload('owner')
+    })
+    await membership.load('streamer', (query) => {
+      query.preload('user')
+    })
 
     logger.info({ campaignId, streamerId }, 'Streamer invited to campaign')
+
+    // Envoyer une notification push si le streamer a un compte Tumulte
+    if (membership.streamer.userId) {
+      try {
+        const pushService = new PushNotificationService()
+        await pushService.sendToUser(membership.streamer.userId, 'campaign:invitation', {
+          title: 'Invitation à une campagne',
+          body: `${membership.campaign.owner?.displayName || 'Un MJ'} vous invite à rejoindre "${membership.campaign.name}"`,
+          data: {
+            url: '/streamer/campaigns/invitations',
+            campaignId: membership.campaignId,
+          },
+          actions: [{ action: 'view', title: "Voir l'invitation" }],
+        })
+        logger.info(
+          { campaignId, streamerId, userId: membership.streamer.userId },
+          'Push notification sent for campaign invitation'
+        )
+      } catch (error) {
+        // Ne pas bloquer l'invitation si la notification échoue
+        logger.warn(
+          { campaignId, streamerId, error: error instanceof Error ? error.message : String(error) },
+          'Failed to send push notification for campaign invitation'
+        )
+      }
+    }
 
     return membership
   }

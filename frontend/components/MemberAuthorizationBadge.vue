@@ -1,8 +1,17 @@
 <template>
   <div class="flex items-center gap-2">
+    <!-- Owner: Permanent authorization -->
+    <div
+      v-if="isOwner"
+      class="flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-primary-500/10 text-primary-400 border border-primary-500/20"
+    >
+      <UIcon name="i-lucide-infinity" class="size-3.5" />
+      <span>Permanent</span>
+    </div>
+
     <!-- Authorized with countdown -->
     <div
-      v-if="isPollAuthorized && remainingSeconds !== null && remainingSeconds > 0"
+      v-else-if="isPollAuthorized && remainingSeconds !== null && remainingSeconds > 0"
       class="flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium"
       :class="urgencyClass"
     >
@@ -36,6 +45,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 const props = defineProps<{
   isPollAuthorized: boolean;
   remainingSeconds: number | null;
+  isOwner?: boolean;
 }>();
 
 const emit = defineEmits<{

@@ -62,7 +62,7 @@ export class CampaignMemberDto {
     return {
       id: membership.id,
       status: membership.status,
-      isOwner: membership.streamerId === ownerId,
+      isOwner: membership.streamer?.userId === ownerId,
       streamer: StreamerDto.fromModel(membership.streamer),
       invitedAt: membership.invitedAt?.toISO() || membership.createdAt?.toISO() || '',
       acceptedAt: membership.acceptedAt?.toISO() || null,

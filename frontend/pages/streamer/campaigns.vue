@@ -237,7 +237,6 @@ const {
   grantAuthorization,
   revokeAuthorization,
 } = useCampaigns();
-const toast = useToast();
 
 const invitations = ref<CampaignInvitation[]>([]);
 const activeCampaigns = ref<Campaign[]>([]);
@@ -304,11 +303,7 @@ const loadData = async () => {
 
     activeCampaigns.value = campaignsData;
   } catch {
-    toast.add({
-      title: "Erreur",
-      description: "Impossible de charger les campagnes",
-      color: "error",
-    });
+    // Error handled silently
   } finally {
     loading.value = false;
   }
@@ -327,11 +322,7 @@ const loadAuthorizationStatus = async () => {
       remainingSeconds: item.remaining_seconds,
     }));
   } catch {
-    toast.add({
-      title: "Erreur",
-      description: "Impossible de charger les autorisations",
-      color: "error",
-    });
+    // Error handled silently
   } finally {
     loadingAuth.value = false;
   }
@@ -340,54 +331,27 @@ const loadAuthorizationStatus = async () => {
 const handleAuthorize = async (campaignId: string) => {
   try {
     await grantAuthorization(campaignId);
-    toast.add({
-      title: "Autorisation accordée",
-      description: "Les sondages peuvent maintenant être lancés sur votre chaîne pour les 12 prochaines heures",
-      color: "success",
-    });
     await loadAuthorizationStatus();
   } catch {
-    toast.add({
-      title: "Erreur",
-      description: "Impossible d'accorder l'autorisation",
-      color: "error",
-    });
+    // Error handled silently
   }
 };
 
 const handleRevokeAuth = async (campaignId: string) => {
   try {
     await revokeAuthorization(campaignId);
-    toast.add({
-      title: "Autorisation révoquée",
-      description: "Les sondages ne pourront plus être lancés sur votre chaîne",
-      color: "success",
-    });
     await loadAuthorizationStatus();
   } catch {
-    toast.add({
-      title: "Erreur",
-      description: "Impossible de révoquer l'autorisation",
-      color: "error",
-    });
+    // Error handled silently
   }
 };
 
 const handleAccept = async (id: string) => {
   try {
     await acceptInvitation(id);
-    toast.add({
-      title: "Succès",
-      description: "Invitation acceptée ! Vous faites maintenant partie de cette campagne.",
-      color: "success",
-    });
     await loadData();
   } catch {
-    toast.add({
-      title: "Erreur",
-      description: "Impossible d'accepter l'invitation",
-      color: "error",
-    });
+    // Error handled silently
   }
 };
 
@@ -398,18 +362,9 @@ const handleDecline = async (id: string) => {
 
   try {
     await declineInvitation(id);
-    toast.add({
-      title: "Succès",
-      description: "Invitation refusée",
-      color: "success",
-    });
     await loadData();
   } catch {
-    toast.add({
-      title: "Erreur",
-      description: "Impossible de refuser l'invitation",
-      color: "error",
-    });
+    // Error handled silently
   }
 };
 
@@ -420,18 +375,9 @@ const handleLeave = async (id: string, name: string) => {
 
   try {
     await leaveCampaign(id);
-    toast.add({
-      title: "Succès",
-      description: "Vous avez quitté la campagne",
-      color: "success",
-    });
     await loadData();
   } catch {
-    toast.add({
-      title: "Erreur",
-      description: "Impossible de quitter la campagne",
-      color: "error",
-    });
+    // Error handled silently
   }
 };
 

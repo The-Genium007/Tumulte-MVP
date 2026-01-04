@@ -64,6 +64,14 @@ router
     router.post('/campaigns/:id/invite', '#controllers/mj/campaigns_controller.invite')
     router.get('/campaigns/:id/members', '#controllers/mj/campaigns_controller.listMembers')
     router.get('/campaigns/:id/live-status', '#controllers/mj/campaigns_controller.liveStatus')
+    router.get(
+      '/campaigns/:id/streamers/readiness',
+      '#controllers/mj/campaigns_controller.streamersReadiness'
+    )
+    router.post(
+      '/campaigns/:id/notify-unready',
+      '#controllers/mj/campaigns_controller.notifyUnready'
+    )
     router.delete(
       '/campaigns/:id/members/:memberId',
       '#controllers/mj/campaigns_controller.removeMember'
@@ -205,8 +213,25 @@ router
 router
   .group(() => {
     router.post('/report', [supportController, 'report'])
+    router.get('/logs', [supportController, 'getLogs'])
   })
   .prefix('/support')
+  .use(middleware.auth({ guards: ['web', 'api'] }))
+
+// ==========================================
+// Routes Notifications Push (accessible à tous les rôles authentifiés)
+// ==========================================
+router
+  .group(() => {
+    router.get('/vapid-public-key', '#controllers/notifications_controller.vapidPublicKey')
+    router.post('/subscribe', '#controllers/notifications_controller.subscribe')
+    router.delete('/subscribe', '#controllers/notifications_controller.unsubscribe')
+    router.get('/subscriptions', '#controllers/notifications_controller.listSubscriptions')
+    router.delete('/subscriptions/:id', '#controllers/notifications_controller.deleteSubscription')
+    router.get('/preferences', '#controllers/notifications_controller.getPreferences')
+    router.put('/preferences', '#controllers/notifications_controller.updatePreferences')
+  })
+  .prefix('/notifications')
   .use(middleware.auth({ guards: ['web', 'api'] }))
 
 // ==========================================

@@ -3,11 +3,11 @@
     <!-- Header -->
     <AppHeader />
 
-    <!-- Breadcrumbs + Main Content -->
+    <!-- Main Content -->
     <main class="flex-1 flex flex-col">
       <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-6 max-w-7xl flex-1">
-        <!-- Breadcrumbs -->
-        <AppBreadcrumbs />
+        <!-- Banner de permission notifications push -->
+        <NotificationsPushPermissionBanner />
 
         <!-- Page Content -->
         <slot />
@@ -27,7 +27,6 @@
 import { onMounted } from 'vue'
 import AppHeader from '@/components/AppHeader.vue'
 import AppFooter from '@/components/AppFooter.vue'
-import AppBreadcrumbs from '@/components/AppBreadcrumbs.vue'
 import SupportWidget from '@/components/SupportWidget.vue'
 import DevModeIndicator from '@/components/DevModeIndicator.vue'
 import { useAuth } from '@/composables/useAuth'

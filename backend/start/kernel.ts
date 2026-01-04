@@ -25,6 +25,7 @@ server.errorHandler(() => import('#exceptions/handler'))
 server.use([
   () => import('#middleware/container_bindings_middleware'),
   () => import('#middleware/force_json_response_middleware'),
+  () => import('#middleware/security_headers_middleware'),
   () => import('@adonisjs/cors/cors_middleware'),
 ])
 
@@ -46,4 +47,5 @@ export const middleware = router.named({
   guest: () => import('#middleware/guest_middleware'),
   auth: () => import('#middleware/auth_middleware'),
   role: () => import('#middleware/role_middleware'),
+  rateLimit: () => import('#middleware/rate_limit_middleware'),
 })

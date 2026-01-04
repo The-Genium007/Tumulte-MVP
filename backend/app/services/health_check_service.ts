@@ -1,9 +1,11 @@
 import { inject } from '@adonisjs/core'
 import logger from '@adonisjs/core/services/logger'
 import transmit from '@adonisjs/transmit/services/main'
+import env from '#start/env'
 import { redisService as RedisService } from './cache/redis_service.js'
 import { CampaignMembershipRepository } from '#repositories/campaign_membership_repository'
 import { UserRepository } from '#repositories/user_repository'
+import { TokenRefreshService } from '#services/auth/token_refresh_service'
 
 export interface HealthCheckResult {
   healthy: boolean
@@ -38,8 +40,9 @@ export class HealthCheckService {
     private userRepository: UserRepository
   ) {}
 
-  // Instancier le service Redis
+  // Instancier les services
   private redisService = new RedisService()
+  private tokenRefreshService = new TokenRefreshService()
 
   /**
    * Effectue un health check complet avant le lancement d'un poll
@@ -133,9 +136,9 @@ export class HealthCheckService {
   private async checkTwitchApi(): Promise<void> {
     // Utiliser une route simple de l'API Twitch pour tester la connectivité
     // On peut utiliser GET /users avec un ID Twitch connu
-    const testUserId = '141981764' // Twitch's own user ID
-    const clientId = process.env.TWITCH_CLIENT_ID
-    const clientSecret = process.env.TWITCH_CLIENT_SECRET
+    const testUserId = env.get('TWITCH_TEST_USER_ID', '141981764') // Twitch's own user ID as default
+    const clientId = env.get('TWITCH_CLIENT_ID')
+    const clientSecret = env.get('TWITCH_CLIENT_SECRET')
 
     if (!clientId || !clientSecret) {
       throw new Error('Twitch credentials not configured')
@@ -216,11 +219,24 @@ export class HealthCheckService {
             })
 
             if (!response.ok) {
-              invalidStreamers.push({
-                id: streamer.id,
-                displayName: streamer.twitchDisplayName,
-                error: 'Token expired or invalid',
-              })
+              // Token invalid - attempt auto-refresh
+              logger.info(
+                { streamerId: streamer.id, displayName: streamer.twitchDisplayName },
+                '[HealthCheck] MJ token invalid, attempting refresh...'
+              )
+              const refreshSuccess = await this.tokenRefreshService.refreshStreamerToken(streamer)
+              if (!refreshSuccess) {
+                invalidStreamers.push({
+                  id: streamer.id,
+                  displayName: streamer.twitchDisplayName,
+                  error: 'Token expired or invalid (refresh failed)',
+                })
+              } else {
+                logger.info(
+                  { streamerId: streamer.id },
+                  '[HealthCheck] MJ token refreshed successfully'
+                )
+              }
             }
           }
         } catch (error) {
@@ -275,12 +291,24 @@ export class HealthCheckService {
         })
 
         if (!response.ok) {
-          // Token invalide
-          invalidStreamers.push({
-            id: streamer.id,
-            displayName: streamer.twitchDisplayName,
-            error: 'Token expired or invalid',
-          })
+          // Token invalid - attempt auto-refresh
+          logger.info(
+            { streamerId: streamer.id, displayName: streamer.twitchDisplayName },
+            '[HealthCheck] Streamer token invalid, attempting refresh...'
+          )
+          const refreshSuccess = await this.tokenRefreshService.refreshStreamerToken(streamer)
+          if (!refreshSuccess) {
+            invalidStreamers.push({
+              id: streamer.id,
+              displayName: streamer.twitchDisplayName,
+              error: 'Token expired or invalid (refresh failed)',
+            })
+          } else {
+            logger.info(
+              { streamerId: streamer.id },
+              '[HealthCheck] Streamer token refreshed successfully'
+            )
+          }
         }
       } catch (error) {
         invalidStreamers.push({

@@ -345,7 +345,6 @@ const API_URL = config.public.apiBase;
 
 const route = useRoute();
 const router = useRouter();
-const toast = useToast();
 const pollsStore = useSessionPollsStore();
 
 const sessionId = computed(() => route.params.sessionId as string);
@@ -418,20 +417,10 @@ const handleAddPoll = async () => {
       channelPointsAmount: isStandard ? (newPoll.value.channelPointsAmount || 50) : undefined,
     });
 
-    toast.add({
-      title: "Succès",
-      description: "Le sondage a été ajouté à la session",
-      color: "success",
-    });
-
     // Réinitialiser le formulaire
     resetForm();
   } catch {
-    toast.add({
-      title: "Erreur",
-      description: "Impossible d'ajouter le sondage",
-      color: "error",
-    });
+    // Erreur silencieuse
   }
 };
 
@@ -442,18 +431,8 @@ const handleDeletePoll = async (pollId: string) => {
 
   try {
     await pollsStore.deletePoll(campaignId.value, sessionId.value, pollId);
-
-    toast.add({
-      title: "Succès",
-      description: "Le sondage a été supprimé",
-      color: "success",
-    });
   } catch {
-    toast.add({
-      title: "Erreur",
-      description: "Impossible de supprimer le sondage",
-      color: "error",
-    });
+    // Erreur silencieuse
   }
 };
 
@@ -473,22 +452,12 @@ const handleDeleteSession = async () => {
       throw new Error("Failed to delete session");
     }
 
-    toast.add({
-      title: "Succès",
-      description: "La session a été supprimée avec succès",
-      color: "success",
-    });
-
     showDeleteModal.value = false;
 
     // Rediriger vers le dashboard MJ
     router.push("/mj");
   } catch {
-    toast.add({
-      title: "Erreur",
-      description: "Impossible de supprimer la session",
-      color: "error",
-    });
+    // Erreur silencieuse
   } finally {
     isDeleting.value = false;
   }

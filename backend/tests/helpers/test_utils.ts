@@ -62,9 +62,32 @@ export async function createTestStreamer(overrides: Partial<any> = {}): Promise<
     accessToken: overrides.accessToken || faker.string.alphanumeric(30),
     refreshToken: overrides.refreshToken || faker.string.alphanumeric(50),
     scopes: overrides.scopes || ['channel:manage:polls', 'channel:read:polls'],
+    isActive: overrides.isActive !== undefined ? overrides.isActive : true,
   }
 
-  return await Streamer.createWithEncryptedTokens(streamerData)
+  const streamer = await Streamer.createWithEncryptedTokens(streamerData)
+
+  // Update additional fields that aren't in createWithEncryptedTokens
+  if (overrides.tokenExpiresAt !== undefined) {
+    streamer.tokenExpiresAt = overrides.tokenExpiresAt
+  }
+  if (overrides.tokenRefreshFailedAt !== undefined) {
+    streamer.tokenRefreshFailedAt = overrides.tokenRefreshFailedAt
+  }
+  if (overrides.lastTokenRefreshAt !== undefined) {
+    streamer.lastTokenRefreshAt = overrides.lastTokenRefreshAt
+  }
+
+  // Save if any additional fields were set
+  if (
+    overrides.tokenExpiresAt !== undefined ||
+    overrides.tokenRefreshFailedAt !== undefined ||
+    overrides.lastTokenRefreshAt !== undefined
+  ) {
+    await streamer.save()
+  }
+
+  return streamer
 }
 
 /**

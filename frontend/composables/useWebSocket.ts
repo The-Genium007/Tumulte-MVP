@@ -1,5 +1,11 @@
 import { ref, readonly } from "vue";
-import type { PollStartEvent, PollUpdateEvent, PollEndEvent } from "@/types";
+import type {
+  PollStartEvent,
+  PollUpdateEvent,
+  PollEndEvent,
+  ReadinessChangeEvent,
+} from "@/types";
+import { useSupportTrigger } from "@/composables/useSupportTrigger";
 
 /**
  * Client SSE natif pour remplacer @adonisjs/transmit-client
@@ -283,6 +289,7 @@ class NativeSSEClient {
 export const useWebSocket = () => {
   const config = useRuntimeConfig();
   const API_URL = config.public.apiBase;
+  const { triggerSupportForError } = useSupportTrigger();
 
   const connected = ref(false);
   const client = ref<NativeSSEClient | null>(null);
@@ -360,6 +367,7 @@ export const useWebSocket = () => {
         clientExists: !!client.value,
         channel,
       });
+      triggerSupportForError("websocket_subscribe", error);
       throw error;
     }
 
@@ -419,6 +427,7 @@ export const useWebSocket = () => {
           `[WebSocket] Failed to create subscription for channel ${channel}:`,
           error,
         );
+        triggerSupportForError("websocket_connect", error);
       });
 
     // Retourner une fonction de nettoyage asynchrone
@@ -500,10 +509,75 @@ export const useWebSocket = () => {
           `[WebSocket] Failed to create subscription for streamer channel ${channel}:`,
           error,
         );
+        triggerSupportForError("websocket_subscribe", error);
       });
 
     return async () => {
       console.log(`[WebSocket] Unsubscribing from channel: ${channel}`);
+      await subscription.delete();
+    };
+  };
+
+  /**
+   * S'abonner aux événements de readiness d'une campagne
+   * Utilisé pour la waiting list en temps réel
+   */
+  const subscribeToCampaignReadiness = (
+    campaignId: string,
+    callbacks: {
+      onStreamerReady?: (data: ReadinessChangeEvent) => void;
+      onStreamerNotReady?: (data: ReadinessChangeEvent) => void;
+    },
+  ): (() => Promise<void>) => {
+    if (!client.value) {
+      connect();
+    }
+
+    const channel = `campaign:${campaignId}:readiness`;
+    console.log(`[WebSocket] Subscribing to readiness channel: ${channel}`);
+
+    const subscription = client.value!.subscription(channel);
+
+    subscription.onMessage((message: { event: string; data: unknown }) => {
+      console.log(`[WebSocket] Readiness message on ${channel}:`, message);
+
+      switch (message.event) {
+        case "streamer:ready":
+          if (callbacks.onStreamerReady) {
+            callbacks.onStreamerReady(message.data as ReadinessChangeEvent);
+          }
+          break;
+        case "streamer:not-ready":
+          if (callbacks.onStreamerNotReady) {
+            callbacks.onStreamerNotReady(message.data as ReadinessChangeEvent);
+          }
+          break;
+        default:
+          console.warn(
+            `[WebSocket] Unknown readiness event type: ${message.event}`,
+          );
+      }
+    });
+
+    subscription
+      .create()
+      .then(() => {
+        console.log(
+          `[WebSocket] Subscription created for readiness channel: ${channel}`,
+        );
+      })
+      .catch((error: unknown) => {
+        console.error(
+          `[WebSocket] Failed to create subscription for readiness channel ${channel}:`,
+          error,
+        );
+        triggerSupportForError("websocket_subscribe", error);
+      });
+
+    return async () => {
+      console.log(
+        `[WebSocket] Unsubscribing from readiness channel: ${channel}`,
+      );
       await subscription.delete();
     };
   };
@@ -525,6 +599,7 @@ export const useWebSocket = () => {
     connect,
     subscribeToPoll,
     subscribeToStreamerPolls,
+    subscribeToCampaignReadiness,
     disconnect,
   };
 };

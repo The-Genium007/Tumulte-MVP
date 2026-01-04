@@ -162,3 +162,79 @@ export interface LiveStatus {
 }
 
 export type LiveStatusMap = Record<string, LiveStatus>;
+
+// Push Notification types
+export interface PushSubscription {
+  id: string;
+  endpoint: string;
+  deviceName: string | null;
+  userAgent: string | null;
+  createdAt: string;
+  lastUsedAt: string | null;
+}
+
+export interface NotificationPreferences {
+  pushEnabled: boolean;
+  campaignInvitations: boolean;
+  criticalAlerts: boolean;
+  pollStarted: boolean;
+  pollEnded: boolean;
+  campaignMemberJoined: boolean;
+  sessionReminder: boolean;
+}
+
+export type NotificationType =
+  | "campaign:invitation"
+  | "critical:alert"
+  | "poll:started"
+  | "poll:ended"
+  | "campaign:member_joined"
+  | "session:reminder";
+
+export interface PushNotificationPayload {
+  type: NotificationType;
+  title: string;
+  body: string;
+  data?: {
+    url?: string;
+    campaignId?: string;
+    pollInstanceId?: string;
+    sessionId?: string;
+  };
+  timestamp: string;
+}
+
+// Streamer Readiness types (for waiting list)
+export type ReadinessIssue =
+  | "token_expired"
+  | "token_refresh_failed"
+  | "authorization_missing"
+  | "authorization_expired"
+  | "streamer_inactive";
+
+export interface StreamerReadiness {
+  streamerId: string;
+  streamerName: string;
+  streamerAvatar: string | null;
+  twitchUserId: string;
+  isReady: boolean;
+  issues: ReadinessIssue[];
+  tokenValid: boolean;
+  authorizationActive: boolean;
+  authorizationExpiresAt: string | null;
+}
+
+export interface CampaignReadiness {
+  campaignId: string;
+  allReady: boolean;
+  readyCount: number;
+  totalCount: number;
+  streamers: StreamerReadiness[];
+}
+
+export interface ReadinessChangeEvent {
+  streamerId: string;
+  streamerName: string;
+  isReady: boolean;
+  timestamp: string;
+}

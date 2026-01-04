@@ -8,7 +8,6 @@ export const useRoleSwitch = () => {
   const route = useRoute();
   const router = useRouter();
   const { user, switchRole } = useAuth();
-  const toast = useToast();
 
   const switching = ref(false);
   const isStreamerMode = ref(false);
@@ -51,20 +50,7 @@ export const useRoleSwitch = () => {
       // Rediriger vers la page appropriée
       const targetPath = newRole === "MJ" ? "/mj" : "/streamer";
       await router.push(targetPath);
-
-      toast.add({
-        title: "Rôle changé",
-        description: `Vous êtes maintenant en mode ${newRole}`,
-        color: "success",
-      });
-    } catch (error: unknown) {
-      const errorData = error as { data?: { message?: string } };
-      toast.add({
-        title: "Erreur",
-        description: errorData.data?.message || "Impossible de changer de rôle",
-        color: "error",
-      });
-
+    } catch {
       // Revenir à l'état précédent en cas d'erreur
       isStreamerMode.value = user.value?.role === "STREAMER";
     } finally {

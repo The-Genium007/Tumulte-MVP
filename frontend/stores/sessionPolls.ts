@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
+import { useSupportTrigger } from "@/composables/useSupportTrigger";
 
 export interface Poll {
   id: string;
@@ -13,6 +14,7 @@ export interface Poll {
 export const useSessionPollsStore = defineStore("sessionPolls", () => {
   const config = useRuntimeConfig();
   const API_URL = config.public.apiBase;
+  const { triggerSupportForError } = useSupportTrigger();
 
   const polls = ref<Poll[]>([]);
   const loading = ref(false);
@@ -29,6 +31,7 @@ export const useSessionPollsStore = defineStore("sessionPolls", () => {
       polls.value = data.data.polls || [];
     } catch (error) {
       console.error("Failed to fetch polls:", error);
+      triggerSupportForError("session_fetch", error);
       polls.value = [];
     } finally {
       loading.value = false;
@@ -66,6 +69,7 @@ export const useSessionPollsStore = defineStore("sessionPolls", () => {
       return data.data;
     } catch (error) {
       console.error("Failed to add poll:", error);
+      triggerSupportForError("template_add_to_session", error);
       throw error;
     }
   };
@@ -90,6 +94,7 @@ export const useSessionPollsStore = defineStore("sessionPolls", () => {
       polls.value = polls.value.filter((p) => p.id !== pollId);
     } catch (error) {
       console.error("Failed to delete poll:", error);
+      triggerSupportForError("template_delete", error);
       throw error;
     }
   };

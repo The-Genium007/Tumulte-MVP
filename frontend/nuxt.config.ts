@@ -47,6 +47,8 @@ export default defineNuxtConfig({
     workbox: {
       navigateFallback: "/",
       globPatterns: ["**/*.{js,css,html,png,svg,ico}"],
+      // Import du script de gestion des notifications push
+      importScripts: ["/sw-push.js"],
       runtimeCaching: [
         {
           urlPattern: /^https:\/\/api\.twitch\.tv\/.*/i,
