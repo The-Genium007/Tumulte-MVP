@@ -124,40 +124,24 @@
         </UCard>
 
         <!-- URL de l'overlay -->
-        <UCard class="opacity-60 pointer-events-none relative">
+        <UCard>
           <template #header>
-            <div class="flex items-center gap-3">
-              <UIcon name="i-lucide-link" class="size-6 text-primary-500" />
-              <h2 class="text-xl font-semibold text-white">URL de l'overlay OBS</h2>
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <UIcon name="i-lucide-link" class="size-6 text-primary-500" />
+                <h2 class="text-xl font-semibold text-white">URL de l'overlay OBS</h2>
+              </div>
+              <button
+                class="flex items-center justify-center size-8 rounded-full bg-gray-700/50 hover:bg-gray-600/50 transition-colors"
+                title="Comment configurer l'overlay"
+                @click="showObsInstructions = true"
+              >
+                <UIcon name="i-lucide-info" class="size-5 text-gray-300" />
+              </button>
             </div>
           </template>
 
           <div class="space-y-4">
-            <UAlert
-              color="warning"
-              variant="soft"
-              icon="i-lucide-construction"
-              title="Fonctionnalité en cours de développement"
-            >
-              <template #description>
-                <p>Cette fonctionnalité est actuellement en développement et sera bientôt disponible.</p>
-              </template>
-            </UAlert>
-
-            <UAlert
-              color="info"
-              variant="soft"
-              icon="i-lucide-info"
-              title="Comment utiliser l'overlay"
-            >
-              <template #description>
-                <p>Copiez cette URL et ajoutez-la comme source 'Navigateur' dans OBS Studio. N'oubliez pas de cocher 'Arrière-plan transparent'.</p>
-                <UBadge v-if="isDev" color="warning" variant="soft" size="sm" class="mt-2">
-                  <UIcon name="i-lucide-eye" class="size-3 mr-1" />
-                  En dev : utilisez le bouton "Prévisualiser" pour tester
-                </UBadge>
-              </template>
-            </UAlert>
 
             <div v-if="overlayUrl" class="space-y-3">
               <div class="flex gap-2">
@@ -203,52 +187,73 @@
                 @click="fetchOverlayUrl"
               />
             </div>
-          </div>
-        </UCard>
 
-        <!-- Instructions OBS -->
-        <UCard class="opacity-60 pointer-events-none relative">
-          <template #header>
-            <div class="flex items-center gap-3">
-              <UIcon name="i-lucide-tv" class="size-6 text-primary-500" />
-              <h2 class="text-xl font-semibold text-white">Comment ajouter l'overlay dans OBS</h2>
+            <!-- Bouton dev pour accéder au maker -->
+            <div v-if="isDev" class="pt-4 border-t border-gray-700">
+              <UButton
+                color="warning"
+                variant="soft"
+                icon="i-lucide-palette"
+                label="Overlay Maker"
+                to="/streamer/maker"
+              />
             </div>
-          </template>
-
-          <div class="space-y-4">
-            <UAlert
-              color="warning"
-              variant="soft"
-              icon="i-lucide-construction"
-              title="Fonctionnalité en cours de développement"
-            >
-              <template #description>
-                <p>Cette fonctionnalité est actuellement en développement et sera bientôt disponible.</p>
-              </template>
-            </UAlert>
-
-            <ol class="list-decimal list-inside space-y-2 text-gray-300">
-              <li>Cliquez sur "Générer l'URL de l'overlay" ci-dessus</li>
-              <li>Copiez l'URL générée</li>
-              <li>Dans OBS Studio, ajoutez une nouvelle source → "Navigateur"</li>
-              <li>Collez l'URL dans le champ "URL"</li>
-              <li>Définissez la largeur à <strong>1920</strong> et la hauteur à <strong>1080</strong></li>
-              <li>⚠️ <strong>Important:</strong> Cochez "Arrière-plan transparent"</li>
-              <li>Cliquez sur "OK"</li>
-              <li>L'overlay apparaîtra automatiquement quand le MJ lancera un sondage!</li>
-            </ol>
           </div>
         </UCard>
 
       </div>
     </div>
-  
+
+    <!-- Modal Instructions OBS -->
+    <UModal v-model:open="showObsInstructions">
+      <template #content>
+        <UCard>
+          <template #header>
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <UIcon name="i-lucide-tv" class="size-6 text-primary-500" />
+                <h2 class="text-xl font-semibold text-white">Comment ajouter l'overlay dans OBS</h2>
+              </div>
+              <button
+                class="flex items-center justify-center size-8 rounded-full hover:bg-gray-700/50 transition-colors"
+                @click="showObsInstructions = false"
+              >
+                <UIcon name="i-lucide-x" class="size-5 text-gray-400" />
+              </button>
+            </div>
+          </template>
+
+          <ol class="list-decimal list-inside space-y-3 text-gray-300">
+            <li>Cliquez sur <strong class="text-white">"Générer l'URL de l'overlay"</strong></li>
+            <li>Copiez l'URL générée</li>
+            <li>Dans OBS Studio, ajoutez une nouvelle source → <strong class="text-white">"Navigateur"</strong></li>
+            <li>Collez l'URL dans le champ "URL"</li>
+            <li>Définissez la largeur à <strong class="text-white">1920</strong> et la hauteur à <strong class="text-white">1080</strong></li>
+            <li class="text-yellow-400">⚠️ <strong>Important:</strong> Cochez "Arrière-plan transparent"</li>
+            <li>Cliquez sur "OK"</li>
+            <li class="text-green-400">✨ L'overlay apparaîtra automatiquement quand le MJ lancera un sondage!</li>
+          </ol>
+
+          <template #footer>
+            <div class="flex justify-end">
+              <UButton
+                color="primary"
+                label="Compris !"
+                @click="showObsInstructions = false"
+              />
+            </div>
+          </template>
+        </UCard>
+      </template>
+    </UModal>
+
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from "vue";
 import { useAuth } from "@/composables/useAuth";
 import { useCampaigns } from "@/composables/useCampaigns";
+import { useSupportTrigger } from "@/composables/useSupportTrigger";
 import type { AuthorizationStatus } from "@/types/index";
 
 definePageMeta({
@@ -260,6 +265,7 @@ const config = useRuntimeConfig();
 const API_URL = config.public.apiBase;
 const { user: _user } = useAuth();
 const { fetchInvitations, getAuthorizationStatus, grantAuthorization, revokeAuthorization } = useCampaigns();
+const { triggerSupportForError } = useSupportTrigger();
 
 // Dev mode
 const isDev = import.meta.dev;
@@ -268,6 +274,7 @@ const overlayUrl = ref<string | null>(null);
 const loadingOverlay = ref(false);
 const copySuccess = ref(false);
 const invitationCount = ref(0);
+const showObsInstructions = ref(false);
 const authorizationStatuses = ref<AuthorizationStatus[]>([]);
 const loadingAuth = ref(false);
 
@@ -284,8 +291,8 @@ const fetchOverlayUrl = async () => {
     if (!response.ok) throw new Error("Failed to fetch overlay URL");
     const data = await response.json();
     overlayUrl.value = data.data.overlay_url;
-  } catch {
-    // Error silently handled
+  } catch (error) {
+    triggerSupportForError("overlay_url_fetch", error);
   } finally {
     loadingOverlay.value = false;
   }

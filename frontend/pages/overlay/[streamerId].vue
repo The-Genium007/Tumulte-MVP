@@ -40,15 +40,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import OverlayLayout from "@/layouts/OverlayLayout.vue";
 import { useWebSocket } from "@/composables/useWebSocket";
 import { useCampaigns } from "@/composables/useCampaigns";
 import type { PollStartEvent } from "@/types";
 
-const props = defineProps<{
-  streamerId: string;
-}>();
+// Récupérer le streamerId depuis les paramètres de route
+const route = useRoute();
+const streamerId = computed(() => route.params.streamerId as string);
 
 const activePoll = ref<(PollStartEvent & {
   // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -74,7 +74,7 @@ onMounted(async () => {
   }
 
   // S'abonner au canal spécifique du streamer
-  const unsubscribe = subscribeToStreamerPolls(props.streamerId, {
+  const unsubscribe = subscribeToStreamerPolls(streamerId.value, {
     onPollStart: (data) => {
       console.log("Poll started:", data);
 

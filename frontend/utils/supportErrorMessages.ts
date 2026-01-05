@@ -80,7 +80,8 @@ export type SupportActionType =
   | "health_check_redis"
   | "health_check_tokens"
 
-  // ===== OVERLAY (3) =====
+  // ===== OVERLAY (4) =====
+  | "overlay_url_fetch"
   | "overlay_campaigns_fetch"
   | "overlay_poll_subscribe"
   | "overlay_poll_display"
@@ -204,6 +205,8 @@ export const SUPPORT_ERROR_MESSAGES: Record<SupportActionType, string> = {
   health_check_tokens: "Certains tokens sont invalides.",
 
   // ===== OVERLAY =====
+  overlay_url_fetch:
+    "Une erreur est survenue lors de la génération de l'URL overlay.",
   overlay_campaigns_fetch:
     "Une erreur est survenue lors du chargement overlay.",
   overlay_poll_subscribe:
@@ -316,6 +319,7 @@ export const ACTION_TYPE_LABELS: Record<SupportActionType, string> = {
   health_check_tokens: "Tokens",
 
   // Overlay
+  overlay_url_fetch: "URL Overlay",
   overlay_campaigns_fetch: "Overlay load",
   overlay_poll_subscribe: "Overlay subscribe",
   overlay_poll_display: "Overlay display",
@@ -428,6 +432,7 @@ export const ACTION_CATEGORIES: Record<SupportActionType, ActionCategory> = {
   health_check_redis: "health",
   health_check_tokens: "health",
 
+  overlay_url_fetch: "overlay",
   overlay_campaigns_fetch: "overlay",
   overlay_poll_subscribe: "overlay",
   overlay_poll_display: "overlay",

@@ -177,6 +177,9 @@ router
 
     // Revoke Twitch access
     router.post('/revoke', '#controllers/streamer/authorization_controller.revokeAccess')
+
+    // Overlay URL
+    router.get('/overlay-url', '#controllers/streamer/campaigns_controller.getOverlayUrl')
   })
   .prefix('/streamer')
   .use(middleware.auth({ guards: ['web', 'api'] }))
