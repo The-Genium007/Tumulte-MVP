@@ -1,179 +1,179 @@
-# Tests Backend Tumulte
+# Tumulte Backend Tests
 
-Ce répertoire contient tous les tests du backend Tumulte (AdonisJS + Japa).
+This directory contains all tests for the Tumulte backend (AdonisJS + Japa).
 
-## 📋 Table des matières
+## 📋 Table of Contents
 
 - [Structure](#structure)
 - [Installation](#installation)
-- [Lancement des tests](#lancement-des-tests)
+- [Running Tests](#running-tests)
 - [Conventions](#conventions)
-- [Helpers et Factories](#helpers-et-factories)
+- [Helpers and Factories](#helpers-and-factories)
 - [Mocking](#mocking)
 
 ## 📁 Structure
 
 ```
 tests/
-├── bootstrap.ts                  # Configuration Japa
+├── bootstrap.ts                  # Japa configuration
 ├── helpers/
-│   └── test_utils.ts            # Factories de test (createTestUser, etc.)
+│   └── test_utils.ts            # Test factories (createTestUser, etc.)
 ├── mocks/
-│   └── twitch_api_mock.ts       # Mock Twitch API
-├── unit/                        # Tests unitaires (~70 fichiers prévus)
+│   └── twitch_api_mock.ts       # Twitch API mock
+├── unit/                        # Unit tests (~70 files planned)
 │   ├── models/
 │   ├── services/
 │   ├── repositories/
 │   ├── validators/
 │   └── middleware/
-├── functional/                  # Tests fonctionnels (~20 fichiers)
-│   ├── campaigns_crud.spec.ts       # 13 tests CRUD campaigns
-│   ├── campaigns_members.spec.ts    # 6 tests gestion membres
-│   ├── polls.spec.ts                # 6 tests polls
-│   ├── streamer_campaigns.spec.ts   # 6 tests streamer
-│   └── overlay.spec.ts              # 4 tests overlay public
-└── e2e/                        # Tests E2E (~5 fichiers prévus)
+├── functional/                  # Functional tests (~20 files)
+│   ├── campaigns_crud.spec.ts       # 13 CRUD campaigns tests
+│   ├── campaigns_members.spec.ts    # 6 member management tests
+│   ├── polls.spec.ts                # 6 polls tests
+│   ├── streamer_campaigns.spec.ts   # 6 streamer tests
+│   └── overlay.spec.ts              # 4 public overlay tests
+└── e2e/                        # E2E tests (~5 files planned)
 ```
 
 ## 🚀 Installation
 
-### Prérequis
+### Prerequisites
 
-- Docker et Docker Compose installés
+- Docker and Docker Compose installed
 - Node.js 20+
-- npm ou yarn
+- npm or yarn
 
-### Setup initial
+### Initial Setup
 
-1. **Installer les dépendances** :
+1. **Install dependencies**:
    ```bash
    npm install
    ```
 
-2. **Démarrer les services de test** :
+2. **Start test services**:
    ```bash
    npm run test:setup
    ```
 
-   Cela va :
-   - Démarrer PostgreSQL (port 5433) et Redis (port 6380) en Docker
-   - Exécuter les migrations de test
-   - Préparer l'environnement
+   This will:
+   - Start PostgreSQL (port 5433) and Redis (port 6380) in Docker
+   - Run test migrations
+   - Prepare the environment
 
-## 🧪 Lancement des tests
+## 🧪 Running Tests
 
-### Tous les tests
+### All tests
 
 ```bash
 npm test
 ```
 
-### Tests par type
+### Tests by type
 
 ```bash
-# Tests unitaires uniquement
+# Unit tests only
 npm run test:unit
 
-# Tests fonctionnels uniquement
+# Functional tests only
 npm run test:functional
 
-# Tests E2E uniquement
+# E2E tests only
 npm run test:e2e
 ```
 
-### Tests avec coverage
+### Tests with coverage
 
 ```bash
 npm run test:coverage
 ```
 
-Cible : **80%+ de couverture globale**, **100% sur le code critique** (auth, polls, campaigns).
+Target: **80%+ overall coverage**, **100% on critical code** (auth, polls, campaigns).
 
-### Mode watch
+### Watch mode
 
 ```bash
 npm run test:watch
 ```
 
-### Workflow complet
+### Complete workflow
 
 ```bash
-# Démarrer services + migrations + tests
+# Start services + migrations + tests
 npm run test:all
 
-# Arrêter les services après les tests
+# Stop services after tests
 npm run test:teardown
 
-# Nettoyer complètement (volumes Docker)
+# Complete cleanup (Docker volumes)
 npm run test:clean
 ```
 
 ## 📐 Conventions
 
-### Nommage
+### Naming
 
-✅ **BON - camelCase** pour variables, fonctions, paramètres :
+✅ **GOOD - camelCase** for variables, functions, parameters:
 ```typescript
 const campaignService = new CampaignService()
 const testUser = await createTestUser()
 const mockRepository = new MockCampaignRepository()
 ```
 
-❌ **MAUVAIS - snake_case** interdit :
+❌ **BAD - snake_case** forbidden:
 ```typescript
 const campaign_service = new CampaignService()  // ❌
 const test_user = await createTestUser()        // ❌
 ```
 
-### Exceptions snake_case
+### snake_case Exceptions
 
-✅ **Autorisé** pour colonnes DB et champs API externes :
+✅ **Allowed** for DB columns and external API fields:
 ```typescript
 const campaign = await Campaign.create({
-  owner_id: user.id,           // ✅ colonne DB
-  created_at: new Date(),      // ✅ colonne DB
+  owner_id: user.id,           // ✅ DB column
+  created_at: new Date(),      // ✅ DB column
 })
 
 const twitchData = {
-  twitch_user_id: '12345',     // ✅ API Twitch
+  twitch_user_id: '12345',     // ✅ Twitch API
   access_token: 'token123',    // ✅ OAuth
 }
 ```
 
 ### Imports
 
-✅ **BON - Path mapping** :
+✅ **GOOD - Path mapping**:
 ```typescript
 import { CampaignService } from '#services/campaigns/campaign_service'
 import { createTestUser } from '#tests/helpers/test_utils'
 ```
 
-❌ **MAUVAIS - Imports relatifs** :
+❌ **BAD - Relative imports**:
 ```typescript
 import { CampaignService } from '../../../app/services/campaigns/campaign_service'
 ```
 
-## 🏭 Helpers et Factories
+## 🏭 Helpers and Factories
 
-Le fichier `helpers/test_utils.ts` fournit des factories pour créer des données de test :
+The `helpers/test_utils.ts` file provides factories to create test data:
 
 ### Users
 
 ```typescript
-// Créer un user basique
+// Create a basic user
 const user = await createTestUser({ role: 'MJ' })
 
-// Créer un user authentifié avec token
+// Create an authenticated user with token
 const { user, token } = await createAuthenticatedUser({ role: 'STREAMER' })
 ```
 
 ### Campaigns
 
 ```typescript
-// Campaign simple
+// Simple campaign
 const campaign = await createTestCampaign({ name: 'My Campaign' })
 
-// Campaign avec owner
+// Campaign with owner
 const campaign = await createTestCampaign({ ownerId: user.id })
 ```
 
@@ -195,7 +195,7 @@ const membership = await createTestMembership({
   status: 'ACTIVE',
 })
 
-// Avec autorisation
+// With authorization
 const membership = await grantPollAuthorization(membership, 12) // 12h
 ```
 
@@ -216,10 +216,10 @@ const poll = await createTestPollInstance({
 })
 ```
 
-### Setup complet
+### Complete setup
 
 ```typescript
-// Créer une campaign avec N membres
+// Create a campaign with N members
 const { campaign, owner, members, streamers } = await createCampaignWithMembers(3)
 ```
 
@@ -227,21 +227,21 @@ const { campaign, owner, members, streamers } = await createCampaignWithMembers(
 
 ### Twitch API Mock
 
-Le fichier `mocks/twitch_api_mock.ts` fournit des mocks pour toutes les interactions Twitch :
+The `mocks/twitch_api_mock.ts` file provides mocks for all Twitch interactions:
 
 ```typescript
 import { MockTwitchApiClient, mockOAuthTokenExchange } from '#tests/mocks/twitch_api_mock'
 
-// Mock client réutilisable
+// Reusable mock client
 const mockTwitch = new MockTwitchApiClient()
 
-// Register un user
+// Register a user
 mockTwitch.registerUser('12345', {
   login: 'testuser',
   display_name: 'TestUser',
 })
 
-// Créer un poll
+// Create a poll
 const poll = await mockTwitch.createPoll(
   '12345',
   'Question?',
@@ -249,28 +249,28 @@ const poll = await mockTwitch.createPoll(
   60
 )
 
-// Simuler une erreur
+// Simulate an error
 mockTwitch.failNextRequest(mockUnauthorizedError())
 ```
 
 ### Database
 
-Les tests utilisent une **vraie base PostgreSQL** en Docker (tmpfs pour performance).
+Tests use a **real PostgreSQL database** in Docker (tmpfs for performance).
 
-Cleanup automatique entre chaque test :
+Automatic cleanup between each test:
 ```typescript
 test.group('My Tests', (group) => {
   group.each.setup(() => testUtils.db().truncate())
 
   test('should...', async ({ client, assert }) => {
-    // DB vide ici
+    // Empty DB here
   })
 })
 ```
 
 ### Redis
 
-**Vrai Redis** en Docker (tmpfs) pour les tests de cache.
+**Real Redis** in Docker (tmpfs) for cache tests.
 
 ## ✅ Validation
 
@@ -280,7 +280,7 @@ test.group('My Tests', (group) => {
 npm run lint
 ```
 
-Doit passer **sans erreur**.
+Must pass **without errors**.
 
 ### TypeCheck
 
@@ -288,54 +288,54 @@ Doit passer **sans erreur**.
 npm run typecheck
 ```
 
-Doit passer **sans erreur**.
+Must pass **without errors**.
 
-## 📊 Coverage actuel
+## 📊 Current Coverage
 
-### Tests fonctionnels créés
-- ✅ **campaigns_crud.spec.ts** - 13 tests (CRUD complet)
+### Functional tests created
+- ✅ **campaigns_crud.spec.ts** - 13 tests (complete CRUD)
 - ✅ **campaigns_members.spec.ts** - 6 tests (invitations, authorization)
 - ✅ **polls.spec.ts** - 6 tests (launch, cancel, results)
-- ✅ **streamer_campaigns.spec.ts** - 6 tests (invitations, campaigns actives)
-- ✅ **overlay.spec.ts** - 4 tests (overlay public)
+- ✅ **streamer_campaigns.spec.ts** - 6 tests (invitations, active campaigns)
+- ✅ **overlay.spec.ts** - 4 tests (public overlay)
 
-**Total** : **35+ tests fonctionnels** modernisés avec authentification réelle et assertions strictes.
+**Total**: **35+ functional tests** modernized with real authentication and strict assertions.
 
-### Tests unitaires
-- ✅ **campaign_service_modernized.spec.ts** - 13 tests avec MockRepository pattern
+### Unit tests
+- ✅ **campaign_service_modernized.spec.ts** - 13 tests with MockRepository pattern
 
 ### Infrastructure
-- ✅ Docker Compose pour PostgreSQL + Redis
-- ✅ Configuration .env.test
-- ✅ Bootstrap Japa
-- ✅ Mock Twitch API complet
-- ✅ Factories réutilisables (9 helpers)
-- ✅ Scripts npm pour tous les workflows
+- ✅ Docker Compose for PostgreSQL + Redis
+- ✅ .env.test configuration
+- ✅ Japa bootstrap
+- ✅ Complete Twitch API mock
+- ✅ Reusable factories (9 helpers)
+- ✅ npm scripts for all workflows
 
-## 🎯 Prochaines étapes (selon le plan)
+## 🎯 Next Steps (according to the plan)
 
-### Phase 1 suite
-- Tests authentification OAuth (100% coverage)
-- Tests token encryption/refresh
-- Tests middleware RBAC
+### Phase 1 continued
+- OAuth authentication tests (100% coverage)
+- Token encryption/refresh tests
+- RBAC middleware tests
 
 ### Phase 2
-- Tests services polls (lifecycle, polling, aggregation)
-- Tests services Twitch integration
-- Tests WebSocket real-time
+- Polls services tests (lifecycle, polling, aggregation)
+- Twitch integration services tests
+- WebSocket real-time tests
 
 ### Phase 3
-- Tests E2E workflows complets
-- Tests composants frontend (Vitest + Playwright)
+- Complete E2E workflow tests
+- Frontend component tests (Vitest + Playwright)
 
 ### Phase 4
-- Tests de performance (1000 votes/sec)
-- Tests edge cases
-- Tests validateurs
+- Performance tests (1000 votes/sec)
+- Edge case tests
+- Validator tests
 
-## 📝 Exemples
+## 📝 Examples
 
-### Test fonctionnel moderne
+### Modern Functional Test
 
 ```typescript
 import { test } from '@japa/runner'
@@ -359,7 +359,7 @@ test.group('Campaigns API', (group) => {
 })
 ```
 
-### Test unitaire avec Mock Repository
+### Unit Test with Mock Repository
 
 ```typescript
 import { test } from '@japa/runner'
@@ -387,38 +387,38 @@ test.group('CampaignService', (group) => {
 
 ## 🐛 Debugging
 
-### Logs de test
+### Test logs
 
-Par défaut, les logs sont en mode `silent` (voir `.env.test`).
+By default, logs are in `silent` mode (see `.env.test`).
 
-Pour activer les logs :
+To enable logs:
 ```bash
 LOG_LEVEL=debug npm test
 ```
 
-### Inspecter la DB de test
+### Inspect test DB
 
 ```bash
-# Se connecter à PostgreSQL de test
+# Connect to test PostgreSQL
 docker exec -it tumulte-postgres-test psql -U test -d tumulte_test
 
-# Lister les tables
+# List tables
 \dt
 
 # Query
 SELECT * FROM campaigns;
 ```
 
-### Inspecter Redis de test
+### Inspect test Redis
 
 ```bash
-# Se connecter à Redis de test
+# Connect to test Redis
 docker exec -it tumulte-redis-test redis-cli
 
-# Lister les clés
+# List keys
 KEYS *
 
-# Get une valeur
+# Get a value
 GET poll:results:123
 ```
 
@@ -426,4 +426,4 @@ GET poll:results:123
 
 - [Japa Documentation](https://japa.dev/)
 - [AdonisJS Testing](https://docs.adonisjs.com/guides/testing)
-- [Plan de tests complet](../../.claude/plans/staged-tinkering-summit.md)
+- [Complete test plan](../../.claude/plans/staged-tinkering-summit.md)

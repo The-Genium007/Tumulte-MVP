@@ -78,4 +78,13 @@ export default await Env.create(new URL('../', import.meta.url), {
   |----------------------------------------------------------
   */
   FRONTEND_URL: Env.schema.string(),
+
+  /*
+  |----------------------------------------------------------
+  | Push Notifications (VAPID)
+  |----------------------------------------------------------
+  */
+  VAPID_PUBLIC_KEY: Env.schema.string.optional(),
+  VAPID_PRIVATE_KEY: Env.schema.string.optional(),
+  VAPID_SUBJECT: Env.schema.string.optional(),
 })

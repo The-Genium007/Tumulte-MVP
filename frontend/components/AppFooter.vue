@@ -20,6 +20,7 @@
           <UButton
             to="https://github.com/The-Genium007/Tumulte/releases"
             target="_blank"
+            rel="noopener noreferrer"
             variant="ghost"
             color="neutral"
             size="sm"
@@ -58,6 +59,7 @@
           <a
             href="https://github.com/The-Genium007/Tumulte"
             target="_blank"
+            rel="noopener noreferrer"
             class="flex items-center gap-2 text-sm text-gray-300 hover:text-white transition-colors group"
           >
             <UIcon name="i-simple-icons-github" class="size-5" />

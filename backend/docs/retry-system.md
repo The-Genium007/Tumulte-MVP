@@ -1,45 +1,45 @@
-# Retry System - Documentation Technique
+# Retry System - Technical Documentation
 
-## Vue d'ensemble
+## Overview
 
-Le système de retry est une infrastructure agnostique et réutilisable pour gérer les erreurs transitoires lors des appels API. Il inclut:
+The retry system is an agnostic and reusable infrastructure for handling transient errors during API calls. It includes:
 
-- **Backoff exponentiel avec jitter** pour les rate limits (429)
-- **Délai progressif** pour les erreurs serveur (5xx)
-- **Circuit breaker** pour éviter les cascades d'échecs
-- **Observabilité complète** via logs, WebSocket et base de données
+- **Exponential backoff with jitter** for rate limits (429)
+- **Progressive delay** for server errors (5xx)
+- **Circuit breaker** to avoid failure cascades
+- **Complete observability** via logs, WebSocket, and database
 
 ## Architecture
 
 ```
                       +---------------------+
                       |   RetryUtility      |
-                      | (Wrapper générique) |
+                      | (Generic wrapper)   |
                       +----------+----------+
                                  |
          +-----------------------+-----------------------+
          |                       |                       |
 +--------v--------+    +--------v--------+    +--------v--------+
 | BackoffStrategy |    | CircuitBreaker  |    | RetryEventStore |
-|   (Calcul délai)|    | (Redis-backed)  |    | (DB persistence)|
+|  (Delay calc)   |    | (Redis-backed)  |    | (DB persistence)|
 +-----------------+    +-----------------+    +-----------------+
 ```
 
-## Fichiers
+## Files
 
-| Fichier | Description |
-|---------|-------------|
-| `app/services/resilience/types.ts` | Interfaces, types et policies pré-définies |
-| `app/services/resilience/backoff_strategy.ts` | Calcul des délais de retry |
-| `app/services/resilience/circuit_breaker.ts` | Circuit breaker Redis |
-| `app/services/resilience/retry_utility.ts` | Wrapper principal |
-| `app/services/resilience/retry_event_store.ts` | Persistance DB |
-| `app/models/retry_event.ts` | Model Lucid |
-| `app/exceptions/circuit_open_error.ts` | Exception custom |
+| File | Description |
+|------|-------------|
+| `app/services/resilience/types.ts` | Interfaces, types, and predefined policies |
+| `app/services/resilience/backoff_strategy.ts` | Retry delay calculation |
+| `app/services/resilience/circuit_breaker.ts` | Redis circuit breaker |
+| `app/services/resilience/retry_utility.ts` | Main wrapper |
+| `app/services/resilience/retry_event_store.ts` | DB persistence |
+| `app/models/retry_event.ts` | Lucid model |
+| `app/exceptions/circuit_open_error.ts` | Custom exception |
 
-## Utilisation
+## Usage
 
-### Basique
+### Basic
 
 ```typescript
 import { RetryUtility } from '#services/resilience/retry_utility'
@@ -76,7 +76,7 @@ if (result.success) {
 }
 ```
 
-### Avec Rate Limiting (429)
+### With Rate Limiting (429)
 
 ```typescript
 const result = await retryUtility.execute(
@@ -85,7 +85,7 @@ const result = await retryUtility.execute(
       method: 'POST',
     })
 
-    // Extraire le header Retry-After pour les 429
+    // Extract Retry-After header for 429s
     const retryAfter = response.headers.get('Retry-After')
 
     if (!response.ok) {
@@ -103,115 +103,115 @@ const result = await retryUtility.execute(
 )
 ```
 
-### Avec Circuit Breaker
+### With Circuit Breaker
 
 ```typescript
 const result = await retryUtility.execute(operation, {
   ...RetryPolicies.TWITCH_API,
-  circuitBreakerKey: 'my-service-api', // Clé unique pour ce service
+  circuitBreakerKey: 'my-service-api', // Unique key for this service
 })
 
 if (result.circuitBreakerOpen) {
-  console.log('Circuit breaker ouvert - requête bloquée')
+  console.log('Circuit breaker open - request blocked')
 }
 ```
 
-## Policies Pré-définies
+## Predefined Policies
 
 ### RATE_LIMITED
-Pour les erreurs 429 (Too Many Requests):
+For 429 (Too Many Requests) errors:
 - Max retries: 3
 - Base delay: 1000ms
-- Backoff: Exponentiel avec jitter
-- Délai max: 30s
+- Backoff: Exponential with jitter
+- Max delay: 30s
 
 ### SERVER_ERROR
-Pour les erreurs 5xx:
+For 5xx errors:
 - Max retries: 3
 - Base delay: 500ms
-- Backoff: Progressif (500ms → 1s → 2s)
-- Délai max: 4s
+- Backoff: Progressive (500ms → 1s → 2s)
+- Max delay: 4s
 
 ### TWITCH_API
-Combinaison optimisée pour l'API Twitch:
+Optimized combination for Twitch API:
 - Max retries: 3
 - Base delay: 500ms
-- Backoff: Exponentiel
-- Erreurs retryables: 429, 500, 502, 503, 504
-- Circuit breaker: activé (clé: 'twitch-api')
-- Timeout par tentative: 10s
-- Délai max: 30s
+- Backoff: Exponential
+- Retryable errors: 429, 500, 502, 503, 504
+- Circuit breaker: enabled (key: 'twitch-api')
+- Timeout per attempt: 10s
+- Max delay: 30s
 
 ## Circuit Breaker
 
-### États
+### States
 
 1. **CLOSED** (Normal)
-   - Toutes les requêtes passent
-   - Les échecs sont comptés
+   - All requests pass through
+   - Failures are counted
 
-2. **OPEN** (Bloqué)
-   - Activé après N échecs consécutifs (défaut: 5)
-   - Toutes les requêtes sont rejetées immédiatement
-   - Durée: 30 secondes par défaut
+2. **OPEN** (Blocked)
+   - Activated after N consecutive failures (default: 5)
+   - All requests are immediately rejected
+   - Duration: 30 seconds by default
 
 3. **HALF_OPEN** (Test)
-   - Après le timeout, 1-2 requêtes sont autorisées
-   - Succès → retour à CLOSED
-   - Échec → retour à OPEN
+   - After timeout, 1-2 requests are allowed
+   - Success → return to CLOSED
+   - Failure → return to OPEN
 
 ### Configuration
 
 ```typescript
 const retryUtility = new RetryUtility({
-  failureThreshold: 5,    // Échecs avant ouverture
-  resetTimeoutMs: 30000,  // Durée OPEN
-  successThreshold: 2,    // Succès pour refermer
+  failureThreshold: 5,    // Failures before opening
+  resetTimeoutMs: 30000,  // OPEN duration
+  successThreshold: 2,    // Successes to close
 })
 ```
 
-### Clés Redis
+### Redis Keys
 
 ```
 circuit:{key}:state       → 'CLOSED' | 'OPEN' | 'HALF_OPEN'
-circuit:{key}:failures    → compteur échecs
-circuit:{key}:successes   → compteur succès (half-open)
-circuit:{key}:openedAt    → timestamp ouverture
+circuit:{key}:failures    → failure counter
+circuit:{key}:successes   → success counter (half-open)
+circuit:{key}:openedAt    → open timestamp
 ```
 
 ## Backoff Strategies
 
-### Exponentiel avec Jitter
+### Exponential with Jitter
 
 ```
 delay = baseDelay × 2^attempt + random(0, 1000)
 ```
 
-Exemple avec baseDelay=500ms:
-- Tentative 1: 500-1500ms
-- Tentative 2: 1000-2000ms
-- Tentative 3: 2000-3000ms
+Example with baseDelay=500ms:
+- Attempt 1: 500-1500ms
+- Attempt 2: 1000-2000ms
+- Attempt 3: 2000-3000ms
 
-### Progressif
+### Progressive
 
 ```
 delay = baseDelay × (attempt + 1)
 ```
 
-Exemple avec baseDelay=500ms:
-- Tentative 1: 500ms
-- Tentative 2: 1000ms
-- Tentative 3: 1500ms
+Example with baseDelay=500ms:
+- Attempt 1: 500ms
+- Attempt 2: 1000ms
+- Attempt 3: 1500ms
 
 ### Retry-After Header
 
-Si l'API retourne un header `Retry-After`, ce délai est utilisé en priorité (converti en millisecondes).
+If the API returns a `Retry-After` header, this delay is used as priority (converted to milliseconds).
 
-## Observabilité
+## Observability
 
 ### Logs
 
-Chaque tentative et résultat final est loggé via `@adonisjs/core/services/logger`:
+Each attempt and final result is logged via `@adonisjs/core/services/logger`:
 
 ```
 [INFO] RetryUtility: Attempt 1/4 for TwitchPollService:createPoll
@@ -221,24 +221,24 @@ Chaque tentative et résultat final est loggé via `@adonisjs/core/services/logg
 
 ### WebSocket
 
-Notifications temps réel vers le MJ via le canal `campaign:{id}:notifications`:
+Real-time notifications to GM via `campaign:{id}:notifications` channel:
 
 ```typescript
-// Événements émis
-'api:retry'           // À chaque tentative
-'api:retry-success'   // Succès après retry(s)
-'api:retry-exhausted' // Échec définitif
+// Emitted events
+'api:retry'           // On each attempt
+'api:retry-success'   // Success after retry(s)
+'api:retry-exhausted' // Final failure
 ```
 
-### Base de données
+### Database
 
-Les événements sont persistés dans la table `retry_events` pour analytics:
+Events are persisted in the `retry_events` table for analytics:
 
 ```typescript
 interface RetryEvent {
   id: string
-  service: string           // Ex: 'TwitchPollService'
-  operation: string         // Ex: 'createPoll'
+  service: string           // e.g., 'TwitchPollService'
+  operation: string         // e.g., 'createPoll'
   attempts: number
   success: boolean
   totalDurationMs: number
@@ -256,33 +256,33 @@ interface RetryEvent {
 
 ## RetryResult
 
-Structure retournée par `execute()`:
+Structure returned by `execute()`:
 
 ```typescript
 interface RetryResult<T> {
   success: boolean
-  data?: T                          // Données si succès
-  error?: Error                     // Erreur si échec
-  attempts: number                  // Nombre de tentatives
-  totalDurationMs: number           // Durée totale
-  circuitBreakerOpen: boolean       // Si bloqué par circuit breaker
-  attemptDetails: AttemptDetail[]   // Détail de chaque tentative
+  data?: T                          // Data if success
+  error?: Error                     // Error if failure
+  attempts: number                  // Number of attempts
+  totalDurationMs: number           // Total duration
+  circuitBreakerOpen: boolean       // If blocked by circuit breaker
+  attemptDetails: AttemptDetail[]   // Detail of each attempt
 }
 
 interface AttemptDetail {
   attempt: number
   statusCode?: number
   errorMessage?: string
-  delayMs: number                   // Délai avant cette tentative
-  durationMs: number                // Durée de cette tentative
+  delayMs: number                   // Delay before this attempt
+  durationMs: number                // Duration of this attempt
   timestamp: Date
   usedRetryAfter: boolean
 }
 ```
 
-## Intégration avec Token Refresh
+## Integration with Token Refresh
 
-Pour les APIs nécessitant un refresh de token (401), combiner avec `withTokenRefresh`:
+For APIs requiring token refresh (401), combine with `withTokenRefresh`:
 
 ```typescript
 async withTokenRefreshAndRetry<T>(
@@ -292,30 +292,30 @@ async withTokenRefreshAndRetry<T>(
   onTokenRefreshed: (newAccess: string, newRefresh: string) => Promise<void>,
   retryOptions: RetryOptions
 ): Promise<RetryResult<T>> {
-  // 1. Tente l'opération avec retry
-  // 2. Sur 401, refresh le token et réessaye
-  // 3. Autres erreurs gérées par RetryUtility
+  // 1. Attempt operation with retry
+  // 2. On 401, refresh token and retry
+  // 3. Other errors handled by RetryUtility
 }
 ```
 
 ## Tests
 
-Les tests unitaires couvrent:
+Unit tests cover:
 
-- `backoff_strategy.spec.ts`: Calcul des délais
-- `circuit_breaker.spec.ts`: États et transitions
-- `retry_utility.spec.ts`: Retry logic complète
+- `backoff_strategy.spec.ts`: Delay calculation
+- `circuit_breaker.spec.ts`: States and transitions
+- `retry_utility.spec.ts`: Complete retry logic
 
-Exécuter:
+Run:
 ```bash
 npm run test:unit -- --files="tests/unit/services/resilience/**"
 ```
 
-## Bonnes Pratiques
+## Best Practices
 
-1. **Toujours définir un contexte** pour le logging/tracking
-2. **Utiliser des clés circuit breaker distinctes** par service/endpoint
-3. **Respecter les headers Retry-After** des APIs
-4. **Ne pas retry les erreurs client** (4xx sauf 429)
-5. **Monitorer les retry_events** pour détecter les problèmes récurrents
-6. **Configurer des alertes** sur les circuit breakers ouverts
+1. **Always define a context** for logging/tracking
+2. **Use distinct circuit breaker keys** per service/endpoint
+3. **Respect Retry-After headers** from APIs
+4. **Don't retry client errors** (4xx except 429)
+5. **Monitor retry_events** to detect recurring issues
+6. **Configure alerts** on open circuit breakers

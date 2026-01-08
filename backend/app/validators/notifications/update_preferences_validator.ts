@@ -8,6 +8,8 @@ export const updatePreferencesSchema = z.object({
   pollEnded: z.boolean().optional(),
   campaignMemberJoined: z.boolean().optional(),
   sessionReminder: z.boolean().optional(),
+  tokenRefreshFailed: z.boolean().optional(),
+  sessionActionRequired: z.boolean().optional(),
 })
 
 export type UpdatePreferencesInput = z.infer<typeof updatePreferencesSchema>

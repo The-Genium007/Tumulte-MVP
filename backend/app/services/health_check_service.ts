@@ -20,7 +20,17 @@ export interface HealthCheckResult {
     }
     tokens: {
       valid: boolean
-      invalidStreamers?: Array<{ id: string; displayName: string; error: string }>
+      invalidStreamers?: Array<{
+        id: string
+        displayName: string
+        error: string
+        issue?:
+          | 'streamer_inactive'
+          | 'authorization_missing'
+          | 'authorization_expired'
+          | 'token_invalid'
+          | 'token_missing'
+      }>
       error?: string
     }
     websocket: {
@@ -184,13 +194,38 @@ export class HealthCheckService {
   }
 
   /**
-   * Vérifie que tous les tokens des streamers de la campagne sont valides + token du MJ
+   * Vérifie que tous les streamers de la campagne sont prêts:
+   * - Streamer actif
+   * - Autorisation accordée et non expirée
+   * - Token valide
    */
   private async checkTokens(
     campaignId: string,
     userId: string
-  ): Promise<Array<{ id: string; displayName: string; error: string }>> {
-    const invalidStreamers: Array<{ id: string; displayName: string; error: string }> = []
+  ): Promise<
+    Array<{
+      id: string
+      displayName: string
+      error: string
+      issue?:
+        | 'streamer_inactive'
+        | 'authorization_missing'
+        | 'authorization_expired'
+        | 'token_invalid'
+        | 'token_missing'
+    }>
+  > {
+    const invalidStreamers: Array<{
+      id: string
+      displayName: string
+      error: string
+      issue?:
+        | 'streamer_inactive'
+        | 'authorization_missing'
+        | 'authorization_expired'
+        | 'token_invalid'
+        | 'token_missing'
+    }> = []
     const checkedStreamerIds = new Set<string>() // Pour éviter les doublons
 
     // 1. Vérifier d'abord le token du MJ (s'il a un profil streamer)
@@ -254,7 +289,7 @@ export class HealthCheckService {
     // 2. Récupérer tous les membres actifs de la campagne (avec streamers préchargés)
     const memberships = await this.campaignMembershipRepository.findActiveByCampaign(campaignId)
 
-    // Vérifier chaque token de streamer (sauf ceux déjà vérifiés)
+    // Vérifier chaque streamer membre (sauf ceux déjà vérifiés)
     for (const membership of memberships) {
       const streamer = membership.streamer
       if (!streamer) continue
@@ -270,6 +305,40 @@ export class HealthCheckService {
 
       checkedStreamerIds.add(streamer.id)
 
+      // NOUVEAU: Vérifier si le streamer est actif
+      if (!streamer.isActive) {
+        invalidStreamers.push({
+          id: streamer.id,
+          displayName: streamer.twitchDisplayName,
+          error: 'Streamer is inactive',
+          issue: 'streamer_inactive',
+        })
+        continue
+      }
+
+      // NOUVEAU: Vérifier si l'autorisation a été accordée
+      if (!membership.pollAuthorizationExpiresAt) {
+        invalidStreamers.push({
+          id: streamer.id,
+          displayName: streamer.twitchDisplayName,
+          error: 'No poll authorization granted',
+          issue: 'authorization_missing',
+        })
+        continue
+      }
+
+      // NOUVEAU: Vérifier si l'autorisation est encore active
+      if (!membership.isPollAuthorizationActive) {
+        invalidStreamers.push({
+          id: streamer.id,
+          displayName: streamer.twitchDisplayName,
+          error: 'Poll authorization expired',
+          issue: 'authorization_expired',
+        })
+        continue
+      }
+
+      // Vérifier le token Twitch
       try {
         const accessToken = await streamer.getDecryptedAccessToken()
         const refreshToken = await streamer.getDecryptedRefreshToken()
@@ -279,6 +348,7 @@ export class HealthCheckService {
             id: streamer.id,
             displayName: streamer.twitchDisplayName,
             error: 'Missing access or refresh token',
+            issue: 'token_missing',
           })
           continue
         }
@@ -302,6 +372,7 @@ export class HealthCheckService {
               id: streamer.id,
               displayName: streamer.twitchDisplayName,
               error: 'Token expired or invalid (refresh failed)',
+              issue: 'token_invalid',
             })
           } else {
             logger.info(
@@ -315,6 +386,7 @@ export class HealthCheckService {
           id: streamer.id,
           displayName: streamer.twitchDisplayName,
           error: error instanceof Error ? error.message : 'Unknown error',
+          issue: 'token_invalid',
         })
       }
     }

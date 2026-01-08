@@ -1,122 +1,122 @@
-# Système de Refresh Automatique des Tokens Twitch
+# Automatic Twitch Token Refresh System
 
-## Vue d'ensemble
+## Overview
 
-Le système de refresh automatique garantit que les tokens Twitch restent valides pendant toute la durée d'une session de jeu (jusqu'à 12h).
+The automatic refresh system ensures that Twitch tokens remain valid throughout a gaming session (up to 12 hours).
 
 ### Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    FLUX DE REFRESH TOKEN                        │
+│                    TOKEN REFRESH FLOW                            │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  [Streamer accorde autorisation 12h]                           │
+│  [Streamer grants 12h authorization]                            │
 │           │                                                     │
 │           ▼                                                     │
 │  ┌─────────────────────┐                                       │
-│  │ Refresh immédiat    │ ← Token frais garanti                 │
-│  │ + Stocker expiresAt │                                       │
+│  │ Immediate refresh   │ ← Fresh token guaranteed              │
+│  │ + Store expiresAt   │                                       │
 │  └─────────────────────┘                                       │
 │           │                                                     │
 │           ▼                                                     │
-│  ┌─────────────────────┐    Toutes les 3h30                    │
+│  ┌─────────────────────┐    Every 3h30                         │
 │  │ Scheduler Cron      │◄───────────────────┐                  │
 │  │ TokenRefreshJob     │                    │                  │
 │  └─────────────────────┘                    │                  │
 │           │                                 │                  │
 │           ▼                                 │                  │
 │  ┌─────────────────────┐                    │                  │
-│  │ Pour chaque streamer│                    │                  │
-│  │ avec autorisation   │                    │                  │
-│  │ active              │                    │                  │
+│  │ For each streamer   │                    │                  │
+│  │ with active         │                    │                  │
+│  │ authorization       │                    │                  │
 │  └─────────────────────┘                    │                  │
 │           │                                 │                  │
 │           ▼                                 │                  │
 │  ┌─────────────────────┐     ┌──────────────────────┐         │
-│  │ Refresh réussi ?    │─No─►│ Notifier Streamer    │         │
-│  └─────────────────────┘     │ + Notifier MJ        │         │
-│           │Yes               │ + Désactiver streamer│         │
+│  │ Refresh success?    │─No─►│ Notify Streamer      │         │
+│  └─────────────────────┘     │ + Notify GM          │         │
+│           │Yes               │ + Deactivate streamer│         │
 │           ▼                  └──────────────────────┘         │
 │  ┌─────────────────────┐                                       │
-│  │ Mettre à jour tokens│                                       │
+│  │ Update tokens       │                                       │
 │  │ + tokenExpiresAt    │                                       │
 │  └─────────────────────┘                                       │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### Composants
+### Components
 
-- **Refresh au grant** : Token refreshé immédiatement quand un streamer autorise sa chaîne
-- **Scheduler** : Refresh proactif toutes les 3h30 pour les streamers avec autorisation active
-- **Retry** : En cas d'échec, retry après 15 min. 2ème échec = désactivation + notifications
+- **Refresh on grant**: Token refreshed immediately when a streamer authorizes their channel
+- **Scheduler**: Proactive refresh every 3h30 for streamers with active authorization
+- **Retry**: On failure, retry after 15 min. 2nd failure = deactivation + notifications
 
-## Colonnes Base de Données (table `streamers`)
+## Database Columns (`streamers` table)
 
-| Colonne | Type | Description |
-|---------|------|-------------|
-| `token_expires_at` | timestamp | Expiration du token access (~4h après refresh) |
-| `last_token_refresh_at` | timestamp | Dernier refresh réussi |
-| `token_refresh_failed_at` | timestamp | Dernier échec (pour retry policy) |
+| Column | Type | Description |
+|--------|------|-------------|
+| `token_expires_at` | timestamp | Access token expiration (~4h after refresh) |
+| `last_token_refresh_at` | timestamp | Last successful refresh |
+| `token_refresh_failed_at` | timestamp | Last failure (for retry policy) |
 
-## Politique de Retry
+## Retry Policy
 
 ```
-1er échec → Marquer tokenRefreshFailedAt = now()
-          → Le scheduler réessaiera dans ~15 min
-          → Pas de notification
+1st failure → Set tokenRefreshFailedAt = now()
+           → Scheduler will retry in ~15 min
+           → No notification
 
-2ème échec → Si tokenRefreshFailedAt < 30 min ago
-           → Désactiver streamer (isActive = false)
-           → Notifier streamer + MJs des campagnes
+2nd failure → If tokenRefreshFailedAt < 30 min ago
+           → Deactivate streamer (isActive = false)
+           → Notify streamer + campaign GMs
            → Clear tokenRefreshFailedAt
 ```
 
-## Guide de Test Manuel
+## Manual Testing Guide
 
-### Prérequis
+### Prerequisites
 
-- Backend lancé en mode dev (`npm run dev`)
-- PostgreSQL et Redis démarrés
-- Un compte streamer connecté avec token Twitch valide
-- Une campagne créée avec le streamer comme membre
+- Backend running in dev mode (`npm run dev`)
+- PostgreSQL and Redis started
+- A connected streamer account with valid Twitch token
+- A campaign created with the streamer as a member
 
-### Scénario 1 : Refresh au Grant d'Autorisation
+### Scenario 1: Refresh on Authorization Grant
 
-**Objectif** : Vérifier que le token est refreshé quand un streamer accorde l'autorisation.
+**Objective**: Verify that the token is refreshed when a streamer grants authorization.
 
-1. Vérifier l'état initial du token :
+1. Check initial token state:
    ```bash
    PGPASSWORD=postgres psql -h localhost -U postgres -d twitch_polls -c \
      "SELECT twitch_display_name, token_expires_at, last_token_refresh_at
-      FROM streamers WHERE twitch_login = 'TON_LOGIN';"
+      FROM streamers WHERE twitch_login = 'YOUR_LOGIN';"
    ```
 
-2. Accorder l'autorisation via l'UI (page Streamer → Campagnes → Autoriser)
+2. Grant authorization via UI (Streamer page → Campaigns → Authorize)
 
-3. Vérifier que le token a été refreshé :
+3. Verify that the token was refreshed:
    ```bash
    PGPASSWORD=postgres psql -h localhost -U postgres -d twitch_polls -c \
      "SELECT twitch_display_name, token_expires_at, last_token_refresh_at
-      FROM streamers WHERE twitch_login = 'TON_LOGIN';"
+      FROM streamers WHERE twitch_login = 'YOUR_LOGIN';"
    ```
 
-**Résultat attendu** :
-- `token_expires_at` = ~4h dans le futur
-- `last_token_refresh_at` = timestamp actuel
+**Expected result**:
+- `token_expires_at` = ~4h in the future
+- `last_token_refresh_at` = current timestamp
 
-### Scénario 2 : Test du Scheduler (Trigger Manuel)
+### Scenario 2: Scheduler Test (Manual Trigger)
 
-**Objectif** : Vérifier que la commande ace refresh les tokens correctement.
+**Objective**: Verify that the ace command refreshes tokens correctly.
 
-1. Exécuter la commande :
+1. Execute the command:
    ```bash
    cd backend
    node --loader ts-node-maintained/esm bin/console.ts token:refresh
    ```
 
-2. Observer les logs :
+2. Observe the logs:
    ```
    🔄 Token Refresh Command
    ========================
@@ -138,188 +138,188 @@ Le système de refresh automatique garantit que les tokens Twitch restent valide
    Skipped: 0
    ```
 
-**Résultat attendu** :
-- Tous les streamers avec autorisation active sont listés
-- Les tokens qui expirent bientôt sont refreshés
-- Les tokens encore valides (>1h) sont skipped
+**Expected result**:
+- All streamers with active authorization are listed
+- Tokens expiring soon are refreshed
+- Still valid tokens (>1h) are skipped
 
-### Scénario 3 : Forcer le Refresh
+### Scenario 3: Force Refresh
 
 ```bash
-# Forcer le refresh même si le token n'expire pas bientôt
+# Force refresh even if token isn't expiring soon
 node --loader ts-node-maintained/esm bin/console.ts token:refresh --force
 
-# Refresh un streamer spécifique
+# Refresh a specific streamer
 node --loader ts-node-maintained/esm bin/console.ts token:refresh STREAMER_ID
 
-# Mode dry-run (affiche ce qui serait fait sans exécuter)
+# Dry-run mode (shows what would be done without executing)
 node --loader ts-node-maintained/esm bin/console.ts token:refresh --dry-run
 ```
 
-### Scénario 4 : Test du Retry (Simuler Échec)
+### Scenario 4: Retry Test (Simulate Failure)
 
-**Objectif** : Vérifier la politique de retry (15 min puis désactivation).
+**Objective**: Verify the retry policy (15 min then deactivation).
 
-1. Invalider manuellement un token en DB :
+1. Manually invalidate a token in DB:
    ```bash
    PGPASSWORD=postgres psql -h localhost -U postgres -d twitch_polls -c \
      "UPDATE streamers SET access_token_encrypted = 'invalid'
-      WHERE twitch_login = 'TON_LOGIN';"
+      WHERE twitch_login = 'YOUR_LOGIN';"
    ```
 
-2. Premier trigger du scheduler :
+2. First scheduler trigger:
    ```bash
    node --loader ts-node-maintained/esm bin/console.ts token:refresh --force
    ```
 
-   **Résultat attendu** :
-   - Le refresh échoue
-   - `token_refresh_failed_at` = timestamp actuel
-   - `is_active` reste `true` (pas encore désactivé)
+   **Expected result**:
+   - Refresh fails
+   - `token_refresh_failed_at` = current timestamp
+   - `is_active` remains `true` (not deactivated yet)
 
-3. Vérifier l'état :
+3. Check state:
    ```bash
    PGPASSWORD=postgres psql -h localhost -U postgres -d twitch_polls -c \
      "SELECT twitch_display_name, is_active, token_refresh_failed_at
-      FROM streamers WHERE twitch_login = 'TON_LOGIN';"
+      FROM streamers WHERE twitch_login = 'YOUR_LOGIN';"
    ```
 
-4. Deuxième trigger (après avoir attendu ou modifié le délai en dev) :
+4. Second trigger (after waiting or modifying delay in dev):
    ```bash
    node --loader ts-node-maintained/esm bin/console.ts token:refresh --force
    ```
 
-   **Résultat attendu après 2ème échec** :
+   **Expected result after 2nd failure**:
    - `is_active` = `false`
-   - Notification push envoyée au streamer
-   - Notification push envoyée aux MJs des campagnes concernées
+   - Push notification sent to streamer
+   - Push notification sent to campaign GMs
 
-### Scénario 5 : Health Check avec Auto-Refresh
+### Scenario 5: Health Check with Auto-Refresh
 
-**Objectif** : Vérifier que le health check tente un refresh automatique.
+**Objective**: Verify that health check attempts automatic refresh.
 
-1. Simuler un token proche de l'expiration :
+1. Simulate a token near expiration:
    ```bash
    PGPASSWORD=postgres psql -h localhost -U postgres -d twitch_polls -c \
      "UPDATE streamers SET token_expires_at = NOW() + INTERVAL '30 minutes'
-      WHERE twitch_login = 'TON_LOGIN';"
+      WHERE twitch_login = 'YOUR_LOGIN';"
    ```
 
-2. Lancer une session de sondage via l'UI MJ
+2. Launch a poll session via GM UI
 
-3. Observer les logs :
+3. Observe the logs:
    ```
    [HealthCheck] Token invalid for streamer X, attempting refresh...
    [HealthCheck] Token refreshed successfully for streamer X
    ```
 
-**Résultat attendu** :
-- Le health check détecte le token expirant
-- Refresh automatique tenté et réussi
-- La session peut être lancée normalement
+**Expected result**:
+- Health check detects expiring token
+- Automatic refresh attempted and succeeds
+- Session can be launched normally
 
-## Commande Ace : token:refresh
+## Ace Command: token:refresh
 
 ```bash
-# Refresh tous les streamers avec autorisation active
+# Refresh all streamers with active authorization
 node --loader ts-node-maintained/esm bin/console.ts token:refresh
 
-# Refresh un streamer spécifique
+# Refresh a specific streamer
 node --loader ts-node-maintained/esm bin/console.ts token:refresh STREAMER_ID
 
-# Forcer le refresh même si le token n'est pas expiré
+# Force refresh even if token isn't expired
 node --loader ts-node-maintained/esm bin/console.ts token:refresh --force
 
-# Mode dry-run (affiche ce qui serait fait sans exécuter)
+# Dry-run mode (shows what would be done without executing)
 node --loader ts-node-maintained/esm bin/console.ts token:refresh --dry-run
 
-# Combiner les options
+# Combine options
 node --loader ts-node-maintained/esm bin/console.ts token:refresh STREAMER_ID --force --dry-run
 ```
 
-## Scheduler Cron
+## Cron Scheduler
 
-Le scheduler s'exécute automatiquement toutes les 3h30 en environnement web (production).
+The scheduler runs automatically every 3h30 in web environment (production).
 
-- **Expressions cron** : `0 0,7,14,21 * * *` et `30 3,10,17 * * *`
-- **Heures d'exécution** : 00:00, 03:30, 07:00, 10:30, 14:00, 17:30, 21:00
+- **Cron expressions**: `0 0,7,14,21 * * *` and `30 3,10,17 * * *`
+- **Execution times**: 00:00, 03:30, 07:00, 10:30, 14:00, 17:30, 21:00
 
-Le scheduler est configuré dans :
-- `app/services/scheduler/token_refresh_scheduler.ts` - Logique du scheduler
-- `start/scheduler.ts` - Démarrage au boot (environnement web uniquement)
-- `adonisrc.ts` - Configuration du preload
+The scheduler is configured in:
+- `app/services/scheduler/token_refresh_scheduler.ts` - Scheduler logic
+- `start/scheduler.ts` - Boot startup (web environment only)
+- `adonisrc.ts` - Preload configuration
 
 ## Tests
 
-### Tests Unitaires
+### Unit Tests
 
 ```bash
 npm run test:unit -- --files="tests/unit/services/token_refresh_service.spec.ts"
 ```
 
-Couvrent :
-- Getters `isTokenExpiringSoon` et `isTokenExpired`
-- Persistance des colonnes de tracking
+Covers:
+- `isTokenExpiringSoon` and `isTokenExpired` getters
+- Tracking column persistence
 - `findStreamersWithActiveAuthorization`
 - `findStreamersNeedingRetry`
-- Politique de retry (`handleRefreshFailure`)
-- Report de `refreshAllActiveTokens`
+- Retry policy (`handleRefreshFailure`)
+- `refreshAllActiveTokens` report
 
-### Tests Fonctionnels
+### Functional Tests
 
 ```bash
 npm run test:functional -- --files="tests/functional/token_refresh.spec.ts"
 ```
 
-Couvrent :
-- Intégration avec le grant d'autorisation
-- Tracking des tokens
-- Intégration du service
-- Cas limites (streamers multiples, inactifs, etc.)
+Covers:
+- Integration with authorization grant
+- Token tracking
+- Service integration
+- Edge cases (multiple streamers, inactive, etc.)
 
-## Dépannage
+## Troubleshooting
 
-### Le refresh échoue systématiquement
+### Refresh fails consistently
 
-1. Vérifier que le refresh token est valide :
+1. Verify the refresh token is valid:
    ```bash
-   # Le refresh token peut avoir été révoqué par l'utilisateur sur Twitch
-   # Solution : demander au streamer de se reconnecter
+   # The refresh token may have been revoked by the user on Twitch
+   # Solution: ask the streamer to reconnect
    ```
 
-2. Vérifier les credentials Twitch :
+2. Verify Twitch credentials:
    ```bash
-   # Vérifier que TWITCH_CLIENT_ID et TWITCH_CLIENT_SECRET sont corrects dans .env
+   # Verify TWITCH_CLIENT_ID and TWITCH_CLIENT_SECRET are correct in .env
    ```
 
-3. Vérifier les logs :
+3. Check the logs:
    ```bash
-   # Chercher les erreurs TokenRefresh
+   # Search for TokenRefresh errors
    grep -i "TokenRefresh" logs/app.log
    ```
 
-### Le scheduler ne se lance pas
+### Scheduler doesn't start
 
-1. Vérifier que le preload est configuré dans `adonisrc.ts`
-2. Vérifier que l'environnement est `web` (pas `console` ou `test`)
-3. Vérifier les logs au démarrage du serveur :
+1. Verify preload is configured in `adonisrc.ts`
+2. Verify environment is `web` (not `console` or `test`)
+3. Check startup logs:
    ```
    [Scheduler] Token refresh scheduler started
    ```
 
-### Notifications non reçues
+### Notifications not received
 
-1. Vérifier que le service de notifications push est configuré
-2. Vérifier que les clés VAPID sont présentes (`backend/.vapid-keys.json`)
-3. Vérifier que l'utilisateur a activé les notifications dans ses paramètres
+1. Verify push notification service is configured
+2. Verify VAPID keys exist (`backend/.vapid-keys.json`)
+3. Verify user has enabled notifications in settings
 
-### Streamer désactivé par erreur
+### Streamer deactivated by mistake
 
-Pour réactiver un streamer :
+To reactivate a streamer:
 ```bash
 PGPASSWORD=postgres psql -h localhost -U postgres -d twitch_polls -c \
   "UPDATE streamers SET is_active = true, token_refresh_failed_at = NULL
-   WHERE twitch_login = 'TON_LOGIN';"
+   WHERE twitch_login = 'YOUR_LOGIN';"
 ```
 
-Le streamer devra se reconnecter pour obtenir un nouveau token valide.
+The streamer will need to reconnect to get a new valid token.

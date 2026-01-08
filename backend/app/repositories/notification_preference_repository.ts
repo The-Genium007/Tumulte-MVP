@@ -27,6 +27,8 @@ export class NotificationPreferenceRepository {
         pollEnded: true,
         campaignMemberJoined: false,
         sessionReminder: false,
+        tokenRefreshFailed: true,
+        sessionActionRequired: true,
       })
     }
 
@@ -46,6 +48,8 @@ export class NotificationPreferenceRepository {
       pollEnded: boolean
       campaignMemberJoined: boolean
       sessionReminder: boolean
+      tokenRefreshFailed: boolean
+      sessionActionRequired: boolean
     }>
   ): Promise<NotificationPreference> {
     const preferences = await this.findOrCreate(userId)
@@ -74,6 +78,8 @@ export class NotificationPreferenceRepository {
       | 'pollEnded'
       | 'campaignMemberJoined'
       | 'sessionReminder'
+      | 'tokenRefreshFailed'
+      | 'sessionActionRequired'
   ): Promise<boolean> {
     const preferences = await this.findByUserId(userId)
     if (!preferences?.pushEnabled) return false

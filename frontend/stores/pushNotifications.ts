@@ -65,12 +65,10 @@ export const usePushNotificationsStore = defineStore(
       () => permissionStatus.value === "denied",
     );
 
-    // Vérifie si le navigateur actuel est inscrit (compare l'endpoint du navigateur avec la liste des subscriptions)
+    // Vérifie si le navigateur actuel a une subscription push active
+    // On vérifie simplement si currentBrowserEndpoint est défini (= le navigateur a une subscription)
     const isCurrentBrowserSubscribed = computed(() => {
-      if (!currentBrowserEndpoint.value) return false;
-      return subscriptions.value.some(
-        (sub) => sub.endpoint === currentBrowserEndpoint.value,
-      );
+      return !!currentBrowserEndpoint.value;
     });
 
     // Actions
@@ -173,10 +171,32 @@ export const usePushNotificationsStore = defineStore(
         const publicKey = await fetchVapidPublicKey();
 
         // S'inscrire aux notifications push
-        const pushSubscription = await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(publicKey),
-        });
+        let pushSubscription;
+        try {
+          pushSubscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(publicKey),
+          });
+        } catch (subscribeError) {
+          // Si l'erreur est due à un changement de clé VAPID, désabonner et réessayer
+          if (
+            subscribeError instanceof Error &&
+            subscribeError.message.includes("applicationServerKey")
+          ) {
+            const existingSubscription =
+              await registration.pushManager.getSubscription();
+            if (existingSubscription) {
+              await existingSubscription.unsubscribe();
+            }
+            // Réessayer avec la nouvelle clé
+            pushSubscription = await registration.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: urlBase64ToUint8Array(publicKey),
+            });
+          } else {
+            throw subscribeError;
+          }
+        }
 
         // Extraire les clés
         const p256dhKey = pushSubscription.getKey("p256dh");

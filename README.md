@@ -59,6 +59,12 @@
 - **Per-session Validation** - GM must authorize you before each session (prevents unwanted polls)
 - **Compatibility** - Works for Twitch Affiliates and Partners
 
+### Overlay Studio (Preview developer)
+- **Visual Editor** - Design your poll overlay with real-time preview
+- **Custom Animations** - Entry, loop, result and exit animations
+- **OBS Integration** - Transparent overlay for Browser Source
+- **Live Preview** - Test animations synchronized with OBS overlay
+
 ---
 
 ## Quick Start
@@ -114,6 +120,21 @@ MJ_TWITCH_IDS=123456789,987654321
 |---------|-----|
 | Frontend | http://localhost:3000 |
 | Backend API | http://localhost:3333 |
+| OBS Overlay | http://localhost:3000/overlay/{streamerId} |
+
+---
+
+## OBS Browser Source Setup
+
+To add the poll overlay to your stream:
+
+1. In OBS, add a **Browser Source**
+2. Set the URL to: `http://localhost:3000/overlay/{your-streamer-id}`
+3. Set dimensions to **1920x1080** (or your stream resolution)
+4. Enable **"Shutdown source when not visible"** = OFF
+5. Enable **"Refresh browser when scene becomes active"** = OFF
+
+> **OBS 32+ Compatibility**: The overlay is fully compatible with OBS Studio 32.0.1+. For best results, use the latest OBS version to avoid Browser Source issues when switching scenes.
 
 ---
 
@@ -173,7 +194,15 @@ docker compose exec backend node ace migration:status
 
 ## Roadmap
 
-Coming soon.
+> **Full roadmap**: [GitHub Project Board](https://github.com/users/The-Genium007/projects/4)
+
+- **v0.4.0** - Visual Identity
+- **v0.5.0** - VTT Integrations
+- **v0.6.0** - Gamification
+- **v0.7.0** - Gamification Advanced
+- **v0.8.0** - Advanced Overlay
+- **v0.9.0** - Multi-Platform
+- **v1.0.0** - Production Ready
 
 ---
 

@@ -1,16 +1,16 @@
-# Système de Support Frontend
+# Frontend Support System
 
-## Vue d'ensemble
+## Overview
 
-Le système de support frontend détecte automatiquement les erreurs et ouvre le widget de support avec un message pré-rempli en français. Conçu pour la phase Alpha, il maximise la capture de bugs.
+The frontend support system automatically detects errors and opens the support widget with a pre-filled message in French. Designed for the Alpha phase, it maximizes bug capture.
 
-## Composants
+## Components
 
 ### 1. supportErrorMessages.ts
 
-Catalogue exhaustif des messages d'erreur.
+Comprehensive catalog of error messages.
 
-**Fichier**: `utils/supportErrorMessages.ts`
+**File**: `utils/supportErrorMessages.ts`
 
 ```typescript
 import {
@@ -20,24 +20,24 @@ import {
   type SupportActionType
 } from '@/utils/supportErrorMessages'
 
-// Obtenir le message pour une action
+// Get the message for an action
 const message = SUPPORT_ERROR_MESSAGES['poll_launch']
 // => "Une erreur est survenue lors du lancement du sondage."
 
-// Obtenir le label court pour le badge
+// Get the short label for the badge
 const label = ACTION_TYPE_LABELS['poll_launch']
 // => "Lancement sondage"
 
-// Obtenir la catégorie
+// Get the category
 const category = ACTION_CATEGORIES['poll_launch']
 // => "poll"
 ```
 
 ### 2. useSupportTrigger
 
-Composable pour déclencher le widget avec rate limiting.
+Composable to trigger the widget with rate limiting.
 
-**Fichier**: `composables/useSupportTrigger.ts`
+**File**: `composables/useSupportTrigger.ts`
 
 ```typescript
 import { useSupportTrigger } from '@/composables/useSupportTrigger'
@@ -50,28 +50,28 @@ const {
   RATE_LIMIT_MS
 } = useSupportTrigger()
 
-// Déclencher sur une erreur
+// Trigger on error
 try {
   await fetchCampaigns()
 } catch (error) {
-  triggerSupportForError('campaign_fetch', error, 'Contexte optionnel')
+  triggerSupportForError('campaign_fetch', error, 'Optional context')
   throw error
 }
 
-// Vérifier si on peut ouvrir
+// Check if we can open
 if (canAutoOpen()) {
-  // Widget peut être ouvert automatiquement
+  // Widget can be opened automatically
 }
 
-// Temps restant avant prochaine ouverture (ms)
+// Time remaining before next opening (ms)
 const remaining = getRemainingCooldown()
 ```
 
 ### 3. useSupportWidget
 
-Composable pour contrôler le widget.
+Composable to control the widget.
 
-**Fichier**: `composables/useSupportWidget.ts`
+**File**: `composables/useSupportWidget.ts`
 
 ```typescript
 import { useSupportWidget } from '@/composables/useSupportWidget'
@@ -85,28 +85,28 @@ const {
   openWithPrefill
 } = useSupportWidget()
 
-// Ouvrir avec message pré-rempli
-openWithPrefill('Message personnalisé', 'poll_launch')
+// Open with pre-filled message
+openWithPrefill('Custom message', 'poll_launch')
 
-// Fermer le widget
+// Close the widget
 closeSupport()
 ```
 
 ### 4. SupportWidget.vue
 
-Composant Vue du widget de support.
+Vue component for the support widget.
 
-**Fichier**: `components/SupportWidget.vue`
+**File**: `components/SupportWidget.vue`
 
-Le widget affiche:
-- Badge avec le type d'erreur (si présent)
-- Textarea pré-remplie avec le message d'erreur
-- Checkbox "Joindre les logs" (activée par défaut)
-- Boutons Annuler/Envoyer
+The widget displays:
+- Badge with the error type (if present)
+- Textarea pre-filled with the error message
+- "Attach logs" checkbox (enabled by default)
+- Cancel/Send buttons
 
-## Intégration dans les stores
+## Integration in Stores
 
-### Pattern recommandé
+### Recommended Pattern
 
 ```typescript
 // stores/campaigns.ts
@@ -117,7 +117,7 @@ export const useCampaignsStore = defineStore('campaigns', () => {
 
   const fetchCampaigns = async () => {
     try {
-      // ... logique existante
+      // ... existing logic
     } catch (error) {
       triggerSupportForError('campaign_fetch', error)
       throw error
@@ -126,7 +126,7 @@ export const useCampaignsStore = defineStore('campaigns', () => {
 
   const createCampaign = async (data: CampaignData) => {
     try {
-      // ... logique existante
+      // ... existing logic
     } catch (error) {
       triggerSupportForError('campaign_create', error)
       throw error
@@ -137,13 +137,13 @@ export const useCampaignsStore = defineStore('campaigns', () => {
 })
 ```
 
-## Intégration dans le HTTP Client
+## Integration in HTTP Client
 
 ```typescript
 // api/http_client.ts
 import { useSupportTrigger } from '@/composables/useSupportTrigger'
 
-// Dans l'intercepteur de réponse
+// In the response interceptor
 this.instance.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -161,43 +161,43 @@ this.instance.interceptors.response.use(
 )
 ```
 
-## Ajouter un nouveau type d'action
+## Adding a New Action Type
 
-1. Ajouter le type dans `SupportActionType`:
+1. Add the type in `SupportActionType`:
 ```typescript
 // utils/supportErrorMessages.ts
 export type SupportActionType =
-  // ... types existants
+  // ... existing types
   | 'new_action_type'
 ```
 
-2. Ajouter le message:
+2. Add the message:
 ```typescript
 export const SUPPORT_ERROR_MESSAGES: Record<SupportActionType, string> = {
-  // ... messages existants
+  // ... existing messages
   new_action_type: "Une erreur est survenue lors de la nouvelle action.",
 }
 ```
 
-3. Ajouter le label:
+3. Add the label:
 ```typescript
 export const ACTION_TYPE_LABELS: Record<SupportActionType, string> = {
-  // ... labels existants
+  // ... existing labels
   new_action_type: "Nouvelle action",
 }
 ```
 
-4. Ajouter la catégorie:
+4. Add the category:
 ```typescript
 export const ACTION_CATEGORIES: Record<SupportActionType, ActionCategory> = {
-  // ... catégories existantes
+  // ... existing categories
   new_action_type: "generic",
 }
 ```
 
 ## Rate Limiting
 
-Le système implémente un rate limit de **1 ouverture automatique par minute** pour éviter le spam.
+The system implements a rate limit of **1 automatic opening per minute** to prevent spam.
 
 ```typescript
 const RATE_LIMIT_MS = 60_000 // 1 minute
@@ -210,19 +210,19 @@ const canAutoOpen = (): boolean => {
 ## Tests
 
 ```bash
-# Tests du catalogue de messages
+# Tests for message catalog
 npm run test -- --run tests/unit/utils/supportErrorMessages.spec.ts
 
-# Tests du composable trigger
+# Tests for trigger composable
 npm run test -- --run tests/unit/composables/useSupportTrigger.spec.ts
 ```
 
-## Liste des types d'actions (60+)
+## Action Types List (60+)
 
-### Authentification (5)
+### Authentication (5)
 - `auth_login`, `auth_callback`, `auth_logout`, `auth_switch_role`, `auth_fetch_me`
 
-### Campagnes MJ (8)
+### GM Campaigns (8)
 - `campaign_fetch`, `campaign_fetch_detail`, `campaign_create`, `campaign_update`
 - `campaign_delete`, `campaign_invite`, `campaign_members_fetch`, `campaign_member_remove`
 
@@ -234,7 +234,7 @@ npm run test -- --run tests/unit/composables/useSupportTrigger.spec.ts
 - `template_fetch`, `template_create`, `template_update`, `template_delete`
 - `template_add_to_session`
 
-### Contrôle sondages (7)
+### Poll Control (7)
 - `poll_launch`, `poll_cancel`, `poll_fetch_results`, `poll_fetch_live`
 - `poll_next`, `poll_previous`, `poll_reorder`
 
@@ -242,11 +242,11 @@ npm run test -- --run tests/unit/composables/useSupportTrigger.spec.ts
 - `streamer_invitations_fetch`, `streamer_invitation_accept`, `streamer_invitation_decline`
 - `streamer_campaigns_fetch`, `streamer_campaign_leave`
 
-### Authorization Twitch (4)
+### Twitch Authorization (4)
 - `authorization_status_fetch`, `authorization_grant`, `authorization_revoke`
 - `twitch_revoke_all`
 
-### Notifications Push (6)
+### Push Notifications (6)
 - `push_permission_request`, `push_subscribe`, `push_unsubscribe`
 - `push_subscriptions_fetch`, `push_subscription_delete`, `push_preferences_update`
 
@@ -261,15 +261,15 @@ npm run test -- --run tests/unit/composables/useSupportTrigger.spec.ts
 ### Overlay (3)
 - `overlay_campaigns_fetch`, `overlay_poll_subscribe`, `overlay_poll_display`
 
-### Compte (2)
+### Account (2)
 - `account_delete`, `settings_update`
 
 ### Support (1)
 - `support_send`
 
-### Processus de fond (5)
+### Background Processes (5)
 - `token_refresh_auto`, `poll_polling_cycle`, `poll_aggregation`
 - `twitch_chat_message`, `push_notification_send`
 
-### Génériques (3)
+### Generic (3)
 - `generic_server_error`, `generic_network_error`, `generic_timeout`

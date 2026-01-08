@@ -23,9 +23,10 @@ export function usePushNotifications() {
     isCurrentBrowserSubscribed,
   } = storeToRefs(store);
 
-  // Initialiser le statut de permission au montage
-  onMounted(() => {
+  // Initialiser le statut de permission et vérifier l'abonnement du navigateur au montage
+  onMounted(async () => {
     store.checkPermissionStatus();
+    await store.checkCurrentBrowserSubscription();
   });
 
   return {

@@ -575,6 +575,7 @@ import { usePollControlStore } from "@/stores/pollControl";
 import { useReadiness } from "@/composables/useReadiness";
 import { useWebSocket } from "@/composables/useWebSocket";
 import { useSupportTrigger } from "@/composables/useSupportTrigger";
+import { loggers } from "@/utils/logger";
 
 definePageMeta({
   layout: "authenticated" as const,
@@ -706,7 +707,7 @@ const fetchLiveStatus = async (campaignId: string) => {
     const status = await getLiveStatus(campaignId);
     liveStatus.value = status;
   } catch (error) {
-    console.error("Error fetching live status:", error);
+    loggers.campaign.error("Error fetching live status:", error);
   }
 };
 
@@ -719,10 +720,10 @@ const loadCampaignMembers = async (campaignId: string) => {
       fetchLiveStatus(campaignId),
     ]);
     campaignMembers.value = members;
-    console.log('🎯 Campaign members loaded:', campaignMembers.value);
-    console.log('🖼️ Streamers with images:', selectedCampaignStreamers.value);
+    loggers.campaign.debug('Campaign members loaded:', campaignMembers.value);
+    loggers.campaign.debug('Streamers with images:', selectedCampaignStreamers.value);
   } catch (error) {
-    console.error('Failed to load campaign members:', error);
+    loggers.campaign.error('Failed to load campaign members:', error);
     campaignMembers.value = [];
   } finally {
     streamersLoading.value = false;
@@ -870,7 +871,7 @@ const launchSession = async (session: Session) => {
 
     // Si échec (waiting list ouverte), on arrête là
     if (!result.success) {
-      console.log('[Session Launch] Waiting list modal opened');
+      loggers.poll.debug('Waiting list modal opened');
       return;
     }
 
@@ -897,7 +898,7 @@ const launchSession = async (session: Session) => {
     pollControlStore.saveState();
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Erreur inconnue";
-    console.error('[Session Launch] Error:', errorMessage);
+    loggers.poll.error('Session Launch Error:', errorMessage);
     triggerSupportForError("session_launch", error);
   }
 };
@@ -995,7 +996,7 @@ const cancelPoll = async () => {
         throw new Error('Failed to cancel poll');
       }
     } catch (error) {
-      console.error('Failed to cancel poll:', error);
+      loggers.poll.error('Failed to cancel poll:', error);
       triggerSupportForError("poll_cancel", error);
     }
   }
@@ -1048,37 +1049,34 @@ const sendPoll = async () => {
 
     const result = await response.json();
 
-    console.log('[DEBUG sendPoll] ========== POLL LAUNCH RESPONSE ==========');
-    console.log('[DEBUG sendPoll] Response data:', result);
-    console.log('[DEBUG sendPoll] Poll instance ID:', result.data.id);
+    loggers.poll.debug('========== POLL LAUNCH RESPONSE ==========');
+    loggers.poll.debug('Response data:', result);
+    loggers.poll.debug('Poll instance ID:', result.data.id);
 
     // S'abonner immédiatement aux événements WebSocket du poll
     currentPollInstanceId.value = result.data.id;
 
-    console.log('[DEBUG sendPoll] currentPollInstanceId set to:', currentPollInstanceId.value);
-    console.log('[DEBUG sendPoll] pollStatus before subscription:', pollStatus.value);
+    loggers.poll.debug('currentPollInstanceId set to:', currentPollInstanceId.value);
+    loggers.poll.debug('pollStatus before subscription:', pollStatus.value);
 
     if (currentPollInstanceId.value) {
-      console.log('[DEBUG sendPoll] ========== STARTING WEBSOCKET SUBSCRIPTION ==========');
-      console.log('[WebSocket] Subscribing to poll:', currentPollInstanceId.value);
+      loggers.poll.debug('========== STARTING WEBSOCKET SUBSCRIPTION ==========');
+      loggers.ws.debug('Subscribing to poll:', currentPollInstanceId.value);
 
       // Nettoyer l'ancienne souscription si elle existe
       if (pollSubscriptionCleanup.value) {
-        console.log('[DEBUG sendPoll] Cleaning up old subscription');
+        loggers.poll.debug('Cleaning up old subscription');
         pollSubscriptionCleanup.value();
       }
 
-      console.log('[DEBUG sendPoll] Creating new subscription with callbacks:');
-      console.log('[DEBUG sendPoll] - onStart: defined');
-      console.log('[DEBUG sendPoll] - onUpdate: defined');
-      console.log('[DEBUG sendPoll] - onEnd: defined');
+      loggers.poll.debug('Creating new subscription with callbacks');
 
       // Créer une nouvelle souscription
       pollSubscriptionCleanup.value = subscribeToPoll(currentPollInstanceId.value, {
         onStart: (data) => {
-          console.log('[WebSocket] poll:start received:', data);
+          loggers.ws.debug('poll:start received:', data);
           if (pollStatus.value === 'sending') {
-            console.log('[WebSocket] Poll confirmed as started, switching to running state');
+            loggers.ws.debug('Poll confirmed as started, switching to running state');
             pollStatus.value = 'running';
 
             // S'assurer que le countdown est bien démarré avec la bonne durée
@@ -1087,13 +1085,13 @@ const sendPoll = async () => {
               pollDuration.value = data.durationSeconds;
 
               // Démarrer le countdown
-              console.log('[WebSocket] Starting countdown with', data.durationSeconds, 'seconds');
+              loggers.ws.debug('Starting countdown with', data.durationSeconds, 'seconds');
               startCountdown();
             }
           }
         },
         onUpdate: (data) => {
-          console.log('[WebSocket] poll:update received:', data);
+          loggers.ws.debug('poll:update received:', data);
           // Mettre à jour les résultats en temps réel
           if (data.votesByOption && (pollStatus.value === 'sending' || pollStatus.value === 'running')) {
             const results = Object.entries(data.votesByOption).map(([index, votes]) => ({
@@ -1108,17 +1106,17 @@ const sendPoll = async () => {
           }
         },
         onEnd: (data) => {
-          console.log('[WebSocket] ========== POLL:END RECEIVED ==========');
-          console.log('[WebSocket] Full data:', JSON.stringify(data, null, 2));
-          console.log('[WebSocket] Current pollStatus before:', pollStatus.value);
-          console.log('[WebSocket] Current countdown before:', countdown.value);
+          loggers.ws.debug('========== POLL:END RECEIVED ==========');
+          loggers.ws.debug('Full data:', JSON.stringify(data, null, 2));
+          loggers.ws.debug('Current pollStatus before:', pollStatus.value);
+          loggers.ws.debug('Current countdown before:', countdown.value);
 
           pollStatus.value = 'sent';
-          console.log('[WebSocket] pollStatus set to:', pollStatus.value);
+          loggers.ws.debug('pollStatus set to:', pollStatus.value);
 
           // Utiliser votesByOption pour poll:end
           const votesData = data.votesByOption;
-          console.log('[WebSocket] votesData:', votesData);
+          loggers.ws.debug('votesData:', votesData);
 
           if (votesData) {
             const results = Object.entries(votesData).map(([index, votes]) => ({
@@ -1126,21 +1124,21 @@ const sendPoll = async () => {
               votes: votes as number,
             }));
 
-            console.log('[WebSocket] Mapped results:', results);
+            loggers.ws.debug('Mapped results:', results);
 
             pollResults.value = {
               results,
               totalVotes: data.totalVotes,
             };
 
-            console.log('[WebSocket] pollResults updated:', pollResults.value);
+            loggers.ws.debug('pollResults updated:', pollResults.value);
           } else {
-            console.warn('[WebSocket] No votesData found in poll:end event');
+            loggers.ws.warn('No votesData found in poll:end event');
           }
 
           // Arrêter le countdown
           if (countdownInterval) {
-            console.log('[WebSocket] Clearing countdown interval');
+            loggers.ws.debug('Clearing countdown interval');
             clearInterval(countdownInterval);
             countdownInterval = null;
           }
@@ -1148,7 +1146,7 @@ const sendPoll = async () => {
           // Sauvegarder l'état du poll terminé avec résultats
           saveCurrentPollState();
 
-          console.log('[WebSocket] ========== POLL:END PROCESSING COMPLETE ==========');
+          loggers.ws.debug('========== POLL:END PROCESSING COMPLETE ==========');
         },
       });
     }
@@ -1157,7 +1155,7 @@ const sendPoll = async () => {
     if (result.data.failed_streamers && result.data.failed_streamers.length > 0) {
       const failedCount = result.data.failed_streamers.length;
       const successCount = result.data.streamers_count - failedCount;
-      console.log(`[Poll] ${successCount} streamer(s) OK, ${failedCount} streamer(s) incompatible(s)`);
+      loggers.poll.debug(`${successCount} streamer(s) OK, ${failedCount} streamer(s) incompatible(s)`);
     }
 
     // Démarrer le compte à rebours
@@ -1168,7 +1166,7 @@ const sendPoll = async () => {
     saveCurrentPollState();
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Impossible d'envoyer le sondage";
-    console.error('[Poll] Error:', errorMessage);
+    loggers.poll.error('Error:', errorMessage);
     pollStatus.value = 'idle';
     pollStartTime.value = null;
     pollDuration.value = null;
@@ -1184,7 +1182,7 @@ const startCountdown = () => {
   // Fonction pour calculer et mettre à jour le countdown basé sur timestamp
   const updateCountdown = () => {
     if (!pollStartTime.value || !pollDuration.value) {
-      console.warn('[Countdown] Missing pollStartTime or pollDuration');
+      loggers.poll.warn('Missing pollStartTime or pollDuration');
       return;
     }
 
@@ -1230,7 +1228,7 @@ onMounted(async () => {
   // 2. Forcer le rechargement de l'état depuis localStorage côté client
   pollControlStore.loadState();
 
-  console.log('Poll Control - onMounted (après loadState):', {
+  loggers.poll.debug('Poll Control - onMounted (après loadState):', {
     activeSession: activeSession.value,
     pollStatus: pollStatus.value,
     countdown: countdown.value,
@@ -1240,46 +1238,46 @@ onMounted(async () => {
 
   // 3. Si une session était active, restaurer l'état du poll actuel
   if (activeSession.value && activeSessionPolls.value.length > 0) {
-    console.log('[Restore] Restoring poll state for index:', currentPollIndex.value);
+    loggers.poll.debug('Restoring poll state for index:', currentPollIndex.value);
     restorePollState(currentPollIndex.value);
   }
 
   // 4. Si un poll était actif, synchroniser avec le backend pour obtenir l'état réel
   if (currentPollInstanceId.value) {
-    console.log('[Sync] Syncing with backend for poll:', currentPollInstanceId.value);
+    loggers.poll.debug('Syncing with backend for poll:', currentPollInstanceId.value);
     await pollControlStore.syncWithBackend();
-    console.log('[Sync] After sync - countdown:', countdown.value, 'status:', pollStatus.value);
+    loggers.poll.debug('After sync - countdown:', countdown.value, 'status:', pollStatus.value);
   }
 
   // Reconnecter le WebSocket si un poll est en cours
   if (currentPollInstanceId.value && (pollStatus.value === 'sending' || pollStatus.value === 'running')) {
-    console.log('[WebSocket RESTORE] Reconnecting to poll:', currentPollInstanceId.value);
-    console.log('[WebSocket RESTORE] Current poll status:', pollStatus.value);
+    loggers.ws.debug('Reconnecting to poll:', currentPollInstanceId.value);
+    loggers.ws.debug('Current poll status:', pollStatus.value);
 
     // Nettoyer l'ancienne souscription si elle existe
     if (pollSubscriptionCleanup.value) {
-      console.log('[WebSocket RESTORE] Cleaning up old subscription');
+      loggers.ws.debug('Cleaning up old subscription');
       pollSubscriptionCleanup.value();
     }
 
     // Recréer la souscription WebSocket
     pollSubscriptionCleanup.value = subscribeToPoll(currentPollInstanceId.value, {
       onStart: (data) => {
-        console.log('[WebSocket] poll:start received:', data);
+        loggers.ws.debug('poll:start received:', data);
         if (pollStatus.value === 'sending') {
-          console.log('[WebSocket] Poll confirmed as started, switching to running state');
+          loggers.ws.debug('Poll confirmed as started, switching to running state');
           pollStatus.value = 'running';
 
           if (data.durationSeconds) {
             countdown.value = data.durationSeconds;
             pollDuration.value = data.durationSeconds;
-            console.log('[WebSocket] Starting countdown with', data.durationSeconds, 'seconds');
+            loggers.ws.debug('Starting countdown with', data.durationSeconds, 'seconds');
             startCountdown();
           }
         }
       },
       onUpdate: (data) => {
-        console.log('[WebSocket] poll:update received:', data);
+        loggers.ws.debug('poll:update received:', data);
         if (data.votesByOption && (pollStatus.value === 'sending' || pollStatus.value === 'running')) {
           const results = Object.entries(data.votesByOption).map(([index, votes]) => ({
             option: currentPoll.value?.options?.[parseInt(index)] || `Option ${parseInt(index) + 1}`,
@@ -1293,16 +1291,16 @@ onMounted(async () => {
         }
       },
       onEnd: (data) => {
-        console.log('[WebSocket] ========== POLL:END RECEIVED ==========');
-        console.log('[WebSocket] Full data:', JSON.stringify(data, null, 2));
-        console.log('[WebSocket] Current pollStatus before:', pollStatus.value);
-        console.log('[WebSocket] Current countdown before:', countdown.value);
+        loggers.ws.debug('========== POLL:END RECEIVED ==========');
+        loggers.ws.debug('Full data:', JSON.stringify(data, null, 2));
+        loggers.ws.debug('Current pollStatus before:', pollStatus.value);
+        loggers.ws.debug('Current countdown before:', countdown.value);
 
         pollStatus.value = 'sent';
-        console.log('[WebSocket] pollStatus set to:', pollStatus.value);
+        loggers.ws.debug('pollStatus set to:', pollStatus.value);
 
         const votesData = data.votesByOption;
-        console.log('[WebSocket] votesData:', votesData);
+        loggers.ws.debug('votesData:', votesData);
 
         if (votesData) {
           const results = Object.entries(votesData).map(([index, votes]) => ({
@@ -1310,34 +1308,34 @@ onMounted(async () => {
             votes: votes as number,
           }));
 
-          console.log('[WebSocket] Mapped results:', results);
+          loggers.ws.debug('Mapped results:', results);
 
           pollResults.value = {
             results,
             totalVotes: data.totalVotes,
           };
 
-          console.log('[WebSocket] pollResults updated:', pollResults.value);
+          loggers.ws.debug('pollResults updated:', pollResults.value);
         } else {
-          console.warn('[WebSocket] No votesData found in poll:end event');
+          loggers.ws.warn('No votesData found in poll:end event');
         }
 
         if (countdownInterval) {
-          console.log('[WebSocket] Clearing countdown interval');
+          loggers.ws.debug('Clearing countdown interval');
           clearInterval(countdownInterval);
           countdownInterval = null;
         }
 
-        console.log('[WebSocket] ========== POLL:END PROCESSING COMPLETE ==========');
+        loggers.ws.debug('========== POLL:END PROCESSING COMPLETE ==========');
       },
     });
 
-    console.log('[WebSocket RESTORE] Subscription recreated');
+    loggers.ws.debug('Subscription recreated');
   }
 
   // Reprendre le countdown si un sondage était en cours
   if (pollStatus.value === 'sending' && countdown.value > 0) {
-    console.log('Reprendre le countdown avec', countdown.value, 'secondes restantes');
+    loggers.poll.debug('Reprendre le countdown avec', countdown.value, 'secondes restantes');
     startCountdown();
   }
 });

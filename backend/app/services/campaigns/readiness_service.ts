@@ -86,6 +86,7 @@ export class ReadinessService {
       streamerName: streamer.twitchDisplayName,
       streamerAvatar: streamer.profileImageUrl,
       twitchUserId: streamer.twitchUserId,
+      userId: streamer.userId,
       isReady,
       issues,
       tokenValid,

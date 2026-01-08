@@ -50,7 +50,7 @@ class WebSocketService {
    * Émet l'événement de démarrage d'un sondage
    */
   async emitPollStart(data: PollStartEvent): Promise<void> {
-    const channel = `poll:${data.poll_instance_id}`
+    const channel = `poll:${data.pollInstanceId}`
 
     // Émettre vers le canal général du poll (pour dashboard MJ)
     transmit.broadcast(channel, {
@@ -60,7 +60,7 @@ class WebSocketService {
 
     // Émettre vers chaque streamer membre de la campagne (si applicable)
     try {
-      const pollInstance = await PollInstance.find(data.poll_instance_id)
+      const pollInstance = await PollInstance.find(data.pollInstanceId)
 
       if (pollInstance?.campaignId) {
         const memberships = await CampaignMembership.query()
@@ -78,10 +78,10 @@ class WebSocketService {
         }
 
         logger.info(
-          `WebSocket: poll:start emitted for poll ${data.poll_instance_id} to ${memberships.length} streamers`
+          `WebSocket: poll:start emitted for poll ${data.pollInstanceId} to ${memberships.length} streamers`
         )
       } else {
-        logger.info(`WebSocket: poll:start emitted for poll ${data.poll_instance_id} (no campaign)`)
+        logger.info(`WebSocket: poll:start emitted for poll ${data.pollInstanceId} (no campaign)`)
       }
     } catch (error) {
       logger.error(`WebSocket: failed to emit poll:start to streamers: ${error.message}`)

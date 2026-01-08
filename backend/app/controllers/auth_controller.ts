@@ -1,10 +1,11 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import { inject } from '@adonisjs/core'
-import { randomBytes } from 'node:crypto'
+import { randomBytes, timingSafeEqual } from 'node:crypto'
 import logger from '@adonisjs/core/services/logger'
 import env from '#start/env'
 import { user as User } from '#models/user'
 import { streamer as Streamer } from '#models/streamer'
+import { overlayConfig as OverlayConfig } from '#models/overlay_config'
 import { twitchAuthService as TwitchAuthService } from '#services/auth/twitch_auth_service'
 
 // Regex pour valider le format du state OAuth (64 caractères hex)
@@ -18,6 +19,18 @@ function getErrorMessage(error: unknown): string {
     return error.message
   }
   return 'Unknown error'
+}
+
+/**
+ * Compare deux chaînes de manière sécurisée contre les timing attacks
+ * Retourne true si les chaînes sont identiques, false sinon
+ */
+function secureCompare(a: string, b: string): boolean {
+  // Les chaînes doivent avoir la même longueur pour timingSafeEqual
+  if (a.length !== b.length) {
+    return false
+  }
+  return timingSafeEqual(Buffer.from(a, 'utf8'), Buffer.from(b, 'utf8'))
 }
 
 @inject()
@@ -130,8 +143,8 @@ export default class AuthController {
       clientId: env.get('TWITCH_CLIENT_ID'),
     })
 
-    // Valider le state CSRF
-    if (!storedState || state !== storedState) {
+    // Valider le state CSRF avec comparaison à temps constant (protection contre timing attacks)
+    if (!storedState || !secureCompare(state, storedState)) {
       logger.warn('OAuth callback: state mismatch')
       return response.redirect(`${env.get('FRONTEND_URL')}/login?error=invalid_state`)
     }
@@ -245,6 +258,16 @@ export default class AuthController {
           scopes: tokens.scope,
           isActive: true,
         })
+
+        // Créer la configuration overlay par défaut pour le nouveau streamer
+        await OverlayConfig.create({
+          streamerId: streamer.id,
+          name: 'Configuration par défaut',
+          config: OverlayConfig.getDefaultConfigWithPoll(),
+          isActive: true,
+        })
+
+        logger.info(`Default overlay config created for streamer ${streamer.id}`)
       }
 
       // Authentifier l'utilisateur (créer la session avec Remember Me pour 7 jours)

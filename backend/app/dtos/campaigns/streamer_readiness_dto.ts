@@ -21,6 +21,7 @@ export interface StreamerReadinessDto {
   streamerName: string
   streamerAvatar: string | null
   twitchUserId: string
+  userId: string | null // User ID pour envoyer des notifications
   isReady: boolean
   issues: ReadinessIssue[]
   tokenValid: boolean

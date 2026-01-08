@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import { ref, watch } from "vue";
+import { loggers } from "@/utils/logger";
 
 const STORAGE_KEY = "pollControl";
 const EXPIRY_HOURS = 24;
@@ -91,7 +92,7 @@ export const usePollControlStore = defineStore("pollControl", () => {
       currentPollInstanceId.value = data.currentPollInstanceId;
       pollStates.value = data.pollStates || {};
 
-      console.log("[PollControl] State restored from localStorage:", {
+      loggers.poll.debug("State restored from localStorage:", {
         hasActiveSession: !!data.activeSession,
         pollStatus: data.pollStatus,
         hasPollResults: !!data.pollResults,
@@ -121,7 +122,7 @@ export const usePollControlStore = defineStore("pollControl", () => {
         countdown.value = data.countdown;
       }
     } catch (error) {
-      console.error("Failed to load poll control state:", error);
+      loggers.poll.error("Failed to load poll control state:", error);
       if (isClient) {
         localStorage.removeItem(STORAGE_KEY);
       }
@@ -148,7 +149,7 @@ export const usePollControlStore = defineStore("pollControl", () => {
         timestamp: Date.now(),
       };
 
-      console.log("[PollControl] Saving state to localStorage:", {
+      loggers.poll.debug("Saving state to localStorage:", {
         hasActiveSession: !!activeSession.value,
         pollsCount: activeSessionPolls.value.length,
         pollStatus: pollStatus.value,
@@ -156,12 +157,12 @@ export const usePollControlStore = defineStore("pollControl", () => {
         pollResultsData: pollResults.value,
       });
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      console.log(
-        "[PollControl] State saved successfully with pollResults:",
+      loggers.poll.debug(
+        "State saved successfully with pollResults:",
         !!pollResults.value,
       );
     } catch (error) {
-      console.error("Failed to save poll control state:", error);
+      loggers.poll.error("Failed to save poll control state:", error);
     }
   };
 
@@ -202,23 +203,23 @@ export const usePollControlStore = defineStore("pollControl", () => {
       () => {
         // Ne pas supprimer le localStorage pendant l'initialisation
         if (isInitializing.value) {
-          console.log(
-            "[PollControl] Watcher triggered during initialization - skipping",
+          loggers.poll.debug(
+            "Watcher triggered during initialization - skipping",
           );
           return;
         }
 
-        console.log(
-          "[PollControl] Watcher triggered - activeSession:",
+        loggers.poll.debug(
+          "Watcher triggered - activeSession:",
           !!activeSession.value,
         );
         // Si une session est active, on sauvegarde
         if (activeSession.value) {
-          console.log("[PollControl] Session active, saving state...");
+          loggers.poll.debug("Session active, saving state...");
           saveState();
         } else {
           // Si plus de session active, on nettoie le localStorage
-          console.log("[PollControl] No active session, clearing localStorage");
+          loggers.poll.debug("No active session, clearing localStorage");
           localStorage.removeItem(STORAGE_KEY);
         }
       },
@@ -238,8 +239,8 @@ export const usePollControlStore = defineStore("pollControl", () => {
       duration: pollDuration.value,
     };
 
-    console.log(
-      `[PollControl] Saved state for poll ${index}:`,
+    loggers.poll.debug(
+      `Saved state for poll ${index}:`,
       pollStates.value[index],
     );
   };
@@ -275,10 +276,7 @@ export const usePollControlStore = defineStore("pollControl", () => {
         countdown.value = 0;
       }
 
-      console.log(
-        `[PollControl] Restored state for poll ${index}:`,
-        savedState,
-      );
+      loggers.poll.debug(`Restored state for poll ${index}:`, savedState);
     } else {
       // Réinitialiser à l'état idle si aucun état sauvegardé
       pollStatus.value = "idle";
@@ -288,9 +286,7 @@ export const usePollControlStore = defineStore("pollControl", () => {
       pollDuration.value = null;
       countdown.value = 0;
 
-      console.log(
-        `[PollControl] No saved state for poll ${index}, reset to idle`,
-      );
+      loggers.poll.debug(`No saved state for poll ${index}, reset to idle`);
     }
   };
 
@@ -329,8 +325,8 @@ export const usePollControlStore = defineStore("pollControl", () => {
             totalVotes: pollInstance.finalTotalVotes || 0,
           };
 
-          console.log(
-            "[PollControl] Synced final results from backend:",
+          loggers.poll.debug(
+            "Synced final results from backend:",
             pollResults.value,
           );
         }
@@ -348,7 +344,7 @@ export const usePollControlStore = defineStore("pollControl", () => {
         pollStatus.value = remaining > 0 ? "sending" : "sent";
       }
     } catch (error) {
-      console.error("[PollControl] Failed to sync with backend:", error);
+      loggers.poll.error("Failed to sync with backend:", error);
       // En cas d'erreur, on garde l'état local
     }
   };
@@ -361,7 +357,7 @@ export const usePollControlStore = defineStore("pollControl", () => {
   if (isClient) {
     setTimeout(() => {
       isInitializing.value = false;
-      console.log("[PollControl] Initialization complete, watcher now active");
+      loggers.poll.debug("Initialization complete, watcher now active");
     }, 0);
   }
 

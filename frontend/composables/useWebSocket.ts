@@ -4,8 +4,10 @@ import type {
   PollUpdateEvent,
   PollEndEvent,
   ReadinessChangeEvent,
+  PreviewCommandEvent,
 } from "@/types";
 import { useSupportTrigger } from "@/composables/useSupportTrigger";
+import { loggers } from "@/utils/logger";
 
 /**
  * Client SSE natif pour remplacer @adonisjs/transmit-client
@@ -24,7 +26,7 @@ class NativeSSEClient {
     this.baseUrl = baseUrl;
     // Générer un UID unique pour ce client
     this.uid = crypto.randomUUID();
-    console.log(`[NativeSSE] Client created with UID: ${this.uid}`);
+    loggers.ws.debug(`Client created with UID: ${this.uid}`);
   }
 
   /**
@@ -32,91 +34,85 @@ class NativeSSEClient {
    */
   private async connect(): Promise<void> {
     if (this.eventSource) {
-      console.log("[NativeSSE] Already connected");
+      loggers.ws.debug("Already connected");
       return;
     }
 
     return new Promise((resolve, reject) => {
       const url = `${this.baseUrl}/__transmit/events?uid=${encodeURIComponent(this.uid)}`;
 
-      console.log(`[NativeSSE] ========== CONNECTING TO SSE ==========`);
-      console.log(`[NativeSSE] UID: ${this.uid}`);
-      console.log(`[NativeSSE] URL: ${url}`);
+      loggers.ws.debug(`========== CONNECTING TO SSE ==========`);
+      loggers.ws.debug(`UID: ${this.uid}`);
+      loggers.ws.debug(`URL: ${url}`);
 
       this.eventSource = new EventSource(url, {
         withCredentials: true,
       });
 
       this.eventSource.addEventListener("open", () => {
-        console.log(`[NativeSSE] ✅ SSE connection opened`);
-        console.log(
-          `[NativeSSE] EventSource readyState: ${this.eventSource?.readyState}`,
+        loggers.ws.debug(`SSE connection opened`);
+        loggers.ws.debug(
+          `EventSource readyState: ${this.eventSource?.readyState}`,
         );
         this.isConnected = true;
         resolve();
       });
 
       this.eventSource.addEventListener("error", (error) => {
-        console.error(`[NativeSSE] ❌ SSE connection error:`, error);
-        console.error(
-          `[NativeSSE] EventSource readyState: ${this.eventSource?.readyState}`,
+        loggers.ws.error(`SSE connection error:`, error);
+        loggers.ws.error(
+          `EventSource readyState: ${this.eventSource?.readyState}`,
         );
 
         if (
           this.eventSource &&
           this.eventSource.readyState === EventSource.CLOSED
         ) {
-          console.error(`[NativeSSE] Connection CLOSED - SSE stream ended`);
+          loggers.ws.error(`Connection CLOSED - SSE stream ended`);
           this.isConnected = false;
           reject(error);
         } else if (
           this.eventSource &&
           this.eventSource.readyState === EventSource.CONNECTING
         ) {
-          console.warn(`[NativeSSE] Reconnecting...`);
+          loggers.ws.warn(`Reconnecting...`);
         }
       });
 
       // Écouter TOUS les messages SSE (tous les canaux)
       this.eventSource.addEventListener("message", (event) => {
         try {
-          console.log(`[NativeSSE] Raw SSE message received:`, event.data);
+          loggers.ws.debug(`Raw SSE message received:`, event.data);
           const parsed = JSON.parse(event.data);
-          console.log(`[NativeSSE] Parsed SSE message:`, parsed);
+          loggers.ws.debug(`Parsed SSE message:`, parsed);
 
           // Format Transmit: { channel: string, payload: { event: string, data: unknown } }
           const { channel, payload } = parsed;
 
           if (!channel || !payload) {
-            console.warn(
-              `[NativeSSE] Invalid message format (missing channel or payload):`,
+            loggers.ws.warn(
+              `Invalid message format (missing channel or payload):`,
               parsed,
             );
             return;
           }
 
-          console.log(`[NativeSSE] Message for channel "${channel}":`, payload);
+          loggers.ws.debug(`Message for channel "${channel}":`, payload);
 
           // Distribuer le message aux handlers de ce canal
           const handlers = this.subscriptions.get(channel);
           if (handlers && handlers.length > 0) {
-            console.log(
-              `[NativeSSE] Dispatching to ${handlers.length} handler(s) for channel "${channel}"`,
+            loggers.ws.debug(
+              `Dispatching to ${handlers.length} handler(s) for channel "${channel}"`,
             );
             handlers.forEach((handler) => {
               handler(payload);
             });
           } else {
-            console.warn(
-              `[NativeSSE] No handlers registered for channel "${channel}"`,
-            );
+            loggers.ws.warn(`No handlers registered for channel "${channel}"`);
           }
         } catch (error) {
-          console.error(
-            `[NativeSSE] Failed to parse SSE message:`,
-            error,
-            event.data,
-          );
+          loggers.ws.error(`Failed to parse SSE message:`, error, event.data);
         }
       });
     });
@@ -126,7 +122,7 @@ class NativeSSEClient {
    * S'abonner à un canal spécifique via POST /__transmit/subscribe
    */
   private async subscribeToChannel(channel: string): Promise<void> {
-    console.log(`[NativeSSE] Subscribing to channel via HTTP: ${channel}`);
+    loggers.ws.debug(`Subscribing to channel via HTTP: ${channel}`);
 
     try {
       const response = await fetch(`${this.baseUrl}/__transmit/subscribe`, {
@@ -141,25 +137,17 @@ class NativeSSEClient {
         }),
       });
 
-      console.log(`[NativeSSE] Subscribe response status: ${response.status}`);
+      loggers.ws.debug(`Subscribe response status: ${response.status}`);
 
       if (!response.ok) {
         const text = await response.text();
-        console.error(
-          `[NativeSSE] Failed to subscribe to channel "${channel}":`,
-          text,
-        );
+        loggers.ws.error(`Failed to subscribe to channel "${channel}":`, text);
         throw new Error(`Subscribe failed: ${response.status} ${text}`);
       }
 
-      console.log(
-        `[NativeSSE] ✅ Successfully subscribed to channel "${channel}"`,
-      );
+      loggers.ws.debug(`Successfully subscribed to channel "${channel}"`);
     } catch (error) {
-      console.error(
-        `[NativeSSE] Error subscribing to channel "${channel}":`,
-        error,
-      );
+      loggers.ws.error(`Error subscribing to channel "${channel}":`, error);
       throw error;
     }
   }
@@ -168,7 +156,7 @@ class NativeSSEClient {
    * Se désabonner d'un canal via POST /__transmit/unsubscribe
    */
   private async unsubscribeFromChannel(channel: string): Promise<void> {
-    console.log(`[NativeSSE] Unsubscribing from channel: ${channel}`);
+    loggers.ws.debug(`Unsubscribing from channel: ${channel}`);
 
     try {
       const response = await fetch(`${this.baseUrl}/__transmit/unsubscribe`, {
@@ -184,19 +172,12 @@ class NativeSSEClient {
       });
 
       if (!response.ok) {
-        console.error(
-          `[NativeSSE] Failed to unsubscribe from channel "${channel}"`,
-        );
+        loggers.ws.error(`Failed to unsubscribe from channel "${channel}"`);
       } else {
-        console.log(
-          `[NativeSSE] ✅ Successfully unsubscribed from channel "${channel}"`,
-        );
+        loggers.ws.debug(`Successfully unsubscribed from channel "${channel}"`);
       }
     } catch (error) {
-      console.error(
-        `[NativeSSE] Error unsubscribing from channel "${channel}":`,
-        error,
-      );
+      loggers.ws.error(`Error unsubscribing from channel "${channel}":`, error);
     }
   }
 
@@ -220,14 +201,12 @@ class NativeSSEClient {
        * Créer la connexion SSE et s'abonner au canal
        */
       create: async () => {
-        console.log(`[NativeSSE] ========== CREATING SUBSCRIPTION ==========`);
-        console.log(`[NativeSSE] Channel: ${channel}`);
+        loggers.ws.debug(`========== CREATING SUBSCRIPTION ==========`);
+        loggers.ws.debug(`Channel: ${channel}`);
 
         // 1. S'assurer que la connexion SSE globale est établie
         if (!this.isConnected) {
-          console.log(
-            `[NativeSSE] SSE not connected yet, establishing connection...`,
-          );
+          loggers.ws.debug(`SSE not connected yet, establishing connection...`);
           await this.connect();
         }
 
@@ -236,15 +215,15 @@ class NativeSSEClient {
           this.subscriptions.set(channel, []);
         }
         this.subscriptions.get(channel)!.push(...messageHandlers);
-        console.log(
-          `[NativeSSE] Registered ${messageHandlers.length} handler(s) for channel "${channel}"`,
+        loggers.ws.debug(
+          `Registered ${messageHandlers.length} handler(s) for channel "${channel}"`,
         );
 
         // 3. S'abonner au canal via POST /__transmit/subscribe
         await this.subscribeToChannel(channel);
 
-        console.log(
-          `[NativeSSE] ✅ Subscription created successfully for channel "${channel}"`,
+        loggers.ws.debug(
+          `Subscription created successfully for channel "${channel}"`,
         );
       },
 
@@ -252,9 +231,7 @@ class NativeSSEClient {
        * Fermer l'abonnement au canal
        */
       delete: async () => {
-        console.log(
-          `[NativeSSE] Deleting subscription for channel: ${channel}`,
-        );
+        loggers.ws.debug(`Deleting subscription for channel: ${channel}`);
 
         // 1. Se désabonner du canal
         await this.unsubscribeFromChannel(channel);
@@ -269,7 +246,7 @@ class NativeSSEClient {
    * Fermer toutes les connexions
    */
   shutdown() {
-    console.log(`[NativeSSE] Shutting down client`);
+    loggers.ws.debug(`Shutting down client`);
 
     // Fermer toutes les souscriptions
     this.subscriptions.clear();
@@ -299,14 +276,14 @@ export const useWebSocket = () => {
    */
   const connect = () => {
     if (client.value) {
-      console.log("[NativeSSE] Already connected");
+      loggers.ws.debug("Already connected");
       return;
     }
 
-    console.log(`[NativeSSE] Initializing client with URL: ${API_URL}`);
+    loggers.ws.debug(`Initializing client with URL: ${API_URL}`);
     client.value = new NativeSSEClient(API_URL);
     connected.value = true;
-    console.log("[NativeSSE] Client initialized");
+    loggers.ws.debug("Client initialized");
   };
 
   /**
@@ -320,48 +297,33 @@ export const useWebSocket = () => {
       onEnd?: (data: PollEndEvent) => void;
     },
   ): (() => Promise<void>) => {
-    console.log(
-      "[DEBUG subscribeToPoll] ========== SUBSCRIBING TO POLL ==========",
-    );
-    console.log("[DEBUG subscribeToPoll] pollInstanceId:", pollInstanceId);
-    console.log("[DEBUG subscribeToPoll] client.value exists:", !!client.value);
-    console.log("[DEBUG subscribeToPoll] callbacks:", {
+    loggers.ws.debug("========== SUBSCRIBING TO POLL ==========");
+    loggers.ws.debug("pollInstanceId:", pollInstanceId);
+    loggers.ws.debug("client.value exists:", !!client.value);
+    loggers.ws.debug("callbacks:", {
       hasOnStart: !!callbacks.onStart,
       hasOnUpdate: !!callbacks.onUpdate,
       hasOnEnd: !!callbacks.onEnd,
     });
 
     if (!client.value) {
-      console.log(
-        "[DEBUG subscribeToPoll] Client not initialized, connecting...",
-      );
+      loggers.ws.debug("Client not initialized, connecting...");
       connect();
-      console.log(
-        "[DEBUG subscribeToPoll] Connected, client.value:",
-        !!client.value,
-      );
+      loggers.ws.debug("Connected, client.value:", !!client.value);
     }
 
     const channel = `poll:${pollInstanceId}`;
-    console.log(`[WebSocket] Subscribing to channel: ${channel}`);
-    console.log("[DEBUG subscribeToPoll] API_URL:", API_URL);
+    loggers.ws.debug(`Subscribing to channel: ${channel}`);
+    loggers.ws.debug("API_URL:", API_URL);
 
     let subscription;
     try {
-      console.log(
-        "[DEBUG subscribeToPoll] About to call client.value!.subscription()...",
-      );
+      loggers.ws.debug("About to call client.value!.subscription()...");
       subscription = client.value!.subscription(channel);
-      console.log(
-        "[DEBUG subscribeToPoll] Subscription object created:",
-        !!subscription,
-      );
+      loggers.ws.debug("Subscription object created:", !!subscription);
     } catch (error) {
-      console.error(
-        "[ERROR subscribeToPoll] Failed to create subscription:",
-        error,
-      );
-      console.error("[ERROR subscribeToPoll] Error details:", {
+      loggers.ws.error("Failed to create subscription:", error);
+      loggers.ws.error("Error details:", {
         message: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
         clientExists: !!client.value,
@@ -372,59 +334,57 @@ export const useWebSocket = () => {
     }
 
     // Enregistrer le listener AVANT de créer la subscription
-    console.log("[DEBUG subscribeToPoll] Registering onMessage listener...");
+    loggers.ws.debug("Registering onMessage listener...");
     subscription.onMessage((message: { event: string; data: unknown }) => {
-      console.log(`[WebSocket] Message received on ${channel}:`, message);
+      loggers.ws.debug(`Message received on ${channel}:`, message);
 
       switch (message.event) {
         case "poll:start":
-          console.log(`[WebSocket] Calling onStart callback`);
+          loggers.ws.debug(`Calling onStart callback`);
           if (callbacks.onStart) {
             callbacks.onStart(message.data as PollStartEvent);
           } else {
-            console.warn(`[WebSocket] No onStart callback defined`);
+            loggers.ws.warn(`No onStart callback defined`);
           }
           break;
         case "poll:update":
-          console.log(`[WebSocket] Calling onUpdate callback`);
+          loggers.ws.debug(`Calling onUpdate callback`);
           if (callbacks.onUpdate) {
             callbacks.onUpdate(message.data as PollUpdateEvent);
           } else {
-            console.warn(`[WebSocket] No onUpdate callback defined`);
+            loggers.ws.warn(`No onUpdate callback defined`);
           }
           break;
         case "poll:end":
-          console.log(
-            `[WebSocket] *** POLL:END EVENT DETECTED IN COMPOSABLE ***`,
-          );
-          console.log(`[WebSocket] Has onEnd callback:`, !!callbacks.onEnd);
+          loggers.ws.debug(`*** POLL:END EVENT DETECTED IN COMPOSABLE ***`);
+          loggers.ws.debug(`Has onEnd callback:`, !!callbacks.onEnd);
           if (callbacks.onEnd) {
-            console.log(`[WebSocket] Calling onEnd callback now...`);
+            loggers.ws.debug(`Calling onEnd callback now...`);
             callbacks.onEnd(message.data as PollEndEvent);
-            console.log(`[WebSocket] onEnd callback completed`);
+            loggers.ws.debug(`onEnd callback completed`);
           } else {
-            console.error(`[WebSocket] ERROR: No onEnd callback defined!`);
+            loggers.ws.error(`ERROR: No onEnd callback defined!`);
           }
           break;
         default:
-          console.warn(`[WebSocket] Unknown event type: ${message.event}`);
+          loggers.ws.warn(`Unknown event type: ${message.event}`);
       }
     });
 
-    console.log("[DEBUG subscribeToPoll] onMessage listener registered");
+    loggers.ws.debug("onMessage listener registered");
 
     // Créer la connexion SSE (après avoir enregistré le listener) - ASYNC!
     subscription
       .create()
       .then(() => {
-        console.log(`[WebSocket] Subscription created for channel: ${channel}`);
-        console.log(
-          "[DEBUG subscribeToPoll] Subscription.create() called successfully - ready to receive messages",
+        loggers.ws.debug(`Subscription created for channel: ${channel}`);
+        loggers.ws.debug(
+          "Subscription.create() called successfully - ready to receive messages",
         );
       })
       .catch((error: unknown) => {
-        console.error(
-          `[WebSocket] Failed to create subscription for channel ${channel}:`,
+        loggers.ws.error(
+          `Failed to create subscription for channel ${channel}:`,
           error,
         );
         triggerSupportForError("websocket_connect", error);
@@ -432,7 +392,7 @@ export const useWebSocket = () => {
 
     // Retourner une fonction de nettoyage asynchrone
     return async () => {
-      console.log(`[WebSocket] Unsubscribing from channel: ${channel}`);
+      loggers.ws.debug(`Unsubscribing from channel: ${channel}`);
       await subscription.delete();
     };
   };
@@ -450,6 +410,7 @@ export const useWebSocket = () => {
       onJoinedCampaign?: (data: { campaign_id: string }) => void;
       // eslint-disable-next-line @typescript-eslint/naming-convention
       onLeftCampaign?: (data: { campaign_id: string }) => void;
+      onPreviewCommand?: (data: PreviewCommandEvent) => void;
     },
   ): (() => Promise<void>) => {
     if (!client.value) {
@@ -457,12 +418,12 @@ export const useWebSocket = () => {
     }
 
     const channel = `streamer:${streamerId}:polls`;
-    console.log(`[WebSocket] Subscribing to streamer channel: ${channel}`);
+    loggers.ws.debug(`Subscribing to streamer channel: ${channel}`);
 
     const subscription = client.value!.subscription(channel);
 
     subscription.onMessage((message: { event: string; data: unknown }) => {
-      console.log(`[WebSocket] Message received on ${channel}:`, message);
+      loggers.ws.debug(`Message received on ${channel}:`, message);
 
       switch (message.event) {
         case "poll:start":
@@ -492,28 +453,33 @@ export const useWebSocket = () => {
             callbacks.onLeftCampaign(message.data as { campaign_id: string });
           }
           break;
+        case "preview:command":
+          if (callbacks.onPreviewCommand) {
+            callbacks.onPreviewCommand(message.data as PreviewCommandEvent);
+          }
+          break;
         default:
-          console.warn(`[WebSocket] Unknown event type: ${message.event}`);
+          loggers.ws.warn(`Unknown event type: ${message.event}`);
       }
     });
 
     subscription
       .create()
       .then(() => {
-        console.log(
-          `[WebSocket] Subscription created for streamer channel: ${channel}`,
+        loggers.ws.debug(
+          `Subscription created for streamer channel: ${channel}`,
         );
       })
       .catch((error: unknown) => {
-        console.error(
-          `[WebSocket] Failed to create subscription for streamer channel ${channel}:`,
+        loggers.ws.error(
+          `Failed to create subscription for streamer channel ${channel}:`,
           error,
         );
         triggerSupportForError("websocket_subscribe", error);
       });
 
     return async () => {
-      console.log(`[WebSocket] Unsubscribing from channel: ${channel}`);
+      loggers.ws.debug(`Unsubscribing from channel: ${channel}`);
       await subscription.delete();
     };
   };
@@ -534,12 +500,12 @@ export const useWebSocket = () => {
     }
 
     const channel = `campaign:${campaignId}:readiness`;
-    console.log(`[WebSocket] Subscribing to readiness channel: ${channel}`);
+    loggers.ws.debug(`Subscribing to readiness channel: ${channel}`);
 
     const subscription = client.value!.subscription(channel);
 
     subscription.onMessage((message: { event: string; data: unknown }) => {
-      console.log(`[WebSocket] Readiness message on ${channel}:`, message);
+      loggers.ws.debug(`Readiness message on ${channel}:`, message);
 
       switch (message.event) {
         case "streamer:ready":
@@ -553,31 +519,27 @@ export const useWebSocket = () => {
           }
           break;
         default:
-          console.warn(
-            `[WebSocket] Unknown readiness event type: ${message.event}`,
-          );
+          loggers.ws.warn(`Unknown readiness event type: ${message.event}`);
       }
     });
 
     subscription
       .create()
       .then(() => {
-        console.log(
-          `[WebSocket] Subscription created for readiness channel: ${channel}`,
+        loggers.ws.debug(
+          `Subscription created for readiness channel: ${channel}`,
         );
       })
       .catch((error: unknown) => {
-        console.error(
-          `[WebSocket] Failed to create subscription for readiness channel ${channel}:`,
+        loggers.ws.error(
+          `Failed to create subscription for readiness channel ${channel}:`,
           error,
         );
         triggerSupportForError("websocket_subscribe", error);
       });
 
     return async () => {
-      console.log(
-        `[WebSocket] Unsubscribing from readiness channel: ${channel}`,
-      );
+      loggers.ws.debug(`Unsubscribing from readiness channel: ${channel}`);
       await subscription.delete();
     };
   };
@@ -587,7 +549,7 @@ export const useWebSocket = () => {
    */
   const disconnect = () => {
     if (client.value) {
-      console.log("[NativeSSE] Disconnecting...");
+      loggers.ws.debug("Disconnecting...");
       client.value.shutdown();
       client.value = null;
       connected.value = false;

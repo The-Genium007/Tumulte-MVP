@@ -80,10 +80,19 @@ export type SupportActionType =
   | "health_check_redis"
   | "health_check_tokens"
 
-  // ===== OVERLAY (3) =====
+  // ===== OVERLAY (4) =====
+  | "overlay_url_fetch"
   | "overlay_campaigns_fetch"
   | "overlay_poll_subscribe"
   | "overlay_poll_display"
+
+  // ===== OVERLAY STUDIO (6) =====
+  | "overlay_configs_fetch"
+  | "overlay_config_fetch"
+  | "overlay_config_create"
+  | "overlay_config_update"
+  | "overlay_config_delete"
+  | "overlay_config_activate"
 
   // ===== COMPTE (2) =====
   | "account_delete"
@@ -204,12 +213,28 @@ export const SUPPORT_ERROR_MESSAGES: Record<SupportActionType, string> = {
   health_check_tokens: "Certains tokens sont invalides.",
 
   // ===== OVERLAY =====
+  overlay_url_fetch:
+    "Une erreur est survenue lors de la génération de l'URL overlay.",
   overlay_campaigns_fetch:
     "Une erreur est survenue lors du chargement overlay.",
   overlay_poll_subscribe:
     "Une erreur est survenue lors de l'écoute des sondages.",
   overlay_poll_display:
     "Une erreur est survenue lors de l'affichage du sondage.",
+
+  // ===== OVERLAY STUDIO =====
+  overlay_configs_fetch:
+    "Une erreur est survenue lors du chargement des configurations.",
+  overlay_config_fetch:
+    "Une erreur est survenue lors du chargement de la configuration.",
+  overlay_config_create:
+    "Une erreur est survenue lors de la création de la configuration.",
+  overlay_config_update:
+    "Une erreur est survenue lors de la mise à jour de la configuration.",
+  overlay_config_delete:
+    "Une erreur est survenue lors de la suppression de la configuration.",
+  overlay_config_activate:
+    "Une erreur est survenue lors de l'activation de la configuration.",
 
   // ===== COMPTE =====
   account_delete: "Une erreur est survenue lors de la suppression du compte.",
@@ -316,9 +341,18 @@ export const ACTION_TYPE_LABELS: Record<SupportActionType, string> = {
   health_check_tokens: "Tokens",
 
   // Overlay
+  overlay_url_fetch: "URL Overlay",
   overlay_campaigns_fetch: "Overlay load",
   overlay_poll_subscribe: "Overlay subscribe",
   overlay_poll_display: "Overlay display",
+
+  // Overlay Studio
+  overlay_configs_fetch: "Liste configs",
+  overlay_config_fetch: "Détail config",
+  overlay_config_create: "Création config",
+  overlay_config_update: "Modif config",
+  overlay_config_delete: "Suppression config",
+  overlay_config_activate: "Activation config",
 
   // Account
   account_delete: "Suppression compte",
@@ -428,9 +462,17 @@ export const ACTION_CATEGORIES: Record<SupportActionType, ActionCategory> = {
   health_check_redis: "health",
   health_check_tokens: "health",
 
+  overlay_url_fetch: "overlay",
   overlay_campaigns_fetch: "overlay",
   overlay_poll_subscribe: "overlay",
   overlay_poll_display: "overlay",
+
+  overlay_configs_fetch: "overlay",
+  overlay_config_fetch: "overlay",
+  overlay_config_create: "overlay",
+  overlay_config_update: "overlay",
+  overlay_config_delete: "overlay",
+  overlay_config_activate: "overlay",
 
   account_delete: "account",
   settings_update: "account",

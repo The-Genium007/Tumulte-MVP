@@ -24,7 +24,8 @@ export default class PollSessionsController {
     private pollRepository: PollRepository,
     private campaignRepository: CampaignRepository,
     private healthCheckService: HealthCheckService,
-    private readinessService: ReadinessService
+    private readinessService: ReadinessService,
+    private pushNotificationService: PushNotificationService
   ) {}
 
   /**
@@ -122,6 +123,44 @@ export default class PollSessionsController {
       let readinessDetails = null
       if (!healthCheck.services.tokens.valid) {
         readinessDetails = await this.readinessService.getCampaignReadiness(campaignId)
+
+        // Récupérer le nom de la campagne pour les notifications
+        const campaign = await this.campaignRepository.findById(campaignId)
+        const campaignName = campaign?.name ?? 'Campagne'
+
+        // Envoyer des notifications aux streamers avec des problèmes
+        if (readinessDetails) {
+          for (const streamer of readinessDetails.streamers) {
+            if (!streamer.isReady && streamer.issues.length > 0 && streamer.userId) {
+              // Ne pas notifier le GM (il voit déjà l'erreur)
+              if (streamer.userId !== userId) {
+                this.pushNotificationService
+                  .sendSessionActionRequired(streamer.userId, campaignName, streamer.issues)
+                  .then(() => {
+                    logger.info(
+                      {
+                        event: 'session_action_required_notification_sent',
+                        streamerId: streamer.streamerId,
+                        userId: streamer.userId,
+                        issues: streamer.issues,
+                      },
+                      'Session action required notification sent to streamer'
+                    )
+                  })
+                  .catch((err: unknown) => {
+                    logger.warn(
+                      {
+                        event: 'session_action_required_notification_failed',
+                        streamerId: streamer.streamerId,
+                        error: err instanceof Error ? err.message : String(err),
+                      },
+                      'Failed to send session action required notification'
+                    )
+                  })
+              }
+            }
+          }
+        }
       }
 
       logger.error(

@@ -203,5 +203,18 @@ describe("supportErrorMessages", () => {
       expect(SUPPORT_ERROR_MESSAGES.push_unsubscribe).toBeDefined();
       expect(SUPPORT_ERROR_MESSAGES.push_preferences_update).toBeDefined();
     });
+
+    test("should have overlay action types", () => {
+      expect(SUPPORT_ERROR_MESSAGES.overlay_url_fetch).toBeDefined();
+      expect(SUPPORT_ERROR_MESSAGES.overlay_campaigns_fetch).toBeDefined();
+      expect(SUPPORT_ERROR_MESSAGES.overlay_poll_subscribe).toBeDefined();
+      expect(SUPPORT_ERROR_MESSAGES.overlay_poll_display).toBeDefined();
+
+      // Verify labels
+      expect(ACTION_TYPE_LABELS.overlay_url_fetch).toBe("URL Overlay");
+
+      // Verify category
+      expect(ACTION_CATEGORIES.overlay_url_fetch).toBe("overlay");
+    });
   });
 });

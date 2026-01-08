@@ -152,7 +152,7 @@ export default [
 
       // Allow single-word component names for UI components and pages
       "vue/multi-word-component-names": ["error", {
-        "ignores": ["Button", "Card", "Modal", "default", "authenticated", "index", "home", "about", "login", "create", "callback", "campaigns", "[id]", "[sessionId]"]
+        "ignores": ["Button", "Card", "Modal", "default", "authenticated", "index", "home", "about", "login", "create", "callback", "campaigns", "[id]", "[sessionId]", "studio"]
       }],
 
       // Allow unused vars with underscore prefix

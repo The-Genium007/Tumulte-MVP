@@ -2,6 +2,7 @@ import type { HttpContext } from '@adonisjs/core/http'
 import type { NextFn } from '@adonisjs/core/types/http'
 import { Sentry } from '#config/sentry'
 import logger from '@adonisjs/core/services/logger'
+import app from '@adonisjs/core/services/app'
 
 /**
  * Middleware pour gérer les erreurs et les envoyer à Sentry
@@ -61,10 +62,45 @@ export default class ErrorHandlerMiddleware {
     return 500
   }
 
+  /**
+   * Messages d'erreur sûrs à exposer au client en production
+   * Ces messages ne révèlent pas d'informations sensibles
+   */
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  private static readonly SAFE_ERROR_PATTERNS = [
+    'not found',
+    'unauthorized',
+    'forbidden',
+    'bad request',
+    'validation failed',
+    'invalid',
+    'already exists',
+    'not allowed',
+    'expired',
+    'rate limit',
+  ]
+
   private getErrorMessage(error: unknown): string {
-    if (error instanceof Error) {
+    if (!(error instanceof Error)) {
+      return 'Internal server error'
+    }
+
+    // En développement, retourner le message complet
+    if (!app.inProduction) {
       return error.message
     }
-    return 'Internal server error'
+
+    // En production, filtrer les messages pour ne pas exposer d'informations sensibles
+    const lowerMessage = error.message.toLowerCase()
+    const isSafeMessage = ErrorHandlerMiddleware.SAFE_ERROR_PATTERNS.some((pattern) =>
+      lowerMessage.includes(pattern)
+    )
+
+    if (isSafeMessage) {
+      return error.message
+    }
+
+    // Message générique pour les erreurs potentiellement sensibles
+    return 'An error occurred. Please try again later.'
   }
 }

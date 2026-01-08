@@ -1,141 +1,141 @@
-# 🔒 Configuration de la Protection des Branches
+# Branch Protection Configuration
 
-Ce guide explique comment configurer la protection des branches sur GitHub pour automatiser les workflows CI/CD.
+This guide explains how to configure branch protection on GitHub to automate CI/CD workflows.
 
-## 📋 Stratégie de branches
+## Branch Strategy
 
 ```
-developement (dev quotidien)
+developement (daily development)
     ↓ merge via PR
-staging (pré-production avec CI/CD progressif)
+staging (pre-production with progressive CI/CD)
     ↓ merge via PR
-main (production avec CI/CD complet)
+main (production with full CI/CD)
 ```
 
-## ⚙️ Configuration GitHub
+## GitHub Configuration
 
-### 1. Créer les branches
+### 1. Create Branches
 
-Si elles n'existent pas déjà :
+If they don't exist yet:
 
 ```bash
-# Créer la branche staging
+# Create staging branch
 git checkout -b staging
 git push -u origin staging
 
-# Créer la branche main
+# Create main branch
 git checkout -b main
 git push -u origin main
 ```
 
-### 2. Configuration de la branche `staging`
+### 2. Staging Branch Configuration
 
-1. Aller sur GitHub : `https://github.com/The-Genium007/Tumulte/settings/branches`
-2. Cliquer sur **Add branch protection rule**
-3. Branch name pattern : `staging`
-4. Cocher les options suivantes :
+1. Go to GitHub: `https://github.com/The-Genium007/Tumulte/settings/branches`
+2. Click **Add branch protection rule**
+3. Branch name pattern: `staging`
+4. Check the following options:
 
-**Protection de base :**
-- ✅ **Require a pull request before merging**
-  - Require approvals : `0` (ou `1` si tu veux t'auto-approuver)
-  - ✅ Dismiss stale pull request approvals when new commits are pushed
+**Basic Protection:**
+- **Require a pull request before merging**
+  - Require approvals: `0` (or `1` if you want self-approval)
+  - Dismiss stale pull request approvals when new commits are pushed
 
-- ✅ **Require status checks to pass before merging**
-  - ✅ Require branches to be up to date before merging
-  - Status checks requis :
+- **Require status checks to pass before merging**
+  - Require branches to be up to date before merging
+  - Required status checks:
     - `Quality Checks (TypeCheck + Lint)`
     - `Unit Tests`
     - `Build Backend & Frontend`
-    - ⚠️ `Functional Tests (Warning Only)` → **NE PAS COCHER** (optionnel)
+    - `Functional Tests (Warning Only)` → **DO NOT CHECK** (optional)
 
-- ✅ **Require conversation resolution before merging**
+- **Require conversation resolution before merging**
 
-- ❌ **Require signed commits** (optionnel)
+- **Require signed commits** (optional)
 
-- ❌ **Include administrators** (tu peux bypass si besoin)
+- **Include administrators** (you can bypass if needed)
 
-5. Cliquer sur **Create**
+5. Click **Create**
 
-### 3. Configuration de la branche `main` (Production)
+### 3. Main Branch Configuration (Production)
 
-1. Même processus, Branch name pattern : `main`
-2. Configuration **PLUS STRICTE** :
+1. Same process, Branch name pattern: `main`
+2. **STRICTER** configuration:
 
-**Protection renforcée :**
-- ✅ **Require a pull request before merging**
-  - Require approvals : `1` (tu dois t'auto-approuver ou avoir un reviewer)
+**Enhanced Protection:**
+- **Require a pull request before merging**
+  - Require approvals: `1` (you must self-approve or have a reviewer)
 
-- ✅ **Require status checks to pass before merging**
-  - ✅ Require branches to be up to date before merging
-  - Status checks requis (TOUS BLOQUANTS) :
+- **Require status checks to pass before merging**
+  - Require branches to be up to date before merging
+  - Required status checks (ALL BLOCKING):
     - `Quality Checks`
     - `Security Audit`
     - `Unit Tests (Required)`
     - `Functional Tests (Required)`
     - `Build Production`
 
-- ✅ **Require conversation resolution before merging**
+- **Require conversation resolution before merging**
 
-- ✅ **Require linear history** (optionnel, force le rebase)
+- **Require linear history** (optional, forces rebase)
 
-- ✅ **Include administrators** (même toi tu ne peux pas bypass)
+- **Include administrators** (even you cannot bypass)
 
-- ✅ **Restrict who can push to matching branches** (optionnel)
-  - Ajouter ton compte uniquement
+- **Restrict who can push to matching branches** (optional)
+  - Add your account only
 
-3. Cliquer sur **Create**
+3. Click **Create**
 
-### 4. Configuration de la branche `developement`
+### 4. Development Branch Configuration
 
-**Aucune protection** - Liberté totale pour le développement quotidien.
+**No protection** - Full freedom for daily development.
 
-Optionnel : Tu peux activer uniquement :
-- ✅ **Require conversation resolution before merging** (si tu fais des PR pour organiser ton travail)
+Optional: You can enable only:
+- **Require conversation resolution before merging** (if you use PRs to organize your work)
 
-## 🚀 Workflow de travail
+## Development Workflow
 
-### Développement quotidien → Staging
+### Daily Development → Staging
 
 ```bash
-# 1. Travailler sur developement
+# 1. Work on developement
 git checkout developement
 git add .
-git commit -m "feat: nouvelle fonctionnalité"
+git commit -m "feat: new feature"
 git push origin developement
 
-# 2. Créer une Pull Request sur GitHub
+# 2. Create a Pull Request on GitHub
 # developement → staging
 
-# 3. GitHub Actions exécute automatiquement :
+# 3. GitHub Actions automatically runs:
 #    ✅ Type-check + Lint
-#    ✅ Tests unitaires
+#    ✅ Unit tests
 #    ✅ Build
-#    ⚠️ Tests fonctionnels (warning)
+#    ⚠️ Functional tests (warning)
 
-# 4. Si tout est vert, merge la PR sur GitHub
+# 4. If everything is green, merge the PR on GitHub
 ```
 
 ### Staging → Production
 
 ```bash
-# 1. Créer une Pull Request sur GitHub
+# 1. Create a Pull Request on GitHub
 # staging → main
 
-# 2. GitHub Actions exécute automatiquement (CI/CD COMPLET) :
+# 2. GitHub Actions automatically runs (FULL CI/CD):
 #    ✅ Type-check + Lint
 #    ✅ Security Audit
-#    ✅ Tests unitaires (BLOQUANT)
-#    ✅ Tests fonctionnels (BLOQUANT)
-#    ✅ Build production
-#    ⚠️ Tests E2E (warning pour l'instant)
+#    ✅ Unit tests (BLOCKING)
+#    ✅ Functional tests (BLOCKING)
+#    ✅ Production build
+#    ⚠️ E2E tests (warning for now)
 
-# 3. Si TOUT est vert, merge la PR sur GitHub
-# 4. Déployer depuis main vers Dokploy
+# 3. If ALL checks are green, merge the PR on GitHub
+# 4. Deploy from main to Dokploy
 ```
 
-## 🎯 Commandes utiles
+## Useful Commands
 
-### Mettre à jour staging depuis developement
+### Update staging from developement
 
 ```bash
 git checkout staging
@@ -144,58 +144,58 @@ git merge developement
 git push origin staging
 ```
 
-### Créer une Pull Request en CLI (avec GitHub CLI)
+### Create a Pull Request via CLI (with GitHub CLI)
 
 ```bash
-# Installer gh CLI : https://cli.github.com/
+# Install gh CLI: https://cli.github.com/
 
-# Créer une PR developement → staging
-gh pr create --base staging --head developement --title "Deploy to staging" --body "Déploiement des dernières modifications"
+# Create a PR developement → staging
+gh pr create --base staging --head developement --title "Deploy to staging" --body "Deployment of latest changes"
 
-# Créer une PR staging → main
+# Create a PR staging → main
 gh pr create --base main --head staging --title "Deploy to production v0.1.0" --body "Release v0.1.0 - Production deployment"
 ```
 
-## 📊 Monitoring des CI/CD
+## CI/CD Monitoring
 
-### Voir les runs GitHub Actions
+### View GitHub Actions Runs
 
 ```bash
 # Via GitHub CLI
 gh run list --branch staging
 gh run list --branch main
 
-# Voir les détails d'un run
+# View run details
 gh run view <run-id>
 
-# Voir les logs
+# View logs
 gh run view <run-id> --log
 ```
 
-### URL directe
+### Direct URLs
 
-- Staging CI : `https://github.com/The-Genium007/Tumulte/actions/workflows/staging-ci.yml`
-- Production CI : `https://github.com/The-Genium007/Tumulte/actions/workflows/production-ci.yml`
+- Staging CI: `https://github.com/The-Genium007/Tumulte/actions/workflows/staging-ci.yml`
+- Production CI: `https://github.com/The-Genium007/Tumulte/actions/workflows/production-ci.yml`
 
-## ⚠️ En cas de problème
+## Troubleshooting
 
-### Bypass temporaire (urgence uniquement)
+### Temporary Bypass (Emergency Only)
 
-Si tu dois absolument merger sans passer les checks :
+If you absolutely must merge without passing checks:
 
-1. Aller dans Settings → Branches
-2. Modifier temporairement la règle
-3. Décocher "Require status checks to pass"
-4. Merger
-5. **RÉACTIVER IMMÉDIATEMENT LA PROTECTION**
+1. Go to Settings → Branches
+2. Temporarily modify the rule
+3. Uncheck "Require status checks to pass"
+4. Merge
+5. **IMMEDIATELY RE-ENABLE THE PROTECTION**
 
-### Débugger un test qui échoue
+### Debugging a Failing Test
 
 ```bash
-# Reproduire localement les conditions CI
+# Reproduce CI conditions locally
 cd backend
 
-# Avec les mêmes variables d'environnement que CI
+# With the same environment variables as CI
 NODE_ENV=test \
 DB_HOST=localhost \
 DB_PORT=5432 \
@@ -209,29 +209,29 @@ APP_KEY=test_key_32_characters_long_1234 \
 npm run test
 ```
 
-## 🔄 Mise à jour des workflows
+## Updating Workflows
 
-Les workflows sont dans `.github/workflows/` :
-- `staging-ci.yml` : CI/CD progressif pour staging
-- `production-ci.yml` : CI/CD complet pour production
+Workflows are in `.github/workflows/`:
+- `staging-ci.yml`: Progressive CI/CD for staging
+- `production-ci.yml`: Full CI/CD for production
 
-Pour modifier :
-1. Éditer le fichier YAML
-2. Commit sur `developement`
-3. Le workflow sera mis à jour au prochain merge
+To modify:
+1. Edit the YAML file
+2. Commit to `developement`
+3. The workflow will be updated on the next merge
 
-## 📝 Checklist avant le premier merge
+## Pre-First Merge Checklist
 
-- [ ] Branches `staging` et `main` créées sur GitHub
-- [ ] Protection configurée pour `staging` (CI progressif)
-- [ ] Protection configurée pour `main` (CI complet)
-- [ ] Tests unitaires backend fonctionnels localement
-- [ ] Tests fonctionnels backend fonctionnels localement
-- [ ] Build frontend réussit localement
-- [ ] Variables d'environnement de test configurées (voir `.env.example`)
-- [ ] PostgreSQL 16 et Redis 7 disponibles pour les tests locaux
+- [ ] `staging` and `main` branches created on GitHub
+- [ ] Protection configured for `staging` (progressive CI)
+- [ ] Protection configured for `main` (full CI)
+- [ ] Backend unit tests working locally
+- [ ] Backend functional tests working locally
+- [ ] Frontend build succeeds locally
+- [ ] Test environment variables configured (see `.env.example`)
+- [ ] PostgreSQL 16 and Redis 7 available for local tests
 
-## 🎓 Ressources
+## Resources
 
 - [GitHub Branch Protection Rules](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches)
 - [GitHub Actions Documentation](https://docs.github.com/en/actions)

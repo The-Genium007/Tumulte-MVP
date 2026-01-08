@@ -34,6 +34,9 @@ class NotificationPreference extends BaseModel {
   @column({ columnName: 'token_refresh_failed' })
   declare tokenRefreshFailed: boolean
 
+  @column({ columnName: 'session_action_required' })
+  declare sessionActionRequired: boolean
+
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
 

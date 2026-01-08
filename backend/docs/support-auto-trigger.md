@@ -1,8 +1,8 @@
-# Système de Support Automatique sur Erreur
+# Automatic Support System on Error
 
-## Vue d'ensemble
+## Overview
 
-Le système de support automatique détecte les erreurs utilisateur et ouvre automatiquement le widget de support avec un message pré-rempli. Conçu pour la phase Alpha, il capture un maximum de bugs pour améliorer la qualité de l'application.
+The automatic support system detects user errors and automatically opens the support widget with a pre-filled message. Designed for the Alpha phase, it captures as many bugs as possible to improve application quality.
 
 ## Architecture
 
@@ -25,7 +25,7 @@ Le système de support automatique détecte les erreurs utilisateur et ouvre aut
 │                                     ▼                                 │
 │  ┌─────────────────────────────────────────────────────────────┐     │
 │  │ SupportWidget.vue                                            │     │
-│  │ + Badge type d'erreur, message pré-rempli                    │     │
+│  │ + Error type badge, pre-filled message                       │     │
 │  └──────────────────────────────────────────────────────────────┘     │
 └─────────────────────────────────────────────────────────────────────┘
                                      │
@@ -47,20 +47,20 @@ Le système de support automatique détecte les erreurs utilisateur et ouvre aut
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-## Composants Backend
+## Backend Components
 
 ### BackendLogService
 
-Service Redis pour stocker les logs utilisateur avec buffer circulaire.
+Redis service for storing user logs with circular buffer.
 
-**Fichier**: `app/services/support/backend_log_service.ts`
+**File**: `app/services/support/backend_log_service.ts`
 
 ```typescript
 import { BackendLogService } from '#services/support/backend_log_service'
 
 const service = new BackendLogService()
 
-// Ajouter un log
+// Add a log
 await service.pushLog(userId, {
   timestamp: new Date().toISOString(),
   requestId: 'req-123',
@@ -71,42 +71,42 @@ await service.pushLog(userId, {
   level: 'info',
 })
 
-// Récupérer les logs (50 par défaut)
+// Get logs (50 by default)
 const logs = await service.getUserLogs(userId, 50)
 
-// Effacer les logs (ex: suppression de compte)
+// Clear logs (e.g., account deletion)
 await service.clearUserLogs(userId)
 ```
 
-**Configuration Redis**:
-- Clé: `support:logs:user:{userId}`
-- TTL: 1 heure (3600 secondes)
-- Max logs: 100 par utilisateur (buffer circulaire)
+**Redis Configuration**:
+- Key: `support:logs:user:{userId}`
+- TTL: 1 hour (3600 seconds)
+- Max logs: 100 per user (circular buffer)
 
 ### TracingMiddleware
 
-Capture automatiquement les requêtes et les pousse vers Redis.
+Automatically captures requests and pushes them to Redis.
 
-**Fichier**: `app/middleware/tracing_middleware.ts`
+**File**: `app/middleware/tracing_middleware.ts`
 
-Le middleware capture:
+The middleware captures:
 - Request ID
-- Méthode HTTP
+- HTTP method
 - URL
-- Code de statut
-- Durée (ms)
-- Message d'erreur (si applicable)
+- Status code
+- Duration (ms)
+- Error message (if applicable)
 
 ### SupportController.getLogs()
 
-Endpoint pour récupérer les logs utilisateur.
+Endpoint to retrieve user logs.
 
 **Route**: `GET /api/v2/support/logs`
 
 **Query params**:
-- `limit`: Nombre de logs (défaut: 50, max: 100)
+- `limit`: Number of logs (default: 50, max: 100)
 
-**Réponse**:
+**Response**:
 ```json
 {
   "data": {
@@ -130,12 +130,12 @@ Endpoint pour récupérer les logs utilisateur.
 }
 ```
 
-## Types d'actions supportés
+## Supported Action Types
 
-Le système supporte 60+ types d'actions répartis en catégories:
+The system supports 60+ action types across categories:
 
-| Catégorie | Exemples |
-|-----------|----------|
+| Category | Examples |
+|----------|----------|
 | auth | `auth_login`, `auth_callback`, `auth_logout` |
 | campaign | `campaign_fetch`, `campaign_create`, `campaign_delete` |
 | session | `session_launch`, `session_close` |
@@ -144,26 +144,26 @@ Le système supporte 60+ types d'actions répartis en catégories:
 | websocket | `websocket_connect`, `websocket_reconnect` |
 | generic | `generic_server_error`, `generic_network_error`, `generic_timeout` |
 
-Voir `frontend/utils/supportErrorMessages.ts` pour la liste complète.
+See `frontend/utils/supportErrorMessages.ts` for the complete list.
 
 ## Rate Limiting
 
-- **Frontend**: 1 ouverture automatique par minute
-- **Backend**: Logs limités à 100 par utilisateur avec TTL 1h
+- **Frontend**: 1 automatic opening per minute
+- **Backend**: Logs limited to 100 per user with 1h TTL
 
 ## Tests
 
 ```bash
-# Tests unitaires backend
+# Backend unit tests
 npm run test -- --files="tests/unit/services/support/backend_log_service.spec.ts"
 
-# Tests fonctionnels backend
+# Backend functional tests
 npm run test -- --files="tests/functional/support/logs.spec.ts"
 ```
 
-## Sécurité
+## Security
 
-- Authentification requise pour `/support/logs`
-- Logs isolés par utilisateur
-- Pas de données sensibles (tokens, passwords) dans les logs
-- TTL automatique pour nettoyage
+- Authentication required for `/support/logs`
+- Logs isolated per user
+- No sensitive data (tokens, passwords) in logs
+- Automatic TTL for cleanup

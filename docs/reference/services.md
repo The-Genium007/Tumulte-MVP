@@ -254,6 +254,109 @@ const token = encryption.decrypt(streamer.accessToken)
 
 ---
 
+## HealthCheckService
+
+Performs system health checks before launching poll sessions.
+
+### Methods
+
+#### `performHealthCheck(campaignId: string, userId: string): Promise<HealthCheckResult>`
+Validates all system components before session launch.
+
+**Checks performed**:
+1. **Twitch API**: Verifies API availability
+2. **Redis**: Tests cache connection
+3. **Tokens**: Validates all streamer tokens + authorization status
+4. **WebSocket**: Confirms Transmit is ready
+
+**Token validation includes**:
+- Streamer `isActive` status
+- Poll authorization granted (`pollAuthorizationExpiresAt`)
+- Poll authorization not expired (`isPollAuthorizationActive`)
+- Valid Twitch access token (with auto-refresh attempt)
+
+**Returns**:
+```typescript
+{
+  healthy: boolean,
+  services: {
+    twitchApi: { available: boolean, error?: string },
+    redis: { connected: boolean, error?: string },
+    tokens: {
+      valid: boolean,
+      invalidStreamers?: Array<{
+        id: string,
+        displayName: string,
+        error: string,
+        issue?: 'streamer_inactive' | 'authorization_missing' | 'authorization_expired' | 'token_invalid' | 'token_missing'
+      }>,
+      error?: string
+    },
+    websocket: { ready: boolean, error?: string }
+  }
+}
+```
+
+---
+
+## ReadinessService
+
+Calculates streamer readiness state for campaign waiting lists.
+
+### Methods
+
+#### `getCampaignReadiness(campaignId: string): Promise<CampaignReadinessDto>`
+Returns readiness status of all active campaign members.
+
+**Detects issues**:
+- `streamer_inactive`: Streamer is deactivated
+- `token_refresh_failed`: Token refresh failed
+- `token_expired`: Token has expired
+- `authorization_missing`: No poll authorization granted
+- `authorization_expired`: Poll authorization has expired
+
+---
+
+## PushNotificationService
+
+Handles Web Push notifications to users.
+
+### Methods
+
+#### `sendToUser(userId: string, type: NotificationType, payload: PushPayload, bypassPreferences?: boolean): Promise<{sent: number, failed: number}>`
+Sends a notification to a specific user.
+
+**Checks user preferences** unless `bypassPreferences=true`.
+
+#### `sendToUsers(userIds: string[], type: NotificationType, payload: PushPayload): Promise<{totalSent: number, totalFailed: number}>`
+Sends a notification to multiple users.
+
+#### `sendSessionActionRequired(userId: string, campaignName: string, issues: string[]): Promise<void>`
+Sends a notification when a streamer needs to take action to participate in polls.
+
+**Triggered when**: GM attempts to launch a session but a streamer has issues (token/authorization).
+
+**Notification content**:
+- Title: `{campaignName} - Action requise`
+- Body: Human-readable list of issues
+- Action URL: `/streamer/campaigns`
+
+### Notification Types
+
+| Type | Urgency | Preference Key | Description |
+|------|---------|----------------|-------------|
+| `campaign:invitation` | low | campaignInvitations | New campaign invitation |
+| `critical:alert` | high | criticalAlerts | Critical system alert |
+| `poll:started` | normal | pollStarted | Poll has started |
+| `poll:ended` | normal | pollEnded | Poll has ended |
+| `campaign:member_joined` | low | campaignMemberJoined | Member joined campaign |
+| `session:reminder` | low | sessionReminder | Session reminder |
+| `session:start_blocked` | normal | sessionReminder | Session launch blocked |
+| `token:refresh_failed` | high | tokenRefreshFailed | Token refresh failed |
+| `session:action_required` | high | sessionActionRequired | Action required to participate |
+
+---
+
 ## Error Handling
 
 Services throw typed exceptions:

@@ -228,6 +228,47 @@ export class PushNotificationService {
       },
     })
   }
+
+  /**
+   * Envoyer une notification d'action requise pour participer aux sondages
+   * Utilisé quand le GM tente de lancer une session mais qu'un streamer a des problèmes
+   * (token expiré, autorisation manquante, etc.)
+   */
+  async sendSessionActionRequired(
+    userId: string,
+    campaignName: string,
+    issues: string[]
+  ): Promise<void> {
+    /* eslint-disable camelcase */
+    const issueMessages: Record<string, string> = {
+      token_expired: 'Reconnexion Twitch requise',
+      token_invalid: 'Reconnexion Twitch requise',
+      token_missing: 'Reconnexion Twitch requise',
+      token_refresh_failed: 'Reconnexion Twitch requise',
+      authorization_missing: 'Autorisation requise',
+      authorization_expired: 'Autorisation expirée',
+      streamer_inactive: 'Compte désactivé',
+    }
+    /* eslint-enable camelcase */
+
+    const readableIssues = issues.map((i) => issueMessages[i] || i)
+    const uniqueIssues = [...new Set(readableIssues)]
+    const body = uniqueIssues.join(' • ')
+
+    await this.sendToUser(userId, 'session:action_required', {
+      title: `${campaignName} - Action requise`,
+      body: `Pour participer aux sondages : ${body}`,
+      data: {
+        url: '/streamer/campaigns',
+        issues,
+        campaignName,
+      },
+      actions: [
+        { action: 'fix', title: 'Corriger maintenant' },
+        { action: 'dismiss', title: 'Plus tard' },
+      ],
+    })
+  }
 }
 
 export default PushNotificationService
