@@ -6,6 +6,10 @@ import env from '#start/env'
  *
  * Les clés VAPID doivent être définies dans les variables d'environnement.
  * Générer avec: npx web-push generate-vapid-keys
+ *
+ * Note: Cette configuration ne cache PAS les échecs d'initialisation.
+ * Cela permet de gérer les cas où les variables d'environnement ne sont
+ * pas immédiatement disponibles au démarrage (ex: Dokploy, containers).
  */
 
 interface PushConfig {
@@ -15,15 +19,18 @@ interface PushConfig {
   isConfigured: boolean
 }
 
-let cachedConfig: PushConfig | null = null
+// Cache uniquement les configs réussies
+let successfulConfig: PushConfig | null = null
 
 /**
  * Initialise la configuration push de manière lazy
- * Appelé uniquement quand la config est effectivement utilisée
+ * Ne cache que les configurations réussies pour permettre une réinitialisation
+ * si les variables d'environnement deviennent disponibles plus tard
  */
 function initPushConfig(): PushConfig {
-  if (cachedConfig) {
-    return cachedConfig
+  // Retourner le cache seulement si l'initialisation a réussi
+  if (successfulConfig) {
+    return successfulConfig
   }
 
   // Use AdonisJS env helper instead of process.env for proper loading
@@ -31,18 +38,14 @@ function initPushConfig(): PushConfig {
   const vapidPrivateKey = env.get('VAPID_PRIVATE_KEY')
 
   if (!vapidPublicKey || !vapidPrivateKey) {
-    process.stderr.write(
-      '[Push Config] ERROR: VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY must be defined in .env\n'
-    )
-    process.stderr.write('[Push Config] Generate keys with: npx web-push generate-vapid-keys\n')
-
-    cachedConfig = {
+    // Log seulement une fois par requête, pas à chaque accès
+    // Ne pas cacher l'échec - les variables peuvent devenir disponibles
+    return {
       vapidPublicKey: '',
       vapidPrivateKey: '',
       vapidSubject: '',
       isConfigured: false,
     }
-    return cachedConfig
   }
 
   // VAPID subject doit être une URL https: ou mailto:
@@ -61,14 +64,15 @@ function initPushConfig(): PushConfig {
   // Configurer web-push avec les clés VAPID
   webPush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey)
 
-  cachedConfig = {
+  // Cacher uniquement les configurations réussies
+  successfulConfig = {
     vapidPublicKey,
     vapidPrivateKey,
     vapidSubject,
     isConfigured: true,
   }
 
-  return cachedConfig
+  return successfulConfig
 }
 
 // Export un objet avec un getter pour l'initialisation lazy
