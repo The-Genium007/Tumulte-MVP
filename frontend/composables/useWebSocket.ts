@@ -4,6 +4,7 @@ import type {
   PollUpdateEvent,
   PollEndEvent,
   ReadinessChangeEvent,
+  PreviewCommandEvent,
 } from "@/types";
 import { useSupportTrigger } from "@/composables/useSupportTrigger";
 
@@ -450,6 +451,7 @@ export const useWebSocket = () => {
       onJoinedCampaign?: (data: { campaign_id: string }) => void;
       // eslint-disable-next-line @typescript-eslint/naming-convention
       onLeftCampaign?: (data: { campaign_id: string }) => void;
+      onPreviewCommand?: (data: PreviewCommandEvent) => void;
     },
   ): (() => Promise<void>) => {
     if (!client.value) {
@@ -490,6 +492,11 @@ export const useWebSocket = () => {
           if (callbacks.onLeftCampaign) {
             // eslint-disable-next-line @typescript-eslint/naming-convention
             callbacks.onLeftCampaign(message.data as { campaign_id: string });
+          }
+          break;
+        case "preview:command":
+          if (callbacks.onPreviewCommand) {
+            callbacks.onPreviewCommand(message.data as PreviewCommandEvent);
           }
           break;
         default:

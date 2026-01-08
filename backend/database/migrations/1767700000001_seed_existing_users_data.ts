@@ -15,7 +15,7 @@ export default class extends BaseSchema {
       UPDATE streamers
       SET token_expires_at = NOW()
       WHERE token_expires_at IS NULL
-        AND encrypted_access_token IS NOT NULL
+        AND access_token_encrypted IS NOT NULL
     `)
 
     // 2. Créer notification_preferences pour les users qui n'en ont pas

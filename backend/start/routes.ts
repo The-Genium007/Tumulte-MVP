@@ -180,6 +180,47 @@ router
 
     // Overlay URL
     router.get('/overlay-url', '#controllers/streamer/campaigns_controller.getOverlayUrl')
+
+    // Overlay Studio - Configurations (avec rate limiting sur les mutations)
+    router.get(
+      '/overlay-studio/configs',
+      '#controllers/overlay-studio/overlay_studio_controller.index'
+    )
+    router
+      .post(
+        '/overlay-studio/configs',
+        '#controllers/overlay-studio/overlay_studio_controller.store'
+      )
+      .use(middleware.rateLimit())
+    router.get(
+      '/overlay-studio/configs/:id',
+      '#controllers/overlay-studio/overlay_studio_controller.show'
+    )
+    router
+      .put(
+        '/overlay-studio/configs/:id',
+        '#controllers/overlay-studio/overlay_studio_controller.update'
+      )
+      .use(middleware.rateLimit())
+    router
+      .delete(
+        '/overlay-studio/configs/:id',
+        '#controllers/overlay-studio/overlay_studio_controller.destroy'
+      )
+      .use(middleware.rateLimit())
+    router
+      .post(
+        '/overlay-studio/configs/:id/activate',
+        '#controllers/overlay-studio/overlay_studio_controller.activate'
+      )
+      .use(middleware.rateLimit())
+    // Preview command - synchronisation overlay OBS (rate limited)
+    router
+      .post(
+        '/overlay-studio/preview-command',
+        '#controllers/overlay-studio/overlay_studio_controller.sendPreviewCommand'
+      )
+      .use(middleware.rateLimit())
   })
   .prefix('/streamer')
   .use(middleware.auth({ guards: ['web', 'api'] }))
@@ -195,6 +236,11 @@ router
     router.get(
       '/:streamerId/poll/:pollInstanceId',
       '#controllers/streamer/overlay_controller.pollResults'
+    )
+    // Overlay Studio - Config active (public)
+    router.get(
+      '/:streamerId/config',
+      '#controllers/overlay-studio/overlay_studio_controller.getActiveConfig'
     )
   })
   .prefix('/overlay')

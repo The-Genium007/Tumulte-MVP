@@ -5,6 +5,7 @@ import logger from '@adonisjs/core/services/logger'
 import env from '#start/env'
 import { user as User } from '#models/user'
 import { streamer as Streamer } from '#models/streamer'
+import { overlayConfig as OverlayConfig } from '#models/overlay_config'
 import { twitchAuthService as TwitchAuthService } from '#services/auth/twitch_auth_service'
 
 // Regex pour valider le format du state OAuth (64 caractères hex)
@@ -245,6 +246,16 @@ export default class AuthController {
           scopes: tokens.scope,
           isActive: true,
         })
+
+        // Créer la configuration overlay par défaut pour le nouveau streamer
+        await OverlayConfig.create({
+          streamerId: streamer.id,
+          name: 'Configuration par défaut',
+          config: OverlayConfig.getDefaultConfigWithPoll(),
+          isActive: true,
+        })
+
+        logger.info(`Default overlay config created for streamer ${streamer.id}`)
       }
 
       // Authentifier l'utilisateur (créer la session avec Remember Me pour 7 jours)

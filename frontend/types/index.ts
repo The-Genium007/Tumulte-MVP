@@ -238,3 +238,28 @@ export interface ReadinessChangeEvent {
   isReady: boolean;
   timestamp: string;
 }
+
+// Preview command types (for overlay studio sync)
+export type PreviewCommand =
+  | "playEntry"
+  | "playLoop"
+  | "stopLoop"
+  | "playResult"
+  | "playExit"
+  | "playFullSequence"
+  | "reset";
+
+export interface PreviewMockData {
+  question: string;
+  options: string[];
+  percentages: number[];
+  timeRemaining: number;
+  totalDuration: number;
+}
+
+export interface PreviewCommandEvent {
+  elementId: string;
+  command: PreviewCommand;
+  duration?: number;
+  mockData?: PreviewMockData;
+}

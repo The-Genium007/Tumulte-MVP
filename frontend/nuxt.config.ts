@@ -4,7 +4,11 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   ssr: false, // SPA mode - variables must be set at build time
 
-  modules: ["@nuxt/ui", "@pinia/nuxt", "@vite-pwa/nuxt"],
+  modules: ["@nuxt/ui", "@pinia/nuxt", "@vite-pwa/nuxt", "@tresjs/nuxt"],
+
+  tres: {
+    devtools: true,
+  },
 
   runtimeConfig: {
     public: {

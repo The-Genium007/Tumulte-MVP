@@ -152,12 +152,11 @@
                   </div>
                 </div>
                 <UButton
-                  v-if="isDev"
                   color="info"
                   size="lg"
-                  icon="i-lucide-external-link"
+                  icon="i-lucide-eye"
                   label="Prévisualiser"
-                  @click="previewOverlay"
+                  to="/streamer/overlay-preview"
                 />
                 <UButton
                   color="primary"
@@ -188,14 +187,14 @@
               />
             </div>
 
-            <!-- Bouton dev pour accéder au maker -->
+            <!-- Bouton dev pour accéder au studio -->
             <div v-if="isDev" class="pt-4 border-t border-gray-700">
               <UButton
                 color="warning"
                 variant="soft"
                 icon="i-lucide-palette"
-                label="Overlay Maker"
-                to="/streamer/maker"
+                label="Overlay Studio"
+                to="/streamer/studio"
               />
             </div>
           </div>
@@ -312,11 +311,6 @@ const copyOverlayUrl = async () => {
   }
 };
 
-const previewOverlay = () => {
-  if (overlayUrl.value) {
-    window.open(overlayUrl.value, "_blank", "width=1920,height=1080");
-  }
-};
 
 // Charger le nombre d'invitations
 const loadInvitationCount = async () => {
