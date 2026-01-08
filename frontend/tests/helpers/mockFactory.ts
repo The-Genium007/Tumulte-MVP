@@ -14,7 +14,6 @@ import type { Campaign as ApiCampaign } from "~/types/api";
 export function createMockUser(overrides: Partial<User> = {}): User {
   return {
     id: "user-123",
-    role: "MJ",
     displayName: "Test User",
     email: "test@example.com",
     streamer: {

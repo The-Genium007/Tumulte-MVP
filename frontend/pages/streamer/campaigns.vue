@@ -193,7 +193,7 @@
                     </div>
                     <div class="flex items-center gap-2 text-xs text-gray-500">
                       <UIcon name="i-lucide-calendar-check" class="size-3" />
-                      <span>Rejoint le {{ formatDate(campaign.joinedAt!) }}</span>
+                      <span>Rejoint le {{ formatDate(campaign.joinedAt) }}</span>
                     </div>
                   </div>
                 </div>
@@ -224,7 +224,7 @@ import type { Campaign, CampaignInvitation, AuthorizationStatus } from "@/types"
 
 definePageMeta({
   layout: "authenticated" as const,
-  middleware: ["auth", "streamer-only"],
+  middleware: ["auth"],
 });
 
 const {
@@ -381,8 +381,10 @@ const handleLeave = async (id: string, name: string) => {
   }
 };
 
-const formatDate = (dateString: string) => {
+const formatDate = (dateString: string | undefined | null) => {
+  if (!dateString) return "Date inconnue";
   const date = new Date(dateString);
+  if (isNaN(date.getTime())) return "Date invalide";
   return new Intl.DateTimeFormat("fr-FR", {
     day: "2-digit",
     month: "long",

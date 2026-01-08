@@ -151,69 +151,6 @@ describe("Auth Store", () => {
     await expect(store.logout()).rejects.toThrow("Network error");
   });
 
-  test("switchRole() should switch to MJ and redirect", async () => {
-    const mockUser = createMockUser({ role: "MJ" });
-    vi.mocked(fetch).mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockUser,
-    } as Response);
-
-    const store = useAuthStore();
-    await store.switchRole("MJ");
-
-    expect(fetch).toHaveBeenCalledWith(
-      "http://localhost:3333/api/v2/auth/switch-role",
-      {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ role: "MJ" }),
-      },
-    );
-    expect(store.user?.role).toBe("MJ");
-    expect(mockRouter.push).toHaveBeenCalledWith("/mj");
-  });
-
-  test("switchRole() should switch to STREAMER and redirect", async () => {
-    const mockUser = createMockUser({ role: "STREAMER" });
-    vi.mocked(fetch).mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockUser,
-    } as Response);
-
-    const store = useAuthStore();
-    await store.switchRole("STREAMER");
-
-    expect(fetch).toHaveBeenCalledWith(
-      "http://localhost:3333/api/v2/auth/switch-role",
-      {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ role: "STREAMER" }),
-      },
-    );
-    expect(store.user?.role).toBe("STREAMER");
-    expect(mockRouter.push).toHaveBeenCalledWith("/streamer");
-  });
-
-  test("switchRole() should handle errors", async () => {
-    vi.mocked(fetch).mockResolvedValueOnce({
-      ok: false,
-      status: 400,
-    } as Response);
-
-    const store = useAuthStore();
-
-    await expect(store.switchRole("MJ")).rejects.toThrow(
-      "Failed to switch role",
-    );
-  });
-
   test("isAuthenticated should be true when user exists", () => {
     const store = useAuthStore();
     store.user = createMockUser();
@@ -226,29 +163,5 @@ describe("Auth Store", () => {
     store.user = null;
 
     expect(store.isAuthenticated).toBe(false);
-  });
-
-  test("isMJ getter should return true for MJ role", () => {
-    const store = useAuthStore();
-    store.user = createMockUser({ role: "MJ" });
-
-    expect(store.isMJ).toBe(true);
-    expect(store.isStreamer).toBe(false);
-  });
-
-  test("isStreamer getter should return true for STREAMER role", () => {
-    const store = useAuthStore();
-    store.user = createMockUser({ role: "STREAMER" });
-
-    expect(store.isStreamer).toBe(true);
-    expect(store.isMJ).toBe(false);
-  });
-
-  test("isMJ and isStreamer should be false when user is null", () => {
-    const store = useAuthStore();
-    store.user = null;
-
-    expect(store.isMJ).toBe(false);
-    expect(store.isStreamer).toBe(false);
   });
 });

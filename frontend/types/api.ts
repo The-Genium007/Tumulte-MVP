@@ -11,7 +11,6 @@ export interface User {
   id: string;
   displayName: string;
   email: string | null;
-  role: "MJ" | "STREAMER";
   createdAt: string;
   updatedAt: string;
 }

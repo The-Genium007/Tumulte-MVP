@@ -174,7 +174,6 @@ describe("supportErrorMessages", () => {
       expect(SUPPORT_ERROR_MESSAGES.auth_login).toBeDefined();
       expect(SUPPORT_ERROR_MESSAGES.auth_callback).toBeDefined();
       expect(SUPPORT_ERROR_MESSAGES.auth_logout).toBeDefined();
-      expect(SUPPORT_ERROR_MESSAGES.auth_switch_role).toBeDefined();
       expect(SUPPORT_ERROR_MESSAGES.auth_fetch_me).toBeDefined();
     });
 

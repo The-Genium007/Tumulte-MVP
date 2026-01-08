@@ -267,14 +267,6 @@ class TwitchAuthService {
       throw new Error('Failed to revoke token')
     }
   }
-
-  /**
-   * Vérifie si un ID Twitch est un MJ
-   */
-  isMJ(twitchUserId: string): boolean {
-    const mjIds = env.get('MJ_TWITCH_IDS', '').split(',').filter(Boolean)
-    return mjIds.includes(twitchUserId)
-  }
 }
 
 export { TwitchAuthService as twitchAuthService }

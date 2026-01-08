@@ -8,14 +8,14 @@ export const useNotifications = () => {
   const invitationCount = ref(0);
   const loading = ref(false);
   const { fetchInvitations } = useCampaigns();
-  const { isStreamer } = useAuth();
+  const { isAuthenticated } = useAuth();
 
   /**
    * Rafraîchit le compteur d'invitations en attente
    */
   const refreshInvitations = async () => {
-    // Ne charger les invitations que pour les streamers
-    if (!isStreamer.value) {
+    // Ne charger les invitations que pour les utilisateurs authentifiés
+    if (!isAuthenticated.value) {
       invitationCount.value = 0;
       return;
     }
