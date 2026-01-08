@@ -3,13 +3,17 @@ import type { NextFn } from '@adonisjs/core/types/http'
 import type { UserRole } from '#models/user'
 
 /**
- * Role middleware is used to restrict access to routes based on user role
+ * Role middleware - currently disabled to allow all authenticated users
+ * to access both MJ and Streamer sections.
+ *
+ * Previously restricted access based on user role, but now any authenticated
+ * user can access all parts of the application.
  */
 export default class RoleMiddleware {
   async handle(
     ctx: HttpContext,
     next: NextFn,
-    options: {
+    _options: {
       role: UserRole
     }
   ) {
@@ -19,9 +23,8 @@ export default class RoleMiddleware {
       return ctx.response.unauthorized({ error: 'Unauthorized' })
     }
 
-    if (user.role !== options.role) {
-      return ctx.response.forbidden({ error: 'Access denied: insufficient permissions' })
-    }
+    // Role check disabled - all authenticated users can access all sections
+    // Previously: if (user.role !== options.role) { return forbidden }
 
     return next()
   }

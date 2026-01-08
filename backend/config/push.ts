@@ -1,4 +1,5 @@
 import webPush from 'web-push'
+import env from '#start/env'
 
 /**
  * Configuration des notifications push avec VAPID
@@ -25,8 +26,9 @@ function initPushConfig(): PushConfig {
     return cachedConfig
   }
 
-  const vapidPublicKey = process.env.VAPID_PUBLIC_KEY
-  const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY
+  // Use AdonisJS env helper instead of process.env for proper loading
+  const vapidPublicKey = env.get('VAPID_PUBLIC_KEY')
+  const vapidPrivateKey = env.get('VAPID_PRIVATE_KEY')
 
   if (!vapidPublicKey || !vapidPrivateKey) {
     process.stderr.write(
@@ -44,10 +46,10 @@ function initPushConfig(): PushConfig {
   }
 
   // VAPID subject doit être une URL https: ou mailto:
-  let vapidSubject = process.env.VAPID_SUBJECT
+  let vapidSubject = env.get('VAPID_SUBJECT')
 
   if (!vapidSubject) {
-    const frontendUrl = process.env.FRONTEND_URL
+    const frontendUrl = env.get('FRONTEND_URL')
     if (frontendUrl && frontendUrl.startsWith('https://')) {
       vapidSubject = frontendUrl
     } else {
