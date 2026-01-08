@@ -239,6 +239,7 @@ export class PushNotificationService {
     campaignName: string,
     issues: string[]
   ): Promise<void> {
+    /* eslint-disable camelcase */
     const issueMessages: Record<string, string> = {
       token_expired: 'Reconnexion Twitch requise',
       token_invalid: 'Reconnexion Twitch requise',
@@ -248,6 +249,7 @@ export class PushNotificationService {
       authorization_expired: 'Autorisation expirée',
       streamer_inactive: 'Compte désactivé',
     }
+    /* eslint-enable camelcase */
 
     const readableIssues = issues.map((i) => issueMessages[i] || i)
     const uniqueIssues = [...new Set(readableIssues)]

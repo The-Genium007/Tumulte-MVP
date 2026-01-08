@@ -66,6 +66,7 @@ export default class ErrorHandlerMiddleware {
    * Messages d'erreur sûrs à exposer au client en production
    * Ces messages ne révèlent pas d'informations sensibles
    */
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   private static readonly SAFE_ERROR_PATTERNS = [
     'not found',
     'unauthorized',

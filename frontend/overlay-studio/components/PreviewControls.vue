@@ -109,7 +109,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from "vue";
-import type { OverlayElement, PollProperties } from "../types";
+import type { OverlayElement } from "../types";
 import type { AnimationState } from "../composables/useAnimationController";
 
 const props = defineProps<{

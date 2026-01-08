@@ -593,7 +593,7 @@ const deleteConfigItem = async (id: string) => {
 
 // Vérifier si une configuration peut être supprimée
 // La configuration par défaut (la seule restante) ne peut pas être supprimée
-const canDeleteConfig = (config: { id: string; isActive: boolean }): boolean => {
+const canDeleteConfig = (_config: { id: string; isActive: boolean }): boolean => {
   // On ne peut pas supprimer s'il n'y a qu'une seule configuration
   if (api.configs.value.length <= 1) {
     return false;

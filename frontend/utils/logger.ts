@@ -3,8 +3,6 @@
  * Only logs in development mode to prevent information leakage in production
  */
 
-type LogLevel = "debug" | "info" | "warn" | "error";
-
 interface LoggerOptions {
   prefix?: string;
 }
