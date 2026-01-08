@@ -21,10 +21,6 @@ const mockUser = ref({
   },
 });
 const mockLogout = vi.fn();
-const mockSwitching = ref(false);
-const mockCurrentRole = ref("MJ");
-const mockTargetRoleLabel = ref("Streamer");
-const mockSwitchToOppositeRole = vi.fn();
 const mockInvitationCount = ref(0);
 const mockHasInvitations = ref(false);
 
@@ -33,15 +29,6 @@ vi.mock("@/composables/useAuth", () => ({
   useAuth: () => ({
     user: mockUser,
     logout: mockLogout,
-  }),
-}));
-
-vi.mock("@/composables/useRoleSwitch", () => ({
-  useRoleSwitch: () => ({
-    switching: mockSwitching,
-    currentRole: mockCurrentRole,
-    targetRoleLabel: mockTargetRoleLabel,
-    switchToOppositeRole: mockSwitchToOppositeRole,
   }),
 }));
 
@@ -80,9 +67,6 @@ describe("UserMenu Component", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Reset refs
-    mockSwitching.value = false;
-    mockCurrentRole.value = "MJ";
-    mockTargetRoleLabel.value = "Streamer";
     mockInvitationCount.value = 0;
     mockHasInvitations.value = false;
     mockPush.mockClear();
@@ -150,24 +134,6 @@ describe("UserMenu Component", () => {
     expect(wrapper.text()).toContain("TestUser");
   });
 
-  test("should display current role", async () => {
-    const wrapper = mount(UserMenu, {
-      global: {
-        components: mockComponents,
-        stubs: {
-          Transition: false,
-        },
-      },
-    });
-
-    await wrapper
-      .find("button[aria-label='Menu utilisateur']")
-      .trigger("click");
-    await wrapper.vm.$nextTick();
-
-    expect(wrapper.text()).toContain("Mode MJ");
-  });
-
   test("should show invitation badge when hasInvitations is true", () => {
     mockHasInvitations.value = true;
     mockInvitationCount.value = 3;
@@ -201,7 +167,7 @@ describe("UserMenu Component", () => {
     expect(badges.length).toBe(0);
   });
 
-  test("should display home link for MJ", async () => {
+  test("should display home link (Accueil)", async () => {
     const wrapper = mount(UserMenu, {
       global: {
         components: mockComponents,
@@ -216,32 +182,12 @@ describe("UserMenu Component", () => {
       .trigger("click");
     await wrapper.vm.$nextTick();
 
-    const homeLink = wrapper.find("a[href='/mj']");
-    expect(homeLink.exists()).toBe(true);
-  });
-
-  test("should display home link for Streamer", async () => {
-    mockCurrentRole.value = "STREAMER";
-
-    const wrapper = mount(UserMenu, {
-      global: {
-        components: mockComponents,
-        stubs: {
-          Transition: false,
-        },
-      },
-    });
-
-    await wrapper
-      .find("button[aria-label='Menu utilisateur']")
-      .trigger("click");
-    await wrapper.vm.$nextTick();
-
+    expect(wrapper.text()).toContain("Accueil");
     const homeLink = wrapper.find("a[href='/streamer']");
     expect(homeLink.exists()).toBe(true);
   });
 
-  test("should display switch mode button", async () => {
+  test("should display Mes Campagnes link", async () => {
     const wrapper = mount(UserMenu, {
       global: {
         components: mockComponents,
@@ -256,10 +202,12 @@ describe("UserMenu Component", () => {
       .trigger("click");
     await wrapper.vm.$nextTick();
 
-    expect(wrapper.text()).toContain("Passer en Streamer");
+    expect(wrapper.text()).toContain("Mes Campagnes");
+    const campaignsLink = wrapper.find("a[href='/streamer/campaigns']");
+    expect(campaignsLink.exists()).toBe(true);
   });
 
-  test("should call switchToOppositeRole when switch button clicked", async () => {
+  test("should display MJ dashboard link", async () => {
     const wrapper = mount(UserMenu, {
       global: {
         components: mockComponents,
@@ -274,19 +222,12 @@ describe("UserMenu Component", () => {
       .trigger("click");
     await wrapper.vm.$nextTick();
 
-    const buttons = wrapper.findAll("button");
-    const switchButton = buttons.find((btn) =>
-      btn.text().includes("Passer en"),
-    );
-
-    await switchButton?.trigger("click");
-
-    expect(mockSwitchToOppositeRole).toHaveBeenCalled();
+    expect(wrapper.text()).toContain("Tableau de bord MJ");
+    const mjLink = wrapper.find("a[href='/mj']");
+    expect(mjLink.exists()).toBe(true);
   });
 
-  test("should disable switch button when switching", async () => {
-    mockSwitching.value = true;
-
+  test("should display settings link", async () => {
     const wrapper = mount(UserMenu, {
       global: {
         components: mockComponents,
@@ -301,12 +242,9 @@ describe("UserMenu Component", () => {
       .trigger("click");
     await wrapper.vm.$nextTick();
 
-    const buttons = wrapper.findAll("button");
-    const switchButton = buttons.find((btn) =>
-      btn.text().includes("Passer en"),
-    );
-
-    expect(switchButton?.attributes("disabled")).toBeDefined();
+    expect(wrapper.text()).toContain("Réglages");
+    const settingsLink = wrapper.find("a[href='/settings']");
+    expect(settingsLink.exists()).toBe(true);
   });
 
   test("should display logout button", async () => {

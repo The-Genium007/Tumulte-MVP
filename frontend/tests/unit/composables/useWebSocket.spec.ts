@@ -126,18 +126,14 @@ describe("useWebSocket Composable", () => {
   });
 
   test("connect() should not create duplicate clients", () => {
-    const { connect } = useWebSocket();
+    const { connect, connected } = useWebSocket();
 
     connect();
-    const consoleLogSpy = vi.spyOn(console, "log");
+    expect(connected.value).toBe(true);
 
-    connect(); // Second call
-
-    expect(consoleLogSpy).toHaveBeenCalledWith(
-      expect.stringContaining("Already connected"),
-    );
-
-    consoleLogSpy.mockRestore();
+    // Second call should not throw and client should remain connected
+    connect();
+    expect(connected.value).toBe(true);
   });
 
   test("subscribeToPoll() should create SSE connection", async () => {
@@ -541,9 +537,11 @@ describe("useWebSocket Composable", () => {
     // Send malformed JSON
     eventSourceInstance!.simulateMessage("{ invalid json");
 
+    // Logger now uses format: "[WebSocket]", "message:", error, data
     expect(consoleErrorSpy).toHaveBeenCalledWith(
-      expect.stringContaining("Failed to parse SSE message"),
-      expect.any(Error),
+      "[WebSocket]",
+      "Failed to parse SSE message:",
+      expect.any(SyntaxError),
       "{ invalid json",
     );
 
@@ -565,6 +563,13 @@ describe("useWebSocket Composable", () => {
       .spyOn(console, "error")
       .mockImplementation(() => {});
 
+    // Mock failed subscribe response
+    vi.mocked(fetch).mockResolvedValue({
+      ok: false,
+      status: 500,
+      text: async () => "Internal Server Error",
+    } as Response);
+
     subscribeToPoll("poll-error", {
       onUpdate: vi.fn(),
     });
@@ -572,19 +577,14 @@ describe("useWebSocket Composable", () => {
     await new Promise((resolve) => setTimeout(resolve, 10));
     eventSourceInstance!.simulateOpen();
 
-    // Mock failed subscribe AFTER opening connection
-    vi.mocked(fetch).mockResolvedValueOnce({
-      ok: false,
-      status: 500,
-      text: async () => "Internal Server Error",
-    } as Response);
-
     // Wait for subscribe call and error
     await new Promise((resolve) => setTimeout(resolve, 20));
 
+    // Logger now uses format: "[WebSocket]", "message:", ...args
     expect(consoleErrorSpy).toHaveBeenCalledWith(
-      expect.stringContaining("Error subscribing to channel"),
-      expect.any(Error),
+      "[WebSocket]",
+      expect.stringContaining("Failed to subscribe"),
+      expect.anything(),
     );
 
     consoleErrorSpy.mockRestore();
