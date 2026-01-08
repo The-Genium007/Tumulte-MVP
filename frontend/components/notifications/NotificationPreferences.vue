@@ -54,7 +54,7 @@
           />
         </div>
 
-        <UDivider />
+        <USeparator />
 
         <!-- Toggles par type -->
         <div class="space-y-4">
@@ -77,7 +77,7 @@
           </div>
         </div>
 
-        <UDivider />
+        <USeparator />
 
         <!-- Liste des appareils -->
         <div v-if="subscriptions.length > 0" class="space-y-4">

@@ -257,7 +257,7 @@ import type { AuthorizationStatus } from "@/types/index";
 
 definePageMeta({
   layout: "authenticated" as const,
-  middleware: ["auth", "streamer-only"],
+  middleware: ["auth"],
 });
 
 const config = useRuntimeConfig();

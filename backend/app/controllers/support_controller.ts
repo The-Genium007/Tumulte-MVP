@@ -29,12 +29,11 @@ export default class SupportController {
       appVersion: process.env.npm_package_version,
     }
 
-    if (user.role === 'MJ') {
-      const [aggregate] = await Campaign.query().where('ownerId', user.id).count('* as total')
-      backendContext.campaignCount = Number(
-        aggregate?.$extras?.total ?? aggregate?.$extras?.count ?? 0
-      )
-    }
+    // Count campaigns owned by user
+    const [campaignAggregate] = await Campaign.query().where('ownerId', user.id).count('* as total')
+    backendContext.campaignCount = Number(
+      campaignAggregate?.$extras?.total ?? campaignAggregate?.$extras?.count ?? 0
+    )
 
     if (user.streamer) {
       const [aggregate] = await CampaignMembership.query()
@@ -102,7 +101,6 @@ export default class SupportController {
           logs,
           userContext: {
             userId: user.id,
-            role: user.role,
             displayName: user.displayName,
           },
         },

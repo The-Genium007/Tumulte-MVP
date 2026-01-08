@@ -103,7 +103,6 @@ export const useSupportReporter = () => {
   const buildStoreSnapshot = () => ({
     auth: {
       userId: authStore.user?.id ?? null,
-      role: authStore.user?.role ?? null,
       displayName:
         // eslint-disable-next-line @typescript-eslint/naming-convention
         (authStore.user as unknown as { display_name?: string })

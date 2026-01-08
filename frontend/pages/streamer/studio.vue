@@ -353,7 +353,7 @@ import type { OverlayElementType } from "~/overlay-studio/types";
 
 definePageMeta({
   layout: "studio" as const,
-  middleware: ["auth", "streamer-only"],
+  middleware: ["auth"],
 });
 
 const store = useOverlayStudioStore();

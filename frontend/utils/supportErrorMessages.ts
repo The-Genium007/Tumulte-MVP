@@ -6,11 +6,10 @@
 /* eslint-disable camelcase */
 
 export type SupportActionType =
-  // ===== AUTHENTIFICATION (5) =====
+  // ===== AUTHENTIFICATION (4) =====
   | "auth_login"
   | "auth_callback"
   | "auth_logout"
-  | "auth_switch_role"
   | "auth_fetch_me"
 
   // ===== CAMPAGNES MJ (8) =====
@@ -122,7 +121,6 @@ export const SUPPORT_ERROR_MESSAGES: Record<SupportActionType, string> = {
   auth_login: "Une erreur est survenue lors de la connexion.",
   auth_callback: "Une erreur est survenue lors du retour Twitch.",
   auth_logout: "Une erreur est survenue lors de la déconnexion.",
-  auth_switch_role: "Une erreur est survenue lors du changement de rôle.",
   auth_fetch_me: "Une erreur est survenue lors du chargement du profil.",
 
   // ===== CAMPAGNES MJ =====
@@ -270,7 +268,6 @@ export const ACTION_TYPE_LABELS: Record<SupportActionType, string> = {
   auth_login: "Connexion",
   auth_callback: "Callback Twitch",
   auth_logout: "Déconnexion",
-  auth_switch_role: "Changement rôle",
   auth_fetch_me: "Profil",
 
   // Campaigns
@@ -401,7 +398,6 @@ export const ACTION_CATEGORIES: Record<SupportActionType, ActionCategory> = {
   auth_login: "auth",
   auth_callback: "auth",
   auth_logout: "auth",
-  auth_switch_role: "auth",
   auth_fetch_me: "auth",
 
   campaign_fetch: "campaign",

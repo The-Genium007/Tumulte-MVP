@@ -25,18 +25,10 @@
             </div>
           </template>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
               <p class="text-sm text-gray-400 mb-1">Nom du compte</p>
               <p class="text-lg font-semibold text-white">{{ user?.displayName }}</p>
-            </div>
-            <div>
-              <p class="text-sm text-gray-400 mb-1">Rôle</p>
-              <UBadge
-                :label="user?.role === 'MJ' ? 'Maître du Jeu' : 'Streamer'"
-                :color="user?.role === 'MJ' ? 'primary' : 'info'"
-                variant="soft"
-              />
             </div>
             <div>
               <p class="text-sm text-gray-400 mb-1">Email</p>
@@ -44,8 +36,8 @@
             </div>
           </div>
 
-          <!-- Informations Twitch pour les streamers -->
-          <div v-if="user?.role === 'STREAMER' && user?.streamer" class="mt-6 pt-6 border-t border-gray-700">
+          <!-- Informations Twitch -->
+          <div v-if="user?.streamer" class="mt-6 pt-6 border-t border-gray-700">
             <h3 class="text-lg font-semibold text-white mb-4">Informations Twitch</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
@@ -91,8 +83,8 @@
           </template>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <!-- Twitch (si streamer) -->
-            <div v-if="user?.role === 'STREAMER'" class="p-4 rounded-lg bg-gray-800/30 border border-gray-700">
+            <!-- Twitch -->
+            <div v-if="user?.streamer" class="p-4 rounded-lg bg-gray-800/30 border border-gray-700">
               <div class="flex items-center justify-between mb-3">
                 <div class="flex items-center gap-3">
                   <div class="bg-purple-500/10 p-2 rounded-lg">
@@ -176,7 +168,7 @@
         <!-- Grille des zones de danger -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <!-- Révocation de compte -->
-          <UCard class="border-error-500/50" :class="{ 'md:col-span-2': user?.role !== 'STREAMER' }">
+          <UCard class="border-error-500/50">
           <template #header>
             <div class="flex items-center gap-3">
               <div class="bg-error-500/10 p-3 rounded-xl">
@@ -210,7 +202,7 @@
         </UCard>
 
           <!-- Suppression de compte -->
-          <UCard class="border-error-500/50" :class="{ 'md:col-span-2': user?.role !== 'STREAMER' }">
+          <UCard class="border-error-500/50">
           <template #header>
             <div class="flex items-center gap-3">
               <div class="bg-error-500/10 p-3 rounded-xl">
@@ -345,7 +337,7 @@
         </div>
       </template>
     </UModal>
-  
+
 </template>
 
 <script setup lang="ts">
@@ -371,14 +363,8 @@ const showRevokeModal = ref(false)
 const revokeLoading = ref(false)
 
 const goBackToDashboard = () => {
-  // Rediriger vers le dashboard approprié selon le rôle
-  if (user.value?.role === 'MJ') {
-    _router.push('/mj')
-  } else if (user.value?.role === 'STREAMER') {
-    _router.push('/streamer')
-  } else {
-    _router.push('/')
-  }
+  // Tous les utilisateurs vont vers /streamer
+  _router.push('/streamer')
 }
 
 const confirmRevokeTwitch = async () => {

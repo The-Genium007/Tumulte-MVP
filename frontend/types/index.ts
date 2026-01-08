@@ -1,7 +1,6 @@
 // User types
 export interface User {
   id: string;
-  role: "MJ" | "STREAMER";
   displayName: string;
   email: string | null;
   streamer: {

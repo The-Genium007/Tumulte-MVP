@@ -4,7 +4,6 @@ export class UserDto {
   id!: string
   displayName!: string
   email!: string | null
-  role!: 'MJ' | 'STREAMER'
   createdAt!: string
   updatedAt!: string
 
@@ -13,7 +12,6 @@ export class UserDto {
       id: user.id,
       displayName: user.displayName,
       email: user.email,
-      role: user.role,
       createdAt: user.createdAt.toISO() || '',
       updatedAt: user.updatedAt.toISO() || '',
     }

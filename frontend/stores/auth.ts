@@ -16,8 +16,6 @@ export const useAuthStore = defineStore("auth", () => {
 
   // Computed
   const isAuthenticated = computed(() => user.value !== null);
-  const isMJ = computed(() => user.value?.role === "MJ");
-  const isStreamer = computed(() => user.value?.role === "STREAMER");
 
   // Actions
   async function fetchMe(): Promise<void> {
@@ -61,36 +59,6 @@ export const useAuthStore = defineStore("auth", () => {
     }
   }
 
-  async function switchRole(newRole: "MJ" | "STREAMER"): Promise<void> {
-    try {
-      const response = await fetch(`${API_URL}/auth/switch-role`, {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ role: newRole }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to switch role");
-      }
-
-      user.value = await response.json();
-
-      // Rediriger vers la page appropriée
-      if (newRole === "MJ") {
-        _router.push("/mj");
-      } else {
-        _router.push("/streamer");
-      }
-    } catch (error) {
-      console.error("Switch role failed:", error);
-      triggerSupportForError("auth_switch_role", error);
-      throw error;
-    }
-  }
-
   return {
     // State
     user,
@@ -98,13 +66,10 @@ export const useAuthStore = defineStore("auth", () => {
 
     // Computed
     isAuthenticated,
-    isMJ,
-    isStreamer,
 
     // Actions
     fetchMe,
     loginWithTwitch,
     logout,
-    switchRole,
   };
 });

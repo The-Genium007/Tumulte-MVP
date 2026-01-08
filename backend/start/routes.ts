@@ -47,9 +47,6 @@ router
       .post('/logout', [authController, 'logout'])
       .use(middleware.auth({ guards: ['web', 'api'] }))
     router.get('/me', [authController, 'me']).use(middleware.auth({ guards: ['web', 'api'] }))
-    router
-      .post('/switch-role', [authController, 'switchRole'])
-      .use(middleware.auth({ guards: ['web', 'api'] }))
   })
   .prefix('/auth')
 

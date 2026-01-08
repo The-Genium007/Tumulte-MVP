@@ -29,11 +29,7 @@ export class UserRepository {
   /**
    * Créer un nouvel utilisateur
    */
-  async create(data: {
-    displayName: string
-    email?: string
-    role: 'MJ' | 'STREAMER'
-  }): Promise<User> {
+  async create(data: { displayName: string; email?: string }): Promise<User> {
     return await User.create(data)
   }
 
@@ -55,45 +51,12 @@ export class UserRepository {
   /**
    * Trouver ou créer un utilisateur par email
    */
-  async findOrCreate(data: {
-    displayName: string
-    email: string
-    role: 'MJ' | 'STREAMER'
-  }): Promise<User> {
+  async findOrCreate(data: { displayName: string; email: string }): Promise<User> {
     let user = await this.findByEmail(data.email)
 
     if (!user) {
       user = await this.create(data)
     }
-
-    return user
-  }
-
-  /**
-   * Vérifier si un utilisateur a le rôle MJ
-   */
-  async isMJ(userId: string): Promise<boolean> {
-    const user = await this.findById(userId)
-    return user?.role === 'MJ'
-  }
-
-  /**
-   * Vérifier si un utilisateur a le rôle STREAMER
-   */
-  async isStreamer(userId: string): Promise<boolean> {
-    const user = await this.findById(userId)
-    return user?.role === 'STREAMER'
-  }
-
-  /**
-   * Changer le rôle d'un utilisateur
-   */
-  async switchRole(userId: string, newRole: 'MJ' | 'STREAMER'): Promise<User | null> {
-    const user = await this.findById(userId)
-    if (!user) return null
-
-    user.role = newRole
-    await user.save()
 
     return user
   }

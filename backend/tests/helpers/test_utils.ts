@@ -9,12 +9,11 @@ import { DateTime } from 'luxon'
 
 /**
  * Factory: Create a test user with optional overrides
- * Note: User model only has id, role, displayName, email
+ * Note: User model only has id, displayName, email
  * Twitch info is in the Streamer model
  */
 export async function createTestUser(overrides: Partial<any> = {}): Promise<User> {
   const userData = {
-    role: overrides.role || 'MJ',
     displayName: overrides.displayName || faker.internet.username(),
     email: overrides.email || null,
     ...overrides,
@@ -48,7 +47,7 @@ export async function createTestStreamer(overrides: Partial<any> = {}): Promise<
   // Create associated user first if not provided
   let userId = overrides.userId
   if (!userId) {
-    const user = await createTestUser({ role: 'STREAMER' })
+    const user = await createTestUser()
     userId = user.id
   }
 
@@ -97,7 +96,7 @@ export async function createTestCampaign(overrides: Partial<any> = {}): Promise<
   // Create owner if not provided
   let ownerId = overrides.ownerId
   if (!ownerId) {
-    const owner = await createTestUser({ role: 'MJ' })
+    const owner = await createTestUser()
     ownerId = owner.id
   }
 
@@ -188,7 +187,7 @@ export async function createTestPollInstance(overrides: Partial<any> = {}): Prom
   // Get or create a user for createdBy
   let createdBy = overrides.createdBy
   if (!createdBy) {
-    const user = await createTestUser({ role: 'MJ' })
+    const user = await createTestUser()
     createdBy = user.id
   }
 
@@ -235,7 +234,7 @@ export async function createCampaignWithMembers(memberCount: number = 2): Promis
   members: CampaignMembership[]
   streamers: Streamer[]
 }> {
-  const owner = await createTestUser({ role: 'MJ' })
+  const owner = await createTestUser()
   const campaign = await createTestCampaign({ ownerId: owner.id })
 
   const streamers: Streamer[] = []

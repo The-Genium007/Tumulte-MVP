@@ -52,7 +52,6 @@ export default class AuthController {
   private formatUserResponse(user: User) {
     return {
       id: user.id,
-      role: user.role,
       displayName: user.displayName,
       email: user.email,
       streamer: user.streamer
@@ -193,10 +192,6 @@ export default class AuthController {
         scopes: tokens.scope,
       })
 
-      // Déterminer le rôle de l'utilisateur
-      const isMJ = this.twitchAuthService.isMJ(userInfo.id)
-      const role = isMJ ? 'MJ' : 'STREAMER'
-
       // Vérifier si un streamer existe déjà avec ce twitchUserId
       let streamer = await Streamer.query().where('twitchUserId', userInfo.id).first()
 
@@ -216,7 +211,6 @@ export default class AuthController {
         } else {
           // Corrige les anciens enregistrements sans user associé
           user = await User.create({
-            role,
             displayName: userInfo.displayName,
             email: userInfo.email,
           })
@@ -240,7 +234,6 @@ export default class AuthController {
       } else {
         // Créer un nouvel utilisateur
         user = await User.create({
-          role,
           displayName: userInfo.displayName,
           email: userInfo.email,
         })
@@ -273,7 +266,7 @@ export default class AuthController {
       // Authentifier l'utilisateur (créer la session avec Remember Me pour 7 jours)
       await auth.use('web').login(user, true)
 
-      logger.info(`User ${user.id} (${role}) logged in successfully`)
+      logger.info(`User ${user.id} logged in successfully`)
 
       // Rediriger vers le frontend avec une page intermédiaire qui gère la redirection
       // All users go to /streamer by default (role restrictions are disabled)
@@ -316,39 +309,7 @@ export default class AuthController {
   async me({ auth }: HttpContext) {
     const user = auth.user!
 
-    // Charger le streamer pour tous les utilisateurs (MJ et STREAMER)
-    await user.load((loader) => loader.load('streamer'))
-
-    return this.formatUserResponse(user)
-  }
-
-  /**
-   * Change le rôle de l'utilisateur connecté
-   */
-  async switchRole({ auth, request, response }: HttpContext) {
-    const user = auth.user!
-    const { role } = request.only(['role'])
-
-    // Valider le rôle
-    if (!['MJ', 'STREAMER'].includes(role)) {
-      return response.badRequest({ message: 'Rôle invalide. Doit être MJ ou STREAMER' })
-    }
-
-    // Si on passe à STREAMER, vérifier qu'un streamer existe
-    if (role === 'STREAMER') {
-      await user.load((loader) => loader.load('streamer'))
-      if (!user.streamer) {
-        return response.badRequest({ message: 'Aucun profil streamer associé à cet utilisateur' })
-      }
-    }
-
-    // Mettre à jour le rôle
-    user.role = role
-    await user.save()
-
-    logger.info(`User ${user.id} switched role to ${role}`)
-
-    // Charger le streamer pour tous les utilisateurs (MJ et STREAMER)
+    // Charger le streamer pour tous les utilisateurs
     await user.load((loader) => loader.load('streamer'))
 
     return this.formatUserResponse(user)
