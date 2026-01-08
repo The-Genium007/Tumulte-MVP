@@ -59,7 +59,7 @@
 - **Per-session Validation** - GM must authorize you before each session (prevents unwanted polls)
 - **Compatibility** - Works for Twitch Affiliates and Partners
 
-### Overlay Studio (Preview)
+### Overlay Studio (Preview developer)
 - **Visual Editor** - Design your poll overlay with real-time preview
 - **Custom Animations** - Entry, loop, result and exit animations
 - **OBS Integration** - Transparent overlay for Browser Source
@@ -194,7 +194,15 @@ docker compose exec backend node ace migration:status
 
 ## Roadmap
 
-Coming soon.
+> **Full roadmap**: [GitHub Project Board](https://github.com/users/The-Genium007/projects/4)
+
+- **v0.4.0** - Visual Identity
+- **v0.5.0** - VTT Integrations
+- **v0.6.0** - Gamification
+- **v0.7.0** - Gamification Advanced
+- **v0.8.0** - Advanced Overlay
+- **v0.9.0** - Multi-Platform
+- **v1.0.0** - Production Ready
 
 ---
 
