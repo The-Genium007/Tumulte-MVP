@@ -276,7 +276,8 @@ export default class AuthController {
       logger.info(`User ${user.id} (${role}) logged in successfully`)
 
       // Rediriger vers le frontend avec une page intermédiaire qui gère la redirection
-      const redirectPath = role === 'MJ' ? '/mj' : '/streamer'
+      // All users go to /streamer by default (role restrictions are disabled)
+      const redirectPath = '/streamer'
       const redirectUrl = `${env.get('FRONTEND_URL')}/auth/callback?redirect=${encodeURIComponent(redirectPath)}`
 
       logger.info({
