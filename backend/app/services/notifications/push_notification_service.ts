@@ -91,6 +91,11 @@ export class PushNotificationService {
 
     for (const subscription of subscriptions) {
       try {
+        logger.debug(
+          { subscriptionId: subscription.id, endpoint: subscription.endpoint.substring(0, 50) },
+          'Sending push to subscription'
+        )
+
         await webPush.sendNotification(
           {
             endpoint: subscription.endpoint,
@@ -105,18 +110,20 @@ export class PushNotificationService {
 
         await this.subscriptionRepository.updateLastUsed(subscription.id)
         sent++
+        logger.debug({ subscriptionId: subscription.id }, 'Push sent successfully')
       } catch (error) {
         const statusCode = (error as { statusCode?: number })?.statusCode
+        const errorMessage = (error as Error)?.message || 'Unknown error'
+
+        logger.error(
+          { subscriptionId: subscription.id, statusCode, errorMessage },
+          'Push notification failed'
+        )
 
         // 404 ou 410 = subscription expirée, on la supprime
         if (statusCode === 404 || statusCode === 410) {
           await this.subscriptionRepository.delete(subscription.id)
           logger.info({ subscriptionId: subscription.id }, 'Removed expired push subscription')
-        } else {
-          logger.error(
-            { error, subscriptionId: subscription.id },
-            'Failed to send push notification'
-          )
         }
         failed++
       }

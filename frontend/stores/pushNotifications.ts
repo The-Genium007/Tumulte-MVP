@@ -43,7 +43,13 @@ export const usePushNotificationsStore = defineStore(
     const loading = ref(false);
     const permissionStatus = ref<NotificationPermission>("default");
     const bannerDismissed = ref(false);
-    const currentBrowserEndpoint = ref<string | null>(null);
+
+    // État interne pour suivre l'endpoint du navigateur actuel
+    // Cet endpoint est récupéré directement depuis le PushManager du navigateur
+    const browserEndpoint = ref<string | null>(null);
+
+    // Flag pour savoir si l'initialisation a été faite
+    const initialized = ref(false);
 
     // Computed
     const isSupported = computed(
@@ -65,13 +71,79 @@ export const usePushNotificationsStore = defineStore(
       () => permissionStatus.value === "denied",
     );
 
-    // Vérifie si le navigateur actuel a une subscription push active
-    // On vérifie simplement si currentBrowserEndpoint est défini (= le navigateur a une subscription)
+    /**
+     * Vérifie si le navigateur actuel a une subscription push active ET enregistrée côté backend.
+     * Cette computed se base sur :
+     * 1. browserEndpoint : l'endpoint du navigateur (depuis PushManager)
+     * 2. subscriptions : la liste des subscriptions du backend
+     */
     const isCurrentBrowserSubscribed = computed(() => {
-      return !!currentBrowserEndpoint.value;
+      if (!browserEndpoint.value) return false;
+      return subscriptions.value.some(
+        (s) => s.endpoint === browserEndpoint.value,
+      );
     });
 
     // Actions
+
+    /**
+     * Récupère l'endpoint push du navigateur actuel depuis le PushManager.
+     * Cette fonction ne fait AUCUNE comparaison avec le backend, elle récupère juste l'état local.
+     */
+    async function refreshBrowserEndpoint(): Promise<void> {
+      if (!isSupported.value) {
+        browserEndpoint.value = null;
+        return;
+      }
+
+      try {
+        const registration = await navigator.serviceWorker.ready;
+        const pushSubscription =
+          await registration.pushManager.getSubscription();
+
+        browserEndpoint.value = pushSubscription?.endpoint ?? null;
+      } catch {
+        browserEndpoint.value = null;
+      }
+    }
+
+    /**
+     * Initialise le store : charge les données backend et l'état du navigateur.
+     * Cette fonction doit être appelée une seule fois au démarrage de l'app (après authentification).
+     */
+    async function initialize(): Promise<void> {
+      if (initialized.value) return;
+
+      try {
+        // Charger en parallèle :
+        // 1. L'état du navigateur (endpoint local)
+        // 2. Les données backend (subscriptions, preferences)
+        await Promise.all([
+          refreshBrowserEndpoint(),
+          fetchSubscriptions(),
+          fetchPreferences(),
+        ]);
+
+        // Mettre à jour le statut de permission
+        checkPermissionStatus();
+
+        initialized.value = true;
+      } catch (error) {
+        console.error("Failed to initialize push notifications:", error);
+        // On ne throw pas, l'app peut fonctionner sans les notifications
+      }
+    }
+
+    /**
+     * Reset le store (à appeler lors de la déconnexion)
+     */
+    function reset(): void {
+      subscriptions.value = [];
+      preferences.value = null;
+      initialized.value = false;
+      // On ne reset PAS browserEndpoint car il est lié au navigateur, pas à l'utilisateur
+    }
+
     async function fetchVapidPublicKey(): Promise<string> {
       if (vapidPublicKey.value) return vapidPublicKey.value;
 
@@ -225,7 +297,12 @@ export const usePushNotificationsStore = defineStore(
           throw new Error("Failed to register subscription");
         }
 
+        // Mettre à jour l'endpoint du navigateur
+        browserEndpoint.value = pushSubscription.endpoint;
+
+        // Recharger les subscriptions pour avoir l'ID et autres infos
         await fetchSubscriptions();
+
         return true;
       } catch (error) {
         console.error("Failed to subscribe to push notifications:", error);
@@ -245,19 +322,22 @@ export const usePushNotificationsStore = defineStore(
           await registration.pushManager.getSubscription();
 
         if (pushSubscription) {
-          // Désinscrire du navigateur
-          await pushSubscription.unsubscribe();
-
-          // Supprimer du backend
+          // Supprimer du backend d'abord
           await fetch(`${API_URL}/notifications/subscribe`, {
             method: "DELETE",
             credentials: "include",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ endpoint: pushSubscription.endpoint }),
           });
+
+          // Puis désinscrire du navigateur
+          await pushSubscription.unsubscribe();
         }
 
+        // Mettre à jour l'état local
+        browserEndpoint.value = null;
         await fetchSubscriptions();
+
         return true;
       } catch (error) {
         console.error("Failed to unsubscribe:", error);
@@ -283,8 +363,8 @@ export const usePushNotificationsStore = defineStore(
         // Si c'est le navigateur actuel, désabonner aussi localement
         if (
           subscriptionToDelete &&
-          currentBrowserEndpoint.value &&
-          subscriptionToDelete.endpoint === currentBrowserEndpoint.value
+          browserEndpoint.value &&
+          subscriptionToDelete.endpoint === browserEndpoint.value
         ) {
           try {
             const registration = await navigator.serviceWorker.ready;
@@ -296,7 +376,7 @@ export const usePushNotificationsStore = defineStore(
           } catch (unsubError) {
             console.warn("Failed to unsubscribe browser locally:", unsubError);
           }
-          currentBrowserEndpoint.value = null;
+          browserEndpoint.value = null;
         }
 
         await fetchSubscriptions();
@@ -345,54 +425,11 @@ export const usePushNotificationsStore = defineStore(
     }
 
     /**
-     * Vérifie si le navigateur actuel a une subscription push active
-     * et stocke l'endpoint pour comparaison.
-     * Détecte aussi les désynchronisations (subscription locale sans correspondance backend)
-     * et nettoie automatiquement les subscriptions orphelines.
+     * @deprecated Utiliser initialize() à la place qui charge tout correctement
+     * Conservé pour compatibilité avec le code existant
      */
     async function checkCurrentBrowserSubscription(): Promise<void> {
-      if (!isSupported.value) {
-        currentBrowserEndpoint.value = null;
-        return;
-      }
-
-      try {
-        const registration = await navigator.serviceWorker.ready;
-        const pushSubscription =
-          await registration.pushManager.getSubscription();
-
-        if (pushSubscription) {
-          const browserEndpoint = pushSubscription.endpoint;
-
-          // Vérifier si cette subscription existe côté backend
-          const existsInBackend = subscriptions.value.some(
-            (s) => s.endpoint === browserEndpoint,
-          );
-
-          if (existsInBackend) {
-            currentBrowserEndpoint.value = browserEndpoint;
-          } else {
-            // Subscription locale orpheline - désabonner pour resynchroniser
-            console.warn(
-              "[Push] Local subscription not found in backend, cleaning up...",
-            );
-            try {
-              await pushSubscription.unsubscribe();
-            } catch (unsubError) {
-              console.warn(
-                "Failed to unsubscribe orphan subscription:",
-                unsubError,
-              );
-            }
-            currentBrowserEndpoint.value = null;
-          }
-        } else {
-          currentBrowserEndpoint.value = null;
-        }
-      } catch (error) {
-        console.error("Failed to check browser subscription:", error);
-        currentBrowserEndpoint.value = null;
-      }
+      await refreshBrowserEndpoint();
     }
 
     return {
@@ -403,6 +440,7 @@ export const usePushNotificationsStore = defineStore(
       loading,
       permissionStatus,
       bannerDismissed,
+      initialized,
 
       // Computed
       isSupported,
@@ -414,6 +452,9 @@ export const usePushNotificationsStore = defineStore(
       isCurrentBrowserSubscribed,
 
       // Actions
+      initialize,
+      reset,
+      refreshBrowserEndpoint,
       fetchVapidPublicKey,
       fetchSubscriptions,
       fetchPreferences,
@@ -425,7 +466,7 @@ export const usePushNotificationsStore = defineStore(
       shouldShowPermissionBanner,
       dismissPermissionBanner,
       resetBannerDismissal,
-      checkCurrentBrowserSubscription,
+      checkCurrentBrowserSubscription, // deprecated
     };
   },
 );

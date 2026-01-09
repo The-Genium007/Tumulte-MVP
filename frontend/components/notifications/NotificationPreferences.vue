@@ -143,7 +143,7 @@ import type { NotificationPreferences, PushSubscription } from "@/types";
 
 const config = useRuntimeConfig();
 const toast = useToast();
-const isDev = process.env.NODE_ENV !== "production";
+const isDev = import.meta.dev;
 
 const {
   subscriptions,
@@ -152,12 +152,10 @@ const {
   isSupported,
   isCurrentBrowserSubscribed,
   isPermissionDenied,
-  fetchSubscriptions,
-  fetchPreferences,
+  initialize,
   updatePreferences,
   subscribe,
   deleteSubscription,
-  checkCurrentBrowserSubscription,
 } = usePushNotifications();
 
 const testLoading = ref(false);
@@ -211,12 +209,8 @@ watch(
 );
 
 onMounted(async () => {
-  try {
-    await Promise.all([fetchPreferences(), fetchSubscriptions()]);
-    await checkCurrentBrowserSubscription();
-  } catch (error) {
-    console.error("Failed to fetch notification settings:", error);
-  }
+  // initialize() charge tout en parallèle : subscriptions, preferences, et browserEndpoint
+  await initialize();
 });
 
 const handleGlobalToggle = async (value: boolean) => {
@@ -225,8 +219,6 @@ const handleGlobalToggle = async (value: boolean) => {
 
   if (value && !isCurrentBrowserSubscribed.value) {
     await subscribe();
-    // Après inscription, mettre à jour l'état du navigateur actuel
-    await checkCurrentBrowserSubscription();
   }
 };
 
@@ -240,8 +232,6 @@ const handleUpdate = async (
 
 const handleSubscribe = async () => {
   await subscribe();
-  // Après inscription, mettre à jour l'état du navigateur actuel
-  await checkCurrentBrowserSubscription();
 };
 
 const handleDeleteDevice = async (id: string) => {

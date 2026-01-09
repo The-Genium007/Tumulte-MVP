@@ -1,4 +1,3 @@
-import { onMounted } from "vue";
 import { storeToRefs } from "pinia";
 import { usePushNotificationsStore } from "@/stores/pushNotifications";
 
@@ -15,6 +14,7 @@ export function usePushNotifications() {
     loading,
     permissionStatus,
     bannerDismissed,
+    initialized,
     isSupported,
     isSubscribed,
     isPushEnabled,
@@ -24,12 +24,6 @@ export function usePushNotifications() {
     isCurrentBrowserSubscribed,
   } = storeToRefs(store);
 
-  // Initialiser le statut de permission et vérifier l'abonnement du navigateur au montage
-  onMounted(async () => {
-    store.checkPermissionStatus();
-    await store.checkCurrentBrowserSubscription();
-  });
-
   return {
     // State (refs)
     subscriptions,
@@ -37,6 +31,7 @@ export function usePushNotifications() {
     loading,
     permissionStatus,
     bannerDismissed,
+    initialized,
 
     // Computed (refs)
     isSupported,
@@ -48,6 +43,9 @@ export function usePushNotifications() {
     isCurrentBrowserSubscribed,
 
     // Actions
+    initialize: store.initialize,
+    reset: store.reset,
+    refreshBrowserEndpoint: store.refreshBrowserEndpoint,
     subscribe: store.subscribe,
     unsubscribe: store.unsubscribe,
     fetchSubscriptions: store.fetchSubscriptions,
@@ -58,6 +56,7 @@ export function usePushNotifications() {
     dismissPermissionBanner: store.dismissPermissionBanner,
     resetBannerDismissal: store.resetBannerDismissal,
     checkPermissionStatus: store.checkPermissionStatus,
+    // Deprecated - use initialize() instead
     checkCurrentBrowserSubscription: store.checkCurrentBrowserSubscription,
   };
 }

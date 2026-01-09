@@ -170,13 +170,25 @@ export default class NotificationsController {
    * POST /notifications/test
    * Disponible uniquement en mode développement
    */
-  async sendTestNotification({ auth, response }: HttpContext) {
+  async sendTestNotification({ auth, response, logger }: HttpContext) {
     // Route disponible uniquement en développement
     if (process.env.NODE_ENV === 'production') {
       return response.notFound({ error: 'Route non disponible' })
     }
 
     const userId = auth.user!.id
+    logger.info({ userId }, '[Test Push] Sending test notification')
+
+    // Vérifier les subscriptions de l'utilisateur
+    const subscriptions = await this.subscriptionRepository.findByUserId(userId)
+    logger.info({ userId, count: subscriptions.length }, '[Test Push] User subscriptions found')
+
+    if (subscriptions.length > 0) {
+      logger.info(
+        { endpoints: subscriptions.map((s) => s.endpoint.substring(0, 50) + '...') },
+        '[Test Push] Subscription endpoints'
+      )
+    }
 
     const result = await this.pushService.sendToUser(
       userId,

@@ -55,7 +55,7 @@ const {
   subscribe,
   shouldShowBanner,
   dismissPermissionBanner,
-  checkCurrentBrowserSubscription,
+  initialize,
 } = usePushNotifications();
 
 // En mode persistent : afficher tant que le navigateur n'est pas inscrit
@@ -71,7 +71,8 @@ const showBanner = computed(() => {
 // S'assurer que l'état du navigateur est à jour en mode persistent
 onMounted(async () => {
   if (props.persistent) {
-    await checkCurrentBrowserSubscription();
+    // initialize() charge subscriptions + browserEndpoint en parallèle
+    await initialize();
   }
 });
 
@@ -85,13 +86,12 @@ const handleEnable = async () => {
     showDeniedModal.value = true;
   }
 
-  // En mode persistent, on met à jour l'état du navigateur pour faire disparaître le banner
-  // En mode normal, on dismiss simplement le banner
-  if (props.persistent) {
-    await checkCurrentBrowserSubscription();
-  } else {
+  // En mode non-persistent, on dismiss simplement le banner
+  if (!props.persistent) {
     dismissPermissionBanner();
   }
+  // En mode persistent, isCurrentBrowserSubscribed est mis à jour automatiquement
+  // par subscribe() qui met à jour browserEndpoint
 };
 
 const handleDismiss = () => {
