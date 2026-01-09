@@ -144,7 +144,7 @@ export const useOverlayStudioStore = defineStore("overlayStudio", () => {
               winnerEnlarge: { scale: 1.1, duration: 0.3 },
               loserFadeOut: { opacity: 0.3, duration: 0.5 },
               sound: { enabled: true, volume: 0.8 },
-              displayDuration: 5,
+              displayDuration: 20,
             },
           },
           layout: {
