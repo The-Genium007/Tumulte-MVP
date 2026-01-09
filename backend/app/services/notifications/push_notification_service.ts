@@ -20,12 +20,7 @@ export class PushNotificationService {
   constructor() {
     this.subscriptionRepository = new PushSubscriptionRepository()
     this.preferenceRepository = new NotificationPreferenceRepository()
-
-    // S'assurer que la config VAPID est initialisée au démarrage
-    // L'accès au getter déclenche l'initialisation et l'appel à webPush.setVapidDetails()
-    if (!pushConfig.isConfigured) {
-      logger.warn('Push notifications are not configured - VAPID keys missing')
-    }
+    // Config VAPID initialisée de manière lazy lors de la première utilisation
   }
 
   /**
@@ -45,6 +40,12 @@ export class PushNotificationService {
     payload: PushPayload,
     bypassPreferences: boolean = false
   ): Promise<{ sent: number; failed: number }> {
+    // Vérifier que VAPID est configuré
+    if (!pushConfig.isConfigured) {
+      logger.warn('Push notification skipped: VAPID keys not configured')
+      return { sent: 0, failed: 0 }
+    }
+
     // Vérifier les préférences utilisateur (sauf si bypassPreferences)
     if (!bypassPreferences) {
       const preferences = await this.preferenceRepository.findByUserId(userId)
