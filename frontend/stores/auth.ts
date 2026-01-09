@@ -3,6 +3,7 @@ import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
 import type { User } from "@/types";
 import { useSupportTrigger } from "@/composables/useSupportTrigger";
+import { usePushNotificationsStore } from "@/stores/pushNotifications";
 
 export const useAuthStore = defineStore("auth", () => {
   const _router = useRouter();
@@ -49,6 +50,10 @@ export const useAuthStore = defineStore("auth", () => {
         method: "POST",
         credentials: "include",
       });
+
+      // Reset les stores dépendants de l'authentification
+      const pushStore = usePushNotificationsStore();
+      pushStore.reset();
 
       user.value = null;
       _router.push({ name: "login" });

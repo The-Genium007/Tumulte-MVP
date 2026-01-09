@@ -42,6 +42,8 @@ export class PushSubscriptionRepository {
 
   /**
    * Créer ou mettre à jour une subscription (upsert par endpoint)
+   * Note: Met à jour le userId si l'endpoint existe déjà pour un autre utilisateur
+   * (cas où l'utilisateur se reconnecte et obtient un nouvel ID)
    */
   async upsert(data: {
     userId: string
@@ -55,6 +57,7 @@ export class PushSubscriptionRepository {
 
     if (existing) {
       existing.merge({
+        userId: data.userId, // Important: mettre à jour le userId aussi
         p256dh: data.p256dh,
         auth: data.auth,
         userAgent: data.userAgent,

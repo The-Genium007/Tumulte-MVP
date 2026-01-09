@@ -38,10 +38,15 @@ export default class NotificationsController {
    * Inscrit un appareil aux notifications push
    * POST /notifications/subscribe
    */
-  async subscribe({ auth, request, response }: HttpContext) {
+  async subscribe({ auth, request, response, logger }: HttpContext) {
+    logger.info('[Push Subscribe] Request received')
     const result = subscribePushSchema.safeParse(request.body())
 
     if (!result.success) {
+      logger.error(
+        { errors: result.error.flatten().fieldErrors },
+        '[Push Subscribe] Validation failed'
+      )
       return response.badRequest({
         error: 'Données invalides',
         details: result.error.flatten().fieldErrors,
@@ -50,6 +55,10 @@ export default class NotificationsController {
 
     const { endpoint, keys, deviceName } = result.data
     const userId = auth.user!.id
+    logger.info(
+      { userId, endpoint: endpoint.substring(0, 50) },
+      '[Push Subscribe] Creating subscription'
+    )
 
     const subscription = await this.subscriptionRepository.upsert({
       userId,
@@ -59,6 +68,11 @@ export default class NotificationsController {
       userAgent: request.header('user-agent') || null,
       deviceName: deviceName || null,
     })
+
+    logger.info(
+      { subscriptionId: subscription.id },
+      '[Push Subscribe] Subscription created/updated'
+    )
 
     // S'assurer que les préférences existent
     await this.preferenceRepository.findOrCreate(userId)
@@ -93,9 +107,11 @@ export default class NotificationsController {
    * Liste les appareils inscrits de l'utilisateur
    * GET /notifications/subscriptions
    */
-  async listSubscriptions({ auth, response }: HttpContext) {
+  async listSubscriptions({ auth, response, logger }: HttpContext) {
     const userId = auth.user!.id
+    logger.info({ userId }, '[Push List] Fetching subscriptions')
     const subscriptions = await this.subscriptionRepository.findByUserId(userId)
+    logger.info({ userId, count: subscriptions.length }, '[Push List] Subscriptions found')
 
     return response.ok({
       data: PushSubscriptionDto.fromModelArray(subscriptions),

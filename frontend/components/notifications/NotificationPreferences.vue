@@ -143,7 +143,7 @@ import type { NotificationPreferences, PushSubscription } from "@/types";
 
 const config = useRuntimeConfig();
 const toast = useToast();
-const isDev = import.meta.dev;
+const isDev = import.meta.env.DEV;
 
 const {
   subscriptions,

@@ -165,16 +165,26 @@ export const usePushNotificationsStore = defineStore(
 
     async function fetchSubscriptions(): Promise<void> {
       try {
+        console.log("[Push] fetchSubscriptions() - calling backend...");
         const response = await fetch(`${API_URL}/notifications/subscriptions`, {
           credentials: "include",
         });
 
+        console.log(
+          "[Push] fetchSubscriptions() - response status:",
+          response.status,
+        );
         if (!response.ok) {
           throw new Error("Failed to fetch subscriptions");
         }
 
         const data = await response.json();
+        console.log("[Push] fetchSubscriptions() - raw data:", data);
         subscriptions.value = data.data;
+        console.log(
+          "[Push] fetchSubscriptions() - subscriptions set:",
+          subscriptions.value?.length,
+        );
       } catch (error) {
         triggerSupportForError("push_subscriptions_fetch", error);
         throw error;
@@ -223,33 +233,53 @@ export const usePushNotificationsStore = defineStore(
     }
 
     async function subscribe(deviceName?: string): Promise<boolean> {
-      if (!isSupported.value) return false;
+      console.log("[Push] subscribe() called, isSupported:", isSupported.value);
+      if (!isSupported.value) {
+        console.log("[Push] Not supported, returning false");
+        return false;
+      }
 
       try {
         loading.value = true;
+        console.log("[Push] Requesting notification permission...");
 
         // Demander la permission
         const permission = await Notification.requestPermission();
         permissionStatus.value = permission;
+        console.log("[Push] Permission result:", permission);
 
         if (permission !== "granted") {
+          console.log("[Push] Permission not granted, returning false");
           return false;
         }
 
         // Attendre que le service worker soit prêt
+        console.log("[Push] Waiting for service worker...");
         const registration = await navigator.serviceWorker.ready;
+        console.log("[Push] Service worker ready");
 
         // Récupérer la clé VAPID
+        console.log("[Push] Fetching VAPID key...");
         const publicKey = await fetchVapidPublicKey();
+        console.log(
+          "[Push] VAPID key received:",
+          publicKey?.substring(0, 20) + "...",
+        );
 
         // S'inscrire aux notifications push
         let pushSubscription;
         try {
+          console.log("[Push] Subscribing to push manager...");
           pushSubscription = await registration.pushManager.subscribe({
             userVisibleOnly: true,
             applicationServerKey: urlBase64ToUint8Array(publicKey),
           });
+          console.log(
+            "[Push] Push subscription created:",
+            pushSubscription?.endpoint?.substring(0, 50) + "...",
+          );
         } catch (subscribeError) {
+          console.error("[Push] Subscribe error:", subscribeError);
           // Si l'erreur est due à un changement de clé VAPID, désabonner et réessayer
           if (
             subscribeError instanceof Error &&
@@ -271,14 +301,21 @@ export const usePushNotificationsStore = defineStore(
         }
 
         // Extraire les clés
+        console.log("[Push] Extracting keys...");
         const p256dhKey = pushSubscription.getKey("p256dh");
         const authKey = pushSubscription.getKey("auth");
 
         if (!p256dhKey || !authKey) {
+          console.error("[Push] Failed to get keys:", {
+            p256dhKey: !!p256dhKey,
+            authKey: !!authKey,
+          });
           throw new Error("Failed to get subscription keys");
         }
+        console.log("[Push] Keys extracted successfully");
 
         // Envoyer au backend
+        console.log("[Push] Sending to backend...");
         const response = await fetch(`${API_URL}/notifications/subscribe`, {
           method: "POST",
           credentials: "include",
@@ -293,15 +330,24 @@ export const usePushNotificationsStore = defineStore(
           }),
         });
 
+        console.log("[Push] Backend response status:", response.status);
         if (!response.ok) {
+          const errorText = await response.text();
+          console.error("[Push] Backend error:", errorText);
           throw new Error("Failed to register subscription");
         }
 
         // Mettre à jour l'endpoint du navigateur
         browserEndpoint.value = pushSubscription.endpoint;
+        console.log("[Push] browserEndpoint updated");
 
         // Recharger les subscriptions pour avoir l'ID et autres infos
+        console.log("[Push] Fetching subscriptions...");
         await fetchSubscriptions();
+        console.log(
+          "[Push] Subscribe complete! Subscriptions count:",
+          subscriptions.value.length,
+        );
 
         return true;
       } catch (error) {
