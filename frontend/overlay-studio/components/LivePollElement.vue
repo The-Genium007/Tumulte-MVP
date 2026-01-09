@@ -560,9 +560,17 @@ watch(
       return;
     }
 
-    if (newData && !oldData) {
-      // Nouveau poll démarré
-      startPoll();
+    // Nouveau poll (premier ou remplacement d'un ancien avec ID différent)
+    if (newData && (!oldData || newData.pollInstanceId !== oldData.pollInstanceId)) {
+      // Si ancien poll encore visible, reset d'abord
+      if (oldData && state.value !== "hidden") {
+        transitionTo("hidden");
+        cleanupAudio();
+        // Petit délai pour permettre le reset avant de démarrer le nouveau
+        setTimeout(() => startPoll(), 100);
+      } else {
+        startPoll();
+      }
     } else if (!newData && oldData) {
       // Poll terminé sans données (cleanup forcé)
       transitionTo("hidden");

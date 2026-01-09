@@ -15,6 +15,7 @@
         :poll-data="activePoll"
         :percentages="percentages"
         :is-ending="isEnding"
+        @state-change="handlePollStateChange"
       />
     </template>
   </div>
@@ -70,38 +71,87 @@ const isEnding = ref(false);
 
 const { subscribeToStreamerPolls } = useWebSocket();
 
+// Handler pour les changements d'état du poll (émis par LivePollElement)
+const handlePollStateChange = (newState: string) => {
+  console.log("[Overlay] Poll state changed to:", newState);
+
+  // Quand le poll passe en hidden, nettoyer l'état pour le prochain poll
+  if (newState === "hidden") {
+    setTimeout(() => {
+      activePoll.value = null;
+      percentages.value = {};
+      isEnding.value = false;
+      console.log("[Overlay] Poll state cleared, ready for next poll");
+    }, 100);
+  }
+};
+
 // Variable pour stocker la fonction de désabonnement
 let unsubscribe: (() => Promise<void>) | null = null;
 // Intervalle de vérification de connexion
 let connectionCheckInterval: ReturnType<typeof setInterval> | null = null;
 
-onMounted(async () => {
-  console.log("[Overlay] Mounting overlay for streamer:", streamerId.value);
+// Récupérer le poll actif via HTTP (pour chargement initial et récupération après suspension OBS)
+const fetchActivePoll = async () => {
+  try {
+    const config = useRuntimeConfig();
+    const response = await fetch(
+      `${config.public.apiBase}/overlay/${streamerId.value}/active-poll`,
+      { credentials: "include" }
+    );
 
-  // Charger la configuration de l'overlay
-  await fetchConfig();
-  console.log("[Overlay] Config loaded, visible elements:", visibleElements.value.length);
+    if (response.ok) {
+      const data = await response.json();
+      if (data.data && !activePoll.value) {
+        console.log("[Overlay] Fetched active poll from API:", data.data.pollInstanceId);
+        const pollData = data.data;
+        const startTime = new Date(pollData.startedAt).getTime();
+        const endsAt = new Date(startTime + pollData.durationSeconds * 1000).toISOString();
 
-  // Marquer comme initialisé (pour l'indicateur de connexion)
-  isInitialized.value = true;
-
-  // S'abonner aux events de poll
-  console.log("[Overlay] ========== SUBSCRIBING TO WEBSOCKET ==========");
-  console.log("[Overlay] StreamerId:", streamerId.value);
-  console.log("[Overlay] Expected channel: streamer:" + streamerId.value + ":polls");
-
-  // Fonction pour (ré)initialiser la subscription WebSocket
-  const setupWebSocketSubscription = () => {
-    // Nettoyer l'ancienne subscription si elle existe
-    if (unsubscribe) {
-      unsubscribe();
-      unsubscribe = null;
+        activePoll.value = {
+          pollInstanceId: pollData.pollInstanceId,
+          title: pollData.title,
+          options: pollData.options,
+          durationSeconds: pollData.durationSeconds,
+          startedAt: pollData.startedAt,
+          endsAt,
+          totalDuration: pollData.durationSeconds,
+        };
+        percentages.value = pollData.percentages || {};
+        isEnding.value = false;
+      }
     }
+  } catch (error) {
+    console.warn("[Overlay] Failed to fetch active poll:", error);
+  }
+};
 
-    unsubscribe = subscribeToStreamerPolls(streamerId.value, {
+// Gérer les changements de visibilité (suspension OBS browser source)
+const handleVisibilityChange = () => {
+  if (document.visibilityState === "visible") {
+    console.log("[Overlay] Page became visible, checking state...");
+    // Récupérer le poll actif au cas où on aurait raté des events
+    fetchActivePoll();
+    // Vérifier la connexion WebSocket
+    if (!unsubscribe) {
+      console.log("[Overlay] WebSocket disconnected, reconnecting...");
+      isWsConnected.value = false;
+      reconnectAttempts.value++;
+      setupWebSocketSubscription();
+    }
+  }
+};
+
+// Fonction pour (ré)initialiser la subscription WebSocket (déclarée ici pour être accessible dans handleVisibilityChange)
+const setupWebSocketSubscription = () => {
+  // Nettoyer l'ancienne subscription si elle existe
+  if (unsubscribe) {
+    unsubscribe();
+    unsubscribe = null;
+  }
+
+  unsubscribe = subscribeToStreamerPolls(streamerId.value, {
     onPollStart: (data) => {
-      // Utiliser durationSeconds du backend (durée totale configurée)
-      // plutôt que de calculer depuis endsAt (qui donnerait le temps restant)
       const totalDuration = data.durationSeconds || 60;
       activePoll.value = { ...data, totalDuration };
       isEnding.value = false;
@@ -120,26 +170,18 @@ onMounted(async () => {
       }
     },
 
-    // Écouter les commandes de preview pour synchroniser
     onPreviewCommand: (data) => {
       console.log("[Overlay] Preview command received:", data);
       const { elementId, command, duration, mockData } = data;
       const component = elementRefs.value[elementId];
-      console.log("[Overlay] Element refs:", Object.keys(elementRefs.value));
-      console.log("[Overlay] Component found:", !!component);
       if (!component) {
         console.warn("[Overlay] Component not found for elementId:", elementId);
         return;
       }
 
-      // Si mockData est fourni, créer un poll temporaire pour l'affichage
       if (mockData) {
-        console.log("[Overlay] Setting mock poll data:", mockData);
-        // Créer un "fake" poll avec les données mock
         const now = new Date();
-        const fakeEndsAt = new Date(
-          now.getTime() + mockData.timeRemaining * 1000
-        ).toISOString();
+        const fakeEndsAt = new Date(now.getTime() + mockData.timeRemaining * 1000).toISOString();
         activePoll.value = {
           pollInstanceId: `preview-${Date.now()}`,
           title: mockData.question,
@@ -149,9 +191,8 @@ onMounted(async () => {
           endsAt: fakeEndsAt,
           totalDuration: mockData.totalDuration,
         };
-        // Convertir les pourcentages du tableau en objet indexé
         const newPercentages: Record<number, number> = {};
-        mockData.percentages.forEach((p, i) => {
+        mockData.percentages.forEach((p: number, i: number) => {
           newPercentages[i] = p;
         });
         percentages.value = newPercentages;
@@ -193,30 +234,46 @@ onMounted(async () => {
     },
   });
 
-    // Marquer comme connecté après subscription réussie
-    isWsConnected.value = true;
-    reconnectAttempts.value = 0;
-    console.log("[Overlay] WebSocket subscription established");
-  };
+  isWsConnected.value = true;
+  reconnectAttempts.value = 0;
+  console.log("[Overlay] WebSocket subscription established");
+};
 
-  // Initialiser la subscription
+onMounted(async () => {
+  console.log("[Overlay] Mounting overlay for streamer:", streamerId.value);
+
+  // Charger la configuration de l'overlay
+  await fetchConfig();
+  console.log("[Overlay] Config loaded, visible elements:", visibleElements.value.length);
+
+  // Récupérer le poll actif au chargement (recovery après refresh)
+  await fetchActivePoll();
+
+  // Marquer comme initialisé (pour l'indicateur de connexion)
+  isInitialized.value = true;
+
+  // S'abonner aux events de poll
+  console.log("[Overlay] ========== SUBSCRIBING TO WEBSOCKET ==========");
+  console.log("[Overlay] StreamerId:", streamerId.value);
+
+  // Initialiser la subscription WebSocket
   setupWebSocketSubscription();
 
+  // Écouter les changements de visibilité (OBS browser source suspension)
+  document.addEventListener("visibilitychange", handleVisibilityChange);
+
   // Fallback: Vérifier périodiquement la connexion et reconnecter si nécessaire
-  // En cas de déconnexion, le polling HTTP peut servir de fallback
   connectionCheckInterval = setInterval(() => {
-    // Si la page est toujours montée et qu'on détecte une déconnexion potentielle
-    // (pas de données reçues depuis longtemps), tenter une reconnexion
     if (!unsubscribe) {
       console.log("[Overlay] Detected disconnection, attempting reconnect...");
       isWsConnected.value = false;
       reconnectAttempts.value++;
       setupWebSocketSubscription();
     }
-  }, 30000); // Vérifier toutes les 30 secondes
+  }, 30000);
 });
 
-// Nettoyage au démontage - en dehors de onMounted pour éviter le warning Vue
+// Nettoyage au démontage
 onUnmounted(() => {
   if (unsubscribe) {
     unsubscribe();
@@ -226,6 +283,9 @@ onUnmounted(() => {
   if (connectionCheckInterval) {
     clearInterval(connectionCheckInterval);
   }
+
+  // Retirer le listener de visibilité
+  document.removeEventListener("visibilitychange", handleVisibilityChange);
 });
 </script>
 
