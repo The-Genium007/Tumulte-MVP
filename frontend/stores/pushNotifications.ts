@@ -270,10 +270,34 @@ export const usePushNotificationsStore = defineStore(
 
     async function deleteSubscription(id: string): Promise<void> {
       try {
+        // Trouver la subscription pour vérifier si c'est le navigateur actuel
+        const subscriptionToDelete = subscriptions.value.find(
+          (s) => s.id === id,
+        );
+
         await fetch(`${API_URL}/notifications/subscriptions/${id}`, {
           method: "DELETE",
           credentials: "include",
         });
+
+        // Si c'est le navigateur actuel, désabonner aussi localement
+        if (
+          subscriptionToDelete &&
+          currentBrowserEndpoint.value &&
+          subscriptionToDelete.endpoint === currentBrowserEndpoint.value
+        ) {
+          try {
+            const registration = await navigator.serviceWorker.ready;
+            const pushSubscription =
+              await registration.pushManager.getSubscription();
+            if (pushSubscription) {
+              await pushSubscription.unsubscribe();
+            }
+          } catch (unsubError) {
+            console.warn("Failed to unsubscribe browser locally:", unsubError);
+          }
+          currentBrowserEndpoint.value = null;
+        }
 
         await fetchSubscriptions();
       } catch (error) {
