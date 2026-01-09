@@ -155,10 +155,22 @@ export const usePushNotificationsStore = defineStore(
       );
 
       if (!response.ok) {
-        throw new Error("Failed to fetch VAPID public key");
+        const errorData = await response.json().catch(() => ({}));
+        console.error(
+          "[Push] VAPID key fetch failed:",
+          response.status,
+          errorData,
+        );
+        throw new Error(errorData.error || "Failed to fetch VAPID public key");
       }
 
       const data = await response.json();
+
+      if (!data.publicKey) {
+        console.error("[Push] VAPID public key is empty");
+        throw new Error("VAPID public key is not configured");
+      }
+
       vapidPublicKey.value = data.publicKey;
       return data.publicKey;
     }

@@ -28,9 +28,18 @@ export default class NotificationsController {
    * Récupère la clé publique VAPID pour l'inscription côté client
    * GET /notifications/vapid-public-key
    */
-  async vapidPublicKey({ response }: HttpContext) {
+  async vapidPublicKey({ response, logger }: HttpContext) {
+    const publicKey = this.pushService.getVapidPublicKey()
+
+    if (!publicKey) {
+      logger.warn('[Push VAPID] VAPID public key is not configured')
+      return response.serviceUnavailable({
+        error: 'Push notifications are not configured on this server',
+      })
+    }
+
     return response.ok({
-      publicKey: this.pushService.getVapidPublicKey(),
+      publicKey,
     })
   }
 
