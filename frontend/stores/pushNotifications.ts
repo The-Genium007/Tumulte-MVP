@@ -265,9 +265,22 @@ export const usePushNotificationsStore = defineStore(
           return false;
         }
 
-        // Attendre que le service worker soit prêt
+        // Attendre que le service worker soit prêt (avec timeout de 10s)
         console.log("[Push] Waiting for service worker...");
-        const registration = await navigator.serviceWorker.ready;
+        const registration = await Promise.race([
+          navigator.serviceWorker.ready,
+          new Promise<never>((_, reject) =>
+            setTimeout(
+              () =>
+                reject(
+                  new Error(
+                    "Service Worker timeout - vérifiez la validité du certificat SSL",
+                  ),
+                ),
+              10000,
+            ),
+          ),
+        ]);
         console.log("[Push] Service worker ready");
 
         // Récupérer la clé VAPID
