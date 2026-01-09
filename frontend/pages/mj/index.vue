@@ -240,6 +240,8 @@
           :status="pollStatus"
           :countdown="countdown"
           :results="pollResults"
+          :send-loading="sendPollButton.isLoading.value"
+          :close-loading="closeButton.isLoading.value"
           @send="sendPoll"
           @previous="goToPreviousPoll"
           @next="goToNextPoll"
@@ -339,6 +341,8 @@
                   icon="i-lucide-rocket"
                   label="Lancer"
                   size="sm"
+                  :loading="launchSessionLoading && pendingLaunchSessionId === session.id"
+                  :disabled="launchSessionLoading || !!activeSession"
                   @click="launchSession(session)"
                 />
               </div>
@@ -575,6 +579,7 @@ import { usePollControlStore } from "@/stores/pollControl";
 import { useReadiness } from "@/composables/useReadiness";
 import { useWebSocket } from "@/composables/useWebSocket";
 import { useSupportTrigger } from "@/composables/useSupportTrigger";
+import { useActionButton } from "@/composables/useActionButton";
 import { loggers } from "@/utils/logger";
 
 definePageMeta({
@@ -848,7 +853,38 @@ const {
 } = storeToRefs(pollControlStore);
 
 // Actions du store
-const { saveCurrentPollState, restorePollState } = pollControlStore;
+const { saveCurrentPollState, restorePollState, validateWithBackend, startHeartbeat, stopHeartbeat } = pollControlStore;
+
+// ==========================================
+// ACTION BUTTONS WITH DEBOUNCING (Phase 1)
+// ==========================================
+
+// Ref pour stocker la session en cours de lancement (pour le debouncing par session)
+const pendingLaunchSessionId = ref<string | null>(null);
+
+// Wrapper pour sendPoll avec debouncing
+const sendPollButton = useActionButton({
+  action: async () => {
+    await sendPollInternal();
+  },
+  cooldownMs: 1000,
+  onError: (error) => {
+    loggers.poll.error('[sendPoll] Action failed:', error);
+    triggerSupportForError("poll_launch", error);
+  },
+});
+
+// Wrapper pour cancelPoll/close avec debouncing
+const closeButton = useActionButton({
+  action: async () => {
+    await handleCloseOrCancelInternal();
+  },
+  cooldownMs: 1000,
+  onError: (error) => {
+    loggers.poll.error('[close] Action failed:', error);
+    triggerSupportForError("session_close", error);
+  },
+});
 
 // Computed pour la question actuelle
 const currentPoll = computed<Poll | null>(() => {
@@ -856,8 +892,8 @@ const currentPoll = computed<Poll | null>(() => {
   return activeSessionPolls.value[currentPollIndex.value] as Poll;
 });
 
-// Fonction pour lancer une session
-const launchSession = async (session: Session) => {
+// Fonction pour lancer une session (interne)
+const launchSessionInternal = async (session: Session) => {
   if (!selectedCampaignId.value) return;
 
   // Vérifier si une session est déjà active
@@ -896,10 +932,52 @@ const launchSession = async (session: Session) => {
 
     // Sauvegarder explicitement l'état immédiatement
     pollControlStore.saveState();
+
+    // Phase 3/5: Démarrer le heartbeat pour la nouvelle session
+    if (selectedCampaignId.value) {
+      startHeartbeat(selectedCampaignId.value, session.id);
+    }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Erreur inconnue";
     loggers.poll.error('Session Launch Error:', errorMessage);
     triggerSupportForError("session_launch", error);
+  } finally {
+    pendingLaunchSessionId.value = null;
+  }
+};
+
+// State pour le loading du bouton Lancer
+const launchSessionLoading = ref(false);
+const launchSessionLastClick = ref(0);
+const LAUNCH_SESSION_COOLDOWN = 1000;
+
+// Handler public pour lancer une session avec debouncing manuel
+// (useActionButton ne convient pas ici car on a besoin de passer la session en paramètre)
+const launchSession = async (session: Session) => {
+  const now = Date.now();
+
+  // Protection anti-double-clic
+  if (now - launchSessionLastClick.value < LAUNCH_SESSION_COOLDOWN) {
+    return;
+  }
+
+  // Ne pas lancer si déjà en cours
+  if (launchSessionLoading.value || pendingLaunchSessionId.value === session.id) {
+    return;
+  }
+
+  launchSessionLastClick.value = now;
+  launchSessionLoading.value = true;
+  pendingLaunchSessionId.value = session.id;
+
+  try {
+    await launchSessionInternal(session);
+  } finally {
+    launchSessionLoading.value = false;
+    // Cooldown avant de pouvoir relancer
+    setTimeout(() => {
+      pendingLaunchSessionId.value = null;
+    }, LAUNCH_SESSION_COOLDOWN);
   }
 };
 
@@ -911,15 +989,20 @@ const handleWaitingListLaunched = () => {
   }
 };
 
-// Gestion intelligente du bouton fermer/annuler
-const handleCloseOrCancel = () => {
+// Gestion intelligente du bouton fermer/annuler (interne)
+const handleCloseOrCancelInternal = async () => {
   if (pollStatus.value === 'sending') {
     // Si un sondage est en cours, annuler directement (sans popup)
-    cancelPoll();
+    await cancelPoll();
   } else {
     // Sinon, demander confirmation pour fermer la session
     showCloseSessionConfirm.value = true;
   }
+};
+
+// Handler public avec debouncing
+const handleCloseOrCancel = () => {
+  closeButton.execute();
 };
 
 // Confirmer la fermeture de la session active
@@ -930,6 +1013,9 @@ const confirmCloseSession = () => {
     pollSubscriptionCleanup.value = null;
   }
   currentPollInstanceId.value = null;
+
+  // Phase 3/5: Arrêter le heartbeat
+  stopHeartbeat();
 
   pollControlStore.clearState();
   showCloseSessionConfirm.value = false;
@@ -1012,8 +1098,8 @@ const cancelPoll = async () => {
   saveCurrentPollState();
 };
 
-// Envoyer le sondage
-const sendPoll = async () => {
+// Envoyer le sondage (interne - appelé via useActionButton)
+const sendPollInternal = async () => {
   if (!currentPoll.value || !activeSession.value || !selectedCampaignId.value) return;
 
   pollStatus.value = 'sending';
@@ -1173,6 +1259,11 @@ const sendPoll = async () => {
   }
 };
 
+// Handler public avec debouncing
+const sendPoll = () => {
+  sendPollButton.execute();
+};
+
 // Compte à rebours
 let countdownInterval: ReturnType<typeof setInterval> | null = null;
 
@@ -1240,6 +1331,17 @@ onMounted(async () => {
   if (activeSession.value && activeSessionPolls.value.length > 0) {
     loggers.poll.debug('Restoring poll state for index:', currentPollIndex.value);
     restorePollState(currentPollIndex.value);
+
+    // Phase 3: Valider l'état local avec le backend
+    const sessionData = activeSession.value as ActiveSession;
+    if (selectedCampaignId.value && sessionData.id) {
+      loggers.poll.debug('Validating state with backend...');
+      const wasSync = await validateWithBackend(selectedCampaignId.value, sessionData.id);
+      loggers.poll.debug('Backend validation result:', { wasSync });
+
+      // Démarrer le heartbeat pour synchronisation continue
+      startHeartbeat(selectedCampaignId.value, sessionData.id);
+    }
   }
 
   // 4. Si un poll était actif, synchroniser avec le backend pour obtenir l'état réel

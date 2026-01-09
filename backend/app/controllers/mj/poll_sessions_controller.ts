@@ -5,11 +5,13 @@ import logger from '@adonisjs/core/services/logger'
 import { PollSessionRepository } from '#repositories/poll_session_repository'
 import { PollRepository } from '#repositories/poll_repository'
 import { CampaignRepository } from '#repositories/campaign_repository'
+import { PollInstanceRepository } from '#repositories/poll_instance_repository'
 import { HealthCheckService } from '#services/health_check_service'
 import { ReadinessService } from '#services/campaigns/readiness_service'
 import { PushNotificationService } from '#services/notifications/push_notification_service'
 import { PollSessionDto } from '#dtos/polls/poll_session_dto'
 import { PollDto } from '#dtos/polls/poll_dto'
+import { PollInstanceDto } from '#dtos/polls/poll_instance_dto'
 import { validateRequest } from '#middleware/validate_middleware'
 import { createPollSessionSchema } from '#validators/polls/create_poll_session_validator'
 import { addPollSchema } from '#validators/polls/add_poll_validator'
@@ -23,6 +25,7 @@ export default class PollSessionsController {
     private pollSessionRepository: PollSessionRepository,
     private pollRepository: PollRepository,
     private campaignRepository: CampaignRepository,
+    private pollInstanceRepository: PollInstanceRepository,
     private healthCheckService: HealthCheckService,
     private readinessService: ReadinessService,
     private pushNotificationService: PushNotificationService
@@ -430,5 +433,100 @@ export default class PollSessionsController {
     await this.pollRepository.reorderPolls(params.id, pollIds)
 
     return response.ok({ message: 'Polls reordered successfully' })
+  }
+
+  /**
+   * Récupère le statut d'une session avec le sondage en cours
+   * GET /api/v2/mj/campaigns/:campaignId/sessions/:sessionId/status
+   *
+   * Utilisé par le frontend pour valider l'état local vs backend
+   */
+  async status({ auth, params, response }: HttpContext) {
+    const userId = auth.user!.id
+    const { campaignId, sessionId } = params
+
+    // Vérifier l'ownership de la campagne
+    const isOwner = await this.campaignRepository.isOwner(campaignId, userId)
+    if (!isOwner) {
+      return response.forbidden({ error: 'Not authorized to access this campaign' })
+    }
+
+    // Récupérer la session
+    const session = await this.pollSessionRepository.findByIdWithPolls(sessionId)
+    if (!session) {
+      return response.notFound({ error: 'Poll session not found' })
+    }
+
+    if (session.ownerId !== userId) {
+      return response.forbidden({ error: 'Not authorized' })
+    }
+
+    // Récupérer le sondage en cours pour cette campagne
+    const runningPolls = await this.pollInstanceRepository.findRunningByCampaign(campaignId)
+    const currentPoll = runningPolls.length > 0 ? runningPolls[0] : null
+
+    return response.ok({
+      data: {
+        session: {
+          ...PollSessionDto.fromModel(session),
+          polls: session.polls ? session.polls.map((poll) => PollDto.fromModel(poll)) : [],
+        },
+        currentPoll: currentPoll ? PollInstanceDto.fromModel(currentPoll) : null,
+        serverTime: Date.now(),
+      },
+    })
+  }
+
+  /**
+   * Heartbeat pour synchronisation temps réel
+   * POST /api/v2/mj/campaigns/:campaignId/sessions/:sessionId/heartbeat
+   *
+   * Appelé périodiquement par le frontend (toutes les 30s)
+   * Retourne l'état actuel pour détecter les désynchronisations
+   */
+  async heartbeat({ auth, params, response }: HttpContext) {
+    const userId = auth.user!.id
+    const { campaignId, sessionId } = params
+
+    // Vérifier l'ownership de la campagne
+    const isOwner = await this.campaignRepository.isOwner(campaignId, userId)
+    if (!isOwner) {
+      return response.forbidden({ error: 'Not authorized to access this campaign' })
+    }
+
+    // Vérifier que la session existe
+    const session = await this.pollSessionRepository.findById(sessionId)
+    if (!session) {
+      return response.notFound({ error: 'Poll session not found' })
+    }
+
+    if (session.ownerId !== userId) {
+      return response.forbidden({ error: 'Not authorized' })
+    }
+
+    // Récupérer le sondage en cours pour cette campagne
+    const runningPolls = await this.pollInstanceRepository.findRunningByCampaign(campaignId)
+    const currentPoll = runningPolls.length > 0 ? runningPolls[0] : null
+
+    logger.debug(
+      {
+        event: 'session_heartbeat',
+        userId,
+        campaignId,
+        sessionId,
+        hasCurrentPoll: !!currentPoll,
+        currentPollId: currentPoll?.id,
+        currentPollStatus: currentPoll?.status,
+      },
+      'Session heartbeat received'
+    )
+
+    return response.ok({
+      data: {
+        sessionActive: true,
+        currentPoll: currentPoll ? PollInstanceDto.fromModel(currentPoll) : null,
+        serverTime: Date.now(),
+      },
+    })
   }
 }

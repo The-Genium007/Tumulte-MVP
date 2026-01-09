@@ -114,6 +114,16 @@ router
       '/campaigns/:campaignId/sessions/:sessionId/launch',
       '#controllers/mj/poll_sessions_controller.launch'
     )
+    // Status de session (validation état frontend/backend)
+    router.get(
+      '/campaigns/:campaignId/sessions/:sessionId/status',
+      '#controllers/mj/poll_sessions_controller.status'
+    )
+    // Heartbeat de session (synchronisation temps réel)
+    router.post(
+      '/campaigns/:campaignId/sessions/:sessionId/heartbeat',
+      '#controllers/mj/poll_sessions_controller.heartbeat'
+    )
 
     // Poll Templates (nested sous campaigns OU standalone)
     router.get(

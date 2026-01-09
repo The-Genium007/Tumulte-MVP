@@ -19,13 +19,16 @@ type PollAggregationService = {
 export class PollPollingService {
   private static instanceCount = 0
   private instanceId: string
-  private pollingIntervals: Map<string, NodeJS.Timeout> = new Map()
-  private pollingActive: Set<string> = new Set() // Nouveau : flag actif/inactif pour chaque poll
-  private cyclesInProgress: Set<string> = new Set() // Nouveau : prévient le chevauchement de cycles
+  // Changed from setInterval to setTimeout for queue-based polling
+  private pollingTimeouts: Map<string, NodeJS.Timeout> = new Map()
+  private pollingActive: Set<string> = new Set() // Flag actif/inactif pour chaque poll
+  private cyclesInProgress: Set<string> = new Set() // Prévient le chevauchement de cycles
   private sentMessages: Map<string, Set<string>> = new Map() // pollInstanceId -> Set de messages envoyés
   private aggregationService?: PollAggregationService
   private onPollEndCallback?: (pollInstance: PollInstance) => Promise<void>
   private twitchChatService: any // Sera initialisé de manière lazy
+  // Polling cycle interval
+  private static readonly pollingIntervalMs = 3000
 
   constructor(
     private pollChannelLinkRepository: PollChannelLinkRepository,
@@ -76,7 +79,7 @@ export class PollPollingService {
     const pollId = pollInstance.id
 
     // Si un polling est déjà en cours, on l'arrête d'abord
-    if (this.pollingIntervals.has(pollId)) {
+    if (this.pollingTimeouts.has(pollId) || this.pollingActive.has(pollId)) {
       logger.warn({
         event: 'polling_already_running',
         pollInstanceId: pollId,
@@ -104,10 +107,8 @@ export class PollPollingService {
       timeRemainingSeconds: Math.round(timeRemaining),
     })
 
-    // Attendre 500ms pour laisser le temps au frontend de s'abonner au WebSocket
-    await new Promise((resolve) => setTimeout(resolve, 500))
-
-    // Émettre l'événement de démarrage du poll
+    // Émettre l'événement de démarrage du poll IMMÉDIATEMENT (supprimé le délai 500ms)
+    // Le frontend s'abonne au WebSocket avant de lancer le poll, donc pas besoin d'attendre
     this.webSocketService.emitPollStart({
       pollInstanceId: pollId,
       title: pollInstance.title,
@@ -125,15 +126,15 @@ export class PollPollingService {
     // Compteurs de polling
     let pollingCycleCount = 0
 
-    // Fonction de polling
-    const poll = async () => {
+    // Fonction de polling (queue-based: exécute un cycle puis schedule le suivant)
+    const runPollingCycle = async () => {
       logger.info({
         event: 'polling_cycle_start',
         pollInstanceId: pollId,
         instanceId: this.instanceId,
         checks: {
           isActive: this.pollingActive.has(pollId),
-          hasInterval: this.pollingIntervals.has(pollId),
+          hasTimeout: this.pollingTimeouts.has(pollId),
           hasCycleInProgress: this.cyclesInProgress.has(pollId),
         },
       })
@@ -149,23 +150,12 @@ export class PollPollingService {
         return
       }
 
-      // ====== NIVEAU 2 : Vérification interval toujours présent ======
-      if (!this.pollingIntervals.has(pollId)) {
-        logger.debug({
-          event: 'polling_cycle_skipped_no_interval',
-          pollInstanceId: pollId,
-          instanceId: this.instanceId,
-          reason: 'Interval was cleared',
-        })
-        return
-      }
-
-      // ====== NIVEAU 3 : Prévenir chevauchement de cycles ======
+      // ====== NIVEAU 2 : Prévenir chevauchement de cycles (ne devrait jamais arriver avec queue-based) ======
       if (this.cyclesInProgress.has(pollId)) {
         logger.warn({
           event: 'polling_cycle_overlapped',
           pollInstanceId: pollId,
-          reason: 'Previous cycle still running, skipping this cycle',
+          reason: 'Previous cycle still running (should not happen with queue-based polling)',
         })
         return
       }
@@ -405,16 +395,26 @@ export class PollPollingService {
       } finally {
         // ====== CRITIQUE : Toujours nettoyer le flag de cycle en cours ======
         this.cyclesInProgress.delete(pollId)
+
+        // ====== QUEUE-BASED : Schedule le prochain cycle APRÈS que le courant soit terminé ======
+        // Cela évite l'accumulation de cycles si l'API Twitch est lente
+        if (this.pollingActive.has(pollId)) {
+          const nextTimeout = setTimeout(() => {
+            runPollingCycle().catch((error) => {
+              logger.error({
+                event: 'polling_cycle_error_unhandled',
+                pollInstanceId: pollId,
+                error: error instanceof Error ? error.message : String(error),
+              })
+            })
+          }, PollPollingService.pollingIntervalMs)
+          this.pollingTimeouts.set(pollId, nextTimeout)
+        }
       }
     }
 
-    // IMPORTANT : Créer l'interval AVANT de lancer le premier poll
-    // pour que stopPolling() puisse le trouver même si appelé pendant le premier poll
-    const interval = setInterval(poll, 3000)
-    this.pollingIntervals.set(pollId, interval)
-
-    // Lancer le premier poll immédiatement (sans await pour ne pas bloquer)
-    poll().catch((error) => {
+    // Lancer le premier cycle immédiatement (sans await pour ne pas bloquer)
+    runPollingCycle().catch((error) => {
       logger.error({
         event: 'initial_poll_error',
         pollInstanceId: pollId,
@@ -423,10 +423,12 @@ export class PollPollingService {
     })
 
     logger.info({
-      event: 'polling_interval_configured',
+      event: 'polling_queue_started',
       pollInstanceId: pollId,
-      intervalMs: 3000,
-      expectedCycles: Math.ceil(pollInstance.durationSeconds / 3),
+      intervalMs: PollPollingService.pollingIntervalMs,
+      expectedCycles: Math.ceil(
+        pollInstance.durationSeconds / (PollPollingService.pollingIntervalMs / 1000)
+      ),
     })
   }
 
@@ -553,22 +555,22 @@ export class PollPollingService {
       pollInstanceId,
       instanceId: this.instanceId,
       beforeState: {
-        hadInterval: this.pollingIntervals.has(pollInstanceId),
+        hadTimeout: this.pollingTimeouts.has(pollInstanceId),
         wasActive: this.pollingActive.has(pollInstanceId),
         hadCycleInProgress: this.cyclesInProgress.has(pollInstanceId),
         allActivePolls: Array.from(this.pollingActive),
-        allIntervals: Array.from(this.pollingIntervals.keys()),
+        allTimeouts: Array.from(this.pollingTimeouts.keys()),
       },
     })
 
     // 1. Marquer comme inactif IMMÉDIATEMENT (avant tout autre nettoyage)
     this.pollingActive.delete(pollInstanceId)
 
-    // 2. Arrêter l'interval
-    const interval = this.pollingIntervals.get(pollInstanceId)
-    if (interval) {
-      clearInterval(interval)
-      this.pollingIntervals.delete(pollInstanceId)
+    // 2. Arrêter le timeout en attente (queue-based)
+    const timeout = this.pollingTimeouts.get(pollInstanceId)
+    if (timeout) {
+      clearTimeout(timeout)
+      this.pollingTimeouts.delete(pollInstanceId)
     }
 
     // 3. Nettoyer les cycles en cours
@@ -581,9 +583,9 @@ export class PollPollingService {
       event: 'polling_stopped',
       pollInstanceId,
       instanceId: this.instanceId,
-      hadInterval: !!interval,
+      hadTimeout: !!timeout,
       afterState: {
-        hasInterval: this.pollingIntervals.has(pollInstanceId),
+        hasTimeout: this.pollingTimeouts.has(pollInstanceId),
         isActive: this.pollingActive.has(pollInstanceId),
         hasCycleInProgress: this.cyclesInProgress.has(pollInstanceId),
       },

@@ -32,6 +32,8 @@
           icon="i-lucide-send"
           label="Envoyer"
           size="lg"
+          :loading="props.sendLoading"
+          :disabled="props.sendLoading"
           @click="$emit('send')"
         />
 
@@ -42,6 +44,8 @@
           icon="i-lucide-refresh-cw"
           label="Relancer"
           size="lg"
+          :loading="props.sendLoading"
+          :disabled="props.sendLoading"
           @click="$emit('send')"
         />
       </div>
@@ -102,6 +106,8 @@
           icon="i-lucide-x"
           size="sm"
           square
+          :loading="props.closeLoading"
+          :disabled="props.closeLoading"
           :class="status === 'sending' || status === 'running' ? 'border-2 border-red-500' : 'border border-gray-500'"
           @click="$emit('close')"
         />
@@ -201,10 +207,14 @@ interface Props {
   status: 'idle' | 'pending' | 'sending' | 'running' | 'sent' | 'cancelled';
   countdown: number;
   results?: PollResultsData | null;
+  sendLoading?: boolean;
+  closeLoading?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   results: null,
+  sendLoading: false,
+  closeLoading: false,
 });
 
 defineEmits<{

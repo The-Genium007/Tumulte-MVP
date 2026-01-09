@@ -64,6 +64,30 @@ export default class PollsController {
       'channelPointsAmount',
     ])
 
+    // === IDEMPOTENCE CHECK ===
+    // Vérifier si un sondage est déjà en cours pour cette campagne
+    const existingRunningPolls = await this.pollInstanceRepository.findRunningByCampaign(
+      params.campaignId
+    )
+    if (existingRunningPolls.length > 0) {
+      const existingPoll = existingRunningPolls[0]
+      logger.warn({
+        event: 'poll_launch_idempotent_return',
+        userId,
+        campaignId: params.campaignId,
+        existingPollId: existingPoll.id,
+        reason: 'A poll is already running for this campaign',
+      })
+
+      // Retourner le sondage existant au lieu d'en créer un nouveau
+      const existingInstance = await this.pollInstanceRepository.findByIdWithLinks(existingPoll.id)
+      return response.ok({
+        data: PollInstanceDto.fromModel(existingInstance!),
+        message: 'A poll is already running',
+        idempotent: true,
+      })
+    }
+
     logger.info({
       event: 'poll_launch_initiated',
       userId,

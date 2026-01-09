@@ -1,5 +1,12 @@
 <template>
   <div class="overlay">
+    <!-- Indicateur de reconnexion discret (point orange) -->
+    <div
+      v-if="!isWsConnected && isInitialized"
+      class="connection-indicator"
+      :title="`Reconnexion... (tentative ${reconnectAttempts})`"
+    />
+
     <template v-for="element in visibleElements" :key="element.id">
       <LivePollElement
         v-if="element.type === 'poll'"
@@ -19,6 +26,11 @@ import LivePollElement from "@/overlay-studio/components/LivePollElement.vue";
 import { useWebSocket } from "@/composables/useWebSocket";
 import { useOverlayConfig } from "@/composables/useOverlayConfig";
 import type { PollStartEvent } from "@/types";
+
+// State pour l'indicateur de connexion
+const isWsConnected = ref(true);
+const reconnectAttempts = ref(0);
+const isInitialized = ref(false);
 
 // Désactiver tout layout Nuxt
 definePageMeta({
@@ -60,6 +72,8 @@ const { subscribeToStreamerPolls } = useWebSocket();
 
 // Variable pour stocker la fonction de désabonnement
 let unsubscribe: (() => Promise<void>) | null = null;
+// Intervalle de vérification de connexion
+let connectionCheckInterval: ReturnType<typeof setInterval> | null = null;
 
 onMounted(async () => {
   console.log("[Overlay] Mounting overlay for streamer:", streamerId.value);
@@ -68,11 +82,23 @@ onMounted(async () => {
   await fetchConfig();
   console.log("[Overlay] Config loaded, visible elements:", visibleElements.value.length);
 
+  // Marquer comme initialisé (pour l'indicateur de connexion)
+  isInitialized.value = true;
+
   // S'abonner aux events de poll
   console.log("[Overlay] ========== SUBSCRIBING TO WEBSOCKET ==========");
   console.log("[Overlay] StreamerId:", streamerId.value);
   console.log("[Overlay] Expected channel: streamer:" + streamerId.value + ":polls");
-  unsubscribe = subscribeToStreamerPolls(streamerId.value, {
+
+  // Fonction pour (ré)initialiser la subscription WebSocket
+  const setupWebSocketSubscription = () => {
+    // Nettoyer l'ancienne subscription si elle existe
+    if (unsubscribe) {
+      unsubscribe();
+      unsubscribe = null;
+    }
+
+    unsubscribe = subscribeToStreamerPolls(streamerId.value, {
     onPollStart: (data) => {
       let totalDuration = 60;
       if (data.endsAt) {
@@ -169,12 +195,39 @@ onMounted(async () => {
       }
     },
   });
+
+    // Marquer comme connecté après subscription réussie
+    isWsConnected.value = true;
+    reconnectAttempts.value = 0;
+    console.log("[Overlay] WebSocket subscription established");
+  };
+
+  // Initialiser la subscription
+  setupWebSocketSubscription();
+
+  // Fallback: Vérifier périodiquement la connexion et reconnecter si nécessaire
+  // En cas de déconnexion, le polling HTTP peut servir de fallback
+  connectionCheckInterval = setInterval(() => {
+    // Si la page est toujours montée et qu'on détecte une déconnexion potentielle
+    // (pas de données reçues depuis longtemps), tenter une reconnexion
+    if (!unsubscribe) {
+      console.log("[Overlay] Detected disconnection, attempting reconnect...");
+      isWsConnected.value = false;
+      reconnectAttempts.value++;
+      setupWebSocketSubscription();
+    }
+  }, 30000); // Vérifier toutes les 30 secondes
 });
 
 // Nettoyage au démontage - en dehors de onMounted pour éviter le warning Vue
 onUnmounted(() => {
   if (unsubscribe) {
     unsubscribe();
+  }
+
+  // Nettoyer l'intervalle de vérification de connexion
+  if (connectionCheckInterval) {
+    clearInterval(connectionCheckInterval);
   }
 });
 </script>
@@ -196,5 +249,30 @@ html, body, #__nuxt {
   position: relative;
   background: transparent;
   overflow: hidden;
+}
+
+/* Indicateur de reconnexion discret (point orange) */
+.connection-indicator {
+  position: fixed;
+  top: 8px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  background-color: #f97316;
+  border-radius: 50%;
+  animation: pulse 1.5s ease-in-out infinite;
+  z-index: 9999;
+  opacity: 0.8;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
 }
 </style>
