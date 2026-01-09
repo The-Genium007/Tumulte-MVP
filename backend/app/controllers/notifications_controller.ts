@@ -31,6 +31,11 @@ export default class NotificationsController {
   async vapidPublicKey({ response, logger }: HttpContext) {
     const publicKey = this.pushService.getVapidPublicKey()
 
+    logger.info(
+      { hasPublicKey: !!publicKey, keyLength: publicKey?.length || 0 },
+      '[Push VAPID] Getting public key'
+    )
+
     if (!publicKey) {
       logger.warn('[Push VAPID] VAPID public key is not configured')
       return response.serviceUnavailable({
