@@ -52,22 +52,17 @@ export default class OverlayController {
     }
 
     // Trouver les channel links actifs pour ce streamer
-    const activeLinks = await this.pollChannelLinkRepository.findByPollInstance('')
+    const activeLinks = await this.pollChannelLinkRepository.findActiveByStreamer(params.streamerId)
 
-    // Filtrer pour ce streamer et status RUNNING
-    const streamerLinks = activeLinks.filter(
-      (link) => link.streamerId === params.streamerId && link.status === 'RUNNING'
-    )
-
-    if (streamerLinks.length === 0) {
+    if (activeLinks.length === 0) {
       return response.ok({ data: null })
     }
 
     // Prendre le premier poll actif
-    const link = streamerLinks[0]
+    const link = activeLinks[0]
     const pollInstance = await this.pollInstanceRepository.findById(link.pollInstanceId)
 
-    if (!pollInstance) {
+    if (!pollInstance || pollInstance.status !== 'RUNNING') {
       return response.ok({ data: null })
     }
 
