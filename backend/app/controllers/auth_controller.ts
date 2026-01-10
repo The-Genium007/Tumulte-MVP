@@ -314,36 +314,4 @@ export default class AuthController {
 
     return this.formatUserResponse(user)
   }
-
-  /**
-   * Change le rôle de l'utilisateur connecté
-   */
-  async switchRole({ auth, request, response }: HttpContext) {
-    const user = auth.user!
-    const { role } = request.only(['role'])
-
-    // Valider le rôle
-    if (!['MJ', 'STREAMER'].includes(role)) {
-      return response.badRequest({ message: 'Rôle invalide. Doit être MJ ou STREAMER' })
-    }
-
-    // Si on passe à STREAMER, vérifier qu'un streamer existe
-    if (role === 'STREAMER') {
-      await user.load((loader) => loader.load('streamer'))
-      if (!user.streamer) {
-        return response.badRequest({ message: 'Aucun profil streamer associé à cet utilisateur' })
-      }
-    }
-
-    // Mettre à jour le rôle
-    user.role = role
-    await user.save()
-
-    logger.info(`User ${user.id} switched role to ${role}`)
-
-    // Charger le streamer pour tous les utilisateurs (MJ et STREAMER)
-    await user.load((loader) => loader.load('streamer'))
-
-    return this.formatUserResponse(user)
-  }
 }
