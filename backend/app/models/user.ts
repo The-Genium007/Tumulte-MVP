@@ -5,14 +5,9 @@ import { DbAccessTokensProvider } from '@adonisjs/auth/access_tokens'
 import type { HasOne } from '@adonisjs/lucid/types/relations'
 import { streamer as Streamer } from './streamer.js'
 
-export type UserRole = 'MJ' | 'STREAMER'
-
 class User extends BaseModel {
   @column({ isPrimary: true })
   declare id: string
-
-  @column()
-  declare role: UserRole
 
   @column()
   declare displayName: string

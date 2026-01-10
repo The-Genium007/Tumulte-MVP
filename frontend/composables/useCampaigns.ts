@@ -6,6 +6,7 @@ import type {
   StreamerSearchResult,
   LiveStatusMap,
 } from "@/types";
+import { useSupportTrigger } from "@/composables/useSupportTrigger";
 
 export interface CampaignMember {
   id: string;
@@ -30,6 +31,7 @@ export interface CampaignMember {
 export const useCampaigns = () => {
   const config = useRuntimeConfig();
   const API_URL = config.public.apiBase;
+  const { triggerSupportForError } = useSupportTrigger();
 
   const campaigns = ref<Campaign[]>([]);
   const selectedCampaign = ref<Campaign | null>(null);
@@ -51,6 +53,7 @@ export const useCampaigns = () => {
       campaigns.value = data.data;
     } catch (error) {
       console.error("Failed to fetch campaigns:", error);
+      triggerSupportForError("campaign_fetch", error);
       throw error;
     } finally {
       loading.value = false;
@@ -64,16 +67,21 @@ export const useCampaigns = () => {
     name: string;
     description?: string;
   }): Promise<Campaign> => {
-    const response = await fetch(`${API_URL}/mj/campaigns`, {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-    if (!response.ok) throw new Error("Failed to create campaign");
-    const result = await response.json();
-    campaigns.value.unshift(result.data);
-    return result.data;
+    try {
+      const response = await fetch(`${API_URL}/mj/campaigns`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) throw new Error("Failed to create campaign");
+      const result = await response.json();
+      campaigns.value.unshift(result.data);
+      return result.data;
+    } catch (error) {
+      triggerSupportForError("campaign_create", error);
+      throw error;
+    }
   };
 
   /**
@@ -83,33 +91,43 @@ export const useCampaigns = () => {
     id: string,
     data: { name?: string; description?: string },
   ): Promise<Campaign> => {
-    const response = await fetch(`${API_URL}/mj/campaigns/${id}`, {
-      method: "PUT",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-    if (!response.ok) throw new Error("Failed to update campaign");
-    const result = await response.json();
-    const index = campaigns.value.findIndex((c) => c.id === id);
-    if (index !== -1) {
-      campaigns.value[index] = result.data;
+    try {
+      const response = await fetch(`${API_URL}/mj/campaigns/${id}`, {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) throw new Error("Failed to update campaign");
+      const result = await response.json();
+      const index = campaigns.value.findIndex((c) => c.id === id);
+      if (index !== -1) {
+        campaigns.value[index] = result.data;
+      }
+      return result.data;
+    } catch (error) {
+      triggerSupportForError("campaign_update", error);
+      throw error;
     }
-    return result.data;
   };
 
   /**
    * Supprime une campagne
    */
   const deleteCampaign = async (id: string): Promise<void> => {
-    const response = await fetch(`${API_URL}/mj/campaigns/${id}`, {
-      method: "DELETE",
-      credentials: "include",
-    });
-    if (!response.ok) throw new Error("Failed to delete campaign");
-    campaigns.value = campaigns.value.filter((c) => c.id !== id);
-    if (selectedCampaign.value?.id === id) {
-      selectedCampaign.value = null;
+    try {
+      const response = await fetch(`${API_URL}/mj/campaigns/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("Failed to delete campaign");
+      campaigns.value = campaigns.value.filter((c) => c.id !== id);
+      if (selectedCampaign.value?.id === id) {
+        selectedCampaign.value = null;
+      }
+    } catch (error) {
+      triggerSupportForError("campaign_delete", error);
+      throw error;
     }
   };
 
@@ -117,12 +135,17 @@ export const useCampaigns = () => {
    * Récupère les membres d'une campagne
    */
   const getCampaignMembers = async (id: string): Promise<CampaignMember[]> => {
-    const response = await fetch(`${API_URL}/mj/campaigns/${id}`, {
-      credentials: "include",
-    });
-    if (!response.ok) throw new Error("Failed to fetch campaign members");
-    const data = await response.json();
-    return data.data.members;
+    try {
+      const response = await fetch(`${API_URL}/mj/campaigns/${id}`, {
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("Failed to fetch campaign members");
+      const data = await response.json();
+      return data.data.members;
+    } catch (error) {
+      triggerSupportForError("campaign_members_fetch", error);
+      throw error;
+    }
   };
 
   /**
@@ -131,22 +154,27 @@ export const useCampaigns = () => {
   const getCampaignDetails = async (
     id: string,
   ): Promise<{ campaign: Campaign; members: CampaignMembership[] }> => {
-    const response = await fetch(`${API_URL}/mj/campaigns/${id}`, {
-      credentials: "include",
-    });
-    if (!response.ok) throw new Error("Failed to fetch campaign details");
-    const data = await response.json();
-    return {
-      campaign: {
-        id: data.data.id,
-        name: data.data.name,
-        description: data.data.description,
-        memberCount: data.data.memberCount,
-        activeMemberCount: data.data.activeMemberCount,
-        createdAt: data.data.createdAt,
-      },
-      members: data.data.members,
-    };
+    try {
+      const response = await fetch(`${API_URL}/mj/campaigns/${id}`, {
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("Failed to fetch campaign details");
+      const data = await response.json();
+      return {
+        campaign: {
+          id: data.data.id,
+          name: data.data.name,
+          description: data.data.description,
+          memberCount: data.data.memberCount,
+          activeMemberCount: data.data.activeMemberCount,
+          createdAt: data.data.createdAt,
+        },
+        members: data.data.members,
+      };
+    } catch (error) {
+      triggerSupportForError("campaign_fetch_detail", error);
+      throw error;
+    }
   };
 
   /**
@@ -167,16 +195,21 @@ export const useCampaigns = () => {
           profile_image_url?: string;
         },
   ): Promise<void> => {
-    const response = await fetch(
-      `${API_URL}/mj/campaigns/${campaignId}/invite`,
-      {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      },
-    );
-    if (!response.ok) throw new Error("Failed to invite streamer");
+    try {
+      const response = await fetch(
+        `${API_URL}/mj/campaigns/${campaignId}/invite`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        },
+      );
+      if (!response.ok) throw new Error("Failed to invite streamer");
+    } catch (error) {
+      triggerSupportForError("campaign_invite", error);
+      throw error;
+    }
   };
 
   /**
@@ -186,14 +219,19 @@ export const useCampaigns = () => {
     campaignId: string,
     memberId: string,
   ): Promise<void> => {
-    const response = await fetch(
-      `${API_URL}/mj/campaigns/${campaignId}/members/${memberId}`,
-      {
-        method: "DELETE",
-        credentials: "include",
-      },
-    );
-    if (!response.ok) throw new Error("Failed to remove member");
+    try {
+      const response = await fetch(
+        `${API_URL}/mj/campaigns/${campaignId}/members/${memberId}`,
+        {
+          method: "DELETE",
+          credentials: "include",
+        },
+      );
+      if (!response.ok) throw new Error("Failed to remove member");
+    } catch (error) {
+      triggerSupportForError("campaign_member_remove", error);
+      throw error;
+    }
   };
 
   /**
@@ -229,63 +267,94 @@ export const useCampaigns = () => {
    * Récupère les invitations en attente pour le streamer
    */
   const fetchInvitations = async (): Promise<CampaignInvitation[]> => {
-    const response = await fetch(`${API_URL}/streamer/campaigns/invitations`, {
-      credentials: "include",
-    });
-    if (!response.ok) throw new Error("Failed to fetch invitations");
-    const data = await response.json();
-    return data.data;
+    try {
+      const response = await fetch(
+        `${API_URL}/streamer/campaigns/invitations`,
+        {
+          credentials: "include",
+        },
+      );
+      if (!response.ok) throw new Error("Failed to fetch invitations");
+      const data = await response.json();
+      return data.data;
+    } catch (error) {
+      triggerSupportForError("streamer_invitations_fetch", error);
+      throw error;
+    }
   };
 
   /**
    * Accepte une invitation
    */
   const acceptInvitation = async (id: string): Promise<void> => {
-    const response = await fetch(
-      `${API_URL}/streamer/campaigns/invitations/${id}/accept`,
-      {
-        method: "POST",
-        credentials: "include",
-      },
-    );
-    if (!response.ok) throw new Error("Failed to accept invitation");
+    try {
+      const response = await fetch(
+        `${API_URL}/streamer/campaigns/invitations/${id}/accept`,
+        {
+          method: "POST",
+          credentials: "include",
+        },
+      );
+      if (!response.ok) throw new Error("Failed to accept invitation");
+    } catch (error) {
+      triggerSupportForError("streamer_invitation_accept", error);
+      throw error;
+    }
   };
 
   /**
    * Refuse une invitation
    */
   const declineInvitation = async (id: string): Promise<void> => {
-    const response = await fetch(
-      `${API_URL}/streamer/campaigns/invitations/${id}/decline`,
-      {
-        method: "POST",
-        credentials: "include",
-      },
-    );
-    if (!response.ok) throw new Error("Failed to decline invitation");
+    try {
+      const response = await fetch(
+        `${API_URL}/streamer/campaigns/invitations/${id}/decline`,
+        {
+          method: "POST",
+          credentials: "include",
+        },
+      );
+      if (!response.ok) throw new Error("Failed to decline invitation");
+    } catch (error) {
+      triggerSupportForError("streamer_invitation_decline", error);
+      throw error;
+    }
   };
 
   /**
    * Récupère les campagnes actives du streamer
    */
   const fetchActiveCampaigns = async (): Promise<Campaign[]> => {
-    const response = await fetch(`${API_URL}/streamer/campaigns`, {
-      credentials: "include",
-    });
-    if (!response.ok) throw new Error("Failed to fetch active campaigns");
-    const data = await response.json();
-    return data.data;
+    try {
+      const response = await fetch(`${API_URL}/streamer/campaigns`, {
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("Failed to fetch active campaigns");
+      const data = await response.json();
+      return data.data;
+    } catch (error) {
+      triggerSupportForError("streamer_campaigns_fetch", error);
+      throw error;
+    }
   };
 
   /**
    * Quitte une campagne
    */
   const leaveCampaign = async (id: string): Promise<void> => {
-    const response = await fetch(`${API_URL}/streamer/campaigns/${id}/leave`, {
-      method: "POST",
-      credentials: "include",
-    });
-    if (!response.ok) throw new Error("Failed to leave campaign");
+    try {
+      const response = await fetch(
+        `${API_URL}/streamer/campaigns/${id}/leave`,
+        {
+          method: "POST",
+          credentials: "include",
+        },
+      );
+      if (!response.ok) throw new Error("Failed to leave campaign");
+    } catch (error) {
+      triggerSupportForError("streamer_campaign_leave", error);
+      throw error;
+    }
   };
 
   // ========== Authorization Methods ==========
@@ -297,45 +366,60 @@ export const useCampaigns = () => {
     campaignId: string,
     // eslint-disable-next-line @typescript-eslint/naming-convention
   ): Promise<{ expires_at: string; remaining_seconds: number }> => {
-    const response = await fetch(
-      `${API_URL}/streamer/campaigns/${campaignId}/authorize`,
-      {
-        method: "POST",
-        credentials: "include",
-      },
-    );
-    if (!response.ok) throw new Error("Failed to grant authorization");
-    const data = await response.json();
-    return data.data;
+    try {
+      const response = await fetch(
+        `${API_URL}/streamer/campaigns/${campaignId}/authorize`,
+        {
+          method: "POST",
+          credentials: "include",
+        },
+      );
+      if (!response.ok) throw new Error("Failed to grant authorization");
+      const data = await response.json();
+      return data.data;
+    } catch (error) {
+      triggerSupportForError("authorization_grant", error);
+      throw error;
+    }
   };
 
   /**
    * Révoque l'autorisation
    */
   const revokeAuthorization = async (campaignId: string): Promise<void> => {
-    const response = await fetch(
-      `${API_URL}/streamer/campaigns/${campaignId}/authorize`,
-      {
-        method: "DELETE",
-        credentials: "include",
-      },
-    );
-    if (!response.ok) throw new Error("Failed to revoke authorization");
+    try {
+      const response = await fetch(
+        `${API_URL}/streamer/campaigns/${campaignId}/authorize`,
+        {
+          method: "DELETE",
+          credentials: "include",
+        },
+      );
+      if (!response.ok) throw new Error("Failed to revoke authorization");
+    } catch (error) {
+      triggerSupportForError("authorization_revoke", error);
+      throw error;
+    }
   };
 
   /**
    * Récupère le statut live des membres d'une campagne
    */
   const getLiveStatus = async (campaignId: string): Promise<LiveStatusMap> => {
-    const response = await fetch(
-      `${API_URL}/mj/campaigns/${campaignId}/live-status`,
-      {
-        credentials: "include",
-      },
-    );
-    if (!response.ok) throw new Error("Failed to fetch live status");
-    const data = await response.json();
-    return data.data;
+    try {
+      const response = await fetch(
+        `${API_URL}/mj/campaigns/${campaignId}/live-status`,
+        {
+          credentials: "include",
+        },
+      );
+      if (!response.ok) throw new Error("Failed to fetch live status");
+      const data = await response.json();
+      return data.data;
+    } catch (error) {
+      triggerSupportForError("health_check_twitch", error);
+      throw error;
+    }
   };
 
   /**
@@ -357,15 +441,20 @@ export const useCampaigns = () => {
       remaining_seconds: number | null;
     }[]
   > => {
-    const response = await fetch(
-      `${API_URL}/streamer/campaigns/authorization-status`,
-      {
-        credentials: "include",
-      },
-    );
-    if (!response.ok) throw new Error("Failed to fetch authorization status");
-    const data = await response.json();
-    return data.data;
+    try {
+      const response = await fetch(
+        `${API_URL}/streamer/campaigns/authorization-status`,
+        {
+          credentials: "include",
+        },
+      );
+      if (!response.ok) throw new Error("Failed to fetch authorization status");
+      const data = await response.json();
+      return data.data;
+    } catch (error) {
+      triggerSupportForError("authorization_status_fetch", error);
+      throw error;
+    }
   };
 
   return {

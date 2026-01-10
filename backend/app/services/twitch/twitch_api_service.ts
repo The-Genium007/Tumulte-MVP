@@ -1,5 +1,8 @@
 import env from '#start/env'
 import logger from '@adonisjs/core/services/logger'
+import { RetryUtility } from '#services/resilience/retry_utility'
+import { RetryPolicies } from '#services/resilience/types'
+import type { HttpCallResult, RetryResult, RetryContext } from '#services/resilience/types'
 
 interface TwitchChannel {
   id: string
@@ -43,6 +46,11 @@ interface TwitchStream {
 class TwitchApiService {
   private appAccessToken: string | null = null
   private tokenExpiry: number = 0
+  private readonly retryUtility: RetryUtility
+
+  constructor() {
+    this.retryUtility = new RetryUtility()
+  }
 
   /**
    * Obtient un App Access Token de Twitch
@@ -265,6 +273,263 @@ class TwitchApiService {
     }
 
     return results
+  }
+
+  /**
+   * Get streams with retry support
+   * Returns a RetryResult containing the streams map
+   */
+  async getStreamsByUserIdsWithRetry(
+    userIds: string[],
+    accessToken: string,
+    context?: Partial<RetryContext>
+  ): Promise<RetryResult<Map<string, TwitchStream>>> {
+    if (userIds.length === 0) {
+      return {
+        success: true,
+        data: new Map(),
+        attempts: 0,
+        totalDurationMs: 0,
+        circuitBreakerOpen: false,
+        attemptDetails: [],
+      }
+    }
+
+    const clientId = env.get('TWITCH_CLIENT_ID')
+    if (!clientId) {
+      return {
+        success: false,
+        error: new Error('Missing Twitch Client ID in environment'),
+        attempts: 0,
+        totalDurationMs: 0,
+        circuitBreakerOpen: false,
+        attemptDetails: [],
+      }
+    }
+
+    const operation = async (): Promise<HttpCallResult<Map<string, TwitchStream>>> => {
+      const results = new Map<string, TwitchStream>()
+      const chunkSize = 100
+
+      for (let i = 0; i < userIds.length; i += chunkSize) {
+        const chunk = userIds.slice(i, i + chunkSize)
+        const params = chunk.map((id) => `user_id=${encodeURIComponent(id)}`).join('&')
+        const url = `https://api.twitch.tv/helix/streams?${params}`
+
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Client-Id': clientId,
+          },
+          signal: AbortSignal.timeout(10000),
+        })
+
+        const retryAfterHeader = response.headers.get('Retry-After')
+        const retryAfterSeconds = retryAfterHeader
+          ? Number.parseInt(retryAfterHeader, 10)
+          : undefined
+
+        if (!response.ok) {
+          const errorText = await response.text()
+          return {
+            success: false,
+            statusCode: response.status,
+            retryAfterSeconds,
+            error: new Error(errorText || `HTTP ${response.status}`),
+          }
+        }
+
+        const data = (await response.json()) as { data: TwitchStream[] }
+        for (const stream of data.data) {
+          results.set(stream.user_id, stream)
+        }
+      }
+
+      return {
+        success: true,
+        statusCode: 200,
+        data: results,
+      }
+    }
+
+    return this.retryUtility.execute(operation, {
+      ...RetryPolicies.TWITCH_API,
+      context: {
+        service: 'TwitchApiService',
+        operation: 'getStreamsByUserIds',
+        metadata: { userCount: userIds.length },
+        ...context,
+      },
+    })
+  }
+
+  /**
+   * Get users by IDs with retry support
+   */
+  async getUsersByIdsWithRetry(
+    ids: string[],
+    accessToken: string,
+    context?: Partial<RetryContext>
+  ): Promise<RetryResult<TwitchUserInfo[]>> {
+    if (ids.length === 0) {
+      return {
+        success: true,
+        data: [],
+        attempts: 0,
+        totalDurationMs: 0,
+        circuitBreakerOpen: false,
+        attemptDetails: [],
+      }
+    }
+
+    const clientId = env.get('TWITCH_CLIENT_ID')
+    if (!clientId) {
+      return {
+        success: false,
+        error: new Error('Missing Twitch Client ID in environment'),
+        attempts: 0,
+        totalDurationMs: 0,
+        circuitBreakerOpen: false,
+        attemptDetails: [],
+      }
+    }
+
+    const operation = async (): Promise<HttpCallResult<TwitchUserInfo[]>> => {
+      const results: TwitchUserInfo[] = []
+      const chunkSize = 100
+
+      for (let i = 0; i < ids.length; i += chunkSize) {
+        const chunk = ids.slice(i, i + chunkSize)
+        const params = chunk.map((id) => `id=${encodeURIComponent(id)}`).join('&')
+
+        const response = await fetch(`https://api.twitch.tv/helix/users?${params}`, {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Client-Id': clientId,
+          },
+          signal: AbortSignal.timeout(10000),
+        })
+
+        const retryAfterHeader = response.headers.get('Retry-After')
+        const retryAfterSeconds = retryAfterHeader
+          ? Number.parseInt(retryAfterHeader, 10)
+          : undefined
+
+        if (!response.ok) {
+          const errorText = await response.text()
+          return {
+            success: false,
+            statusCode: response.status,
+            retryAfterSeconds,
+            error: new Error(errorText || `HTTP ${response.status}`),
+          }
+        }
+
+        const data = (await response.json()) as { data: TwitchUserInfo[] }
+        results.push(...data.data)
+      }
+
+      return {
+        success: true,
+        statusCode: 200,
+        data: results,
+      }
+    }
+
+    return this.retryUtility.execute(operation, {
+      ...RetryPolicies.TWITCH_API,
+      context: {
+        service: 'TwitchApiService',
+        operation: 'getUsersByIds',
+        metadata: { userCount: ids.length },
+        ...context,
+      },
+    })
+  }
+
+  /**
+   * Get app access token with retry support
+   */
+  async getAppAccessTokenWithRetry(context?: Partial<RetryContext>): Promise<RetryResult<string>> {
+    // Return cached token if still valid
+    if (this.appAccessToken && Date.now() < this.tokenExpiry) {
+      return {
+        success: true,
+        data: this.appAccessToken,
+        attempts: 0,
+        totalDurationMs: 0,
+        circuitBreakerOpen: false,
+        attemptDetails: [],
+      }
+    }
+
+    const clientId = env.get('TWITCH_CLIENT_ID')
+    const clientSecret = env.get('TWITCH_CLIENT_SECRET')
+
+    if (!clientId || !clientSecret) {
+      return {
+        success: false,
+        error: new Error('Missing Twitch credentials in environment'),
+        attempts: 0,
+        totalDurationMs: 0,
+        circuitBreakerOpen: false,
+        attemptDetails: [],
+      }
+    }
+
+    const operation = async (): Promise<HttpCallResult<string>> => {
+      const response = await fetch('https://id.twitch.tv/oauth2/token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          client_id: clientId,
+          client_secret: clientSecret,
+          grant_type: 'client_credentials',
+        }),
+        signal: AbortSignal.timeout(10000),
+      })
+
+      const retryAfterHeader = response.headers.get('Retry-After')
+      const retryAfterSeconds = retryAfterHeader ? Number.parseInt(retryAfterHeader, 10) : undefined
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        return {
+          success: false,
+          statusCode: response.status,
+          retryAfterSeconds,
+          error: new Error(errorText || `HTTP ${response.status}`),
+        }
+      }
+
+      const data = (await response.json()) as {
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        access_token: string
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        expires_in: number
+      }
+
+      // Cache the token
+      this.appAccessToken = data.access_token
+      this.tokenExpiry = Date.now() + (data.expires_in - 300) * 1000
+
+      return {
+        success: true,
+        statusCode: response.status,
+        data: data.access_token,
+      }
+    }
+
+    return this.retryUtility.execute(operation, {
+      ...RetryPolicies.TWITCH_API,
+      context: {
+        service: 'TwitchApiService',
+        operation: 'getAppAccessToken',
+        ...context,
+      },
+    })
   }
 }
 

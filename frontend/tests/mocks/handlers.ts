@@ -19,13 +19,6 @@ export const handlers = [
     return HttpResponse.json({ success: true });
   }),
 
-  http.post(`${API_URL}/api/v2/auth/switch-role`, async ({ request }) => {
-    const body = (await request.json()) as { role: string };
-    return HttpResponse.json(
-      createMockUser({ role: body.role as "MJ" | "STREAMER" }),
-    );
-  }),
-
   // Campaigns endpoints
   http.get(`${API_URL}/api/v2/mj/campaigns`, () => {
     return HttpResponse.json([

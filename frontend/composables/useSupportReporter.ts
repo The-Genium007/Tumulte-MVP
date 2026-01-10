@@ -1,6 +1,65 @@
 import { useAuthStore } from "@/stores/auth";
 import { usePollControlStore } from "@/stores/pollControl";
 import { getSupportSnapshot } from "@/utils/supportTelemetry";
+import { useSupportTrigger } from "@/composables/useSupportTrigger";
+
+/**
+ * Patterns de données sensibles à filtrer
+ */
+const SENSITIVE_PATTERNS = [
+  /Bearer\s+[A-Za-z0-9\-_.]+/gi, // Bearer tokens
+  /eyJ[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]*/gi, // JWT tokens
+  /[a-z0-9]{30,}/gi, // Long hex/alphanumeric tokens
+  /password["'\s:=]+[^"'\s,}]+/gi, // Passwords
+  /secret["'\s:=]+[^"'\s,}]+/gi, // Secrets
+  /access_token["'\s:=]+[^"'\s,}]+/gi, // Access tokens
+  /refresh_token["'\s:=]+[^"'\s,}]+/gi, // Refresh tokens
+  /api_key["'\s:=]+[^"'\s,}]+/gi, // API keys
+  /authorization["'\s:=]+[^"'\s,}]+/gi, // Authorization headers
+];
+
+/**
+ * Sanitize une chaîne en remplaçant les données sensibles par [REDACTED]
+ */
+const sanitizeString = (str: string): string => {
+  let sanitized = str;
+  for (const pattern of SENSITIVE_PATTERNS) {
+    sanitized = sanitized.replace(pattern, "[REDACTED]");
+  }
+  return sanitized;
+};
+
+/**
+ * Sanitize récursivement un objet
+ */
+const sanitizeObject = (obj: unknown): unknown => {
+  if (typeof obj === "string") {
+    return sanitizeString(obj);
+  }
+  if (Array.isArray(obj)) {
+    return obj.map(sanitizeObject);
+  }
+  if (obj && typeof obj === "object") {
+    const sanitized: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(obj)) {
+      // Filtrer les clés sensibles
+      const lowerKey = key.toLowerCase();
+      if (
+        lowerKey.includes("token") ||
+        lowerKey.includes("password") ||
+        lowerKey.includes("secret") ||
+        lowerKey.includes("apikey") ||
+        lowerKey.includes("authorization")
+      ) {
+        sanitized[key] = "[REDACTED]";
+      } else {
+        sanitized[key] = sanitizeObject(value);
+      }
+    }
+    return sanitized;
+  }
+  return obj;
+};
 
 const buildPerformanceSnapshot = () => {
   if (typeof performance === "undefined") return undefined;
@@ -39,11 +98,11 @@ export const useSupportReporter = () => {
 
   const authStore = useAuthStore();
   const pollControlStore = usePollControlStore();
+  const { triggerSupportForError } = useSupportTrigger();
 
   const buildStoreSnapshot = () => ({
     auth: {
       userId: authStore.user?.id ?? null,
-      role: authStore.user?.role ?? null,
       displayName:
         // eslint-disable-next-line @typescript-eslint/naming-convention
         (authStore.user as unknown as { display_name?: string })
@@ -94,6 +153,24 @@ export const useSupportReporter = () => {
     };
   };
 
+  /**
+   * Récupère les logs backend de l'utilisateur depuis Redis
+   */
+  const fetchBackendLogs = async (): Promise<unknown[]> => {
+    try {
+      const response = await fetch(`${API_URL}/support/logs`, {
+        credentials: "include",
+      });
+      if (response.ok) {
+        const data = await response.json();
+        return data.data?.logs || [];
+      }
+    } catch {
+      // Silent fail - logs backend optionnels
+    }
+    return [];
+  };
+
   const sendSupportReport = async (
     description: string,
     options?: { includeDiagnostics?: boolean },
@@ -112,9 +189,21 @@ export const useSupportReporter = () => {
       }
     }
 
-    const payload = {
+    // Récupérer les logs backend si diagnostics activés
+    let backendLogs: unknown[] = [];
+    if (includeDiagnostics) {
+      backendLogs = await fetchBackendLogs();
+    }
+
+    // Sanitize les données pour retirer les informations sensibles
+    const payload = sanitizeObject({
       description: description.trim(),
       frontend: buildFrontendContext(description, includeDiagnostics),
+      backendLogs,
+    }) as {
+      description: string;
+      frontend: ReturnType<typeof buildFrontendContext>;
+      backendLogs: unknown[];
     };
 
     const response = await fetch(`${API_URL}/support/report`, {
@@ -127,10 +216,18 @@ export const useSupportReporter = () => {
     });
 
     if (!response.ok) {
-      const error = await response.json().catch(() => null);
-      throw new Error(
-        error?.error || "Impossible d'envoyer le ticket Discord.",
+      const errorData = await response.json().catch(() => null);
+      const error = new Error(
+        errorData?.error || "Impossible d'envoyer le ticket Discord.",
       );
+      // Note: On utilise un try/catch interne pour éviter une boucle infinie
+      // si le trigger lui-même échoue
+      try {
+        triggerSupportForError("support_send", error);
+      } catch {
+        // Ignore pour éviter boucle infinie
+      }
+      throw error;
     }
 
     return response.json().catch(() => ({}));

@@ -7,7 +7,7 @@ test.group('Campaigns CRUD API (MJ)', (group) => {
   group.each.setup(() => testUtils.db().withGlobalTransaction())
 
   test('Campaign repository should return empty list for new user', async ({ assert }) => {
-    const user = await createTestUser({ role: 'MJ' })
+    const user = await createTestUser({})
 
     const campaigns = await Campaign.query().where('ownerId', user.id)
 
@@ -16,7 +16,7 @@ test.group('Campaigns CRUD API (MJ)', (group) => {
   })
 
   test('Campaign repository should return campaigns list for owner', async ({ assert }) => {
-    const user = await createTestUser({ role: 'MJ' })
+    const user = await createTestUser({})
 
     await createTestCampaign({ ownerId: user.id, name: 'Campaign 1' })
     await createTestCampaign({ ownerId: user.id, name: 'Campaign 2' })
@@ -30,8 +30,8 @@ test.group('Campaigns CRUD API (MJ)', (group) => {
   })
 
   test('Campaign should not be accessible by non-owner', async ({ assert }) => {
-    const owner = await createTestUser({ role: 'MJ' })
-    const otherUser = await createTestUser({ role: 'MJ' })
+    const owner = await createTestUser({})
+    const otherUser = await createTestUser({})
     const campaign = await createTestCampaign({ ownerId: owner.id })
 
     // Verify campaign belongs to owner, not otherUser
@@ -40,7 +40,7 @@ test.group('Campaigns CRUD API (MJ)', (group) => {
   })
 
   test('Campaign create should set correct owner', async ({ assert }) => {
-    const user = await createTestUser({ role: 'MJ' })
+    const user = await createTestUser({})
 
     const campaign = await Campaign.create({
       ownerId: user.id,
@@ -61,7 +61,7 @@ test.group('Campaigns CRUD API (MJ)', (group) => {
   })
 
   test('Campaign findById should return campaign details', async ({ assert }) => {
-    const user = await createTestUser({ role: 'MJ' })
+    const user = await createTestUser({})
     const campaign = await createTestCampaign({ ownerId: user.id, name: 'Test Campaign' })
 
     const found = await Campaign.find(campaign.id)
@@ -79,7 +79,7 @@ test.group('Campaigns CRUD API (MJ)', (group) => {
   })
 
   test('Campaign update should modify fields', async ({ assert }) => {
-    const user = await createTestUser({ role: 'MJ' })
+    const user = await createTestUser({})
     const campaign = await createTestCampaign({ ownerId: user.id, name: 'Old Name' })
 
     campaign.name = 'Updated Name'
@@ -92,7 +92,7 @@ test.group('Campaigns CRUD API (MJ)', (group) => {
   })
 
   test('Campaign delete should remove from database', async ({ assert }) => {
-    const user = await createTestUser({ role: 'MJ' })
+    const user = await createTestUser({})
     const campaign = await createTestCampaign({ ownerId: user.id })
     const campaignId = campaign.id
 
@@ -103,8 +103,8 @@ test.group('Campaigns CRUD API (MJ)', (group) => {
   })
 
   test('Campaign ownership check should work correctly', async ({ assert }) => {
-    const owner = await createTestUser({ role: 'MJ' })
-    const otherUser = await createTestUser({ role: 'MJ' })
+    const owner = await createTestUser({})
+    const otherUser = await createTestUser({})
     const campaign = await createTestCampaign({ ownerId: owner.id })
 
     assert.isTrue(campaign.ownerId === owner.id)

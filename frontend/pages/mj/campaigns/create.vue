@@ -2,15 +2,18 @@
 
     <div class="min-h-screen py-6">
       <div class="space-y-6">
+        <!-- Bouton retour -->
+        <UButton
+          color="neutral"
+          variant="soft"
+          icon="i-lucide-arrow-left"
+          label="Retour aux campagnes"
+          @click="_router.push('/mj/campaigns')"
+        />
+
         <!-- Header -->
         <UCard>
           <div class="flex items-center gap-4">
-            <UButton
-              color="neutral"
-              variant="ghost"
-              icon="i-lucide-arrow-left"
-              @click="_router.push('/mj/campaigns')"
-            />
             <div class="bg-primary-500/10 p-3 rounded-xl">
               <UIcon name="i-lucide-folder-plus" class="size-8 text-primary-500" />
             </div>
@@ -99,14 +102,9 @@ import { useCampaigns } from "@/composables/useCampaigns";
 definePageMeta({
   layout: "authenticated" as const,
   middleware: ["auth"],
-  breadcrumbs: [
-    { label: "Campagnes", to: "/mj/campaigns", icon: "i-lucide-folder-kanban" },
-    { label: "Nouvelle campagne", to: null, icon: "i-lucide-folder-plus" }
-  ]
 });
 
 const _router = useRouter();
-const toast = useToast();
 const { createCampaign } = useCampaigns();
 
 const name = ref("");
@@ -115,11 +113,6 @@ const creating = ref(false);
 
 const handleCreate = async () => {
   if (!name.value.trim()) {
-    toast.add({
-      title: "Erreur",
-      description: "Le nom de la campagne est requis",
-      color: "error",
-    });
     return;
   }
 
@@ -130,20 +123,9 @@ const handleCreate = async () => {
       description: description.value.trim() || undefined,
     });
 
-    toast.add({
-      title: "Succès",
-      description: `Campagne "${name.value}" créée avec succès`,
-      color: "success",
-    });
-
     _router.push("/mj/campaigns");
   } catch (error: unknown) {
     console.error("Failed to create campaign:", error);
-    toast.add({
-      title: "Erreur",
-      description: (error as { data?: { error?: string } })?.data?.error || "Impossible de créer la campagne",
-      color: "error",
-    });
   } finally {
     creating.value = false;
   }

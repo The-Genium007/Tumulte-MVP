@@ -28,13 +28,16 @@ export const http = defineConfig({
   /**
    * Manage cookies configuration. The settings for the session id cookie are
    * defined inside the "config/session.ts" file.
+   *
+   * Note: sameSite 'none' is required for cross-origin requests with credentials
+   * when frontend and backend are on different domains (e.g., staging environment)
    */
   cookie: {
     domain: '',
     path: '/',
-    maxAge: '2h',
+    maxAge: '7 days',
     httpOnly: true,
     secure: app.inProduction,
-    sameSite: 'lax',
+    sameSite: app.inProduction ? 'none' : 'lax',
   },
 })

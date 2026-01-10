@@ -21,7 +21,6 @@ test.group('Account Deletion (GDPR Anonymization)', (group) => {
 
   test('should anonymize user displayName and email', async ({ assert }) => {
     const user = await createTestUser({
-      role: 'STREAMER',
       displayName: 'TestUser123',
       email: 'test@example.com',
     })
@@ -38,7 +37,7 @@ test.group('Account Deletion (GDPR Anonymization)', (group) => {
   })
 
   test('should anonymize streamer twitchUserId to allow re-registration', async ({ assert }) => {
-    const user = await createTestUser({ role: 'STREAMER' })
+    const user = await createTestUser({})
     const streamer = await createTestStreamer({
       userId: user.id,
       twitchUserId: '12345678',
@@ -79,7 +78,7 @@ test.group('Account Deletion (GDPR Anonymization)', (group) => {
   })
 
   test('should anonymize campaigns owned by user', async ({ assert }) => {
-    const user = await createTestUser({ role: 'MJ' })
+    const user = await createTestUser({})
     await createTestCampaign({
       ownerId: user.id,
       name: 'Ma Campagne RPG',
@@ -110,7 +109,7 @@ test.group('Account Deletion (GDPR Anonymization)', (group) => {
   })
 
   test('should delete campaign memberships for streamer', async ({ assert }) => {
-    const user = await createTestUser({ role: 'STREAMER' })
+    const user = await createTestUser({})
     const streamer = await createTestStreamer({ userId: user.id })
 
     // Create memberships
@@ -132,7 +131,7 @@ test.group('Account Deletion (GDPR Anonymization)', (group) => {
   })
 
   test('should anonymize poll templates owned by user', async ({ assert }) => {
-    const user = await createTestUser({ role: 'MJ' })
+    const user = await createTestUser({})
     const campaign = await createTestCampaign({ ownerId: user.id })
 
     await PollTemplate.create({
@@ -163,7 +162,7 @@ test.group('Account Deletion (GDPR Anonymization)', (group) => {
   })
 
   test('should anonymize poll instances created by user', async ({ assert }) => {
-    const user = await createTestUser({ role: 'MJ' })
+    const user = await createTestUser({})
     const campaign = await createTestCampaign({ ownerId: user.id })
 
     await createTestPollInstance({
@@ -183,7 +182,7 @@ test.group('Account Deletion (GDPR Anonymization)', (group) => {
   })
 
   test('should anonymize poll sessions owned by user', async ({ assert }) => {
-    const user = await createTestUser({ role: 'MJ' })
+    const user = await createTestUser({})
     const campaign = await createTestCampaign({ ownerId: user.id })
 
     await PollSession.create({
@@ -212,7 +211,6 @@ test.group('Account Deletion (GDPR Anonymization)', (group) => {
   }) => {
     // Setup: Create a complete user with all related data
     const user = await createTestUser({
-      role: 'MJ',
       displayName: 'CompleteMJ',
       email: 'complete@test.com',
     })

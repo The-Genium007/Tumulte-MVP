@@ -1,10 +1,20 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: "2024-11-01",
-  devtools: { enabled: true },
+  devtools: { enabled: process.env.NODE_ENV === "development" },
   ssr: false, // SPA mode - variables must be set at build time
 
-  modules: ["@nuxt/ui", "@pinia/nuxt", "@vite-pwa/nuxt"],
+  // Disable source maps in production for security
+  sourcemap: {
+    server: false,
+    client: process.env.NODE_ENV === "development",
+  },
+
+  modules: ["@nuxt/ui", "@pinia/nuxt", "@vite-pwa/nuxt", "@tresjs/nuxt"],
+
+  tres: {
+    devtools: process.env.NODE_ENV === "development",
+  },
 
   runtimeConfig: {
     public: {
@@ -47,6 +57,8 @@ export default defineNuxtConfig({
     workbox: {
       navigateFallback: "/",
       globPatterns: ["**/*.{js,css,html,png,svg,ico}"],
+      // Import du script de gestion des notifications push
+      importScripts: ["/sw-push.js"],
       runtimeCaching: [
         {
           urlPattern: /^https:\/\/api\.twitch\.tv\/.*/i,
@@ -84,6 +96,34 @@ export default defineNuxtConfig({
           content: "black-translucent",
         },
         { name: "mobile-web-app-capable", content: "yes" },
+        // Content Security Policy for defense in depth
+        {
+          "http-equiv": "Content-Security-Policy",
+          content: [
+            "default-src 'self'",
+            // Scripts: self + inline (Vue/Nuxt needs it) + Umami analytics
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://zerocase-umami-2548df-51-83-45-107.traefik.me",
+            // Styles: self + inline (Tailwind/Vue needs it)
+            "style-src 'self' 'unsafe-inline'",
+            // Images: self + data URIs + Twitch CDN for profile images
+            "img-src 'self' data: https: blob:",
+            // Connect: API backend + Twitch API + GitHub API + WebSocket + Iconify
+            // Note: Backend URL is dynamic based on environment
+            `connect-src 'self' ${process.env.NUXT_PUBLIC_API_BASE || "http://localhost:3333"} https://*.twitch.tv wss://*.twitch.tv https://api.github.com https://api.iconify.design https://zerocase-umami-2548df-51-83-45-107.traefik.me https://*.traefik.me`,
+            // Fonts: self + data URIs
+            "font-src 'self' data:",
+            // Workers: self + blob (for PWA service worker)
+            "worker-src 'self' blob:",
+            // Note: frame-ancestors must be set via HTTP header, not meta tag
+            // Base URI: self only
+            "base-uri 'self'",
+            // Form action: self only
+            "form-action 'self'",
+          ].join("; "),
+        },
+        // X-Content-Type-Options works via meta tag
+        { "http-equiv": "X-Content-Type-Options", content: "nosniff" },
+        // Note: X-Frame-Options and frame-ancestors must be set via HTTP headers on your reverse proxy
       ],
       link: [{ rel: "apple-touch-icon", href: "/apple-touch-icon.png" }],
       script: [

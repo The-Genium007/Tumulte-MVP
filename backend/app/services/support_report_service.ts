@@ -156,7 +156,6 @@ class SupportReportService {
 
     const userBlock = [
       `ID: ${user.id}`,
-      `Role: ${user.role}`,
       `Display: ${user.displayName}`,
       user.email ? `Email: ${user.email}` : null,
       streamer ? `Twitch: ${streamer.twitchDisplayName} (@${streamer.twitchLogin})` : null,
@@ -217,7 +216,6 @@ class SupportReportService {
 
     lines.push('=== Utilisateur ===')
     lines.push(`User ID: ${user.id}`)
-    lines.push(`Role: ${user.role}`)
     lines.push(`Display: ${user.displayName}`)
     lines.push(`Email: ${user.email ?? 'N/A'}`)
     if (streamer) {

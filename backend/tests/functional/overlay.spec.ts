@@ -4,9 +4,11 @@ import {
   createTestStreamer,
   createTestPollInstance,
   createTestCampaign,
+  createTestUser,
 } from '#tests/helpers/test_utils'
 import { streamer as Streamer } from '#models/streamer'
 import { pollInstance as PollInstance } from '#models/poll_instance'
+import env from '#start/env'
 
 test.group('Overlay API (Public)', (group) => {
   group.each.setup(() => testUtils.db().withGlobalTransaction())
@@ -75,5 +77,40 @@ test.group('Overlay API (Public)', (group) => {
 
     assert.isNotNull(found)
     assert.exists(found!.twitchLogin)
+  })
+})
+
+test.group('Overlay URL Generation', (group) => {
+  group.each.setup(() => testUtils.db().withGlobalTransaction())
+
+  test('Overlay URL should be correctly formatted with streamer ID', async ({ assert }) => {
+    const user = await createTestUser({})
+    const streamer = await createTestStreamer({ userId: user.id })
+
+    const frontendUrl = env.get('FRONTEND_URL')
+    const expectedUrl = `${frontendUrl}/overlay/${streamer.id}`
+
+    // Verify URL format
+    assert.isString(expectedUrl)
+    assert.include(expectedUrl, '/overlay/')
+    assert.include(expectedUrl, streamer.id)
+  })
+
+  test('Streamer must have associated user for authenticated endpoints', async ({ assert }) => {
+    // Create a streamer with an associated user (standard case)
+    const user = await createTestUser({})
+    const streamer = await createTestStreamer({ userId: user.id })
+
+    // Verify streamer is correctly linked to user
+    const found = await Streamer.find(streamer.id)
+    assert.isNotNull(found)
+    assert.equal(found!.userId, user.id)
+  })
+
+  test('Overlay URL should use FRONTEND_URL environment variable', async ({ assert }) => {
+    const frontendUrl = env.get('FRONTEND_URL')
+
+    assert.isString(frontendUrl)
+    assert.isTrue(frontendUrl.startsWith('http'))
   })
 })

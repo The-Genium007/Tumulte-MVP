@@ -266,7 +266,7 @@ Multi-channel Twitch poll management for tabletop RPG Game Masters.
 
 ## License
 
-CC BY-NC 4.0
+MIT
 ```
 
 ### Docs README

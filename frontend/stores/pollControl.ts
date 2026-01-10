@@ -1,8 +1,11 @@
 import { defineStore } from "pinia";
 import { ref, watch } from "vue";
+import { loggers } from "@/utils/logger";
+import axios from "axios";
 
 const STORAGE_KEY = "pollControl";
 const EXPIRY_HOURS = 24;
+const HEARTBEAT_INTERVAL_MS = 30000; // 30 secondes
 
 interface PollResult {
   option: string;
@@ -91,7 +94,7 @@ export const usePollControlStore = defineStore("pollControl", () => {
       currentPollInstanceId.value = data.currentPollInstanceId;
       pollStates.value = data.pollStates || {};
 
-      console.log("[PollControl] State restored from localStorage:", {
+      loggers.poll.debug("State restored from localStorage:", {
         hasActiveSession: !!data.activeSession,
         pollStatus: data.pollStatus,
         hasPollResults: !!data.pollResults,
@@ -121,7 +124,7 @@ export const usePollControlStore = defineStore("pollControl", () => {
         countdown.value = data.countdown;
       }
     } catch (error) {
-      console.error("Failed to load poll control state:", error);
+      loggers.poll.error("Failed to load poll control state:", error);
       if (isClient) {
         localStorage.removeItem(STORAGE_KEY);
       }
@@ -148,7 +151,7 @@ export const usePollControlStore = defineStore("pollControl", () => {
         timestamp: Date.now(),
       };
 
-      console.log("[PollControl] Saving state to localStorage:", {
+      loggers.poll.debug("Saving state to localStorage:", {
         hasActiveSession: !!activeSession.value,
         pollsCount: activeSessionPolls.value.length,
         pollStatus: pollStatus.value,
@@ -156,12 +159,12 @@ export const usePollControlStore = defineStore("pollControl", () => {
         pollResultsData: pollResults.value,
       });
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      console.log(
-        "[PollControl] State saved successfully with pollResults:",
+      loggers.poll.debug(
+        "State saved successfully with pollResults:",
         !!pollResults.value,
       );
     } catch (error) {
-      console.error("Failed to save poll control state:", error);
+      loggers.poll.error("Failed to save poll control state:", error);
     }
   };
 
@@ -202,23 +205,23 @@ export const usePollControlStore = defineStore("pollControl", () => {
       () => {
         // Ne pas supprimer le localStorage pendant l'initialisation
         if (isInitializing.value) {
-          console.log(
-            "[PollControl] Watcher triggered during initialization - skipping",
+          loggers.poll.debug(
+            "Watcher triggered during initialization - skipping",
           );
           return;
         }
 
-        console.log(
-          "[PollControl] Watcher triggered - activeSession:",
+        loggers.poll.debug(
+          "Watcher triggered - activeSession:",
           !!activeSession.value,
         );
         // Si une session est active, on sauvegarde
         if (activeSession.value) {
-          console.log("[PollControl] Session active, saving state...");
+          loggers.poll.debug("Session active, saving state...");
           saveState();
         } else {
           // Si plus de session active, on nettoie le localStorage
-          console.log("[PollControl] No active session, clearing localStorage");
+          loggers.poll.debug("No active session, clearing localStorage");
           localStorage.removeItem(STORAGE_KEY);
         }
       },
@@ -238,8 +241,8 @@ export const usePollControlStore = defineStore("pollControl", () => {
       duration: pollDuration.value,
     };
 
-    console.log(
-      `[PollControl] Saved state for poll ${index}:`,
+    loggers.poll.debug(
+      `Saved state for poll ${index}:`,
       pollStates.value[index],
     );
   };
@@ -275,10 +278,7 @@ export const usePollControlStore = defineStore("pollControl", () => {
         countdown.value = 0;
       }
 
-      console.log(
-        `[PollControl] Restored state for poll ${index}:`,
-        savedState,
-      );
+      loggers.poll.debug(`Restored state for poll ${index}:`, savedState);
     } else {
       // Réinitialiser à l'état idle si aucun état sauvegardé
       pollStatus.value = "idle";
@@ -288,9 +288,7 @@ export const usePollControlStore = defineStore("pollControl", () => {
       pollDuration.value = null;
       countdown.value = 0;
 
-      console.log(
-        `[PollControl] No saved state for poll ${index}, reset to idle`,
-      );
+      loggers.poll.debug(`No saved state for poll ${index}, reset to idle`);
     }
   };
 
@@ -329,8 +327,8 @@ export const usePollControlStore = defineStore("pollControl", () => {
             totalVotes: pollInstance.finalTotalVotes || 0,
           };
 
-          console.log(
-            "[PollControl] Synced final results from backend:",
+          loggers.poll.debug(
+            "Synced final results from backend:",
             pollResults.value,
           );
         }
@@ -348,7 +346,7 @@ export const usePollControlStore = defineStore("pollControl", () => {
         pollStatus.value = remaining > 0 ? "sending" : "sent";
       }
     } catch (error) {
-      console.error("[PollControl] Failed to sync with backend:", error);
+      loggers.poll.error("Failed to sync with backend:", error);
       // En cas d'erreur, on garde l'état local
     }
   };
@@ -361,9 +359,184 @@ export const usePollControlStore = defineStore("pollControl", () => {
   if (isClient) {
     setTimeout(() => {
       isInitializing.value = false;
-      console.log("[PollControl] Initialization complete, watcher now active");
+      loggers.poll.debug("Initialization complete, watcher now active");
     }, 0);
   }
+
+  // Heartbeat interval reference
+  let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
+
+  /**
+   * Valide l'état local avec le backend au chargement
+   * Compare pollStatus local vs backend et reset si désynchronisé
+   */
+  const validateWithBackend = async (
+    campaignId: string,
+    sessionId: string,
+  ): Promise<boolean> => {
+    if (!isClient) return true;
+
+    try {
+      const config = useRuntimeConfig();
+      const response = await axios.get(
+        `${config.public.apiBase}/mj/campaigns/${campaignId}/sessions/${sessionId}/status`,
+        { withCredentials: true },
+      );
+
+      const { session, currentPoll, serverTime } = response.data.data;
+
+      loggers.poll.debug("Backend validation response:", {
+        sessionId: session?.id,
+        currentPollId: currentPoll?.id,
+        currentPollStatus: currentPoll?.status,
+        localPollStatus: pollStatus.value,
+        localPollInstanceId: currentPollInstanceId.value,
+      });
+
+      // Vérifier la désynchronisation
+      let isDesynchronized = false;
+
+      // Cas 1: Frontend pense qu'un poll est en cours mais backend dit non
+      if (
+        (pollStatus.value === "sending" || pollStatus.value === "running") &&
+        !currentPoll
+      ) {
+        loggers.poll.warn(
+          "Desync detected: Frontend has running poll but backend has none",
+        );
+        isDesynchronized = true;
+      }
+
+      // Cas 2: Frontend pense qu'il n'y a pas de poll mais backend en a un
+      if (pollStatus.value === "idle" && currentPoll?.status === "RUNNING") {
+        loggers.poll.warn(
+          "Desync detected: Backend has running poll but frontend is idle",
+        );
+        isDesynchronized = true;
+      }
+
+      // Cas 3: IDs de poll différents
+      if (
+        currentPollInstanceId.value &&
+        currentPoll &&
+        currentPollInstanceId.value !== currentPoll.id
+      ) {
+        loggers.poll.warn("Desync detected: Poll instance IDs don't match", {
+          local: currentPollInstanceId.value,
+          backend: currentPoll.id,
+        });
+        isDesynchronized = true;
+      }
+
+      if (isDesynchronized) {
+        loggers.poll.info("Resetting local state to match backend");
+
+        // Reset à l'état backend
+        if (currentPoll && currentPoll.status === "RUNNING") {
+          // Synchroniser avec le poll en cours
+          currentPollInstanceId.value = currentPoll.id;
+          pollStatus.value = "sending";
+
+          // Calculer le temps restant
+          if (currentPoll.startedAt && currentPoll.durationSeconds) {
+            const startedAt = new Date(currentPoll.startedAt).getTime();
+            const endsAt = startedAt + currentPoll.durationSeconds * 1000;
+            const remaining = Math.max(
+              0,
+              Math.floor((endsAt - serverTime) / 1000),
+            );
+            countdown.value = remaining;
+            pollStartTime.value = startedAt;
+            pollDuration.value = currentPoll.durationSeconds;
+          }
+        } else {
+          // Pas de poll en cours, reset à idle
+          pollStatus.value = "idle";
+          currentPollInstanceId.value = null;
+          countdown.value = 0;
+          pollStartTime.value = null;
+          pollDuration.value = null;
+        }
+
+        saveState();
+        return false; // Était désynchronisé
+      }
+
+      return true; // Était synchronisé
+    } catch (error) {
+      loggers.poll.error("Failed to validate with backend:", error);
+      // En cas d'erreur réseau, on garde l'état local
+      return true;
+    }
+  };
+
+  /**
+   * Démarre le heartbeat périodique
+   */
+  const startHeartbeat = (campaignId: string, sessionId: string): void => {
+    if (!isClient) return;
+
+    // Arrêter l'ancien heartbeat s'il existe
+    stopHeartbeat();
+
+    loggers.poll.debug("Starting heartbeat", { campaignId, sessionId });
+
+    heartbeatInterval = setInterval(async () => {
+      try {
+        const config = useRuntimeConfig();
+        const response = await axios.post(
+          `${config.public.apiBase}/mj/campaigns/${campaignId}/sessions/${sessionId}/heartbeat`,
+          {},
+          { withCredentials: true },
+        );
+
+        const { currentPoll, serverTime } = response.data.data;
+
+        // Vérifier si désynchronisé
+        const backendHasRunningPoll = currentPoll?.status === "RUNNING";
+        const frontendHasRunningPoll =
+          pollStatus.value === "sending" || pollStatus.value === "running";
+
+        if (backendHasRunningPoll !== frontendHasRunningPoll) {
+          loggers.poll.warn("Heartbeat detected desync, revalidating...");
+          await validateWithBackend(campaignId, sessionId);
+        } else if (backendHasRunningPoll && currentPoll) {
+          // Synchroniser le countdown avec le serveur
+          if (currentPoll.startedAt && currentPoll.durationSeconds) {
+            const startedAt = new Date(currentPoll.startedAt).getTime();
+            const endsAt = startedAt + currentPoll.durationSeconds * 1000;
+            const remaining = Math.max(
+              0,
+              Math.floor((endsAt - serverTime) / 1000),
+            );
+
+            // Tolérance de 2 secondes pour éviter les micro-corrections
+            if (Math.abs(countdown.value - remaining) > 2) {
+              loggers.poll.debug("Heartbeat: correcting countdown drift", {
+                local: countdown.value,
+                server: remaining,
+              });
+              countdown.value = remaining;
+            }
+          }
+        }
+      } catch (error) {
+        loggers.poll.warn("Heartbeat failed:", error);
+        // Ne pas arrêter le heartbeat en cas d'erreur ponctuelle
+      }
+    }, HEARTBEAT_INTERVAL_MS);
+  };
+
+  /**
+   * Arrête le heartbeat
+   */
+  const stopHeartbeat = (): void => {
+    if (heartbeatInterval) {
+      clearInterval(heartbeatInterval);
+      heartbeatInterval = null;
+      loggers.poll.debug("Heartbeat stopped");
+    }
+  };
 
   return {
     // State
@@ -386,5 +559,8 @@ export const usePollControlStore = defineStore("pollControl", () => {
     syncWithBackend,
     saveCurrentPollState,
     restorePollState,
+    validateWithBackend,
+    startHeartbeat,
+    stopHeartbeat,
   };
 });

@@ -8,7 +8,7 @@ test.group('Streamer Campaigns API', (group) => {
   group.each.setup(() => testUtils.db().withGlobalTransaction())
 
   test('List pending invitations should return PENDING memberships', async ({ assert }) => {
-    const streamerUser = await createTestUser({ role: 'STREAMER' })
+    const streamerUser = await createTestUser({})
     const streamer = await createTestStreamer({ userId: streamerUser.id })
 
     const campaign = await createTestCampaign()
@@ -29,7 +29,7 @@ test.group('Streamer Campaigns API', (group) => {
   })
 
   test('Accept invitation should change status to ACTIVE', async ({ assert }) => {
-    const streamerUser = await createTestUser({ role: 'STREAMER' })
+    const streamerUser = await createTestUser({})
     const streamer = await createTestStreamer({ userId: streamerUser.id })
 
     const campaign = await createTestCampaign()
@@ -50,7 +50,7 @@ test.group('Streamer Campaigns API', (group) => {
   })
 
   test('Decline invitation should delete membership', async ({ assert }) => {
-    const streamerUser = await createTestUser({ role: 'STREAMER' })
+    const streamerUser = await createTestUser({})
     const streamer = await createTestStreamer({ userId: streamerUser.id })
 
     const campaign = await createTestCampaign()
@@ -69,7 +69,7 @@ test.group('Streamer Campaigns API', (group) => {
   })
 
   test('List active campaigns should return only ACTIVE memberships', async ({ assert }) => {
-    const streamerUser = await createTestUser({ role: 'STREAMER' })
+    const streamerUser = await createTestUser({})
     const streamer = await createTestStreamer({ userId: streamerUser.id })
 
     // Create active campaign
@@ -102,7 +102,7 @@ test.group('Streamer Campaigns API', (group) => {
   })
 
   test('Leave campaign should delete membership', async ({ assert }) => {
-    const streamerUser = await createTestUser({ role: 'STREAMER' })
+    const streamerUser = await createTestUser({})
     const streamer = await createTestStreamer({ userId: streamerUser.id })
 
     const campaign = await createTestCampaign()
@@ -124,7 +124,7 @@ test.group('Streamer Campaigns API', (group) => {
   })
 
   test('Authorization status should reflect expiry time', async ({ assert }) => {
-    const streamerUser = await createTestUser({ role: 'STREAMER' })
+    const streamerUser = await createTestUser({})
     const streamer = await createTestStreamer({ userId: streamerUser.id })
 
     const campaign = await createTestCampaign()

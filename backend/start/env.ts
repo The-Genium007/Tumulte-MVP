@@ -70,7 +70,6 @@ export default await Env.create(new URL('../', import.meta.url), {
   TWITCH_CLIENT_ID: Env.schema.string(),
   TWITCH_CLIENT_SECRET: Env.schema.string(),
   TWITCH_REDIRECT_URI: Env.schema.string(),
-  MJ_TWITCH_IDS: Env.schema.string.optional(),
 
   /*
   |----------------------------------------------------------
@@ -78,4 +77,13 @@ export default await Env.create(new URL('../', import.meta.url), {
   |----------------------------------------------------------
   */
   FRONTEND_URL: Env.schema.string(),
+
+  /*
+  |----------------------------------------------------------
+  | Push Notifications (VAPID)
+  |----------------------------------------------------------
+  */
+  VAPID_PUBLIC_KEY: Env.schema.string.optional(),
+  VAPID_PRIVATE_KEY: Env.schema.string.optional(),
+  VAPID_SUBJECT: Env.schema.string.optional(),
 })

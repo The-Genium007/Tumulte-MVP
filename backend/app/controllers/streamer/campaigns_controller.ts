@@ -1,5 +1,6 @@
 import { inject } from '@adonisjs/core'
 import type { HttpContext } from '@adonisjs/core/http'
+import env from '#start/env'
 import { MembershipService } from '#services/campaigns/membership_service'
 import { StreamerRepository } from '#repositories/streamer_repository'
 import { CampaignDto } from '#dtos/campaigns/campaign_dto'
@@ -116,5 +117,26 @@ export default class CampaignsController {
         error: error instanceof Error ? error.message : 'Failed to leave campaign',
       })
     }
+  }
+
+  /**
+   * Génère l'URL de l'overlay pour le streamer
+   * GET /api/v2/streamer/overlay-url
+   *
+   * @returns L'URL complète de l'overlay à utiliser dans OBS
+   */
+  async getOverlayUrl({ auth, response }: HttpContext) {
+    const streamer = await this.streamerRepository.findByUserId(auth.user!.id)
+
+    if (!streamer) {
+      return response.notFound({ error: 'Streamer profile not found' })
+    }
+
+    const overlayUrl = `${env.get('FRONTEND_URL')}/overlay/${streamer.id}`
+
+    return response.ok({
+      // eslint-disable-next-line camelcase -- API response format
+      data: { overlay_url: overlayUrl },
+    })
   }
 }

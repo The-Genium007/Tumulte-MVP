@@ -52,18 +52,15 @@
                 <span class="text-sm font-semibold text-white">
                   {{ user?.streamer?.twitchDisplayName }}
                 </span>
-                <span class="text-xs text-gray-400">
-                  Mode {{ currentRole }}
-                </span>
               </div>
             </div>
           </div>
 
           <!-- Items du menu -->
           <div class="py-1">
-            <!-- Accueil -->
+            <!-- Accueil (toujours vers la page streamer) -->
             <NuxtLink
-              :to="homePath"
+              to="/streamer"
               @click="isOpen = false"
               class="flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700/50 rounded-lg transition-colors"
             >
@@ -94,15 +91,15 @@
             <!-- Divider -->
             <div class="my-1 border-t border-gray-700"></div>
 
-            <!-- Switch Mode -->
-            <button
-              @click="handleSwitchMode"
-              :disabled="switching"
-              class="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700/50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            <!-- Tableau de bord MJ -->
+            <NuxtLink
+              to="/mj"
+              @click="isOpen = false"
+              class="flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700/50 rounded-lg transition-colors"
             >
-              <UIcon name="i-lucide-repeat" class="size-4" />
-              <span>Passer en {{ targetRoleLabel }}</span>
-            </button>
+              <UIcon name="i-lucide-crown" class="size-4" />
+              <span>Tableau de bord MJ</span>
+            </NuxtLink>
 
             <!-- Réglages -->
             <NuxtLink
@@ -133,36 +130,23 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { onClickOutside } from '@vueuse/core'
 import { useAuth } from '@/composables/useAuth'
-import { useRoleSwitch } from '@/composables/useRoleSwitch'
 import { useNotifications } from '@/composables/useNotifications'
 
 const router = useRouter()
 const { user, logout } = useAuth()
-const { switching, currentRole, targetRoleLabel, switchToOppositeRole } = useRoleSwitch()
 const { invitationCount, hasInvitations } = useNotifications()
 
 const isOpen = ref(false)
 const menuRef = ref(null)
 
-// Computed property for home path based on current role
-const homePath = computed(() => currentRole.value === 'MJ' ? '/mj' : '/streamer')
-
 // Fermer le menu quand on clique en dehors
 onClickOutside(menuRef, () => {
   isOpen.value = false
 })
-
-/**
- * Gère le switch de mode
- */
-const handleSwitchMode = async () => {
-  await switchToOppositeRole()
-  isOpen.value = false
-}
 
 /**
  * Gère la déconnexion

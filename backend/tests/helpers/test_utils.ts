@@ -9,12 +9,11 @@ import { DateTime } from 'luxon'
 
 /**
  * Factory: Create a test user with optional overrides
- * Note: User model only has id, role, displayName, email
+ * Note: User model only has id, displayName, email
  * Twitch info is in the Streamer model
  */
 export async function createTestUser(overrides: Partial<any> = {}): Promise<User> {
   const userData = {
-    role: overrides.role || 'MJ',
     displayName: overrides.displayName || faker.internet.username(),
     email: overrides.email || null,
     ...overrides,
@@ -48,7 +47,7 @@ export async function createTestStreamer(overrides: Partial<any> = {}): Promise<
   // Create associated user first if not provided
   let userId = overrides.userId
   if (!userId) {
-    const user = await createTestUser({ role: 'STREAMER' })
+    const user = await createTestUser()
     userId = user.id
   }
 
@@ -62,9 +61,32 @@ export async function createTestStreamer(overrides: Partial<any> = {}): Promise<
     accessToken: overrides.accessToken || faker.string.alphanumeric(30),
     refreshToken: overrides.refreshToken || faker.string.alphanumeric(50),
     scopes: overrides.scopes || ['channel:manage:polls', 'channel:read:polls'],
+    isActive: overrides.isActive !== undefined ? overrides.isActive : true,
   }
 
-  return await Streamer.createWithEncryptedTokens(streamerData)
+  const streamer = await Streamer.createWithEncryptedTokens(streamerData)
+
+  // Update additional fields that aren't in createWithEncryptedTokens
+  if (overrides.tokenExpiresAt !== undefined) {
+    streamer.tokenExpiresAt = overrides.tokenExpiresAt
+  }
+  if (overrides.tokenRefreshFailedAt !== undefined) {
+    streamer.tokenRefreshFailedAt = overrides.tokenRefreshFailedAt
+  }
+  if (overrides.lastTokenRefreshAt !== undefined) {
+    streamer.lastTokenRefreshAt = overrides.lastTokenRefreshAt
+  }
+
+  // Save if any additional fields were set
+  if (
+    overrides.tokenExpiresAt !== undefined ||
+    overrides.tokenRefreshFailedAt !== undefined ||
+    overrides.lastTokenRefreshAt !== undefined
+  ) {
+    await streamer.save()
+  }
+
+  return streamer
 }
 
 /**
@@ -74,7 +96,7 @@ export async function createTestCampaign(overrides: Partial<any> = {}): Promise<
   // Create owner if not provided
   let ownerId = overrides.ownerId
   if (!ownerId) {
-    const owner = await createTestUser({ role: 'MJ' })
+    const owner = await createTestUser()
     ownerId = owner.id
   }
 
@@ -165,7 +187,7 @@ export async function createTestPollInstance(overrides: Partial<any> = {}): Prom
   // Get or create a user for createdBy
   let createdBy = overrides.createdBy
   if (!createdBy) {
-    const user = await createTestUser({ role: 'MJ' })
+    const user = await createTestUser()
     createdBy = user.id
   }
 
@@ -212,7 +234,7 @@ export async function createCampaignWithMembers(memberCount: number = 2): Promis
   members: CampaignMembership[]
   streamers: Streamer[]
 }> {
-  const owner = await createTestUser({ role: 'MJ' })
+  const owner = await createTestUser()
   const campaign = await createTestCampaign({ ownerId: owner.id })
 
   const streamers: Streamer[] = []

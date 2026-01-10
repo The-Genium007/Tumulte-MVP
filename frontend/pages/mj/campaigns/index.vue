@@ -176,7 +176,6 @@ import { useCampaigns } from "@/composables/useCampaigns";
 import type { Campaign } from "@/types/index";
 
 const _router = useRouter();
-const toast = useToast();
 const { campaigns, loading, fetchCampaigns, deleteCampaign } = useCampaigns();
 
 const showDeleteModal = ref(false);
@@ -201,17 +200,8 @@ const confirmDelete = async () => {
     await deleteCampaign(campaignToDelete.value.id);
     showDeleteModal.value = false;
     campaignToDelete.value = null;
-    toast.add({
-      title: "Succès",
-      description: "Campagne supprimée avec succès",
-      color: "success",
-    });
   } catch {
-    toast.add({
-      title: "Erreur",
-      description: "Impossible de supprimer la campagne",
-      color: "error",
-    });
+    // Erreur silencieuse
   }
 };
 </script>

@@ -34,12 +34,18 @@
             <p class="text-sm text-gray-400 mt-1">
               {{ modalDescription }}
             </p>
+            <div v-if="actionTypeLabel" class="mt-2">
+              <UBadge color="warning" variant="soft" size="sm">
+                <UIcon name="i-lucide-alert-circle" class="mr-1 size-3" />
+                {{ actionTypeLabel }}
+              </UBadge>
+            </div>
           </div>
           <UButton
             icon="i-lucide-x"
             color="neutral"
             variant="ghost"
-            @click="open = false"
+            @click="closeSupport"
             aria-label="Fermer"
             square
           />
@@ -107,7 +113,7 @@
               color="neutral"
               variant="ghost"
               label="Annuler"
-              @click="open = false"
+              @click="closeSupport"
               :disabled="isSending"
             />
             <UButton
@@ -142,10 +148,16 @@ import { useAuthStore } from "@/stores/auth";
 import { useSupportReporter } from "@/composables/useSupportReporter";
 import { useSupportWidget } from "@/composables/useSupportWidget";
 import { getSupportSnapshot } from "@/utils/supportTelemetry";
+import { ACTION_TYPE_LABELS } from "@/utils/supportErrorMessages";
 
 const authStore = useAuthStore();
 const { sendSupportReport } = useSupportReporter();
-const { isSupportWidgetOpen: open } = useSupportWidget();
+const {
+  isSupportWidgetOpen: open,
+  prefillMessage,
+  prefillActionType,
+  closeSupport,
+} = useSupportWidget();
 const router = useRouter();
 const description = ref("");
 const includeDiagnostics = ref(true);
@@ -154,8 +166,17 @@ const feedback = ref<{ type: "success" | "error" | ""; message: string }>({
   type: "",
   message: "",
 });
-const modalTitle = "Déclarer un bug";
+
+// Titre dynamique selon si c'est une erreur auto-détectée ou non
+const modalTitle = computed(() =>
+  prefillActionType.value ? "Signaler une erreur" : "Déclarer un bug"
+);
 const modalDescription = "Envoi automatique vers le salon des tickets via webhook.";
+
+// Label du badge pour le type d'erreur
+const actionTypeLabel = computed(() =>
+  prefillActionType.value ? ACTION_TYPE_LABELS[prefillActionType.value] : null
+);
 
 const sessionId = computed(() => getSupportSnapshot().sessionId || "n/a");
 const userLabel = computed(() => {
@@ -182,8 +203,19 @@ watch(
   () => router.currentRoute.value.fullPath,
   () => {
     // Refermer si on change de page
-    open.value = false;
+    closeSupport();
   },
+);
+
+// Watch pour remplir la description quand un prefill arrive
+watch(
+  prefillMessage,
+  (newMessage) => {
+    if (newMessage) {
+      description.value = newMessage;
+    }
+  },
+  { immediate: true },
 );
 
 const handleSend = async () => {
@@ -196,7 +228,7 @@ const handleSend = async () => {
     await sendSupportReport(description.value, { includeDiagnostics: includeDiagnostics.value });
     feedback.value = { type: "success", message: "Ticket envoyé sur Discord." };
     description.value = "";
-    open.value = false;
+    closeSupport();
   } catch (error: unknown) {
     feedback.value = {
       type: "error",

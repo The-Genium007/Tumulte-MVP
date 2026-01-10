@@ -59,11 +59,36 @@ class Streamer extends BaseModel {
   @column()
   declare isActive: boolean
 
+  @column.dateTime({ columnName: 'token_expires_at' })
+  declare tokenExpiresAt: DateTime | null
+
+  @column.dateTime({ columnName: 'last_token_refresh_at' })
+  declare lastTokenRefreshAt: DateTime | null
+
+  @column.dateTime({ columnName: 'token_refresh_failed_at' })
+  declare tokenRefreshFailedAt: DateTime | null
+
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
+
+  /**
+   * Check if the token is expiring soon (less than 1 hour)
+   */
+  get isTokenExpiringSoon(): boolean {
+    if (!this.tokenExpiresAt) return true
+    return this.tokenExpiresAt < DateTime.now().plus({ hours: 1 })
+  }
+
+  /**
+   * Check if the token is expired
+   */
+  get isTokenExpired(): boolean {
+    if (!this.tokenExpiresAt) return true
+    return this.tokenExpiresAt < DateTime.now()
+  }
 
   // Relations
   @belongsTo(() => User)

@@ -243,6 +243,76 @@
       </div>
     </div>
 
+    <!-- Modale de confirmation de suppression de sondage -->
+    <Teleport to="body">
+      <Transition
+        enter-active-class="transition duration-200 ease-out"
+        enter-from-class="opacity-0"
+        enter-to-class="opacity-100"
+        leave-active-class="transition duration-150 ease-in"
+        leave-from-class="opacity-100"
+        leave-to-class="opacity-0"
+      >
+        <div
+          v-if="showDeletePollModal"
+          class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+          @click.self="showDeletePollModal = false"
+        >
+          <Transition
+            enter-active-class="transition duration-200 ease-out"
+            enter-from-class="opacity-0 scale-95"
+            enter-to-class="opacity-100 scale-100"
+            leave-active-class="transition duration-150 ease-in"
+            leave-from-class="opacity-100 scale-100"
+            leave-to-class="opacity-0 scale-95"
+          >
+            <UCard v-if="showDeletePollModal" class="max-w-lg mx-4">
+              <template #header>
+                <div class="flex items-center gap-3">
+                  <div class="p-2 rounded-lg bg-error-500/10">
+                    <UIcon name="i-lucide-alert-triangle" class="size-6 text-error-500" />
+                  </div>
+                  <div>
+                    <h3 class="text-lg font-semibold text-white">Supprimer le sondage</h3>
+                    <p class="text-sm text-gray-400 mt-0.5">Cette action est irréversible</p>
+                  </div>
+                </div>
+              </template>
+
+              <div class="space-y-4">
+                <div class="p-4 rounded-lg bg-error-500/10 border border-error-500/30">
+                  <p class="text-sm text-gray-300">
+                    Vous êtes sur le point de supprimer le sondage :
+                  </p>
+                  <p class="font-semibold text-white mt-2">
+                    "{{ pollToDelete?.question }}"
+                  </p>
+                </div>
+              </div>
+
+              <template #footer>
+                <div class="flex items-center justify-end gap-3">
+                  <UButton
+                    variant="soft"
+                    color="neutral"
+                    label="Annuler"
+                    @click="showDeletePollModal = false"
+                  />
+                  <UButton
+                    color="error"
+                    icon="i-lucide-trash-2"
+                    label="Supprimer"
+                    :loading="isDeletingPoll"
+                    @click="confirmDeletePoll"
+                  />
+                </div>
+              </template>
+            </UCard>
+          </Transition>
+        </div>
+      </Transition>
+    </Teleport>
+
     <!-- Modale de confirmation de suppression de session -->
     <Teleport to="body">
       <Transition
@@ -345,7 +415,6 @@ const API_URL = config.public.apiBase;
 
 const route = useRoute();
 const router = useRouter();
-const toast = useToast();
 const pollsStore = useSessionPollsStore();
 
 const sessionId = computed(() => route.params.sessionId as string);
@@ -353,6 +422,9 @@ const campaignId = computed(() => route.query.campaignId as string);
 const sessionName = ref<string>("");
 const showDeleteModal = ref(false);
 const isDeleting = ref(false);
+const showDeletePollModal = ref(false);
+const isDeletingPoll = ref(false);
+const pollToDelete = ref<{ id: string; question: string } | null>(null);
 
 const newPoll = ref({
   question: "",
@@ -418,42 +490,33 @@ const handleAddPoll = async () => {
       channelPointsAmount: isStandard ? (newPoll.value.channelPointsAmount || 50) : undefined,
     });
 
-    toast.add({
-      title: "Succès",
-      description: "Le sondage a été ajouté à la session",
-      color: "success",
-    });
-
     // Réinitialiser le formulaire
     resetForm();
   } catch {
-    toast.add({
-      title: "Erreur",
-      description: "Impossible d'ajouter le sondage",
-      color: "error",
-    });
+    // Erreur silencieuse
   }
 };
 
-const handleDeletePoll = async (pollId: string) => {
-  if (!confirm("Êtes-vous sûr de vouloir supprimer ce sondage ?")) {
-    return;
+const handleDeletePoll = (pollId: string) => {
+  const poll = pollsStore.polls.find((p) => p.id === pollId);
+  if (poll) {
+    pollToDelete.value = { id: pollId, question: poll.question };
+    showDeletePollModal.value = true;
   }
+};
 
+const confirmDeletePoll = async () => {
+  if (!pollToDelete.value) return;
+
+  isDeletingPoll.value = true;
   try {
-    await pollsStore.deletePoll(campaignId.value, sessionId.value, pollId);
-
-    toast.add({
-      title: "Succès",
-      description: "Le sondage a été supprimé",
-      color: "success",
-    });
+    await pollsStore.deletePoll(campaignId.value, sessionId.value, pollToDelete.value.id);
+    showDeletePollModal.value = false;
+    pollToDelete.value = null;
   } catch {
-    toast.add({
-      title: "Erreur",
-      description: "Impossible de supprimer le sondage",
-      color: "error",
-    });
+    // Erreur silencieuse
+  } finally {
+    isDeletingPoll.value = false;
   }
 };
 
@@ -473,22 +536,12 @@ const handleDeleteSession = async () => {
       throw new Error("Failed to delete session");
     }
 
-    toast.add({
-      title: "Succès",
-      description: "La session a été supprimée avec succès",
-      color: "success",
-    });
-
     showDeleteModal.value = false;
 
     // Rediriger vers le dashboard MJ
     router.push("/mj");
   } catch {
-    toast.add({
-      title: "Erreur",
-      description: "Impossible de supprimer la session",
-      color: "error",
-    });
+    // Erreur silencieuse
   } finally {
     isDeleting.value = false;
   }

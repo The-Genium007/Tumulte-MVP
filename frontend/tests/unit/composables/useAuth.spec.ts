@@ -35,8 +35,6 @@ describe("useAuth Composable", () => {
     expect(auth.user).toBeDefined();
     expect(auth.loading).toBeDefined();
     expect(auth.isAuthenticated).toBeDefined();
-    expect(auth.isMJ).toBeDefined();
-    expect(auth.isStreamer).toBeDefined();
   });
 
   test("should expose auth store methods", () => {
@@ -45,7 +43,6 @@ describe("useAuth Composable", () => {
     expect(typeof auth.fetchMe).toBe("function");
     expect(typeof auth.loginWithTwitch).toBe("function");
     expect(typeof auth.logout).toBe("function");
-    expect(typeof auth.switchRole).toBe("function");
   });
 
   test("user should be reactive with store", () => {
@@ -72,26 +69,6 @@ describe("useAuth Composable", () => {
 
     // Composable should reflect the change
     expect(auth.isAuthenticated.value).toBe(true);
-  });
-
-  test("isMJ should be reactive with store", () => {
-    const auth = useAuth();
-    const store = useAuthStore();
-
-    store.user = createMockUser({ role: "MJ" });
-
-    expect(auth.isMJ.value).toBe(true);
-    expect(auth.isStreamer.value).toBe(false);
-  });
-
-  test("isStreamer should be reactive with store", () => {
-    const auth = useAuth();
-    const store = useAuthStore();
-
-    store.user = createMockUser({ role: "STREAMER" });
-
-    expect(auth.isStreamer.value).toBe(true);
-    expect(auth.isMJ.value).toBe(false);
   });
 
   test("loading should be reactive with store", () => {
@@ -133,18 +110,5 @@ describe("useAuth Composable", () => {
     await auth.logout();
 
     expect(auth.user.value).toBeNull();
-  });
-
-  test("switchRole should call store method", async () => {
-    const mockUser = createMockUser({ role: "STREAMER" });
-    vi.mocked(fetch).mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockUser,
-    } as Response);
-
-    const auth = useAuth();
-    await auth.switchRole("STREAMER");
-
-    expect(auth.user.value?.role).toBe("STREAMER");
   });
 });

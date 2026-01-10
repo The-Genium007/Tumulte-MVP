@@ -21,12 +21,15 @@ const sessionConfig = defineConfig({
   /**
    * Configuration for session cookie and the
    * cookie store
+   *
+   * Note: sameSite 'none' is required for cross-origin requests with credentials
+   * when frontend and backend are on different domains (e.g., staging environment)
    */
   cookie: {
     path: '/',
     httpOnly: true,
     secure: app.inProduction,
-    sameSite: 'lax',
+    sameSite: app.inProduction ? 'none' : 'lax',
   },
 
   /**

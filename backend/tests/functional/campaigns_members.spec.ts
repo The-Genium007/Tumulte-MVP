@@ -8,7 +8,7 @@ test.group('Campaign Members API (MJ)', (group) => {
   group.each.setup(() => testUtils.db().withGlobalTransaction())
 
   test('Invite streamer should create PENDING membership', async ({ assert }) => {
-    const owner = await createTestUser({ role: 'MJ' })
+    const owner = await createTestUser({})
     const campaign = await createTestCampaign({ ownerId: owner.id })
     const streamer = await createTestStreamer()
 
@@ -26,8 +26,8 @@ test.group('Campaign Members API (MJ)', (group) => {
   })
 
   test('Non-owner should not be able to invite to campaign', async ({ assert }) => {
-    const owner = await createTestUser({ role: 'MJ' })
-    const otherUser = await createTestUser({ role: 'MJ' })
+    const owner = await createTestUser({})
+    const otherUser = await createTestUser({})
     const campaign = await createTestCampaign({ ownerId: owner.id })
 
     // Verify that otherUser is not the owner
@@ -36,7 +36,7 @@ test.group('Campaign Members API (MJ)', (group) => {
   })
 
   test('List members should return all campaign memberships', async ({ assert }) => {
-    const owner = await createTestUser({ role: 'MJ' })
+    const owner = await createTestUser({})
     const campaign = await createTestCampaign({ ownerId: owner.id })
     const streamer1 = await createTestStreamer()
     const streamer2 = await createTestStreamer()
@@ -62,7 +62,7 @@ test.group('Campaign Members API (MJ)', (group) => {
   })
 
   test('Remove member should delete membership from database', async ({ assert }) => {
-    const owner = await createTestUser({ role: 'MJ' })
+    const owner = await createTestUser({})
     const campaign = await createTestCampaign({ ownerId: owner.id })
     const streamer = await createTestStreamer()
 
@@ -82,7 +82,7 @@ test.group('Campaign Members API (MJ)', (group) => {
   })
 
   test('Grant authorization should set 12-hour expiry window', async ({ assert }) => {
-    const owner = await createTestUser({ role: 'MJ' })
+    const owner = await createTestUser({})
     const campaign = await createTestCampaign({ ownerId: owner.id })
     const streamer = await createTestStreamer()
 
@@ -110,7 +110,7 @@ test.group('Campaign Members API (MJ)', (group) => {
   })
 
   test('Revoke authorization should clear expiry date', async ({ assert }) => {
-    const owner = await createTestUser({ role: 'MJ' })
+    const owner = await createTestUser({})
     const campaign = await createTestCampaign({ ownerId: owner.id })
     const streamer = await createTestStreamer()
 

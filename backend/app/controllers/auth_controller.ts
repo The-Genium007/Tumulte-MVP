@@ -1,10 +1,11 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import { inject } from '@adonisjs/core'
-import { randomBytes } from 'node:crypto'
+import { randomBytes, timingSafeEqual } from 'node:crypto'
 import logger from '@adonisjs/core/services/logger'
 import env from '#start/env'
 import { user as User } from '#models/user'
 import { streamer as Streamer } from '#models/streamer'
+import { overlayConfig as OverlayConfig } from '#models/overlay_config'
 import { twitchAuthService as TwitchAuthService } from '#services/auth/twitch_auth_service'
 
 // Regex pour valider le format du state OAuth (64 caractères hex)
@@ -18,6 +19,18 @@ function getErrorMessage(error: unknown): string {
     return error.message
   }
   return 'Unknown error'
+}
+
+/**
+ * Compare deux chaînes de manière sécurisée contre les timing attacks
+ * Retourne true si les chaînes sont identiques, false sinon
+ */
+function secureCompare(a: string, b: string): boolean {
+  // Les chaînes doivent avoir la même longueur pour timingSafeEqual
+  if (a.length !== b.length) {
+    return false
+  }
+  return timingSafeEqual(Buffer.from(a, 'utf8'), Buffer.from(b, 'utf8'))
 }
 
 @inject()
@@ -39,7 +52,6 @@ export default class AuthController {
   private formatUserResponse(user: User) {
     return {
       id: user.id,
-      role: user.role,
       displayName: user.displayName,
       email: user.email,
       streamer: user.streamer
@@ -130,8 +142,8 @@ export default class AuthController {
       clientId: env.get('TWITCH_CLIENT_ID'),
     })
 
-    // Valider le state CSRF
-    if (!storedState || state !== storedState) {
+    // Valider le state CSRF avec comparaison à temps constant (protection contre timing attacks)
+    if (!storedState || !secureCompare(state, storedState)) {
       logger.warn('OAuth callback: state mismatch')
       return response.redirect(`${env.get('FRONTEND_URL')}/login?error=invalid_state`)
     }
@@ -180,10 +192,6 @@ export default class AuthController {
         scopes: tokens.scope,
       })
 
-      // Déterminer le rôle de l'utilisateur
-      const isMJ = this.twitchAuthService.isMJ(userInfo.id)
-      const role = isMJ ? 'MJ' : 'STREAMER'
-
       // Vérifier si un streamer existe déjà avec ce twitchUserId
       let streamer = await Streamer.query().where('twitchUserId', userInfo.id).first()
 
@@ -203,7 +211,6 @@ export default class AuthController {
         } else {
           // Corrige les anciens enregistrements sans user associé
           user = await User.create({
-            role,
             displayName: userInfo.displayName,
             email: userInfo.email,
           })
@@ -227,7 +234,6 @@ export default class AuthController {
       } else {
         // Créer un nouvel utilisateur
         user = await User.create({
-          role,
           displayName: userInfo.displayName,
           email: userInfo.email,
         })
@@ -245,15 +251,26 @@ export default class AuthController {
           scopes: tokens.scope,
           isActive: true,
         })
+
+        // Créer la configuration overlay par défaut pour le nouveau streamer
+        await OverlayConfig.create({
+          streamerId: streamer.id,
+          name: 'Configuration par défaut',
+          config: OverlayConfig.getDefaultConfigWithPoll(),
+          isActive: true,
+        })
+
+        logger.info(`Default overlay config created for streamer ${streamer.id}`)
       }
 
       // Authentifier l'utilisateur (créer la session avec Remember Me pour 7 jours)
       await auth.use('web').login(user, true)
 
-      logger.info(`User ${user.id} (${role}) logged in successfully`)
+      logger.info(`User ${user.id} logged in successfully`)
 
       // Rediriger vers le frontend avec une page intermédiaire qui gère la redirection
-      const redirectPath = role === 'MJ' ? '/mj' : '/streamer'
+      // All users go to /streamer by default (role restrictions are disabled)
+      const redirectPath = '/streamer'
       const redirectUrl = `${env.get('FRONTEND_URL')}/auth/callback?redirect=${encodeURIComponent(redirectPath)}`
 
       logger.info({
@@ -291,38 +308,6 @@ export default class AuthController {
    */
   async me({ auth }: HttpContext) {
     const user = auth.user!
-
-    // Charger le streamer pour tous les utilisateurs (MJ et STREAMER)
-    await user.load((loader) => loader.load('streamer'))
-
-    return this.formatUserResponse(user)
-  }
-
-  /**
-   * Change le rôle de l'utilisateur connecté
-   */
-  async switchRole({ auth, request, response }: HttpContext) {
-    const user = auth.user!
-    const { role } = request.only(['role'])
-
-    // Valider le rôle
-    if (!['MJ', 'STREAMER'].includes(role)) {
-      return response.badRequest({ message: 'Rôle invalide. Doit être MJ ou STREAMER' })
-    }
-
-    // Si on passe à STREAMER, vérifier qu'un streamer existe
-    if (role === 'STREAMER') {
-      await user.load((loader) => loader.load('streamer'))
-      if (!user.streamer) {
-        return response.badRequest({ message: 'Aucun profil streamer associé à cet utilisateur' })
-      }
-    }
-
-    // Mettre à jour le rôle
-    user.role = role
-    await user.save()
-
-    logger.info(`User ${user.id} switched role to ${role}`)
 
     // Charger le streamer pour tous les utilisateurs (MJ et STREAMER)
     await user.load((loader) => loader.load('streamer'))

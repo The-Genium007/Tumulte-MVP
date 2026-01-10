@@ -292,4 +292,4 @@ npx playwright test --debug
 
 ## 📄 License
 
-CC BY-NC 4.0 - Voir LICENSE dans le dossier racine
+MIT - See LICENSE in the root folder

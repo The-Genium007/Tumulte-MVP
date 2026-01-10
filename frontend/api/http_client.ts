@@ -3,12 +3,17 @@ import axios, {
   type AxiosError,
   type AxiosResponse,
 } from "axios";
+import { useSupportTrigger } from "@/composables/useSupportTrigger";
 
 /**
  * HTTP Client centralisé avec interceptors
+ * Intègre le système de support automatique sur erreur
  */
 class HttpClient {
   private instance: AxiosInstance;
+  private triggerSupport:
+    | ReturnType<typeof useSupportTrigger>["triggerSupportForError"]
+    | null = null;
 
   constructor() {
     const config = useRuntimeConfig();
@@ -22,6 +27,16 @@ class HttpClient {
         "Content-Type": "application/json",
       },
     });
+
+    // Initialiser le trigger de support (lazy loading pour éviter les problèmes SSR)
+    if (process.client) {
+      try {
+        const { triggerSupportForError } = useSupportTrigger();
+        this.triggerSupport = triggerSupportForError;
+      } catch {
+        // Ignore si le composable n'est pas disponible
+      }
+    }
 
     this.setupInterceptors();
   }
@@ -64,15 +79,24 @@ class HttpClient {
               break;
             case 500:
               console.error("Erreur serveur");
+              // Trigger support pour erreurs serveur
+              this.triggerSupport?.("generic_server_error", error);
               break;
           }
         } else if (error.request) {
           console.error("Aucune réponse du serveur");
+          // Trigger support pour erreurs réseau
+          this.triggerSupport?.("generic_network_error", error);
         } else {
           console.error(
             "Erreur de configuration de la requête:",
             error.message,
           );
+        }
+
+        // Trigger support pour timeout
+        if (error.code === "ECONNABORTED") {
+          this.triggerSupport?.("generic_timeout", error);
         }
 
         return Promise.reject(error);

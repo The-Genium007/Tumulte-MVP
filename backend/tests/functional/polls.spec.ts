@@ -11,7 +11,7 @@ test.group('Polls API (MJ)', (group) => {
   group.each.setup(() => testUtils.db().withGlobalTransaction())
 
   test('PollInstance create should set correct fields', async ({ assert }) => {
-    const user = await createTestUser({ role: 'MJ' })
+    const user = await createTestUser({})
     const campaign = await createTestCampaign({ ownerId: user.id })
 
     const poll = await createTestPollInstance({
@@ -38,7 +38,7 @@ test.group('Polls API (MJ)', (group) => {
   })
 
   test('List polls should return all polls for campaign', async ({ assert }) => {
-    const user = await createTestUser({ role: 'MJ' })
+    const user = await createTestUser({})
     const campaign = await createTestCampaign({ ownerId: user.id })
 
     await createTestPollInstance({
@@ -61,7 +61,7 @@ test.group('Polls API (MJ)', (group) => {
   })
 
   test('Cancel poll should update status to ENDED', async ({ assert }) => {
-    const user = await createTestUser({ role: 'MJ' })
+    const user = await createTestUser({})
     const campaign = await createTestCampaign({ ownerId: user.id })
     const poll = await createTestPollInstance({
       campaignId: campaign.id,
@@ -77,7 +77,7 @@ test.group('Polls API (MJ)', (group) => {
   })
 
   test('Poll results should include vote counts', async ({ assert }) => {
-    const user = await createTestUser({ role: 'MJ' })
+    const user = await createTestUser({})
     const campaign = await createTestCampaign({ ownerId: user.id })
     const poll = await createTestPollInstance({
       campaignId: campaign.id,
@@ -97,7 +97,7 @@ test.group('Polls API (MJ)', (group) => {
   })
 
   test('Live poll should have RUNNING status', async ({ assert }) => {
-    const user = await createTestUser({ role: 'MJ' })
+    const user = await createTestUser({})
     const campaign = await createTestCampaign({ ownerId: user.id })
     const poll = await createTestPollInstance({
       campaignId: campaign.id,

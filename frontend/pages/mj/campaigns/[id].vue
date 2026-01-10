@@ -207,10 +207,12 @@
                   v-if="member.status === 'ACTIVE'"
                   :is-poll-authorized="member.isPollAuthorized"
                   :remaining-seconds="member.authorizationRemainingSeconds"
+                  :is-owner="member.isOwner"
                   @expired="handleAuthorizationExpired"
                 />
 
                 <UButton
+                  v-if="!member.isOwner"
                   icon="i-lucide-x"
                   label="Révoquer"
                   color="error"
@@ -412,7 +414,6 @@ const route = useRoute();
 const campaignId = route.params.id as string;
 
 const { getCampaignDetails, inviteStreamer, removeMember, searchTwitchStreamers, deleteCampaign, getLiveStatus } = useCampaigns();
-const toast = useToast();
 
 const campaign = ref<Campaign | null>(null);
 const liveStatus = ref<LiveStatusMap>({});
@@ -566,11 +567,6 @@ const loadMembers = async () => {
     members.value = data.members;
   } catch (error) {
     console.error("Error loading campaign:", error);
-    toast.add({
-      title: "Erreur",
-      description: "Impossible de charger la campagne",
-      color: "error",
-    });
   } finally {
     loadingMembers.value = false;
   }
@@ -596,11 +592,6 @@ watch(searchQuery, () => {
       searchResults.value = results;
     } catch (error) {
       console.error("Search error:", error);
-      toast.add({
-        title: "Erreur",
-        description: "Impossible de rechercher les streamers",
-        color: "error",
-      });
     } finally {
       searching.value = false;
     }
@@ -622,22 +613,12 @@ const handleInvite = async (streamer: StreamerSearchResult) => {
     };
 
     await inviteStreamer(campaignId, payload);
-    toast.add({
-      title: "Succès",
-      description: `${streamer.displayName} a été invité`,
-      color: "success",
-    });
     showInviteModal.value = false;
     searchQuery.value = "";
     searchResults.value = [];
     await loadMembers();
   } catch (error) {
-    const message = (error as { data?: { error?: string } })?.data?.error || "Impossible d'inviter le streamer";
-    toast.add({
-      title: "Erreur",
-      description: message,
-      color: "error",
-    });
+    console.error("Error inviting streamer:", error);
   }
 };
 
@@ -655,18 +636,9 @@ const confirmRemoveMember = async () => {
     await removeMember(campaignId, memberToRemove.value.id);
     showRemoveMemberModal.value = false;
     memberToRemove.value = null;
-    toast.add({
-      title: "Succès",
-      description: "Membre retiré de la campagne",
-      color: "success",
-    });
     await loadMembers();
-  } catch {
-    toast.add({
-      title: "Erreur",
-      description: "Impossible de retirer le membre",
-      color: "error",
-    });
+  } catch (error) {
+    console.error("Error removing member:", error);
   }
 };
 
@@ -680,18 +652,9 @@ const confirmDeleteCampaign = async () => {
   try {
     await deleteCampaign(campaignId);
     showDeleteModal.value = false;
-    toast.add({
-      title: "Succès",
-      description: "Campagne supprimée avec succès",
-      color: "success",
-    });
     _router.push({ path: "/mj/campaigns" });
-  } catch {
-    toast.add({
-      title: "Erreur",
-      description: "Impossible de supprimer la campagne",
-      color: "error",
-    });
+  } catch (error) {
+    console.error("Error deleting campaign:", error);
   }
 };
 

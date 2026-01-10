@@ -3,8 +3,10 @@ import type { HttpContext } from '@adonisjs/core/http'
 import logger from '@adonisjs/core/services/logger'
 import { CampaignService } from '#services/campaigns/campaign_service'
 import { MembershipService } from '#services/campaigns/membership_service'
+import { ReadinessService } from '#services/campaigns/readiness_service'
 import { StreamerRepository } from '#repositories/streamer_repository'
 import { TwitchApiService } from '#services/twitch/twitch_api_service'
+import { PushNotificationService } from '#services/notifications/push_notification_service'
 import { CampaignDto } from '#dtos/campaigns/campaign_dto'
 import { CampaignDetailDto } from '#dtos/campaigns/campaign_detail_dto'
 import { CampaignInvitationDto } from '#dtos/campaigns/campaign_invitation_dto'
@@ -23,6 +25,7 @@ export default class CampaignsController {
   constructor(
     private campaignService: CampaignService,
     private membershipService: MembershipService,
+    private readinessService: ReadinessService,
     private streamerRepository: StreamerRepository,
     private twitchApiService: TwitchApiService
   ) {}
@@ -267,5 +270,96 @@ export default class CampaignsController {
       // En cas d'erreur, retourner un objet vide plutôt qu'échouer
       return response.ok({ data: {} })
     }
+  }
+
+  /**
+   * Récupère l'état de readiness des streamers d'une campagne
+   * GET /api/v2/mj/campaigns/:id/streamers/readiness
+   */
+  async streamersReadiness({ auth, params, response }: HttpContext) {
+    const userId = auth.user!.id
+
+    // Vérifier que l'utilisateur a accès à cette campagne
+    try {
+      await this.campaignService.getCampaignWithMembers(params.id, userId)
+    } catch {
+      return response.forbidden({ error: 'Not authorized to access this campaign' })
+    }
+
+    const readiness = await this.readinessService.getCampaignReadiness(params.id)
+
+    return response.ok({
+      data: readiness,
+    })
+  }
+
+  /**
+   * Notifie les streamers non prêts d'une campagne
+   * POST /api/v2/mj/campaigns/:id/notify-unready
+   */
+  async notifyUnready({ auth, params, response }: HttpContext) {
+    const userId = auth.user!.id
+
+    // Vérifier que l'utilisateur a accès à cette campagne
+    let campaign
+    try {
+      campaign = await this.campaignService.getCampaignWithMembers(params.id, userId)
+    } catch {
+      return response.forbidden({ error: 'Not authorized to access this campaign' })
+    }
+
+    // Récupérer la readiness pour identifier les streamers non prêts
+    const readiness = await this.readinessService.getCampaignReadiness(params.id)
+    const unreadyStreamers = readiness.streamers.filter((s) => !s.isReady)
+
+    if (unreadyStreamers.length === 0) {
+      return response.ok({
+        data: {
+          notified: 0,
+          streamers: [],
+          message: 'All streamers are ready',
+        },
+      })
+    }
+
+    // Récupérer les userIds des streamers non prêts
+    const userIds: string[] = []
+    for (const streamer of unreadyStreamers) {
+      const streamerModel = await this.streamerRepository.findById(streamer.streamerId)
+      if (streamerModel?.userId) {
+        userIds.push(streamerModel.userId)
+      }
+    }
+
+    // Envoyer les notifications
+    if (userIds.length > 0) {
+      const pushService = new PushNotificationService()
+      await pushService.sendToUsers(userIds, 'session:start_blocked', {
+        title: 'Session de sondage en attente',
+        body: `Le MJ de "${campaign.name}" souhaite lancer une session. Veuillez autoriser votre chaîne.`,
+        data: {
+          url: '/streamer',
+          campaignId: params.id,
+        },
+        actions: [
+          { action: 'authorize', title: 'Autoriser' },
+          { action: 'dismiss', title: 'Plus tard' },
+        ],
+      })
+
+      logger.info({
+        event: 'notify_unready_streamers',
+        campaignId: params.id,
+        notifiedCount: userIds.length,
+        streamers: unreadyStreamers.map((s) => s.streamerName),
+      })
+    }
+
+    return response.ok({
+      data: {
+        notified: userIds.length,
+        streamers: unreadyStreamers.map((s) => s.streamerName),
+      },
+    })
   }
 }

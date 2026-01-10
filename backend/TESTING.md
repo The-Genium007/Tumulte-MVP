@@ -1,102 +1,102 @@
-# Guide de Tests - Backend Tumulte
+# Testing Guide - Backend Tumulte
 
-## 📚 Table des Matières
+## 📚 Table of Contents
 
-- [Architecture des Tests](#architecture-des-tests)
-- [Scripts NPM](#scripts-npm)
-- [Exécution Locale](#exécution-locale)
+- [Test Architecture](#test-architecture)
+- [NPM Scripts](#npm-scripts)
+- [Local Execution](#local-execution)
 - [CI/CD](#cicd)
 - [Coverage](#coverage)
-- [Bonnes Pratiques](#bonnes-pratiques)
+- [Best Practices](#best-practices)
 
-## 🏗️ Architecture des Tests
+## 🏗️ Test Architecture
 
-Le projet utilise **Japa** comme framework de test avec une structure en 3 niveaux :
+The project uses **Japa** as the testing framework with a 3-level structure:
 
 ```
 tests/
-├── unit/              # Tests isolés (mocks)
+├── unit/              # Isolated tests (mocks)
 │   ├── models/
 │   ├── services/
 │   ├── repositories/
 │   ├── validators/
 │   └── middleware/
-├── functional/        # Tests HTTP (vraie DB)
+├── functional/        # HTTP tests (real DB)
 │   ├── auth/
 │   ├── campaigns/
 │   ├── polls/
 │   └── websocket/
-└── e2e/              # Workflows complets
+└── e2e/              # Complete workflows
     ├── complete_poll_workflow.spec.ts
     ├── multi_streamer_poll.spec.ts
     └── authorization_expiry.spec.ts
 ```
 
-### Types de Tests
+### Test Types
 
-1. **Tests Unitaires** (~475 tests)
-   - Services isolés avec mocks
+1. **Unit Tests** (~475 tests)
+   - Isolated services with mocks
    - Repositories
-   - Validators Zod
+   - Zod validators
    - Models (encryption)
    - Middleware
 
-2. **Tests Fonctionnels** (~45 tests)
-   - Requêtes HTTP réelles
-   - Base de données PostgreSQL
+2. **Functional Tests** (~45 tests)
+   - Real HTTP requests
+   - PostgreSQL database
    - Redis
-   - Transactions automatiques
+   - Automatic transactions
 
-3. **Tests E2E** (~31 workflows)
-   - Scénarios complets
-   - Multi-services
-   - Gestion temporelle (12h window)
+3. **E2E Tests** (~31 workflows)
+   - Complete scenarios
+   - Multi-service
+   - Time management (12h window)
 
-## 📦 Scripts NPM
+## 📦 NPM Scripts
 
-### Exécution des Tests
+### Running Tests
 
 ```bash
-# Tous les tests
+# All tests
 npm test
 
-# Par type
-npm run test:unit           # Tests unitaires uniquement
-npm run test:functional     # Tests fonctionnels uniquement
-npm run test:e2e           # Tests E2E uniquement
+# By type
+npm run test:unit           # Unit tests only
+npm run test:functional     # Functional tests only
+npm run test:e2e           # E2E tests only
 
-# Avec coverage
-npm run test:coverage       # Tous tests + rapport coverage
+# With coverage
+npm run test:coverage       # All tests + coverage report
 
-# Mode watch
-npm run test:watch         # Re-exécution auto sur changements
+# Watch mode
+npm run test:watch         # Auto re-run on changes
 ```
 
-### Gestion Infrastructure
+### Infrastructure Management
 
 ```bash
-# Démarrer PostgreSQL + Redis (Docker)
+# Start PostgreSQL + Redis (Docker)
 npm run test:setup
 
-# Arrêter services
+# Stop services
 npm run test:teardown
 
-# Nettoyer données de test
+# Clean test data
 npm run test:clean
 
-# Cycle complet (setup + tests + teardown)
+# Complete cycle (setup + tests + teardown)
 npm run test:all
 ```
 
-## 🚀 Exécution Locale
+## 🚀 Local Execution
 
-### Prérequis
+### Prerequisites
 
 ```bash
-# Installer dépendances
+# Install dependencies
 npm ci
 
-# Variables d'environnement
+# Environment variables
 cp .env.example .env.test
 ```
 
@@ -122,64 +122,64 @@ SESSION_DRIVER=memory
 APP_KEY=test_key_32_characters_long_1234
 ```
 
-### Démarrage Services Docker
+### Starting Docker Services
 
 ```bash
 # Via npm script
 npm run test:setup
 
-# OU manuellement
+# OR manually
 docker-compose -f docker-compose.test.yml up -d
 ```
 
-### Exécution Tests
+### Running Tests
 
 ```bash
-# 1. Démarrer services
+# 1. Start services
 npm run test:setup
 
-# 2. Lancer migrations
+# 2. Run migrations
 node ace migration:run --force
 
-# 3. Exécuter tests
+# 3. Execute tests
 npm run test:unit          # ~2-3 sec
 npm run test:functional    # ~10-15 sec
 npm run test:e2e          # ~30-60 sec
 
-# 4. Arrêter services
+# 4. Stop services
 npm run test:teardown
 ```
 
 ## ⚙️ CI/CD
 
-### Workflow Staging
+### Staging Workflow
 
-**Déclencheurs** : PR vers `staging` ou push sur `staging`
+**Triggers**: PR to `staging` or push on `staging`
 
-**Jobs** :
+**Jobs**:
 1. ✅ Quality Checks (TypeCheck + Lint)
 2. ✅ Unit Tests (Backend + Frontend) - **Coverage 80%+**
 3. ✅ Build (Backend + Frontend)
-4. ⚠️ Functional Tests (Warning only, non-bloquant)
+4. ⚠️ Functional Tests (Warning only, non-blocking)
 
-**Durée estimée** : ~5-7 minutes
+**Estimated duration**: ~5-7 minutes
 
-### Workflow Production
+### Production Workflow
 
-**Déclencheurs** : PR vers `main` ou push sur `main`
+**Triggers**: PR to `main` or push on `main`
 
-**Jobs** :
+**Jobs**:
 1. ✅ Quality Checks (TypeCheck + Lint)
 2. ✅ Security Audit (npm audit)
-3. ✅ Unit Tests - **Coverage 85%+ REQUIS**
-4. ✅ Functional Tests - **BLOQUANT**
-5. ✅ E2E Tests Backend - **BLOQUANT**
+3. ✅ Unit Tests - **Coverage 85%+ REQUIRED**
+4. ✅ Functional Tests - **BLOCKING**
+5. ✅ E2E Tests Backend - **BLOCKING**
 6. ✅ Build Production
 7. ⚠️ E2E Tests Frontend (Playwright - Warning)
 
-**Durée estimée** : ~10-15 minutes
+**Estimated duration**: ~10-15 minutes
 
-### Badges GitHub
+### GitHub Badges
 
 ```markdown
 [![Staging CI](https://github.com/user/repo/actions/workflows/staging-ci.yml/badge.svg)](https://github.com/user/repo/actions/workflows/staging-ci.yml)
@@ -189,9 +189,9 @@ npm run test:teardown
 
 ## 📊 Coverage
 
-### Configuration Japa
+### Japa Configuration
 
-Le coverage est configuré dans `adonisrc.ts` :
+Coverage is configured in `adonisrc.ts`:
 
 ```typescript
 {
@@ -215,7 +215,7 @@ Le coverage est configuré dans `adonisrc.ts` :
       reporters: ['text', 'html', 'lcov'],
       include: ['app/**/*.ts'],
       exclude: [
-        'app/controllers/**',  // Couvert par tests fonctionnels
+        'app/controllers/**',  // Covered by functional tests
         'app/exceptions/**',
         'bin/**',
         'config/**',
@@ -227,61 +227,61 @@ Le coverage est configuré dans `adonisrc.ts` :
 }
 ```
 
-### Rapports Coverage
+### Coverage Reports
 
 ```bash
-# Générer rapport
+# Generate report
 npm run test:coverage
 
-# Ouvrir rapport HTML
+# Open HTML report
 open coverage/index.html
 
-# LCOV pour Codecov
+# LCOV for Codecov
 cat coverage/lcov.info
 ```
 
-### Objectifs Coverage
+### Coverage Goals
 
-| Environnement | Backend | Frontend | Code Critique |
-|---------------|---------|----------|---------------|
+| Environment | Backend | Frontend | Critical Code |
+|-------------|---------|----------|---------------|
 | **Staging**   | 80%+    | 80%+     | 90%+          |
 | **Production**| 85%+    | 85%+     | **100%**      |
 
-**Code critique (100% requis)** :
-- Services Auth (OAuth, encryption)
-- Services Polls (lifecycle, aggregation)
+**Critical code (100% required)**:
+- Auth Services (OAuth, encryption)
+- Poll Services (lifecycle, aggregation)
 - Repositories (authorization)
 - Middleware (auth, roles)
 - Validators (Zod schemas)
 
-## 🎯 Bonnes Pratiques
+## 🎯 Best Practices
 
-### Conventions de Nommage
+### Naming Conventions
 
 ```typescript
-// ✅ BON - camelCase
+// ✅ GOOD - camelCase
 const testUser = await createTestUser()
 const pollInstance = await createTestPoll()
 
-// ❌ MAUVAIS - snake_case interdit
+// ❌ BAD - snake_case forbidden
 const test_user = await createTestUser()
 const poll_instance = await createTestPoll()
 
-// ✅ Exception - Colonnes DB et API externe
+// ✅ Exception - DB columns and external API
 const user = {
-  created_at: new Date(),  // OK - colonne DB
-  twitch_user_id: '123',   // OK - API Twitch
+  created_at: new Date(),  // OK - DB column
+  twitch_user_id: '123',   // OK - Twitch API
 }
 ```
 
-### Structure d'un Test
+### Test Structure
 
 ```typescript
 import { test } from '@japa/runner'
 import testUtils from '@adonisjs/core/services/test_utils'
 
 test.group('Service Name', (group) => {
-  // Setup global pour le groupe
+  // Global setup for group
   group.each.setup(() => testUtils.db().withGlobalTransaction())
 
   test('should do something', async ({ assert }) => {
@@ -301,7 +301,7 @@ test.group('Service Name', (group) => {
 ### Mocking Pattern
 
 ```typescript
-// Mock avec Partial<T>
+// Mock with Partial<T>
 const mockService: Partial<TwitchApiService> = {
   getUserById: async (id: string) => {
     return { id, login: 'testuser' }
@@ -319,72 +319,72 @@ const mockWithSpy = {
   },
 }
 
-// Vérification
+// Verification
 assert.isTrue(called)
 assert.equal(callCount, 3)
 ```
 
-### Tests Asynchrones
+### Async Tests
 
 ```typescript
-// ✅ BON - async/await
+// ✅ GOOD - async/await
 test('async operation', async ({ assert }) => {
   const result = await asyncFunction()
   assert.isDefined(result)
 })
 
-// ❌ MAUVAIS - Promise non attendue
+// ❌ BAD - Promise not awaited
 test('async operation', ({ assert }) => {
   asyncFunction().then(result => {
-    assert.isDefined(result)  // Peut ne pas s'exécuter
+    assert.isDefined(result)  // May not execute
   })
 })
 ```
 
-### Isolation des Tests
+### Test Isolation
 
 ```typescript
-// ✅ BON - Transaction automatique
+// ✅ GOOD - Automatic transaction
 group.each.setup(() => testUtils.db().withGlobalTransaction())
 
-// ❌ MAUVAIS - Partage de données entre tests
-let sharedUser: User  // Risque de pollution
+// ❌ BAD - Shared data between tests
+let sharedUser: User  // Risk of pollution
 
 test('test 1', async () => {
   sharedUser = await User.create({ /* ... */ })
 })
 
 test('test 2', async () => {
-  // sharedUser peut être undefined si test 1 échoue
+  // sharedUser may be undefined if test 1 fails
 })
 ```
 
-### Assertions Strictes
+### Strict Assertions
 
 ```typescript
-// ✅ BON - Assertions spécifiques
+// ✅ GOOD - Specific assertions
 assert.equal(response.status(), 201)
 assert.equal(response.body().name, 'Expected Name')
 
-// ❌ MAUVAIS - Assertions permissives
-assert.oneOf(response.status(), [200, 201, 204])  // Trop large
-assert.isDefined(response.body())  // Pas assez précis
+// ❌ BAD - Permissive assertions
+assert.oneOf(response.status(), [200, 201, 204])  // Too broad
+assert.isDefined(response.body())  // Not precise enough
 ```
 
 ## 🐛 Debugging
 
-### Logs de Test
+### Test Logs
 
 ```typescript
-// Activer logs détaillés
+// Enable detailed logs
 NODE_ENV=test DEBUG=* npm test
 
-// Logs spécifiques
+// Specific logs
 DEBUG=japa:runner npm test
 DEBUG=adonis:* npm test
 ```
 
-### Breakpoints VSCode
+### VSCode Breakpoints
 
 ```json
 // .vscode/launch.json
@@ -398,27 +398,27 @@ DEBUG=adonis:* npm test
 }
 ```
 
-### Tests Individuels
+### Individual Tests
 
 ```bash
-# Exécuter 1 fichier
+# Run 1 file
 npm test -- tests/unit/services/poll_lifecycle_service.spec.ts
 
-# Filtrer par nom
+# Filter by name
 npm test -- --grep="should launch poll"
 ```
 
-## 📝 Ajouter de Nouveaux Tests
+## 📝 Adding New Tests
 
-1. **Créer fichier** : `tests/{unit|functional|e2e}/nom.spec.ts`
-2. **Respecter conventions** : camelCase, path mapping
-3. **Ajouter groupe** : `test.group('Name', (group) => { ... })`
-4. **Setup isolation** : `group.each.setup(() => testUtils.db().withGlobalTransaction())`
-5. **Vérifier linting** : `npm run lint`
-6. **Exécuter tests** : `npm test`
-7. **Vérifier coverage** : `npm run test:coverage`
+1. **Create file**: `tests/{unit|functional|e2e}/name.spec.ts`
+2. **Follow conventions**: camelCase, path mapping
+3. **Add group**: `test.group('Name', (group) => { ... })`
+4. **Setup isolation**: `group.each.setup(() => testUtils.db().withGlobalTransaction())`
+5. **Check linting**: `npm run lint`
+6. **Run tests**: `npm test`
+7. **Check coverage**: `npm run test:coverage`
 
-## 🔗 Ressources
+## 🔗 Resources
 
 - [Japa Documentation](https://japa.dev/)
 - [AdonisJS Testing](https://docs.adonisjs.com/guides/testing)
@@ -427,4 +427,4 @@ npm test -- --grep="should launch poll"
 
 ---
 
-**Dernière mise à jour** : 2026-01-02
+**Last updated**: 2026-01-02

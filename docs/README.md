@@ -38,4 +38,4 @@ If you want to contribute or understand the codebase:
 
 ## License
 
-Tumulte is licensed under CC BY-NC 4.0.
+Tumulte is licensed under the MIT License.
