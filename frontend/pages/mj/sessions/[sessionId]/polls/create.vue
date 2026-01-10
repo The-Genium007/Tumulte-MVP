@@ -485,9 +485,8 @@ const handleAddPoll = async () => {
       question: newPoll.value.question,
       options: validOptions,
       type: newPoll.value.type,
-      // Channel points auto-enabled for STANDARD (vote multiple)
-      channelPointsEnabled: isStandard,
-      channelPointsAmount: isStandard ? (newPoll.value.channelPointsAmount || 50) : undefined,
+      // Channel points per vote (only for STANDARD/multiple vote type)
+      channelPointsPerVote: isStandard ? (newPoll.value.channelPointsAmount || 50) : undefined,
     });
 
     // Réinitialiser le formulaire

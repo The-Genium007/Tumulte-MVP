@@ -26,12 +26,20 @@ import { ref, computed, onMounted, onUnmounted } from "vue";
 import LivePollElement from "@/overlay-studio/components/LivePollElement.vue";
 import { useWebSocket } from "@/composables/useWebSocket";
 import { useOverlayConfig } from "@/composables/useOverlayConfig";
+import { useWorkerTimer } from "@/composables/useWorkerTimer";
+import { useOBSEvents } from "@/composables/useOBSEvents";
 import type { PollStartEvent } from "@/types";
 
 // State pour l'indicateur de connexion
 const isWsConnected = ref(true);
 const reconnectAttempts = ref(0);
 const isInitialized = ref(false);
+
+// Worker timer pour les vérifications périodiques (résistant au throttling OBS)
+const workerTimer = useWorkerTimer();
+
+// Events OBS pour détecter les changements de visibilité de la source
+const { isOBS, onVisibilityChange, onActiveChange } = useOBSEvents();
 
 // Désactiver tout layout Nuxt
 definePageMeta({
@@ -88,8 +96,8 @@ const handlePollStateChange = (newState: string) => {
 
 // Variable pour stocker la fonction de désabonnement
 let unsubscribe: (() => Promise<void>) | null = null;
-// Intervalle de vérification de connexion
-let connectionCheckInterval: ReturnType<typeof setInterval> | null = null;
+// Compteur de ticks du worker pour vérification périodique
+let lastCheckTick = 0;
 
 // Récupérer le poll actif via HTTP (pour chargement initial et récupération après suspension OBS)
 const fetchActivePoll = async () => {
@@ -262,15 +270,51 @@ onMounted(async () => {
   // Écouter les changements de visibilité (OBS browser source suspension)
   document.addEventListener("visibilitychange", handleVisibilityChange);
 
-  // Fallback: Vérifier périodiquement la connexion et reconnecter si nécessaire
-  connectionCheckInterval = setInterval(() => {
-    if (!unsubscribe) {
-      console.log("[Overlay] Detected disconnection, attempting reconnect...");
-      isWsConnected.value = false;
-      reconnectAttempts.value++;
-      setupWebSocketSubscription();
+  // Utiliser le Worker Timer pour les vérifications périodiques
+  // (résistant au throttling quand l'onglet/source OBS est en arrière-plan)
+  workerTimer.onTick(() => {
+    lastCheckTick++;
+
+    // Vérifier la connexion toutes les 30 secondes (30 ticks à 1s)
+    if (lastCheckTick >= 30) {
+      lastCheckTick = 0;
+
+      if (!unsubscribe) {
+        console.log("[Overlay] Worker detected disconnection, attempting reconnect...");
+        isWsConnected.value = false;
+        reconnectAttempts.value++;
+        setupWebSocketSubscription();
+      }
+
+      // Récupérer le poll actif périodiquement pour rattraper les events manqués
+      fetchActivePoll();
     }
-  }, 30000);
+  });
+  workerTimer.start(1000);
+  console.log("[Overlay] Worker timer started for connection monitoring");
+
+  // Écouter les events OBS pour récupérer l'état quand la source redevient visible
+  if (isOBS.value) {
+    console.log("[Overlay] Running in OBS, setting up OBS event listeners");
+
+    onVisibilityChange((visible) => {
+      if (visible) {
+        console.log("[Overlay] OBS source became visible, syncing state...");
+        fetchActivePoll();
+        if (!unsubscribe) {
+          reconnectAttempts.value++;
+          setupWebSocketSubscription();
+        }
+      }
+    });
+
+    onActiveChange((active) => {
+      if (active) {
+        console.log("[Overlay] OBS source became active, syncing state...");
+        fetchActivePoll();
+      }
+    });
+  }
 });
 
 // Nettoyage au démontage
@@ -279,10 +323,8 @@ onUnmounted(() => {
     unsubscribe();
   }
 
-  // Nettoyer l'intervalle de vérification de connexion
-  if (connectionCheckInterval) {
-    clearInterval(connectionCheckInterval);
-  }
+  // Arrêter le worker timer (cleanup automatique via le composable)
+  workerTimer.stop();
 
   // Retirer le listener de visibilité
   document.removeEventListener("visibilitychange", handleVisibilityChange);

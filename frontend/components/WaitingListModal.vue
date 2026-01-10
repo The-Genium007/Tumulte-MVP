@@ -117,6 +117,8 @@ import { useReadiness } from "@/composables/useReadiness";
 import { useWebSocket } from "@/composables/useWebSocket";
 import type { LiveStatusMap } from "@/types";
 
+const toast = useToast();
+
 const props = defineProps<{
   liveStatuses?: LiveStatusMap;
 }>();
@@ -197,8 +199,28 @@ const handleNotify = async () => {
   try {
     const result = await notifyUnready(store.pendingCampaignId);
     console.log("[WaitingListModal] Notified streamers:", result);
+
+    // Afficher un toast de confirmation
+    if (result.notified > 0) {
+      toast.add({
+        title: "Notifications envoyées",
+        description: `${result.notified} streamer(s) notifié(s)`,
+        color: "success",
+      });
+    } else {
+      toast.add({
+        title: "Aucune notification envoyée",
+        description: "Les streamers n'ont pas activé les notifications push",
+        color: "warning",
+      });
+    }
   } catch (error) {
     console.error("[WaitingListModal] Failed to notify:", error);
+    toast.add({
+      title: "Erreur",
+      description: "Impossible d'envoyer les notifications",
+      color: "error",
+    });
   } finally {
     isNotifying.value = false;
   }

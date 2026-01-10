@@ -10,7 +10,18 @@ import { useSupportTrigger } from "@/composables/useSupportTrigger";
 import { loggers } from "@/utils/logger";
 
 /**
+ * Configuration de reconnexion
+ */
+const RECONNECT_CONFIG = {
+  initialDelay: 1000, // 1 seconde
+  maxDelay: 30000, // 30 secondes max
+  backoffMultiplier: 2,
+  maxAttempts: 10, // Après 10 tentatives, on attend une action utilisateur
+};
+
+/**
  * Client SSE natif pour remplacer @adonisjs/transmit-client
+ * Avec reconnexion automatique robuste
  */
 class NativeSSEClient {
   private eventSource: EventSource | null = null;
@@ -18,9 +29,15 @@ class NativeSSEClient {
     string,
     Array<(message: { event: string; data: unknown }) => void>
   > = new Map();
+  private activeChannels: Set<string> = new Set();
   private baseUrl: string;
   private uid: string;
   private isConnected = false;
+  private isReconnecting = false;
+  private reconnectAttempts = 0;
+  private reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
+  private onReconnectCallback: (() => void) | null = null;
+  private onDisconnectCallback: (() => void) | null = null;
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
@@ -30,14 +47,141 @@ class NativeSSEClient {
   }
 
   /**
+   * Définir le callback appelé après une reconnexion réussie
+   */
+  onReconnect(callback: () => void) {
+    this.onReconnectCallback = callback;
+  }
+
+  /**
+   * Définir le callback appelé lors d'une déconnexion
+   */
+  onDisconnect(callback: () => void) {
+    this.onDisconnectCallback = callback;
+  }
+
+  /**
+   * Obtenir l'état de connexion
+   */
+  getConnectionState(): {
+    connected: boolean;
+    reconnecting: boolean;
+    attempts: number;
+  } {
+    return {
+      connected: this.isConnected,
+      reconnecting: this.isReconnecting,
+      attempts: this.reconnectAttempts,
+    };
+  }
+
+  /**
+   * Calculer le délai de reconnexion avec backoff exponentiel
+   */
+  private getReconnectDelay(): number {
+    const delay = Math.min(
+      RECONNECT_CONFIG.initialDelay *
+        Math.pow(RECONNECT_CONFIG.backoffMultiplier, this.reconnectAttempts),
+      RECONNECT_CONFIG.maxDelay,
+    );
+    return delay;
+  }
+
+  /**
+   * Planifier une reconnexion
+   */
+  private scheduleReconnect(): void {
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
+    }
+
+    if (this.reconnectAttempts >= RECONNECT_CONFIG.maxAttempts) {
+      loggers.ws.error(
+        `Max reconnection attempts (${RECONNECT_CONFIG.maxAttempts}) reached. Stopping auto-reconnect.`,
+      );
+      this.isReconnecting = false;
+      return;
+    }
+
+    const delay = this.getReconnectDelay();
+    this.reconnectAttempts++;
+    this.isReconnecting = true;
+
+    loggers.ws.warn(
+      `Scheduling reconnection attempt ${this.reconnectAttempts}/${RECONNECT_CONFIG.maxAttempts} in ${delay}ms`,
+    );
+
+    this.reconnectTimeout = setTimeout(async () => {
+      try {
+        await this.reconnect();
+      } catch (error) {
+        loggers.ws.error(`Reconnection attempt failed:`, error);
+        this.scheduleReconnect();
+      }
+    }, delay);
+  }
+
+  /**
+   * Reconnecter et ré-abonner aux channels actifs
+   */
+  private async reconnect(): Promise<void> {
+    loggers.ws.info(`========== RECONNECTING ==========`);
+    loggers.ws.info(`Attempt: ${this.reconnectAttempts}`);
+    loggers.ws.info(`Active channels to restore: ${this.activeChannels.size}`);
+
+    // Fermer l'ancienne connexion proprement
+    if (this.eventSource) {
+      this.eventSource.close();
+      this.eventSource = null;
+    }
+
+    // Établir une nouvelle connexion
+    await this.connectInternal();
+
+    // Ré-abonner à tous les channels actifs
+    const channelsToRestore = Array.from(this.activeChannels);
+    for (const channel of channelsToRestore) {
+      try {
+        await this.subscribeToChannel(channel);
+        loggers.ws.info(`Restored subscription to channel: ${channel}`);
+      } catch (error) {
+        loggers.ws.error(
+          `Failed to restore subscription to channel ${channel}:`,
+          error,
+        );
+      }
+    }
+
+    // Réinitialiser les compteurs
+    this.reconnectAttempts = 0;
+    this.isReconnecting = false;
+
+    loggers.ws.info(
+      `Reconnection successful! ${channelsToRestore.length} channels restored.`,
+    );
+
+    // Notifier les composants
+    if (this.onReconnectCallback) {
+      this.onReconnectCallback();
+    }
+  }
+
+  /**
    * Établir la connexion SSE globale (une seule pour tous les canaux)
    */
   private async connect(): Promise<void> {
-    if (this.eventSource) {
+    if (this.eventSource && this.isConnected) {
       loggers.ws.debug("Already connected");
       return;
     }
 
+    return this.connectInternal();
+  }
+
+  /**
+   * Logique interne de connexion SSE
+   */
+  private async connectInternal(): Promise<void> {
     return new Promise((resolve, reject) => {
       const url = `${this.baseUrl}/__transmit/events?uid=${encodeURIComponent(this.uid)}`;
 
@@ -55,6 +199,8 @@ class NativeSSEClient {
           `EventSource readyState: ${this.eventSource?.readyState}`,
         );
         this.isConnected = true;
+        this.isReconnecting = false;
+        this.reconnectAttempts = 0;
         resolve();
       });
 
@@ -69,13 +215,26 @@ class NativeSSEClient {
           this.eventSource.readyState === EventSource.CLOSED
         ) {
           loggers.ws.error(`Connection CLOSED - SSE stream ended`);
+          const wasConnected = this.isConnected;
           this.isConnected = false;
-          reject(error);
+
+          // Notifier la déconnexion
+          if (wasConnected && this.onDisconnectCallback) {
+            this.onDisconnectCallback();
+          }
+
+          // Si on était connecté avant, tenter de reconnecter
+          if (wasConnected && !this.isReconnecting) {
+            this.scheduleReconnect();
+          } else if (!wasConnected) {
+            // Première connexion échouée
+            reject(error);
+          }
         } else if (
           this.eventSource &&
           this.eventSource.readyState === EventSource.CONNECTING
         ) {
-          loggers.ws.warn(`Reconnecting...`);
+          loggers.ws.warn(`EventSource attempting native reconnect...`);
         }
       });
 
@@ -119,6 +278,21 @@ class NativeSSEClient {
   }
 
   /**
+   * Forcer une reconnexion manuelle (réinitialise le compteur)
+   */
+  async forceReconnect(): Promise<void> {
+    loggers.ws.info(`Force reconnect requested`);
+    this.reconnectAttempts = 0;
+
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
+      this.reconnectTimeout = null;
+    }
+
+    await this.reconnect();
+  }
+
+  /**
    * S'abonner à un canal spécifique via POST /__transmit/subscribe
    */
   private async subscribeToChannel(channel: string): Promise<void> {
@@ -145,6 +319,8 @@ class NativeSSEClient {
         throw new Error(`Subscribe failed: ${response.status} ${text}`);
       }
 
+      // Tracker le channel pour la reconnexion
+      this.activeChannels.add(channel);
       loggers.ws.debug(`Successfully subscribed to channel "${channel}"`);
     } catch (error) {
       loggers.ws.error(`Error subscribing to channel "${channel}":`, error);
@@ -157,6 +333,9 @@ class NativeSSEClient {
    */
   private async unsubscribeFromChannel(channel: string): Promise<void> {
     loggers.ws.debug(`Unsubscribing from channel: ${channel}`);
+
+    // Retirer du tracking même si l'API échoue
+    this.activeChannels.delete(channel);
 
     try {
       const response = await fetch(`${this.baseUrl}/__transmit/unsubscribe`, {
@@ -248,8 +427,15 @@ class NativeSSEClient {
   shutdown() {
     loggers.ws.debug(`Shutting down client`);
 
+    // Annuler toute reconnexion en cours
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
+      this.reconnectTimeout = null;
+    }
+
     // Fermer toutes les souscriptions
     this.subscriptions.clear();
+    this.activeChannels.clear();
 
     // Fermer l'EventSource
     if (this.eventSource) {
@@ -257,6 +443,9 @@ class NativeSSEClient {
       this.eventSource = null;
       this.isConnected = false;
     }
+
+    this.isReconnecting = false;
+    this.reconnectAttempts = 0;
   }
 }
 
@@ -269,6 +458,8 @@ export const useWebSocket = () => {
   const { triggerSupportForError } = useSupportTrigger();
 
   const connected = ref(false);
+  const reconnecting = ref(false);
+  const reconnectAttempts = ref(0);
   const client = ref<NativeSSEClient | null>(null);
 
   /**
@@ -282,8 +473,44 @@ export const useWebSocket = () => {
 
     loggers.ws.debug(`Initializing client with URL: ${API_URL}`);
     client.value = new NativeSSEClient(API_URL);
+
+    // Configurer les callbacks de reconnexion
+    client.value.onDisconnect(() => {
+      connected.value = false;
+      const state = client.value?.getConnectionState();
+      reconnecting.value = state?.reconnecting ?? false;
+      reconnectAttempts.value = state?.attempts ?? 0;
+      loggers.ws.warn("WebSocket disconnected, reconnecting...");
+    });
+
+    client.value.onReconnect(() => {
+      connected.value = true;
+      reconnecting.value = false;
+      reconnectAttempts.value = 0;
+      loggers.ws.info("WebSocket reconnected successfully!");
+    });
+
     connected.value = true;
     loggers.ws.debug("Client initialized");
+  };
+
+  /**
+   * Forcer une reconnexion manuelle
+   */
+  const forceReconnect = async () => {
+    if (client.value) {
+      await client.value.forceReconnect();
+    }
+  };
+
+  /**
+   * Obtenir l'état de connexion détaillé
+   */
+  const getConnectionState = () => {
+    if (!client.value) {
+      return { connected: false, reconnecting: false, attempts: 0 };
+    }
+    return client.value.getConnectionState();
   };
 
   /**
@@ -553,15 +780,26 @@ export const useWebSocket = () => {
       client.value.shutdown();
       client.value = null;
       connected.value = false;
+      reconnecting.value = false;
+      reconnectAttempts.value = 0;
     }
   };
 
   return {
+    // État de connexion
     connected: readonly(connected),
+    reconnecting: readonly(reconnecting),
+    reconnectAttempts: readonly(reconnectAttempts),
+
+    // Méthodes
     connect,
+    disconnect,
+    forceReconnect,
+    getConnectionState,
+
+    // Subscriptions
     subscribeToPoll,
     subscribeToStreamerPolls,
     subscribeToCampaignReadiness,
-    disconnect,
   };
 };

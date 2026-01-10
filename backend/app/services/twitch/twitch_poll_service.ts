@@ -67,18 +67,26 @@ class TwitchPollService {
     id: string
     status: string
   }> {
+    // Valider et tronquer les paramètres selon les limites Twitch
+    const sanitizedTitle = title.slice(0, 60)
+    const sanitizedChoices = choices.map((choice) => ({
+      title: choice.slice(0, 25),
+    }))
+
     // Twitch API requires snake_case parameters
     const body: Record<string, unknown> = {
       broadcaster_id: broadcasterUserId,
-      title,
-      choices: choices.map((choice) => ({ title: choice })),
-      duration: durationSeconds,
+      title: sanitizedTitle,
+      choices: sanitizedChoices,
+      duration: Math.min(Math.max(durationSeconds, 15), 1800),
     }
 
-    // Ajouter les points de chaîne si activés
-    if (channelPointsEnabled && channelPointsPerVote && channelPointsPerVote > 0) {
+    // Ajouter les points de chaîne si un montant positif est spécifié
+    // On se base uniquement sur channelPointsPerVote > 0 pour être robuste
+    // (channelPointsEnabled est ignoré - le montant est la source de vérité)
+    if (channelPointsPerVote && channelPointsPerVote > 0) {
       body.channel_points_voting_enabled = true
-      body.channel_points_per_vote = channelPointsPerVote
+      body.channel_points_per_vote = Math.min(Math.max(channelPointsPerVote, 1), 1000000)
     }
 
     const response = await fetch('https://api.twitch.tv/helix/polls', {
@@ -245,17 +253,26 @@ class TwitchPollService {
     channelPointsPerVote: number | null = null,
     context?: Partial<RetryContext>
   ): Promise<RetryResult<{ id: string; status: string }>> {
+    // Valider et tronquer les paramètres selon les limites Twitch
+    const sanitizedTitle = title.slice(0, 60)
+    const sanitizedChoices = choices.map((choice) => ({
+      title: choice.slice(0, 25),
+    }))
+    const sanitizedDuration = Math.min(Math.max(durationSeconds, 15), 1800)
+
     const operation = async (): Promise<HttpCallResult<{ id: string; status: string }>> => {
       const body: Record<string, unknown> = {
         broadcaster_id: broadcasterUserId,
-        title,
-        choices: choices.map((choice) => ({ title: choice })),
-        duration: durationSeconds,
+        title: sanitizedTitle,
+        choices: sanitizedChoices,
+        duration: sanitizedDuration,
       }
 
-      if (channelPointsEnabled && channelPointsPerVote && channelPointsPerVote > 0) {
+      // Ajouter les points de chaîne si un montant positif est spécifié
+      // On se base uniquement sur channelPointsPerVote > 0 pour être robuste
+      if (channelPointsPerVote && channelPointsPerVote > 0) {
         body.channel_points_voting_enabled = true
-        body.channel_points_per_vote = channelPointsPerVote
+        body.channel_points_per_vote = Math.min(Math.max(channelPointsPerVote, 1), 1000000)
       }
 
       const response = await fetch('https://api.twitch.tv/helix/polls', {

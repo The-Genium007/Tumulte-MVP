@@ -45,8 +45,7 @@ export const useSessionPollsStore = defineStore("sessionPolls", () => {
       question: string;
       options: string[];
       type: "UNIQUE" | "STANDARD";
-      channelPointsEnabled?: boolean;
-      channelPointsAmount?: number;
+      channelPointsPerVote?: number;
     },
   ) => {
     try {

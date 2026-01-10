@@ -59,6 +59,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from "vue";
+import { useWorkerTimer } from "@/composables/useWorkerTimer";
 import type { PollProperties, OverlayElement } from "../types";
 
 interface PollData {
@@ -86,7 +87,10 @@ type PollState = "hidden" | "entering" | "active" | "result" | "exiting";
 // État
 const state = ref<PollState>("hidden");
 const remainingTime = ref(0);
-let timerInterval: ReturnType<typeof setInterval> | null = null;
+
+// Worker timer pour résister au throttling OBS
+const workerTimer = useWorkerTimer();
+let currentEndsAt: string | null = null;
 
 // Flag pour éviter le double déclenchement (contrôle externe vs watch)
 let isExternalControl = false;
@@ -306,30 +310,39 @@ const animationClass = computed(() => {
   return "";
 });
 
-// Gestion du timer
+// Gestion du timer avec Worker (résistant au throttling OBS)
 const startTimer = (endsAt: string) => {
-  if (timerInterval) {
-    clearInterval(timerInterval);
-  }
+  // Arrêter le timer précédent si actif
+  workerTimer.stop();
+  currentEndsAt = endsAt;
 
   const updateTimer = () => {
+    if (!currentEndsAt) return;
+
     const now = Date.now();
-    const end = new Date(endsAt).getTime();
+    const end = new Date(currentEndsAt).getTime();
     const diff = end - now;
 
     if (diff <= 0) {
       remainingTime.value = 0;
-      if (timerInterval) {
-        clearInterval(timerInterval);
-        timerInterval = null;
-      }
+      workerTimer.stop();
+      currentEndsAt = null;
     } else {
       remainingTime.value = Math.floor(diff / 1000);
     }
   };
 
+  // Mise à jour initiale
   updateTimer();
-  timerInterval = setInterval(updateTimer, 1000);
+
+  // Utiliser le worker pour les ticks (résiste au throttling)
+  workerTimer.onTick(updateTimer);
+  workerTimer.start(1000);
+};
+
+const stopTimer = () => {
+  workerTimer.stop();
+  currentEndsAt = null;
 };
 
 // Gestion audio
@@ -510,10 +523,7 @@ const publicPlayExit = async () => {
 };
 
 const publicReset = () => {
-  if (timerInterval) {
-    clearInterval(timerInterval);
-    timerInterval = null;
-  }
+  stopTimer();
   cleanupAudio();
   transitionTo("hidden");
   // Réinitialiser le flag de contrôle externe
@@ -597,9 +607,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-  if (timerInterval) {
-    clearInterval(timerInterval);
-  }
+  stopTimer();
   cleanupAudio();
 });
 </script>

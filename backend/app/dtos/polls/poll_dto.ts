@@ -71,10 +71,12 @@ export class PollDto {
   type!: string
   orderIndex!: number
   channelPointsPerVote!: number | null
+  channelPointsEnabled!: boolean
   createdAt!: string
   updatedAt!: string
 
   static fromModel(poll: Poll): PollDto {
+    const channelPointsPerVote = poll.channelPointsAmount
     return {
       id: poll.id,
       sessionId: poll.sessionId,
@@ -82,7 +84,8 @@ export class PollDto {
       options: Array.isArray(poll.options) ? poll.options : JSON.parse(poll.options || '[]'),
       type: poll.type,
       orderIndex: poll.orderIndex,
-      channelPointsPerVote: poll.channelPointsAmount,
+      channelPointsPerVote,
+      channelPointsEnabled: channelPointsPerVote !== null && channelPointsPerVote > 0,
       createdAt: poll.createdAt.toISO() || '',
       updatedAt: poll.updatedAt.toISO() || '',
     }

@@ -68,6 +68,16 @@ export class PollChannelLinkRepository {
   async deleteByStreamer(streamerId: string): Promise<void> {
     await PollChannelLink.query().where('streamerId', streamerId).delete()
   }
+
+  /**
+   * Trouve les liens actifs (CREATED ou RUNNING) pour un streamer
+   */
+  async findActiveByStreamer(streamerId: string): Promise<PollChannelLink[]> {
+    return await PollChannelLink.query()
+      .where('streamerId', streamerId)
+      .whereIn('status', ['CREATED', 'RUNNING'])
+      .preload('streamer')
+  }
 }
 
 export default PollChannelLinkRepository

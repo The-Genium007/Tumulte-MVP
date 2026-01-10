@@ -40,13 +40,18 @@ export class PollInstanceRepository {
     channelPointsEnabled?: boolean
     channelPointsAmount?: number | null
   }): Promise<PollInstance> {
+    // Déduire channelPointsEnabled du montant pour être robuste
+    // Si channelPointsAmount > 0, le multi-vote est activé
+    const amount = data.channelPointsAmount ?? null
+    const enabled = amount !== null && amount > 0
+
     return await PollInstance.create({
       ...data,
       options: JSON.stringify(data.options) as any,
       status: 'PENDING',
       type: data.type || 'STANDARD',
-      channelPointsEnabled: data.channelPointsEnabled || false,
-      channelPointsAmount: data.channelPointsAmount || null,
+      channelPointsEnabled: enabled,
+      channelPointsAmount: amount,
     })
   }
 

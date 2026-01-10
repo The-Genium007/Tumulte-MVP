@@ -309,7 +309,7 @@ export default class AuthController {
   async me({ auth }: HttpContext) {
     const user = auth.user!
 
-    // Charger le streamer pour tous les utilisateurs
+    // Charger le streamer pour tous les utilisateurs (MJ et STREAMER)
     await user.load((loader) => loader.load('streamer'))
 
     return this.formatUserResponse(user)
