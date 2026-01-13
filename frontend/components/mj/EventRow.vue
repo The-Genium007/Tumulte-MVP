@@ -61,16 +61,19 @@ const rowClass = computed(() => {
     </button>
 
     <!-- Poll info -->
-    <div class="flex-1 min-w-0 px-3 sm:px-4 py-1 sm:py-2 flex flex-col justify-center overflow-hidden">
-      <p class="font-medium text-primary truncate text-sm sm:text-base leading-tight first-letter:capitalize">
-        {{ poll.question }}
-      </p>
-      <div class="flex items-center gap-2 text-xs text-muted shrink-0">
-        <span class="shrink-0">{{ formatDuration(poll.durationSeconds) }}</span>
-        <span v-if="poll.channelPointsEnabled" class="flex items-center gap-1 shrink-0">
-          <UIcon name="i-lucide-coins" class="size-3" />
-          {{ poll.channelPointsPerVote }}
-        </span>
+    <div class="flex-1 min-w-0 px-3 sm:px-4 py-1 sm:py-2 flex items-center gap-2 overflow-hidden">
+      <UIcon name="i-lucide-bar-chart-2" class="size-4 text-primary shrink-0" />
+      <div class="flex flex-col justify-center min-w-0">
+        <p class="font-medium text-primary truncate text-sm sm:text-base leading-tight first-letter:capitalize">
+          {{ poll.question }}
+        </p>
+        <div class="flex items-center gap-2 text-xs text-muted shrink-0">
+          <span class="shrink-0">{{ formatDuration(poll.durationSeconds) }}</span>
+          <span v-if="poll.channelPointsEnabled" class="flex items-center gap-1 shrink-0">
+            <UIcon name="i-lucide-coins" class="size-3" />
+            {{ poll.channelPointsPerVote }}
+          </span>
+        </div>
       </div>
     </div>
 

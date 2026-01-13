@@ -188,15 +188,45 @@ onMounted(async () => {
   }
 
   // Then fetch from API
-  pollsStore.fetchPolls(props.campaignId);
+  await pollsStore.fetchPolls(props.campaignId);
+
+  // If there's an active poll from backend, subscribe to its WebSocket events
+  // This handles the case where user returns to the page with an active poll
+  if (activePollInstance.value?.id) {
+    console.debug("[EventsCard] Reconnecting to active poll:", activePollInstance.value.id);
+    await subscribeToActivePoll(activePollInstance.value.id);
+  }
 });
 
 // Watch for campaign changes
 watch(
   () => props.campaignId,
-  (newId) => {
+  async (newId) => {
     if (newId) {
-      pollsStore.fetchPolls(newId);
+      await pollsStore.fetchPolls(newId);
+      // Reconnect to active poll if exists after fetching
+      if (activePollInstance.value?.id) {
+        await subscribeToActivePoll(activePollInstance.value.id);
+      }
+    }
+  },
+);
+
+// Watch for activePollInstance changes (e.g., when poll ends or is restored)
+// This ensures WebSocket subscription is always in sync with the active poll
+watch(
+  activePollInstance,
+  async (newInstance, oldInstance) => {
+    // Only subscribe if we have a new active poll that's different from the old one
+    if (newInstance?.id && newInstance.id !== oldInstance?.id) {
+      console.debug("[EventsCard] Active poll changed, subscribing to:", newInstance.id);
+      await subscribeToActivePoll(newInstance.id);
+    }
+    // If poll was cleared, cleanup subscription
+    if (!newInstance && wsUnsubscribe) {
+      console.debug("[EventsCard] Active poll cleared, cleaning up subscription");
+      await wsUnsubscribe();
+      wsUnsubscribe = null;
     }
   },
 );
