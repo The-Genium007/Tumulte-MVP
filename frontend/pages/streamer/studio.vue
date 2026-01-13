@@ -79,7 +79,7 @@
 
               <div class="config-dropdown-content">
                 <div v-if="loading" class="config-dropdown-empty">
-                  <UIcon name="i-lucide-loader-2" class="size-6 animate-spin text-muted" />
+                  <UIcon name="i-game-icons-dice-twenty-faces-twenty" class="size-6 animate-spin-slow text-muted" />
                 </div>
 
                 <div v-else-if="api.configs.value.length === 0" class="config-dropdown-empty">

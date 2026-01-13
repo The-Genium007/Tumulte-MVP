@@ -1,16 +1,9 @@
 <template>
-  <div
-    class="min-h-screen flex items-center justify-center bg-linear-to-br from-gray-950 via-purple-950/20 to-gray-950"
-  >
-    <div class="text-center">
-      <div class="bg-primary-light p-8 rounded-3xl mb-6 inline-block">
-        <UIcon name="i-lucide-loader" class="size-16 text-primary-500 animate-spin" />
-      </div>
-      <h2 class="text-2xl font-bold text-primary mb-2">Connexion en cours</h2>
-      <p class="text-muted">
-        Veuillez patienter pendant que nous vous connectons...
-      </p>
-    </div>
+  <div class="min-h-screen flex items-center justify-center bg-secondary">
+    <UIcon
+      name="i-game-icons-dice-twenty-faces-twenty"
+      class="w-40 h-40 text-primary animate-spin-slow"
+    />
   </div>
 </template>
 

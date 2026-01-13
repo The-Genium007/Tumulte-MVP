@@ -154,8 +154,8 @@ watch(
     <!-- Loading -->
     <div v-if="loading" class="flex-1 flex items-center justify-center">
       <UIcon
-        name="i-lucide-loader"
-        class="size-8 text-primary-500 animate-spin"
+        name="i-game-icons-dice-twenty-faces-twenty"
+        class="size-8 text-primary animate-spin-slow"
       />
     </div>
 

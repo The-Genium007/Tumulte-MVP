@@ -47,7 +47,7 @@ const rowClass = computed(() => {
       :disabled="cancelling"
       @click="emit('cancel')"
     >
-      <UIcon v-if="cancelling" name="i-lucide-loader" class="size-4 sm:size-5 animate-spin" />
+      <UIcon v-if="cancelling" name="i-game-icons-dice-twenty-faces-twenty" class="size-4 sm:size-5 animate-spin-slow" />
       <UIcon v-else name="i-lucide-x" class="size-4 sm:size-5" />
     </button>
     <button
@@ -56,7 +56,7 @@ const rowClass = computed(() => {
       :disabled="launching"
       @click="emit('launch', poll.id)"
     >
-      <UIcon v-if="launching" name="i-lucide-loader" class="size-4 sm:size-5 animate-spin" />
+      <UIcon v-if="launching" name="i-game-icons-dice-twenty-faces-twenty" class="size-4 sm:size-5 animate-spin-slow" />
       <UIcon v-else name="i-lucide-play" class="size-4 sm:size-5" />
     </button>
 

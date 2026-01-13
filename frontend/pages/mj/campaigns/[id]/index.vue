@@ -179,7 +179,7 @@
           </template>
 
           <div v-if="loadingMembers" class="flex items-center justify-center py-12">
-            <UIcon name="i-lucide-loader" class="size-12 text-primary-500 animate-spin" />
+            <UIcon name="i-game-icons-dice-twenty-faces-twenty" class="size-12 text-primary animate-spin-slow" />
           </div>
 
           <div v-else-if="members.length === 0" class="text-center py-12">
@@ -409,7 +409,7 @@
 
           <!-- Loading -->
           <div v-if="searching" class="flex items-center justify-center py-8">
-            <UIcon name="i-lucide-loader" class="size-8 text-primary-500 animate-spin" />
+            <UIcon name="i-game-icons-dice-twenty-faces-twenty" class="size-8 text-primary animate-spin-slow" />
           </div>
 
           <!-- Search Results -->

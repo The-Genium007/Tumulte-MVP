@@ -40,7 +40,7 @@
           </template>
 
           <div v-if="loadingAuth" class="text-center py-12">
-            <UIcon name="i-lucide-loader" class="size-10 text-primary-500 animate-spin mx-auto" />
+            <UIcon name="i-game-icons-dice-twenty-faces-twenty" class="size-10 text-primary animate-spin-slow mx-auto" />
           </div>
 
           <div v-else-if="authorizationStatuses.length === 0" class="text-center py-12">

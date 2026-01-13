@@ -380,3 +380,20 @@ h1, h2, h3, h4, h5, h6 {
   scrollbar-width: thin;
   scrollbar-color: var(--color-primary-300) var(--color-neutral-100);
 }
+
+/* ============================================================================
+   ANIMATION D20 LOADING
+   ============================================================================ */
+
+.animate-spin-slow {
+  animation: spin-slow 4.5s linear infinite;
+}
+
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

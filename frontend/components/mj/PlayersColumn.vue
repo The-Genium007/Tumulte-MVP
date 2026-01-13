@@ -60,8 +60,8 @@ const formatAuthTime = (seconds: number | null): string => {
       class="flex flex-col items-center justify-center py-12"
     >
       <UIcon
-        name="i-lucide-loader"
-        class="size-8 text-primary-500 animate-spin mb-3"
+        name="i-game-icons-dice-twenty-faces-twenty"
+        class="size-8 text-primary animate-spin-slow mb-3"
       />
       <p class="text-muted text-sm">Chargement...</p>
     </div>

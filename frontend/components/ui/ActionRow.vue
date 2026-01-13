@@ -51,8 +51,8 @@
           >
             <UIcon
               v-if="action.loading"
-              name="i-lucide-loader"
-              class="size-5 animate-spin"
+              name="i-game-icons-dice-twenty-faces-twenty"
+              class="size-5 animate-spin-slow"
             />
             <UIcon
               v-else-if="action.icon"

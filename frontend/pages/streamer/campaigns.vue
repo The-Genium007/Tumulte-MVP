@@ -24,7 +24,7 @@
         <!-- Invitations en attente -->
         <UCard v-if="loading">
           <div class="text-center py-12">
-            <UIcon name="i-lucide-loader" class="size-12 text-primary-500 animate-spin mx-auto" />
+            <UIcon name="i-game-icons-dice-twenty-faces-twenty" class="size-12 text-primary animate-spin-slow mx-auto" />
             <p class="text-muted mt-4">Chargement...</p>
           </div>
         </UCard>
@@ -102,7 +102,7 @@
           </template>
 
           <div v-if="loadingAuth" class="text-center py-12">
-            <UIcon name="i-lucide-loader" class="size-10 text-primary-500 animate-spin mx-auto" />
+            <UIcon name="i-game-icons-dice-twenty-faces-twenty" class="size-10 text-primary animate-spin-slow mx-auto" />
           </div>
 
           <div v-else-if="authorizationStatuses.length === 0" class="text-center py-12">
@@ -159,7 +159,7 @@
           </template>
 
           <div v-if="loading" class="text-center py-12">
-            <UIcon name="i-lucide-loader" class="size-10 text-primary-500 animate-spin mx-auto" />
+            <UIcon name="i-game-icons-dice-twenty-faces-twenty" class="size-10 text-primary animate-spin-slow mx-auto" />
           </div>
 
           <div v-else-if="activeCampaigns.length === 0" class="text-center py-12">
