@@ -159,7 +159,7 @@ jobs:
           TWITCH_CLIENT_SECRET: test_client_secret
           TWITCH_REDIRECT_URI: http://localhost:3333/auth/twitch/callback
           FRONTEND_URL: http://localhost:3000
-        run: npm run test:coverage -- --filter=unit
+        run: npm run test:coverage -- --suite=unit
 
       # Note: c8 outputs coverage to console, coverage threshold is enforced by c8 config
 
