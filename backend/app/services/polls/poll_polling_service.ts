@@ -29,6 +29,9 @@ export class PollPollingService {
   private twitchChatService: any // Sera initialisé de manière lazy
   // Polling cycle interval
   private static readonly pollingIntervalMs = 3000
+  // Real-time broadcast interval (emit cached results every second)
+  private broadcastIntervals: Map<string, NodeJS.Timeout> = new Map()
+  private static readonly broadcastIntervalMs = 1000
 
   constructor(
     private pollChannelLinkRepository: PollChannelLinkRepository,
@@ -70,6 +73,97 @@ export class PollPollingService {
       this.twitchChatService = new twitchChatServiceClass(redisServiceInstance)
     }
     return this.twitchChatService
+  }
+
+  /**
+   * Démarre le broadcast en temps réel (émet les résultats du cache Redis toutes les secondes)
+   */
+  private startRealtimeBroadcast(pollInstanceId: string, endsAt: DateTime): void {
+    // Arrêter tout broadcast existant pour ce poll
+    this.stopRealtimeBroadcast(pollInstanceId)
+
+    logger.info({
+      event: 'realtime_broadcast_started',
+      pollInstanceId,
+      intervalMs: PollPollingService.broadcastIntervalMs,
+    })
+
+    // Fonction qui émet les résultats depuis le cache Redis
+    const broadcastCachedResults = async () => {
+      try {
+        // Vérifier si le poll est toujours actif
+        if (!this.pollingActive.has(pollInstanceId)) {
+          logger.debug({
+            event: 'realtime_broadcast_stopped_inactive',
+            pollInstanceId,
+          })
+          this.stopRealtimeBroadcast(pollInstanceId)
+          return
+        }
+
+        // Vérifier si le poll est terminé
+        if (DateTime.now() >= endsAt) {
+          logger.info({
+            event: 'realtime_broadcast_stopped_ended',
+            pollInstanceId,
+          })
+          this.stopRealtimeBroadcast(pollInstanceId)
+          return
+        }
+
+        // Récupérer les résultats depuis le cache Redis
+        if (this.aggregationService) {
+          const { redisService: redisServiceClass } = await import('../cache/redis_service.js')
+          const redisService = await app.container.make(redisServiceClass)
+          const cached = await redisService.getCachedAggregatedVotes(pollInstanceId)
+
+          if (cached) {
+            // Émettre les résultats via WebSocket
+            this.webSocketService.emitPollUpdate(pollInstanceId, cached)
+
+            logger.debug({
+              event: 'realtime_broadcast_emitted',
+              pollInstanceId,
+              totalVotes: cached.totalVotes,
+            })
+          }
+        }
+      } catch (error) {
+        logger.error({
+          event: 'realtime_broadcast_error',
+          pollInstanceId,
+          error: error instanceof Error ? error.message : String(error),
+        })
+      }
+    }
+
+    // Démarrer l'intervalle de 1 seconde
+    const interval = setInterval(() => {
+      broadcastCachedResults().catch((error) => {
+        logger.error({
+          event: 'realtime_broadcast_unhandled_error',
+          pollInstanceId,
+          error: error instanceof Error ? error.message : String(error),
+        })
+      })
+    }, PollPollingService.broadcastIntervalMs)
+
+    this.broadcastIntervals.set(pollInstanceId, interval)
+  }
+
+  /**
+   * Arrête le broadcast en temps réel pour un poll
+   */
+  private stopRealtimeBroadcast(pollInstanceId: string): void {
+    const interval = this.broadcastIntervals.get(pollInstanceId)
+    if (interval) {
+      clearInterval(interval)
+      this.broadcastIntervals.delete(pollInstanceId)
+      logger.info({
+        event: 'realtime_broadcast_stopped',
+        pollInstanceId,
+      })
+    }
   }
 
   /**
@@ -122,6 +216,9 @@ export class PollPollingService {
       event: 'websocket_poll_start_emitted',
       pollInstanceId: pollId,
     })
+
+    // Démarrer le broadcast en temps réel (toutes les secondes)
+    this.startRealtimeBroadcast(pollId, endsAt)
 
     // Compteurs de polling
     let pollingCycleCount = 0
@@ -566,17 +663,20 @@ export class PollPollingService {
     // 1. Marquer comme inactif IMMÉDIATEMENT (avant tout autre nettoyage)
     this.pollingActive.delete(pollInstanceId)
 
-    // 2. Arrêter le timeout en attente (queue-based)
+    // 2. Arrêter le broadcast en temps réel
+    this.stopRealtimeBroadcast(pollInstanceId)
+
+    // 3. Arrêter le timeout en attente (queue-based)
     const timeout = this.pollingTimeouts.get(pollInstanceId)
     if (timeout) {
       clearTimeout(timeout)
       this.pollingTimeouts.delete(pollInstanceId)
     }
 
-    // 3. Nettoyer les cycles en cours
+    // 4. Nettoyer les cycles en cours
     this.cyclesInProgress.delete(pollInstanceId)
 
-    // 4. Nettoyer les messages envoyés
+    // 5. Nettoyer les messages envoyés
     this.sentMessages.delete(pollInstanceId)
 
     logger.info({
