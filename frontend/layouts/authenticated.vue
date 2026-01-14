@@ -15,7 +15,9 @@
         <OfflineIndicator />
 
         <!-- Banner de permission notifications push -->
-        <NotificationsPushPermissionBanner />
+        <div class="pb-2">
+          <NotificationsPushPermissionBanner />
+        </div>
 
         <!-- Page Content -->
         <slot />
