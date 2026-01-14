@@ -92,7 +92,7 @@ class WebSocketService {
   /**
    * Émet l'événement de mise à jour d'un sondage
    */
-  emitPollUpdate(pollInstanceId: string, aggregated: PollAggregatedVotes): void {
+  async emitPollUpdate(pollInstanceId: string, aggregated: PollAggregatedVotes): Promise<void> {
     const channel = `poll:${pollInstanceId}`
 
     const data: PollUpdateEvent = {
@@ -109,6 +109,7 @@ class WebSocketService {
       totalVotes: aggregated.totalVotes,
     })
 
+    // Émettre vers le canal général du poll (pour dashboard MJ)
     transmit.broadcast(channel, {
       event: 'poll:update',
       data,
@@ -120,6 +121,34 @@ class WebSocketService {
       pollInstanceId,
       totalVotes: aggregated.totalVotes,
     })
+
+    // Émettre vers chaque streamer membre de la campagne (pour les overlays)
+    try {
+      const pollInstance = await PollInstance.find(pollInstanceId)
+
+      if (pollInstance?.campaignId) {
+        const memberships = await CampaignMembership.query()
+          .where('campaignId', pollInstance.campaignId)
+          .where('status', 'ACTIVE')
+
+        for (const membership of memberships) {
+          transmit.broadcast(`streamer:${membership.streamerId}:polls`, {
+            event: 'poll:update',
+            data: {
+              ...data,
+              campaign_id: String(pollInstance.campaignId),
+            },
+          })
+        }
+
+        logger.debug(
+          `WebSocket: poll:update emitted for poll ${pollInstanceId} to ${memberships.length} streamers`
+        )
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      logger.error(`WebSocket: failed to emit poll:update to streamers: ${errorMessage}`)
+    }
   }
 
   /**
@@ -257,6 +286,33 @@ class WebSocketService {
     })
 
     logger.info(`WebSocket: streamer:left-campaign emitted for streamer ${streamerId}`)
+  }
+
+  /**
+   * Émet un événement de changement de readiness d'un streamer
+   * Utilisé pour la waiting list en temps réel
+   */
+  emitStreamerReadinessChange(
+    campaignId: string,
+    streamerId: string,
+    isReady: boolean,
+    streamerName: string
+  ): void {
+    const channel = `campaign:${campaignId}:readiness`
+
+    transmit.broadcast(channel, {
+      event: isReady ? 'streamer:ready' : 'streamer:not-ready',
+      data: {
+        streamerId,
+        streamerName,
+        isReady,
+        timestamp: new Date().toISOString(),
+      },
+    })
+
+    logger.info(
+      `WebSocket: ${isReady ? 'streamer:ready' : 'streamer:not-ready'} emitted for ${streamerName} on campaign ${campaignId}`
+    )
   }
 }
 

@@ -11,6 +11,7 @@ services:
       target: production
       args:
         NUXT_PUBLIC_API_BASE: ${NUXT_PUBLIC_API_BASE}
+        NUXT_PUBLIC_SENTRY_DSN: ${NUXT_PUBLIC_SENTRY_DSN}
     image: ${IMAGE_NAME:-tumulte-frontend}:${IMAGE_TAG:-latest}
     environment:
       # Application
@@ -20,6 +21,12 @@ services:
 
       # API URL (must be provided via .env file)
       NUXT_PUBLIC_API_BASE: ${NUXT_PUBLIC_API_BASE}
+
+      # Sentry (optional)
+      NUXT_PUBLIC_SENTRY_DSN: ${NUXT_PUBLIC_SENTRY_DSN}
+      SENTRY_ORG: ${SENTRY_ORG}
+      SENTRY_PROJECT: ${SENTRY_PROJECT}
+      SENTRY_AUTH_TOKEN: ${SENTRY_AUTH_TOKEN}
     networks:
       - dokploy-network
     restart: unless-stopped

@@ -1,6 +1,7 @@
 import { inject } from '@adonisjs/core'
 import app from '@adonisjs/core/services/app'
 import logger from '@adonisjs/core/services/logger'
+import env from '#start/env'
 import { DateTime } from 'luxon'
 import { pollInstance as PollInstance } from '#models/poll_instance'
 import { pollChannelLink as PollChannelLink } from '#models/poll_channel_link'
@@ -9,6 +10,7 @@ import { campaignMembership as CampaignMembership } from '#models/campaign_membe
 import { twitchPollService as TwitchPollService } from '../twitch/twitch_poll_service.js'
 import { TwitchApiService } from '../twitch/twitch_api_service.js'
 import { PushNotificationService } from '#services/notifications/push_notification_service'
+import type { HttpCallResult } from '#services/resilience/types'
 
 /**
  * Service pour créer des polls Twitch pour tous les streamers d'une campagne
@@ -131,6 +133,7 @@ export class PollCreationService {
     let apiPollsCreated = 0
     let chatPollsCreated = 0
     let pollCreationErrors = 0
+    let circuitBreakerBlocked = 0
 
     // Créer un poll pour chaque streamer compatible
     for (const streamer of streamers) {
@@ -150,7 +153,7 @@ export class PollCreationService {
 
         // Vérifier si le streamer peut utiliser l'API officielle des polls
         if (this.canUseOfficialPolls(streamer)) {
-          // Affiliate ou Partner: utiliser l'API Twitch Polls
+          // Affiliate ou Partner: utiliser l'API Twitch Polls avec retry résilient
           logger.info({
             event: 'poll_creation_api_started',
             pollInstanceId: pollInstance.id,
@@ -160,30 +163,45 @@ export class PollCreationService {
           })
 
           const accessToken = await streamer.getDecryptedAccessToken()
+          const refreshToken = await streamer.getDecryptedRefreshToken()
 
-          const poll = await this.twitchPollService.withTokenRefresh(
-            (token) =>
-              this.twitchPollService.createPoll(
-                streamer.twitchUserId,
-                token,
-                pollInstance.title,
-                pollInstance.options,
-                pollInstance.durationSeconds,
-                pollInstance.channelPointsEnabled,
-                pollInstance.channelPointsAmount
-              ),
+          // Utiliser la méthode avec retry et token refresh combinés
+          const result = await this.twitchPollService.withTokenRefreshAndRetry(
+            (token) => this.createPollHttpCall(streamer, token, pollInstance),
             async () => accessToken,
-            await streamer.getDecryptedRefreshToken(),
+            refreshToken,
             async (newAccessToken, newRefreshToken) => {
               await streamer.updateTokens(newAccessToken, newRefreshToken)
+            },
+            {
+              campaignId: pollInstance.campaignId ?? undefined,
+              pollInstanceId: pollInstance.id,
+              streamerId: streamer.id,
             }
           )
+
+          // Vérifier si le circuit breaker a bloqué
+          if (result.circuitBreakerOpen) {
+            circuitBreakerBlocked++
+            logger.warn({
+              event: 'poll_creation_circuit_breaker_blocked',
+              pollInstanceId: pollInstance.id,
+              streamer_id: streamer.id,
+              streamerDisplayName: streamer.twitchDisplayName,
+            })
+            continue
+          }
+
+          // Vérifier le succès après retries
+          if (!result.success || !result.data) {
+            throw result.error || new Error('Poll creation failed after retries')
+          }
 
           // Créer le lien en base avec twitchPollId
           await PollChannelLink.create({
             pollInstanceId: pollInstance.id,
             streamerId: streamer.id,
-            twitchPollId: poll.id,
+            twitchPollId: result.data.id,
             status: 'CREATED',
             totalVotes: 0,
             votesByOption: {},
@@ -197,8 +215,9 @@ export class PollCreationService {
             pollInstanceId: pollInstance.id,
             streamer_id: streamer.id,
             streamerDisplayName: streamer.twitchDisplayName,
-            twitchPollId: poll.id,
+            twitchPollId: result.data.id,
             durationMs: duration,
+            attempts: result.attempts,
           })
         } else {
           // Non-affilié: utiliser le chat IRC
@@ -411,6 +430,89 @@ export class PollCreationService {
   private canUseOfficialPolls(streamer: Streamer): boolean {
     const type = (streamer.broadcasterType || '').toLowerCase()
     return type === 'affiliate' || type === 'partner'
+  }
+
+  /**
+   * Crée un appel HTTP pour créer un poll Twitch (format compatible avec RetryUtility)
+   */
+  private async createPollHttpCall(
+    streamer: Streamer,
+    accessToken: string,
+    pollInstance: PollInstance
+  ): Promise<HttpCallResult<{ id: string; status: string }>> {
+    const clientId = env.get('TWITCH_CLIENT_ID') || ''
+
+    // Valider et tronquer les paramètres selon les limites Twitch
+    const sanitizedTitle = pollInstance.title.slice(0, 60)
+    const sanitizedChoices = pollInstance.options.map((choice) => ({
+      title: choice.slice(0, 25),
+    }))
+    const sanitizedDuration = Math.min(Math.max(pollInstance.durationSeconds, 15), 1800)
+
+    const body: Record<string, unknown> = {
+      broadcaster_id: streamer.twitchUserId,
+      title: sanitizedTitle,
+      choices: sanitizedChoices,
+      duration: sanitizedDuration,
+    }
+
+    // Ajouter les points de chaîne si un montant positif est spécifié
+    if (pollInstance.channelPointsAmount && pollInstance.channelPointsAmount > 0) {
+      body.channel_points_voting_enabled = true
+      body.channel_points_per_vote = Math.min(
+        Math.max(pollInstance.channelPointsAmount, 1),
+        1000000
+      )
+    }
+
+    try {
+      const response = await fetch('https://api.twitch.tv/helix/polls', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Client-Id': clientId,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(10000),
+      })
+
+      // Extract Retry-After header for 429 responses
+      const retryAfterHeader = response.headers.get('Retry-After')
+      const retryAfterSeconds = retryAfterHeader ? Number.parseInt(retryAfterHeader, 10) : undefined
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        return {
+          success: false,
+          statusCode: response.status,
+          retryAfterSeconds,
+          error: new Error(errorText || `HTTP ${response.status}`),
+        }
+      }
+
+      const data = (await response.json()) as { data: Array<{ id: string; status: string }> }
+
+      if (!data.data || data.data.length === 0) {
+        return {
+          success: false,
+          statusCode: response.status,
+          error: new Error('No poll data returned from Twitch'),
+        }
+      }
+
+      return {
+        success: true,
+        statusCode: response.status,
+        data: { id: data.data[0].id, status: data.data[0].status },
+      }
+    } catch (error) {
+      return {
+        success: false,
+        statusCode: 0,
+        error: error instanceof Error ? error : new Error(String(error)),
+      }
+    }
   }
 
   /**

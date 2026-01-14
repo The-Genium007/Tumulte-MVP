@@ -10,7 +10,44 @@ export default defineNuxtConfig({
     client: process.env.NODE_ENV === "development",
   },
 
-  modules: ["@nuxt/ui", "@pinia/nuxt", "@vite-pwa/nuxt", "@tresjs/nuxt"],
+  modules: [
+    "@nuxt/ui",
+    "@pinia/nuxt",
+    "@vite-pwa/nuxt",
+    "@tresjs/nuxt",
+    "@nuxt/fonts",
+    "@sentry/nuxt/module",
+  ],
+
+  sentry: {
+    sourceMapsUploadOptions: {
+      org: process.env.SENTRY_ORG || "",
+      project: process.env.SENTRY_PROJECT || "",
+      authToken: process.env.SENTRY_AUTH_TOKEN || "",
+    },
+  },
+
+  // Force light theme only - no dark mode
+  colorMode: {
+    preference: "light",
+    fallback: "light",
+  },
+
+  // Google Fonts configuration
+  fonts: {
+    families: [
+      {
+        name: "Inter",
+        provider: "google",
+        weights: [400, 500, 600, 700],
+      },
+      {
+        name: "Aoboshi One",
+        provider: "google",
+        weights: [400],
+      },
+    ],
+  },
 
   tres: {
     devtools: process.env.NODE_ENV === "development",
@@ -19,6 +56,8 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       apiBase: process.env.NUXT_PUBLIC_API_BASE || "http://localhost:3333",
+      sentryDsn: process.env.NUXT_PUBLIC_SENTRY_DSN || "",
+      envSuffix: process.env.ENV_SUFFIX || "dev",
     },
   },
 
@@ -28,14 +67,20 @@ export default defineNuxtConfig({
     manifest: {
       name: "Tumulte - Multi-Stream Polling",
       short_name: "Tumulte",
-      description: "Système de sondages Twitch synchronisés multi-streams",
-      theme_color: "#8b5cf6",
-      background_color: "#030712",
+      description: "Gestion de sondages multi-chaînes pour MJ de JDR",
+      theme_color: "#a855f7",
+      background_color: "#ffffff",
       display: "standalone",
       orientation: "portrait",
       scope: "/",
       start_url: "/",
+      categories: ["games", "utilities"],
       icons: [
+        {
+          src: "/pwa-64x64.png",
+          sizes: "64x64",
+          type: "image/png",
+        },
         {
           src: "/pwa-192x192.png",
           sizes: "192x192",
@@ -53,13 +98,29 @@ export default defineNuxtConfig({
           purpose: "any maskable",
         },
       ],
+      shortcuts: [
+        {
+          name: "Mes Campagnes",
+          url: "/mj/campaigns",
+          icons: [{ src: "/shortcut-campaigns.png", sizes: "96x96" }],
+        },
+        {
+          name: "Invitations",
+          url: "/streamer/invitations",
+          icons: [{ src: "/shortcut-invitations.png", sizes: "96x96" }],
+        },
+      ],
     },
     workbox: {
-      navigateFallback: "/",
+      // En mode SPA, toutes les navigations doivent servir index.html
+      // Le client-side router gère ensuite la route
+      navigateFallback: "/index.html",
+      navigateFallbackDenylist: [/^\/api/, /^\/auth/, /^\/offline/],
       globPatterns: ["**/*.{js,css,html,png,svg,ico}"],
       // Import du script de gestion des notifications push
       importScripts: ["/sw-push.js"],
       runtimeCaching: [
+        // Twitch API
         {
           urlPattern: /^https:\/\/api\.twitch\.tv\/.*/i,
           handler: "NetworkFirst",
@@ -69,6 +130,71 @@ export default defineNuxtConfig({
               maxEntries: 50,
               maxAgeSeconds: 300,
             },
+          },
+        },
+        // Backend API - Campaigns (7 days cache)
+        {
+          urlPattern: /\/mj\/campaigns(\/.*)?$/,
+          handler: "NetworkFirst",
+          options: {
+            cacheName: "tumulte-campaigns-cache",
+            expiration: {
+              maxEntries: 100,
+              maxAgeSeconds: 604800, // 7 days
+            },
+            networkTimeoutSeconds: 3,
+          },
+        },
+        // Backend API - Poll templates (7 days cache)
+        {
+          urlPattern: /\/mj\/poll-templates(\/.*)?$/,
+          handler: "NetworkFirst",
+          options: {
+            cacheName: "tumulte-templates-cache",
+            expiration: {
+              maxEntries: 200,
+              maxAgeSeconds: 604800,
+            },
+            networkTimeoutSeconds: 3,
+          },
+        },
+        // Backend API - Sessions (7 days cache)
+        {
+          urlPattern: /\/mj\/sessions(\/.*)?$/,
+          handler: "NetworkFirst",
+          options: {
+            cacheName: "tumulte-sessions-cache",
+            expiration: {
+              maxEntries: 100,
+              maxAgeSeconds: 604800,
+            },
+            networkTimeoutSeconds: 3,
+          },
+        },
+        // Backend API - Streamer routes (7 days cache)
+        {
+          urlPattern: /\/streamer\/campaigns(\/.*)?$/,
+          handler: "NetworkFirst",
+          options: {
+            cacheName: "tumulte-streamer-cache",
+            expiration: {
+              maxEntries: 50,
+              maxAgeSeconds: 604800,
+            },
+            networkTimeoutSeconds: 3,
+          },
+        },
+        // Backend API - Auth (1 day cache)
+        {
+          urlPattern: /\/auth\/me$/,
+          handler: "NetworkFirst",
+          options: {
+            cacheName: "tumulte-auth-cache",
+            expiration: {
+              maxEntries: 1,
+              maxAgeSeconds: 86400, // 1 day
+            },
+            networkTimeoutSeconds: 3,
           },
         },
       ],
@@ -95,14 +221,19 @@ export default defineNuxtConfig({
           name: "apple-mobile-web-app-status-bar-style",
           content: "black-translucent",
         },
+        { name: "apple-mobile-web-app-title", content: "Tumulte" },
         { name: "mobile-web-app-capable", content: "yes" },
+        { name: "format-detection", content: "telephone=no" },
+        // Theme color - Light mode only
+        { name: "theme-color", content: "#a855f7" },
         // Content Security Policy for defense in depth
         {
           "http-equiv": "Content-Security-Policy",
           content: [
             "default-src 'self'",
             // Scripts: self + inline (Vue/Nuxt needs it) + Umami analytics
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://zerocase-umami-2548df-51-83-45-107.traefik.me",
+            // Note: unsafe-eval only needed in dev for HMR, removed in production for security
+            `script-src 'self' 'unsafe-inline' ${process.env.NODE_ENV === "development" ? "'unsafe-eval'" : ""} https://zerocase-umami-2548df-51-83-45-107.traefik.me`,
             // Styles: self + inline (Tailwind/Vue needs it)
             "style-src 'self' 'unsafe-inline'",
             // Images: self + data URIs + Twitch CDN for profile images
@@ -125,7 +256,92 @@ export default defineNuxtConfig({
         { "http-equiv": "X-Content-Type-Options", content: "nosniff" },
         // Note: X-Frame-Options and frame-ancestors must be set via HTTP headers on your reverse proxy
       ],
-      link: [{ rel: "apple-touch-icon", href: "/apple-touch-icon.png" }],
+      link: [
+        // Preconnect Google Fonts pour optimisation
+        { rel: "preconnect", href: "https://fonts.googleapis.com" },
+        {
+          rel: "preconnect",
+          href: "https://fonts.gstatic.com",
+          crossorigin: "anonymous",
+        },
+        // Favicons - SVG moderne + PNG fallback
+        { rel: "icon", type: "image/svg+xml", href: "/pwa-icon.svg" },
+        {
+          rel: "icon",
+          type: "image/png",
+          sizes: "32x32",
+          href: "/favicon-32x32.png",
+        },
+        {
+          rel: "icon",
+          type: "image/png",
+          sizes: "16x16",
+          href: "/favicon-16x16.png",
+        },
+        // Apple Touch Icon
+        { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
+        // Apple splash screens pour différents appareils iOS
+        {
+          rel: "apple-touch-startup-image",
+          href: "/apple-splash-1170-2532.png",
+          media:
+            "(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)",
+        },
+        {
+          rel: "apple-touch-startup-image",
+          href: "/apple-splash-1284-2778.png",
+          media:
+            "(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3)",
+        },
+        {
+          rel: "apple-touch-startup-image",
+          href: "/apple-splash-1179-2556.png",
+          media:
+            "(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)",
+        },
+        {
+          rel: "apple-touch-startup-image",
+          href: "/apple-splash-1290-2796.png",
+          media:
+            "(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)",
+        },
+        {
+          rel: "apple-touch-startup-image",
+          href: "/apple-splash-1125-2436.png",
+          media:
+            "(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)",
+        },
+        {
+          rel: "apple-touch-startup-image",
+          href: "/apple-splash-1242-2688.png",
+          media:
+            "(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3)",
+        },
+        {
+          rel: "apple-touch-startup-image",
+          href: "/apple-splash-828-1792.png",
+          media:
+            "(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2)",
+        },
+        {
+          rel: "apple-touch-startup-image",
+          href: "/apple-splash-1536-2048.png",
+          media:
+            "(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2)",
+        },
+        {
+          rel: "apple-touch-startup-image",
+          href: "/apple-splash-1668-2388.png",
+          media:
+            "(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2)",
+        },
+        {
+          rel: "apple-touch-startup-image",
+          href: "/apple-splash-2048-2732.png",
+          media:
+            "(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2)",
+        },
+      ],
       script: [
         {
           defer: true,

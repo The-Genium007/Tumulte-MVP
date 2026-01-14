@@ -6,9 +6,9 @@
 
 <style scoped>
 .card-header {
-  padding-bottom: 1rem;
-  border-bottom: 1px solid rgb(229 231 235);
-  margin-bottom: 1rem;
+  padding-bottom: var(--spacing-4);
+  border-bottom: var(--border-width-1) solid var(--color-border-default);
+  margin-bottom: var(--spacing-4);
 }
 
 .card-header:last-child {

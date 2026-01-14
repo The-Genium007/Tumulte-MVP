@@ -8,6 +8,12 @@ import type {
   UpdateCampaignRequest,
 } from "~/types/api";
 import { useSupportTrigger } from "@/composables/useSupportTrigger";
+import {
+  storeCampaigns,
+  getStoredCampaigns,
+  storeCampaignDetail,
+  getStoredCampaignDetail,
+} from "@/utils/offline-storage";
 
 /**
  * Store Pinia pour la gestion des campagnes (MJ)
@@ -20,6 +26,7 @@ export const useCampaignsStore = defineStore("campaigns", () => {
   const selectedCampaign = ref<CampaignDetail | null>(null);
   const loading = ref(false);
   const _error = ref<string | null>(null);
+  const isOfflineData = ref(false);
 
   // Getters
   const activeCampaigns = computed(() => {
@@ -35,11 +42,33 @@ export const useCampaignsStore = defineStore("campaigns", () => {
     loading.value = true;
     _error.value = null;
 
+    // Load from offline storage first for instant display
     try {
-      campaigns.value = await campaignsRepository.list();
+      const storedCampaigns = await getStoredCampaigns();
+      if (storedCampaigns && campaigns.value.length === 0) {
+        campaigns.value = storedCampaigns;
+        isOfflineData.value = true;
+      }
+    } catch (offlineErr) {
+      console.warn(
+        "[CampaignsStore] Failed to load from offline storage:",
+        offlineErr,
+      );
+    }
+
+    try {
+      const freshCampaigns = await campaignsRepository.list();
+      campaigns.value = freshCampaigns;
+      isOfflineData.value = false;
+
+      // Persist to offline storage
+      await storeCampaigns(freshCampaigns);
     } catch (err) {
-      _error.value =
-        err instanceof Error ? err.message : "Failed to fetch campaigns";
+      // Keep offline data if available
+      if (!isOfflineData.value) {
+        _error.value =
+          err instanceof Error ? err.message : "Failed to fetch campaigns";
+      }
       triggerSupportForError("campaign_fetch", err);
       throw err;
     } finally {
@@ -51,12 +80,35 @@ export const useCampaignsStore = defineStore("campaigns", () => {
     loading.value = true;
     _error.value = null;
 
+    // Load from offline storage first
     try {
-      selectedCampaign.value = await campaignsRepository.get(id);
+      const storedCampaign = await getStoredCampaignDetail(id);
+      if (storedCampaign && !selectedCampaign.value) {
+        selectedCampaign.value = storedCampaign;
+        isOfflineData.value = true;
+      }
+    } catch (offlineErr) {
+      console.warn(
+        "[CampaignsStore] Failed to load campaign from offline storage:",
+        offlineErr,
+      );
+    }
+
+    try {
+      const freshCampaign = await campaignsRepository.get(id);
+      selectedCampaign.value = freshCampaign;
+      isOfflineData.value = false;
+
+      // Persist to offline storage
+      await storeCampaignDetail(freshCampaign);
+
       return selectedCampaign.value;
     } catch (err) {
-      _error.value =
-        err instanceof Error ? err.message : "Failed to fetch campaign";
+      // Keep offline data if available
+      if (!isOfflineData.value) {
+        _error.value =
+          err instanceof Error ? err.message : "Failed to fetch campaign";
+      }
       triggerSupportForError("campaign_fetch_detail", err);
       throw err;
     } finally {
@@ -206,6 +258,7 @@ export const useCampaignsStore = defineStore("campaigns", () => {
     selectedCampaign,
     loading,
     error,
+    isOfflineData,
 
     // Getters
     activeCampaigns,

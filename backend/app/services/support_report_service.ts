@@ -4,6 +4,8 @@ import { DateTime } from 'luxon'
 import { Blob } from 'node:buffer'
 import type { user as User } from '#models/user'
 import type { streamer as Streamer } from '#models/streamer'
+import { gitHubIssueService } from '#services/github_issue_service'
+import { gitHubDiscussionService } from '#services/github_discussion_service'
 
 type ConsoleLogEntry = {
   level?: string
@@ -49,34 +51,78 @@ type RequestContext = {
   host?: string
 }
 
-type SupportReportPayload = {
+type BugReportPayload = {
   user: User
   streamer?: Streamer | null
-  description?: string
+  title: string
+  description: string
+  includeDiagnostics: boolean
   frontend?: FrontendContext
   backendContext?: BackendContext
   requestContext: RequestContext
 }
 
+type SuggestionPayload = {
+  user: User
+  streamer?: Streamer | null
+  title: string
+  description: string
+}
+
+type BugReportResult = {
+  discordSent: boolean
+  githubIssueUrl: string | null
+}
+
+type SuggestionResult = {
+  discordSent: boolean
+  githubDiscussionUrl: string | null
+}
+
 class SupportReportService {
-  async send(payload: SupportReportPayload) {
-    const webhookUrl = env.get('DISCORD_SUPPORT_WEBHOOK_URL')
-    if (!webhookUrl) {
-      throw new Error('DISCORD_SUPPORT_WEBHOOK_URL is not configured')
+  /**
+   * Envoie un rapport de bug vers Discord #support-bugs + GitHub Issue
+   */
+  async sendBugReport(payload: BugReportPayload): Promise<BugReportResult> {
+    const result: BugReportResult = {
+      discordSent: false,
+      githubIssueUrl: null,
     }
 
-    const sanitizedFrontend = this.sanitizeFrontend(payload.frontend)
-    const textReport = this.buildTextReport({ ...payload, frontend: sanitizedFrontend })
-    const embed = this.buildEmbed({ ...payload, frontend: sanitizedFrontend })
+    // 1. Créer l'issue GitHub (simple, sans données techniques)
+    const githubIssue = await gitHubIssueService.createIssue({
+      title: payload.title,
+      body: this.buildSimpleBugBody(payload),
+      labels: ['bug', 'user-report'],
+      userDisplayName: payload.user.displayName,
+    })
+
+    if (githubIssue) {
+      result.githubIssueUrl = githubIssue.htmlUrl
+    }
+
+    // 2. Envoyer sur Discord #support-bugs
+    const webhookUrl = env.get('DISCORD_SUPPORT_WEBHOOK_URL')
+    if (!webhookUrl) {
+      logger.warn('DISCORD_SUPPORT_WEBHOOK_URL is not configured, skipping Discord notification')
+      return result
+    }
+
+    const sanitizedFrontend = payload.includeDiagnostics
+      ? this.sanitizeFrontend(payload.frontend)
+      : undefined
+
+    const embed = this.buildBugEmbed(payload, sanitizedFrontend, result.githubIssueUrl)
 
     const rawRoleId = (env.get('DISCORD_SUPPORT_ROLE_ID') || '').trim()
     const isValidRoleId = /^\d{5,30}$/.test(rawRoleId)
     const roleId = isValidRoleId ? rawRoleId : ''
+
     const contentPieces = []
     if (roleId.length > 0) {
       contentPieces.push(`<@&${roleId}>`)
     }
-    contentPieces.push('Nouveau ticket support')
+    contentPieces.push('Nouveau rapport de bug')
 
     const payloadJson: Record<string, unknown> = {
       content: contentPieces.join(' '),
@@ -86,26 +132,127 @@ class SupportReportService {
 
     const formData = new FormData()
     formData.append('payload_json', JSON.stringify(payloadJson))
-    formData.append(
-      'files[0]',
-      new Blob([textReport], { type: 'text/plain' }),
-      `support-report-${Date.now()}.txt`
-    )
 
-    const response = await fetch(webhookUrl, {
-      method: 'POST',
-      body: formData,
+    // Joindre le rapport détaillé uniquement si diagnostics inclus
+    if (payload.includeDiagnostics && sanitizedFrontend) {
+      const textReport = this.buildTextReport({
+        ...payload,
+        frontend: sanitizedFrontend,
+      })
+      formData.append(
+        'files[0]',
+        new Blob([textReport], { type: 'text/plain' }),
+        `bug-report-${Date.now()}.txt`
+      )
+    }
+
+    try {
+      const response = await fetch(webhookUrl, {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (response.ok) {
+        result.discordSent = true
+      } else {
+        const responseText = await response.text().catch(() => '')
+        logger.error({
+          message: 'Failed to send Discord bug report',
+          status: response.status,
+          response: responseText?.slice(0, 300),
+        })
+      }
+    } catch (error) {
+      logger.error({
+        message: 'Error sending Discord bug report',
+        error: error instanceof Error ? error.message : String(error),
+      })
+    }
+
+    return result
+  }
+
+  /**
+   * Construit le body simple pour l'issue GitHub (sans données techniques)
+   */
+  private buildSimpleBugBody(payload: BugReportPayload): string {
+    const lines: string[] = []
+
+    lines.push('## Description')
+    lines.push('')
+    lines.push(payload.description)
+    lines.push('')
+    lines.push('---')
+    lines.push('')
+    lines.push(`**Signalé par:** ${payload.user.displayName}`)
+    lines.push(`**Source:** Widget Support Tumulte`)
+    lines.push(`**Date:** ${new Date().toISOString()}`)
+
+    return lines.join('\n')
+  }
+
+  /**
+   * Envoie une suggestion vers Discord #suggestions + crée une GitHub Discussion
+   */
+  async sendSuggestion(payload: SuggestionPayload): Promise<SuggestionResult> {
+    const result: SuggestionResult = {
+      discordSent: false,
+      githubDiscussionUrl: null,
+    }
+
+    // 1. Créer la discussion GitHub
+    const githubDiscussion = await gitHubDiscussionService.createDiscussion({
+      title: payload.title,
+      body: payload.description,
+      userDisplayName: payload.user.displayName,
     })
 
-    if (!response.ok) {
-      const responseText = await response.text().catch(() => '')
-      logger.error({
-        message: 'Failed to send Discord support report',
-        status: response.status,
-        response: responseText?.slice(0, 300),
-      })
-      throw new Error(`Discord webhook responded with status ${response.status}`)
+    if (githubDiscussion) {
+      result.githubDiscussionUrl = githubDiscussion.url
     }
+
+    // 2. Envoyer sur Discord #suggestions
+    const webhookUrl = env.get('DISCORD_SUGGESTIONS_WEBHOOK_URL')
+    if (!webhookUrl) {
+      logger.warn(
+        'DISCORD_SUGGESTIONS_WEBHOOK_URL is not configured, skipping Discord notification'
+      )
+      return result
+    }
+
+    const embed = this.buildSuggestionEmbed(payload, result.githubDiscussionUrl)
+
+    const payloadJson: Record<string, unknown> = {
+      content: 'Nouvelle suggestion utilisateur',
+      embeds: [embed],
+      allowedMentions: { parse: [] },
+    }
+
+    try {
+      const response = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payloadJson),
+      })
+
+      if (response.ok) {
+        result.discordSent = true
+      } else {
+        const responseText = await response.text().catch(() => '')
+        logger.error({
+          message: 'Failed to send Discord suggestion',
+          status: response.status,
+          response: responseText?.slice(0, 300),
+        })
+      }
+    } catch (error) {
+      logger.error({
+        message: 'Error sending Discord suggestion',
+        error: error instanceof Error ? error.message : String(error),
+      })
+    }
+
+    return result
   }
 
   private sanitizeFrontend(frontend?: FrontendContext): FrontendContext | undefined {
@@ -151,65 +298,101 @@ class SupportReportService {
     }
   }
 
-  private buildEmbed(payload: SupportReportPayload & { frontend?: FrontendContext }) {
-    const { user, streamer, description, frontend, requestContext, backendContext } = payload
+  private buildBugEmbed(
+    payload: BugReportPayload,
+    sanitizedFrontend?: FrontendContext,
+    githubIssueUrl?: string | null
+  ) {
+    const { user, streamer, title, description } = payload
 
     const userBlock = [
       `ID: ${user.id}`,
       `Display: ${user.displayName}`,
-      user.email ? `Email: ${user.email}` : null,
-      streamer ? `Twitch: ${streamer.twitchDisplayName} (@${streamer.twitchLogin})` : null,
+      streamer ? `Twitch: ${streamer.twitchDisplayName}` : null,
     ]
       .filter(Boolean)
       .join('\n')
 
-    const frontendBlock = [
-      frontend?.url ? `URL: ${frontend.url}` : null,
-      frontend?.locale ? `Locale: ${frontend.locale}` : null,
-      frontend?.timezone ? `TZ: ${frontend.timezone}` : null,
-      frontend?.userAgent ? `UA: ${this.truncate(frontend.userAgent, 180)}` : null,
+    const fields = [
+      {
+        name: 'Utilisateur',
+        value: this.truncate(userBlock || 'Inconnu', 1024),
+        inline: true,
+      },
     ]
-      .filter(Boolean)
-      .join('\n')
 
-    const requestBlock = [
-      requestContext.method && requestContext.url
-        ? `${requestContext.method} ${requestContext.url}`
-        : requestContext.url,
-      requestContext.ip ? `IP: ${requestContext.ip}` : null,
-      requestContext.userAgent ? `UA: ${this.truncate(requestContext.userAgent, 120)}` : null,
-      backendContext?.nodeEnv ? `Env: ${backendContext.nodeEnv}` : null,
-    ]
-      .filter(Boolean)
-      .join('\n')
+    // Ajouter lien GitHub Issue
+    if (githubIssueUrl) {
+      fields.push({
+        name: 'GitHub Issue',
+        value: `[Voir l'issue](${githubIssueUrl})`,
+        inline: true,
+      })
+    }
+
+    // Ajouter Session ID pour corrélation Sentry
+    if (sanitizedFrontend?.sessionId) {
+      fields.push({
+        name: 'Session Sentry',
+        value: `\`${sanitizedFrontend.sessionId}\``,
+        inline: true,
+      })
+    }
+
+    if (payload.includeDiagnostics) {
+      fields.push({
+        name: 'Diagnostics',
+        value: '📎 Voir fichier joint',
+        inline: true,
+      })
+    }
 
     return {
-      title: 'Nouveau ticket automatique',
+      title: `🐛 ${this.truncate(title, 200)}`,
       description: this.truncate(description || 'Aucune description fournie', 1800),
-      color: 0x9b59b6,
-      fields: [
-        {
-          name: 'Utilisateur',
-          value: this.truncate(userBlock || 'Inconnu', 1024),
-        },
-        {
-          name: 'Contexte frontend',
-          value: this.truncate(frontendBlock || 'Non fourni', 1024),
-        },
-        {
-          name: 'Requête / backend',
-          value: this.truncate(requestBlock || 'Non fourni', 1024),
-        },
-      ],
+      color: 0xe74c3c, // Rouge
+      fields,
       timestamp: DateTime.now().toISO(),
     }
   }
 
-  private buildTextReport(payload: SupportReportPayload & { frontend?: FrontendContext }) {
+  private buildSuggestionEmbed(payload: SuggestionPayload, githubDiscussionUrl: string | null) {
+    const { user, streamer, title, description } = payload
+
+    const userInfo = streamer
+      ? `${user.displayName} (${streamer.twitchDisplayName})`
+      : user.displayName
+
+    const fields = [
+      {
+        name: 'Suggéré par',
+        value: userInfo,
+        inline: true,
+      },
+    ]
+
+    if (githubDiscussionUrl) {
+      fields.push({
+        name: 'GitHub Discussion',
+        value: `[Voir la discussion](${githubDiscussionUrl})`,
+        inline: true,
+      })
+    }
+
+    return {
+      title: `💡 ${this.truncate(title, 200)}`,
+      description: this.truncate(description, 1800),
+      color: 0x3498db, // Bleu
+      fields,
+      timestamp: DateTime.now().toISO(),
+    }
+  }
+
+  private buildTextReport(payload: BugReportPayload & { frontend?: FrontendContext }) {
     const { user, streamer, description, frontend, backendContext, requestContext } = payload
     const lines: string[] = []
 
-    lines.push('=== Ticket ===')
+    lines.push('=== Rapport de Bug ===')
     lines.push(`Horodatage: ${DateTime.now().toISO()}`)
     lines.push(`Description: ${description || 'Aucune description'}`)
     lines.push('')
@@ -259,7 +442,7 @@ class SupportReportService {
         lines.push(`Screen: ${frontend.screen.width ?? '?'} x ${frontend.screen.height ?? '?'}`)
       }
       if (frontend.sessionId) {
-        lines.push(`Session ID: ${frontend.sessionId}`)
+        lines.push(`Session ID (Sentry): ${frontend.sessionId}`)
       }
       lines.push('')
 
@@ -328,4 +511,4 @@ class SupportReportService {
   }
 }
 
-export { SupportReportService as supportReportService }
+export const supportReportService = new SupportReportService()

@@ -37,6 +37,12 @@ export type SupportActionType =
   | "template_delete"
   | "template_add_to_session"
 
+  // ===== SONDAGES CRUD (4) =====
+  | "polls_fetch"
+  | "poll_create"
+  | "poll_update"
+  | "poll_delete"
+
   // ===== CONTRÔLE SONDAGES (7) =====
   | "poll_launch"
   | "poll_cancel"
@@ -155,6 +161,12 @@ export const SUPPORT_ERROR_MESSAGES: Record<SupportActionType, string> = {
   template_delete: "Une erreur est survenue lors de la suppression du modèle.",
   template_add_to_session:
     "Une erreur est survenue lors de l'ajout à la session.",
+
+  // ===== SONDAGES CRUD =====
+  polls_fetch: "Une erreur est survenue lors du chargement des sondages.",
+  poll_create: "Une erreur est survenue lors de la création du sondage.",
+  poll_update: "Une erreur est survenue lors de la modification du sondage.",
+  poll_delete: "Une erreur est survenue lors de la suppression du sondage.",
 
   // ===== CONTRÔLE SONDAGES =====
   poll_launch: "Une erreur est survenue lors du lancement du sondage.",
@@ -295,7 +307,13 @@ export const ACTION_TYPE_LABELS: Record<SupportActionType, string> = {
   template_delete: "Suppression modèle",
   template_add_to_session: "Ajout session",
 
-  // Polls
+  // Polls CRUD
+  polls_fetch: "Liste sondages",
+  poll_create: "Création sondage",
+  poll_update: "Modif sondage",
+  poll_delete: "Suppression sondage",
+
+  // Polls Control
   poll_launch: "Lancement sondage",
   poll_cancel: "Annulation sondage",
   poll_fetch_results: "Résultats",
@@ -421,6 +439,11 @@ export const ACTION_CATEGORIES: Record<SupportActionType, ActionCategory> = {
   template_update: "template",
   template_delete: "template",
   template_add_to_session: "template",
+
+  polls_fetch: "poll",
+  poll_create: "poll",
+  poll_update: "poll",
+  poll_delete: "poll",
 
   poll_launch: "poll",
   poll_cancel: "poll",

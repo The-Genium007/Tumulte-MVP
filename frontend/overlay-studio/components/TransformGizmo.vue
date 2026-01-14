@@ -354,7 +354,7 @@ onUnmounted(() => {
 .gizmo-border {
   position: absolute;
   inset: 0;
-  border: 2px solid #9333ea;
+  border: 2px solid var(--color-gizmo-border);
   pointer-events: auto;
   cursor: move;
 }
@@ -365,7 +365,7 @@ onUnmounted(() => {
   width: 10px;
   height: 10px;
   background: white;
-  border: 2px solid #9333ea;
+  border: 2px solid var(--color-gizmo-border);
   border-radius: 2px;
   pointer-events: auto;
   z-index: 10;

@@ -1,5 +1,5 @@
 <template>
-  <UCard class="border-2 border-primary-500/50 bg-gray-900/50">
+  <UCard class="border-2 border-brand-light bg-brand-light">
     <div class="flex items-center justify-between gap-6">
       <!-- Partie gauche: Compteur + Question + Chrono + Actions -->
       <div class="flex items-center gap-4 flex-1">
@@ -12,12 +12,12 @@
         />
 
         <!-- Question -->
-        <h3 class="text-lg font-semibold text-white flex-1">{{ poll?.question }}</h3>
+        <h3 class="text-lg font-semibold text-primary flex-1">{{ poll?.question }}</h3>
 
         <!-- Chrono (si en cours) -->
         <div
           v-if="(status === 'sending' || status === 'running') && countdown > 0"
-          class="flex items-center gap-2 px-4 py-2 bg-primary-500/10 rounded-lg border border-primary-500/30"
+          class="flex items-center gap-2 px-4 py-2 bg-primary-light rounded-lg border border-primary-light"
         >
           <UIcon name="i-lucide-clock" class="size-5 text-primary-500" />
           <span class="text-2xl font-bold text-primary-500 tabular-nums">
@@ -108,23 +108,23 @@
           square
           :loading="props.closeLoading"
           :disabled="props.closeLoading"
-          :class="status === 'sending' || status === 'running' ? 'border-2 border-red-500' : 'border border-gray-500'"
+          :class="status === 'sending' || status === 'running' ? 'border-2 border-error-500' : 'border border-neutral-300'"
           @click="$emit('close')"
         />
       </div>
     </div>
 
     <!-- Options et Résultats -->
-    <div v-if="(status === 'sending' || status === 'running' || status === 'pending' || results) && status !== 'cancelled'" class="mt-6 pt-6 border-t border-gray-700">
-      <div class="grid grid-cols-3 gap-3">
+    <div v-if="(status === 'sending' || status === 'running' || status === 'pending' || results) && status !== 'cancelled'" class="mt-6 pt-6 border-t border-default">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         <div
           v-for="(option, index) in allOptions"
           :key="index"
           :class="[
             'p-3 rounded-lg border transition-all duration-300',
             isWinningOption(option)
-              ? 'bg-linear-to-br from-yellow-500/20 to-amber-500/10 border-yellow-500/60 shadow-lg shadow-yellow-500/20'
-              : 'bg-gray-800/50 border-gray-700'
+              ? 'bg-linear-to-br from-warning-medium to-warning-light border-warning-light shadow-lg shadow-warning-500/20'
+              : 'bg-neutral-100 border-default'
           ]"
         >
           <div class="flex items-center justify-between mb-2">
@@ -132,7 +132,7 @@
               <span
                 :class="[
                   'font-medium text-sm',
-                  isWinningOption(option) ? 'text-yellow-400' : 'text-white'
+                  isWinningOption(option) ? 'text-warning-600' : 'text-primary'
                 ]"
               >
                 {{ option.label }}
@@ -156,24 +156,24 @@
             <span
               :class="[
                 'font-bold',
-                isWinningOption(option) ? 'text-yellow-400 text-lg' : 'text-primary-500'
+                isWinningOption(option) ? 'text-warning-600 text-lg' : 'text-brand-500'
               ]"
             >
               {{ option.votes }}
             </span>
           </div>
-          <div class="w-full bg-gray-700 rounded-full h-2">
+          <div class="w-full bg-neutral-200 rounded-full h-2">
             <div
               :class="[
                 'h-2 rounded-full transition-all duration-500',
-                isWinningOption(option) ? 'bg-linear-to-r from-yellow-500 to-amber-500' : 'bg-primary-500'
+                isWinningOption(option) ? 'bg-linear-to-r from-warning-500 to-warning-400' : 'bg-brand-500'
               ]"
               :style="{ width: `${option.percentage}%` }"
             ></div>
           </div>
         </div>
       </div>
-      <p v-if="totalVotes > 0" class="text-gray-400 text-xs text-center mt-3">
+      <p v-if="totalVotes > 0" class="text-muted text-xs text-center mt-3">
         Total: {{ totalVotes }} votes
       </p>
     </div>

@@ -59,9 +59,16 @@ export default class RateLimitMiddleware {
         })
       }
     } catch (error) {
-      // En cas d'erreur Redis, on laisse passer (fail open)
-      // mais on log l'erreur pour investigation
-      logger.error({ error, ip }, 'Rate limit check failed')
+      // En cas d'erreur Redis, on bloque la requête (fail closed)
+      // pour éviter les abus quand le rate limiting est indisponible
+      logger.error(
+        { error, ip, keyPrefix },
+        'Rate limit check failed - blocking request (fail closed)'
+      )
+      return response.serviceUnavailable({
+        error: 'Service temporarily unavailable',
+        message: 'Rate limiting service is unavailable. Please try again later.',
+      })
     }
 
     await next()

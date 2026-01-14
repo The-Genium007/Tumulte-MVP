@@ -1,26 +1,31 @@
 <template>
 
-    <div class="min-h-screen py-6">
-      <div class="space-y-6">
-        <!-- Bouton retour -->
-        <UButton
-          color="neutral"
-          variant="soft"
-          icon="i-lucide-arrow-left"
-          label="Retour aux campagnes"
-          @click="_router.push('/mj/campaigns')"
-        />
+    <div class="min-h-screen">
+      <div class="max-w-300 mx-auto space-y-6">
+
 
         <!-- Header -->
         <UCard>
           <div class="flex items-center gap-4">
-            <div class="bg-primary-500/10 p-3 rounded-xl">
-              <UIcon name="i-lucide-folder-plus" class="size-8 text-primary-500" />
+            <div>
+                      <!-- Bouton retour -->
+        <UButton
+          color="neutral"
+          variant="soft"
+          size="xl"
+          square
+          class="group"
+          @click="_router.push('/mj')"
+        >
+          <template #leading>
+            <UIcon name="i-lucide-arrow-left" class="size-12 transition-transform duration-200 group-hover:-translate-x-1" />
+          </template>
+        </UButton>
             </div>
             <div>
-              <h1 class="text-3xl font-bold text-white">Créer une campagne</h1>
-              <p class="text-gray-400 mt-1">
-                Configurez votre nouvelle campagne multi-stream
+              <h1 class="text-3xl font-bold text-primary">Créer une campagne</h1>
+              <p class="text-muted mt-1">
+                Configurez votre nouvelle campagne
               </p>
             </div>
           </div>
@@ -29,56 +34,50 @@
         <!-- Form Card -->
         <UCard>
           <template #header>
-            <h2 class="text-xl font-semibold text-white">
+            <h2 class="text-xl font-semibold text-primary">
               Informations de la campagne
             </h2>
           </template>
 
-          <div class="space-y-6">
+          <div class="space-y-6 w-full lg:w-1/2 xl:w-1/3">
             <!-- Name Field -->
             <div>
-              <label class="block text-sm font-medium text-gray-300 mb-2">
-                Nom de la campagne <span class="text-red-400">*</span>
+              <label class="block text-sm font-bold text-secondary ml-4 uppercase">
+                Nom de la campagne <span class="text-error-500">*</span>
               </label>
               <UInput
                 v-model="name"
                 type="text"
                 placeholder="Ma super campagne"
                 size="lg"
-                icon="i-lucide-folder"
                 autofocus
+                :ui="{
+                  root: 'ring-0 border-0 rounded-lg overflow-hidden',
+                  base: 'px-3.5 py-2.5 bg-primary-100 text-primary-500 placeholder:text-primary-400 rounded-lg',
+                }"
               />
-              <p class="text-xs text-gray-400 mt-1">
-                Le nom de votre campagne (visible par tous les membres)
-              </p>
             </div>
 
             <!-- Description Field -->
             <div>
-              <label class="block text-sm font-medium text-gray-300 mb-2">
+              <label class="block text-sm font-bold text-secondary ml-4 uppercase">
                 Description
               </label>
-              <UInput
+              <UTextarea
                 v-model="description"
                 type="textarea"
                 placeholder="Description de la campagne..."
                 :rows="6"
+                :ui="{
+                  root: 'ring-0 border-0 rounded-lg overflow-hidden',
+                  base: 'px-3.5 py-2.5 bg-primary-100 text-primary-500 placeholder:text-primary-400 rounded-lg',
+                }"
               />
-              <p class="text-xs text-gray-400 mt-1">
-                Une brève description (optionnel)
-              </p>
             </div>
           </div>
 
           <template #footer>
             <div class="flex justify-end gap-3">
-              <UButton
-                color="neutral"
-                variant="soft"
-                label="Annuler"
-                icon="i-lucide-x"
-                @click="_router.push('/mj/campaigns')"
-              />
               <UButton
                 color="primary"
                 label="Créer la campagne"
@@ -123,7 +122,7 @@ const handleCreate = async () => {
       description: description.value.trim() || undefined,
     });
 
-    _router.push("/mj/campaigns");
+    _router.push("/mj");
   } catch (error: unknown) {
     console.error("Failed to create campaign:", error);
   } finally {

@@ -23,7 +23,8 @@ let sessionId = "";
 const serialize = (value: unknown): string => {
   if (value instanceof Error) return `${value.name}: ${value.message}`;
   if (typeof value === "string") return value;
-  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  if (typeof value === "number" || typeof value === "boolean")
+    return String(value);
   try {
     return JSON.stringify(value);
   } catch {
@@ -60,7 +61,18 @@ const pushError = (type: string, value: unknown) => {
 export const setupSupportTelemetry = () => {
   if (initialized || typeof window === "undefined") return;
   initialized = true;
-  sessionId = crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  sessionId =
+    crypto.randomUUID?.() ??
+    `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+  // Synchroniser le sessionId avec Sentry pour corrélation
+  import("@/sentry.client.config")
+    .then(({ setSentrySessionId }) => {
+      setSentrySessionId(sessionId);
+    })
+    .catch(() => {
+      // Sentry non configuré, ignorer
+    });
 
   const original = {
     log: console.log,

@@ -1,26 +1,25 @@
 <template>
 
-    <div class="min-h-screen py-6">
+    <div class="min-h-screen">
       <div class="space-y-6">
-        <!-- Banner notifications push (persistent - disparaît uniquement quand le navigateur est enregistré) -->
-        <NotificationsPushPermissionBanner persistent />
 
         <!-- Alert pour invitations en attente -->
         <UCard v-if="invitationCount > 0">
           <UAlert
-            color="warning"
+            color="primary"
             variant="soft"
             icon="i-lucide-mail"
             :title="`Vous avez ${invitationCount} invitation${invitationCount > 1 ? 's' : ''} en attente`"
           >
             <template #description>
-              <div class="flex items-center justify-between mt-2">
+              <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mt-2">
                 <p>Consultez vos invitations pour rejoindre de nouvelles campagnes</p>
                 <UButton
-                  color="warning"
+                  color="primary"
                   size="sm"
                   label="Voir les invitations"
                   to="/streamer/campaigns"
+                  class="w-full sm:w-auto"
                 />
               </div>
             </template>
@@ -31,26 +30,21 @@
         <UCard>
           <template #header>
             <div class="flex items-center gap-3">
-              <div class="bg-blue-500/10 p-2 rounded-lg">
-                <UIcon name="i-lucide-shield" class="size-6 text-blue-500" />
-              </div>
-              <h2 class="text-xl font-semibold text-white">Autorisations de sondages</h2>
-              <UBadge v-if="authorizationStatuses.length > 0" color="info" variant="soft">
+              <h2 class="text-xl font-semibold text-primary">Autorisations de sondages</h2>
+              <UBadge v-if="authorizationStatuses.length > 0" color="primary" variant="soft">
                 {{ authorizationStatuses.length }}
               </UBadge>
             </div>
           </template>
 
           <div v-if="loadingAuth" class="text-center py-12">
-            <UIcon name="i-lucide-loader" class="size-10 text-primary-500 animate-spin mx-auto" />
+            <UIcon name="i-game-icons-dice-twenty-faces-twenty" class="size-10 text-primary animate-spin-slow mx-auto" />
           </div>
 
           <div v-else-if="authorizationStatuses.length === 0" class="text-center py-12">
-            <div class="bg-gray-800/50 p-4 rounded-2xl mb-4 inline-block">
-              <UIcon name="i-lucide-shield-off" class="size-12 text-gray-600" />
-            </div>
-            <p class="text-gray-400 mb-2">Aucune campagne active</p>
-            <p class="text-sm text-gray-500">
+              <UIcon name="i-lucide-shield-off" class="size-12 text-primary" />
+            <p class="text-primary mb-2">Aucune campagne active</p>
+            <p class="text-sm text-primary-400">
               Acceptez une invitation pour gérer vos autorisations de sondages
             </p>
           </div>
@@ -58,7 +52,7 @@
           <div v-else class="space-y-4">
             <!-- Info text above list -->
             <UAlert
-              color="info"
+              color="primary"
               variant="soft"
               icon="i-lucide-info"
             >
@@ -72,35 +66,39 @@
               <div
                 v-for="status in authorizationStatuses"
                 :key="status.campaignId"
-                class="flex items-center justify-between p-4 rounded-lg border"
-                :class="(status.isOwner || status.isAuthorized) ? 'border-green-500/50 bg-green-500/5' : 'border-gray-700 bg-gray-800/30'"
+                class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-lg"
+                :class="(status.isOwner || status.isAuthorized) ? 'bg-success-100' : ' bg-neutral-100'"
               >
                 <!-- Campaign name -->
-                <div class="flex-1">
-                  <h3 class="text-lg font-semibold text-white">{{ status.campaignName }}</h3>
+                <div class="flex-1 min-w-0">
+                  <h3 class="text-lg font-semibold text-primary truncate">{{ status.campaignName }}</h3>
                 </div>
 
                 <!-- Authorization button/status -->
-                <div class="flex items-center gap-3">
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
                   <!-- Owners are always authorized, members need to authorize -->
                   <UButton
                     v-if="!status.isOwner && !status.isAuthorized"
                     color="primary"
+                    variant="solid"
                     size="lg"
                     icon="i-lucide-shield-check"
-                    label="Autoriser pour 12 heures"
+                    class="w-full sm:w-auto"
                     @click="handleAuthorize(status.campaignId)"
-                  />
+                  >
+                    <span class="hidden sm:inline">Autoriser pour 12 heures</span>
+                    <span class="sm:hidden">Autoriser</span>
+                  </UButton>
                   <template v-else>
                     <!-- Permanent badge for owners -->
-                    <UBadge v-if="status.isOwner" color="primary" variant="soft" size="lg" class="px-4 py-2">
+                    <UBadge v-if="status.isOwner" color="primary" variant="soft" size="lg" class="px-4 py-2 justify-center">
                       <div class="flex items-center gap-2">
                         <UIcon name="i-lucide-infinity" class="size-4" />
                         <span class="font-semibold text-base">Permanent</span>
                       </div>
                     </UBadge>
                     <!-- Countdown timer for members -->
-                    <UBadge v-else color="success" variant="soft" size="lg" class="px-4 py-2">
+                    <UBadge v-else color="success" variant="soft" size="lg" class="px-4 py-2 justify-center">
                       <div class="flex items-center gap-2">
                         <UIcon name="i-lucide-clock" class="size-4" />
                         <span class="font-mono text-base">{{ formatTime(status.remainingSeconds || 0) }}</span>
@@ -110,12 +108,15 @@
                     <UButton
                       v-if="!status.isOwner"
                       color="error"
-                      variant="soft"
+                      variant="solid"
                       size="lg"
                       icon="i-lucide-shield-off"
-                      label="Révoquer"
+                      class="w-full sm:w-auto"
                       @click="handleRevokeAuth(status.campaignId)"
-                    />
+                    >
+                      <span class="hidden sm:inline">Révoquer</span>
+                      <span class="sm:hidden">Révoquer</span>
+                    </UButton>
                   </template>
                 </div>
               </div>
@@ -128,15 +129,14 @@
           <template #header>
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-3">
-                <UIcon name="i-lucide-link" class="size-6 text-primary-500" />
-                <h2 class="text-xl font-semibold text-white">URL de l'overlay OBS</h2>
+                <h2 class="text-xl font-semibold text-primary">URL de l'overlay OBS</h2>
               </div>
               <button
-                class="flex items-center justify-center size-8 rounded-full bg-gray-700/50 hover:bg-gray-600/50 transition-colors"
+                class="flex items-center justify-center size-8 rounded-full bg-primary-100 hover:bg-primary-200 transition-colors"
                 title="Comment configurer l'overlay"
                 @click="showObsInstructions = true"
               >
-                <UIcon name="i-lucide-info" class="size-5 text-gray-300" />
+                <UIcon name="i-lucide-info" class="size-5 text-primary-400"/>
               </button>
             </div>
           </template>
@@ -144,27 +144,35 @@
           <div class="space-y-4">
 
             <div v-if="overlayUrl" class="space-y-3">
-              <div class="flex gap-2">
-                <div class="flex-1 relative">
-                  <div class="flex items-center gap-2 px-3.5 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-white font-mono text-sm overflow-x-auto">
-                    <UIcon name="i-lucide-link" class="size-4 text-gray-400 shrink-0" />
-                    <span class="select-all">{{ overlayUrl }}</span>
+              <div class="flex flex-col sm:flex-row gap-2">
+                <div class="flex-1 relative min-w-0">
+                  <div class="flex items-center gap-2 px-3.5 py-2.5 bg-primary-100 rounded-lg text-primary-400 font-mono text-sm overflow-x-auto">
+                    <UIcon name="i-lucide-link" class="size-4 text-primary-400 shrink-0" />
+                    <span class="select-all truncate sm:whitespace-normal">{{ overlayUrl }}</span>
                   </div>
                 </div>
-                <UButton
-                  color="info"
-                  size="lg"
-                  icon="i-lucide-eye"
-                  label="Prévisualiser"
-                  to="/streamer/overlay-preview"
-                />
-                <UButton
-                  color="primary"
-                  size="lg"
-                  icon="i-lucide-clipboard"
-                  label="Copier"
-                  @click="copyOverlayUrl"
-                />
+                <div class="flex gap-2">
+                  <UButton
+                    color="primary"
+                    size="lg"
+                    icon="i-lucide-eye"
+                    to="/streamer/overlay-preview"
+                    class="flex-1 sm:flex-initial"
+                  >
+                    <span class="hidden sm:inline">Prévisualiser</span>
+                    <span class="sm:hidden">Aperçu</span>
+                  </UButton>
+                  <UButton
+                    color="primary"
+                    size="lg"
+                    icon="i-lucide-clipboard"
+                    class="flex-1 sm:flex-initial"
+                    @click="copyOverlayUrl"
+                  >
+                    <span class="hidden sm:inline">Copier</span>
+                    <span class="sm:hidden">Copier</span>
+                  </UButton>
+                </div>
               </div>
 
               <UAlert
@@ -188,7 +196,7 @@
             </div>
 
             <!-- Bouton dev pour accéder au studio -->
-            <div v-if="isDev" class="pt-4 border-t border-gray-700">
+            <div v-if="isDev" class="pt-4 border-t border-default">
               <UButton
                 color="warning"
                 variant="soft"
@@ -208,29 +216,27 @@
       <template #content>
         <UCard>
           <template #header>
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-3">
-                <UIcon name="i-lucide-tv" class="size-6 text-primary-500" />
-                <h2 class="text-xl font-semibold text-white">Comment ajouter l'overlay dans OBS</h2>
+            <div class="flex items-center justify-between gap-4">
+              <div class="flex items-center gap-3 min-w-0">
+                <h2 class="text-lg sm:text-xl font-semibold text-primary truncate">Ajouter l'overlay dans OBS</h2>
               </div>
               <button
-                class="flex items-center justify-center size-8 rounded-full hover:bg-gray-700/50 transition-colors"
+                class="flex items-center justify-center size-8 rounded-full hover:bg-neutral-200 transition-colors shrink-0"
                 @click="showObsInstructions = false"
               >
-                <UIcon name="i-lucide-x" class="size-5 text-gray-400" />
+                <UIcon name="i-lucide-x" class="size-5 text-muted" />
               </button>
             </div>
           </template>
 
-          <ol class="list-decimal list-inside space-y-3 text-gray-300">
-            <li>Cliquez sur <strong class="text-white">"Générer l'URL de l'overlay"</strong></li>
-            <li>Copiez l'URL générée</li>
-            <li>Dans OBS Studio, ajoutez une nouvelle source → <strong class="text-white">"Navigateur"</strong></li>
+          <ol class="list-decimal list-inside space-y-3 text-secondary text-sm sm:text-base">
+            <li>Copiez l'URL de l'overlay</li>
+            <li>Dans OBS Studio, ajoutez une nouvelle source → <strong class="text-primary">"Navigateur"</strong></li>
             <li>Collez l'URL dans le champ "URL"</li>
-            <li>Définissez la largeur à <strong class="text-white">1920</strong> et la hauteur à <strong class="text-white">1080</strong></li>
-            <li class="text-yellow-400">⚠️ <strong>Important:</strong> Cochez "Arrière-plan transparent"</li>
+            <li>Définissez la largeur à <strong class="text-primary">1920</strong> et la hauteur à <strong class="text-primary">1080</strong></li>
+            <li>Activez <strong class="text-primary">"Contrôler l'audio via OBS"</strong></li>
             <li>Cliquez sur "OK"</li>
-            <li class="text-green-400">✨ L'overlay apparaîtra automatiquement quand le MJ lancera un sondage!</li>
+            <li class="text-success-500">L'overlay apparaîtra automatiquement quand le MJ lancera un sondage</li>
           </ol>
 
           <template #footer>
@@ -238,6 +244,7 @@
               <UButton
                 color="primary"
                 label="Compris !"
+                class="w-full sm:w-auto"
                 @click="showObsInstructions = false"
               />
             </div>
@@ -253,7 +260,9 @@ import { ref, onMounted, onUnmounted } from "vue";
 import { useAuth } from "@/composables/useAuth";
 import { useCampaigns } from "@/composables/useCampaigns";
 import { useSupportTrigger } from "@/composables/useSupportTrigger";
+import { useMockData } from "@/composables/useMockData";
 import type { AuthorizationStatus } from "@/types/index";
+import type { MockDataModule } from "@/composables/useMockData";
 
 definePageMeta({
   layout: "authenticated" as const,
@@ -265,9 +274,13 @@ const API_URL = config.public.apiBase;
 const { user: _user } = useAuth();
 const { fetchInvitations, getAuthorizationStatus, grantAuthorization, revokeAuthorization } = useCampaigns();
 const { triggerSupportForError } = useSupportTrigger();
+const { enabled: mockEnabled, loadMockData, withMockFallback } = useMockData();
 
 // Dev mode
 const isDev = import.meta.dev;
+
+// Mock data
+const mockData = ref<MockDataModule | null>(null);
 
 const overlayUrl = ref<string | null>(null);
 const loadingOverlay = ref(false);
@@ -315,11 +328,16 @@ const copyOverlayUrl = async () => {
 // Charger le nombre d'invitations
 const loadInvitationCount = async () => {
   try {
-    const invitations = await fetchInvitations();
+    const apiInvitations = await fetchInvitations();
+    const invitations = withMockFallback(apiInvitations, mockData.value?.mockInvitations ?? []);
     invitationCount.value = invitations.length;
   } catch (error) {
     // Fail silencieusement - pas critique
     console.error("Failed to load invitations:", error);
+    // En cas d'erreur, utiliser les mock data si disponibles
+    if (mockEnabled.value && mockData.value) {
+      invitationCount.value = mockData.value.mockInvitations.length;
+    }
   }
 };
 
@@ -329,7 +347,7 @@ const loadAuthorizationStatus = async () => {
   try {
     const data = await getAuthorizationStatus();
     // Mapper les données snake_case vers camelCase
-    authorizationStatuses.value = data.map((item) => ({
+    const apiStatuses: AuthorizationStatus[] = data.map((item) => ({
       campaignId: item.campaign_id,
       campaignName: item.campaign_name,
       isOwner: item.is_owner,
@@ -337,11 +355,17 @@ const loadAuthorizationStatus = async () => {
       expiresAt: item.expires_at,
       remainingSeconds: item.remaining_seconds,
     }));
+    authorizationStatuses.value = withMockFallback(apiStatuses, mockData.value?.mockAuthorizationStatuses ?? []);
     // Démarrer le compteur après avoir chargé les données
     startCountdown();
   } catch (error) {
     // Fail silencieusement - pas critique
     console.error("Failed to load authorization status:", error);
+    // En cas d'erreur, utiliser les mock data si disponibles
+    if (mockEnabled.value && mockData.value) {
+      authorizationStatuses.value = mockData.value.mockAuthorizationStatuses;
+      startCountdown();
+    }
   } finally {
     loadingAuth.value = false;
   }
@@ -414,6 +438,9 @@ const formatTime = (seconds: number): string => {
 
 // Charger automatiquement l'URL de l'overlay, les invitations et les autorisations au montage
 onMounted(async () => {
+  // Charger les données mockées si disponibles
+  mockData.value = await loadMockData();
+
   fetchOverlayUrl();
   await loadInvitationCount();
   await loadAuthorizationStatus();

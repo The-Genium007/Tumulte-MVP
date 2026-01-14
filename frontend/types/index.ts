@@ -77,8 +77,24 @@ export interface PollTemplate {
   campaignId?: string;
 }
 
+export interface Poll {
+  id: string;
+  campaignId: string;
+  question: string;
+  options: string[];
+  type: "STANDARD" | "UNIQUE";
+  durationSeconds: number;
+  orderIndex: number;
+  channelPointsPerVote: number | null;
+  channelPointsEnabled: boolean;
+  lastLaunchedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface PollInstance {
   id: string;
+  pollId: string | null;
   templateId: string | null;
   campaignId: string | null;
   title: string;

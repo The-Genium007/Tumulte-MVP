@@ -53,14 +53,25 @@ export default await Env.create(new URL('../', import.meta.url), {
   |----------------------------------------------------------
   */
   SENTRY_DSN: Env.schema.string.optional(),
+  APP_VERSION: Env.schema.string.optional(),
 
   /*
   |----------------------------------------------------------
-  | Discord support / Tickets
+  | Discord support / Tickets (2 webhooks séparés)
   |----------------------------------------------------------
   */
   DISCORD_SUPPORT_WEBHOOK_URL: Env.schema.string.optional(),
+  DISCORD_SUGGESTIONS_WEBHOOK_URL: Env.schema.string.optional(),
   DISCORD_SUPPORT_ROLE_ID: Env.schema.string.optional(),
+
+  /*
+  |----------------------------------------------------------
+  | GitHub (Issues pour bugs, Discussions pour suggestions)
+  |----------------------------------------------------------
+  */
+  GITHUB_TOKEN: Env.schema.string.optional(),
+  GITHUB_REPO: Env.schema.string.optional(),
+  GITHUB_DISCUSSION_CATEGORY_ID: Env.schema.string.optional(),
 
   /*
   |----------------------------------------------------------

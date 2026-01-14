@@ -4,7 +4,7 @@
     class="absolute -top-1 -right-1 flex items-center justify-center"
     :title="tooltipText"
   >
-    <span class="inline-flex rounded-full size-3 bg-red-600"></span>
+    <span class="inline-flex rounded-full size-3 bg-live"></span>
   </div>
 </template>
 

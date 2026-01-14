@@ -1,5 +1,4 @@
 import type { pollInstance as PollInstance } from '#models/poll_instance'
-import type { pollSession as PollSession } from '#models/poll_session'
 import type { pollTemplate as PollTemplate } from '#models/poll_template'
 import type { poll as Poll } from '#models/poll'
 
@@ -35,43 +34,17 @@ export class PollTemplateDto {
   }
 }
 
-export class PollSessionDto {
-  id!: string
-  ownerId!: string
-  campaignId!: string | null
-  name!: string
-  defaultDurationSeconds!: number
-  pollsCount!: number
-  createdAt!: string
-  updatedAt!: string
-
-  static fromModel(session: PollSession): PollSessionDto {
-    return {
-      id: session.id,
-      ownerId: session.ownerId,
-      campaignId: session.campaignId,
-      name: session.name,
-      defaultDurationSeconds: session.defaultDurationSeconds,
-      pollsCount: session.polls?.length || 0,
-      createdAt: session.createdAt.toISO() || '',
-      updatedAt: session.updatedAt.toISO() || '',
-    }
-  }
-
-  static fromModelArray(sessions: PollSession[]): PollSessionDto[] {
-    return sessions.map((session) => PollSessionDto.fromModel(session))
-  }
-}
-
 export class PollDto {
   id!: string
-  sessionId!: string
+  campaignId!: string
   question!: string
   options!: string[]
   type!: string
+  durationSeconds!: number
   orderIndex!: number
   channelPointsPerVote!: number | null
   channelPointsEnabled!: boolean
+  lastLaunchedAt!: string | null
   createdAt!: string
   updatedAt!: string
 
@@ -79,13 +52,15 @@ export class PollDto {
     const channelPointsPerVote = poll.channelPointsAmount
     return {
       id: poll.id,
-      sessionId: poll.sessionId,
+      campaignId: poll.campaignId,
       question: poll.question,
       options: Array.isArray(poll.options) ? poll.options : JSON.parse(poll.options || '[]'),
       type: poll.type,
+      durationSeconds: poll.durationSeconds,
       orderIndex: poll.orderIndex,
       channelPointsPerVote,
       channelPointsEnabled: channelPointsPerVote !== null && channelPointsPerVote > 0,
+      lastLaunchedAt: poll.lastLaunchedAt?.toISO() || null,
       createdAt: poll.createdAt.toISO() || '',
       updatedAt: poll.updatedAt.toISO() || '',
     }
@@ -98,6 +73,7 @@ export class PollDto {
 
 export class PollInstanceDto {
   id!: string
+  pollId!: string | null
   templateId!: string | null
   campaignId!: string | null
   createdBy!: string
@@ -113,6 +89,7 @@ export class PollInstanceDto {
   static fromModel(instance: PollInstance): PollInstanceDto {
     return {
       id: instance.id,
+      pollId: instance.pollId,
       templateId: instance.templateId,
       campaignId: instance.campaignId,
       createdBy: instance.createdBy,
@@ -196,19 +173,35 @@ export class PollResultsDto {
   }
 
   static fromAggregated(pollInstance: any, aggregated: any): PollResultsDto {
+    const options: string[] = Array.isArray(pollInstance.options)
+      ? pollInstance.options
+      : JSON.parse(pollInstance.options || '[]')
+
+    // Convert index-based votes/percentages to option-name-based
+    const votesByOption: Record<string, number> = {}
+    const percentages: Record<string, number> = {}
+
+    for (const [index, votes] of Object.entries(aggregated.votesByOption || {})) {
+      const optionName = options[Number.parseInt(index)] || `Option ${Number.parseInt(index) + 1}`
+      votesByOption[optionName] = votes as number
+    }
+
+    for (const [index, percentage] of Object.entries(aggregated.percentages || {})) {
+      const optionName = options[Number.parseInt(index)] || `Option ${Number.parseInt(index) + 1}`
+      percentages[optionName] = percentage as number
+    }
+
     return {
       pollInstanceId: pollInstance.id,
       campaignId: pollInstance.campaignId || '',
       title: pollInstance.title,
-      options: Array.isArray(pollInstance.options)
-        ? pollInstance.options
-        : JSON.parse(pollInstance.options || '[]'),
+      options,
       status: pollInstance.status,
       startedAt: pollInstance.startedAt?.toISO() || '',
       endedAt: pollInstance.endedAt?.toISO() || null,
       totalVotes: aggregated.totalVotes || 0,
-      votesByOption: aggregated.votesByOption || {},
-      percentages: aggregated.percentages || {},
+      votesByOption,
+      percentages,
       channels: aggregated.channels || [],
       createdAt: pollInstance.createdAt?.toISO() || new Date().toISOString(),
     }

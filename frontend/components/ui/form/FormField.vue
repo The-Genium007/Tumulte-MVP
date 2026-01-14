@@ -30,26 +30,26 @@ withDefaults(defineProps<Props>(), {
 
 <style scoped>
 .form-field {
-  margin-bottom: 1.25rem;
+  margin-bottom: var(--spacing-5);
 }
 
 .form-label {
   display: block;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: rgb(55 65 81);
-  margin-bottom: 0.375rem;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-1_5);
 }
 
 .form-error {
-  margin-top: 0.375rem;
-  font-size: 0.875rem;
-  color: rgb(239 68 68);
+  margin-top: var(--spacing-1_5);
+  font-size: var(--text-sm);
+  color: var(--color-error-500);
 }
 
 .form-hint {
-  margin-top: 0.375rem;
-  font-size: 0.875rem;
-  color: rgb(107 114 128);
+  margin-top: var(--spacing-1_5);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
 }
 </style>

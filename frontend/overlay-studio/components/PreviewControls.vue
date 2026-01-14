@@ -177,7 +177,7 @@ const getStateColor = (
 .preview-controls {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.25rem;
   padding: 1rem;
   height: 100%;
   overflow-y: auto;
@@ -185,13 +185,13 @@ const getStateColor = (
 
 .controls-header {
   padding-bottom: 0.75rem;
-  border-bottom: 1px solid var(--ui-border);
+  border-bottom: 1px solid var(--color-neutral-200);
 }
 
 .controls-title {
-  font-size: 1.125rem;
+  font-size: 1rem;
   font-weight: 600;
-  color: var(--ui-text);
+  color: var(--color-text-primary);
   margin: 0;
 }
 
@@ -202,9 +202,11 @@ const getStateColor = (
 }
 
 .section-title {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--ui-text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
   margin: 0;
 }
 
@@ -219,25 +221,27 @@ const getStateColor = (
   align-items: center;
   gap: 0.75rem;
   padding: 0.5rem 0.75rem;
-  border-radius: 0.5rem;
-  background: var(--ui-bg-elevated);
+  border-radius: 8px;
+  background: var(--color-bg-page);
+  border: 1px solid var(--color-neutral-200);
   cursor: pointer;
-  transition: background 0.15s;
+  transition: all 0.15s;
 }
 
 .element-item:hover {
-  background: var(--ui-bg-accented);
+  background: var(--color-neutral-100);
+  border-color: var(--color-primary-400);
 }
 
 .element-item.selected {
-  background: color-mix(in srgb, var(--ui-primary) 15%, transparent);
-  outline: 1px solid var(--ui-primary);
+  background: var(--color-primary-100);
+  border-color: var(--color-primary-400);
 }
 
 .element-name {
   flex: 1;
   font-size: 0.875rem;
-  color: var(--ui-text);
+  color: var(--color-text-primary);
 }
 
 .animation-buttons {
@@ -258,31 +262,18 @@ const getStateColor = (
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 0.75rem;
-  background: var(--ui-bg-elevated);
-  border-radius: 0.5rem;
+  background: var(--color-bg-page);
+  border-radius: 8px;
+  border: 1px solid var(--color-neutral-200);
 }
 
 .state-label {
   font-size: 0.75rem;
-  color: var(--ui-text-muted);
-}
-
-.audio-toggle {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.5rem 0.75rem;
-  background: var(--ui-bg-elevated);
-  border-radius: 0.5rem;
-}
-
-.audio-icon {
-  margin-left: auto;
-  color: var(--ui-text-muted);
+  color: var(--color-text-muted);
 }
 
 .element-chevron {
-  color: var(--ui-text-muted);
+  color: var(--color-text-muted);
   transition: transform 0.2s;
 }
 </style>

@@ -13,10 +13,16 @@ export async function truncate(): Promise<void> {
     'poll_sessions',
     'poll_instances',
     'poll_templates',
+    'poll_channel_links',
     'campaign_memberships',
     'streamers',
     'campaigns',
+    'overlay_configs',
+    'notification_preferences',
+    'push_subscriptions',
+    'retry_events',
     'auth_access_tokens',
+    'remember_me_tokens',
     'users',
   ]
 
@@ -25,8 +31,17 @@ export async function truncate(): Promise<void> {
 
   try {
     // Use DELETE instead of TRUNCATE to avoid table-level locks
+    // Silently skip tables that don't exist (migrations may not have run yet)
     for (const table of tables) {
-      await dbService.from(table).delete()
+      try {
+        await dbService.from(table).delete()
+      } catch (error: unknown) {
+        // Ignore "relation does not exist" errors
+        const pgError = error as { code?: string }
+        if (pgError.code !== '42P01') {
+          throw error
+        }
+      }
     }
   } finally {
     // Re-enable foreign key checks

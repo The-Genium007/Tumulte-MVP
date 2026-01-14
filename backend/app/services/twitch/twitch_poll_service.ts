@@ -61,7 +61,7 @@ class TwitchPollService {
     title: string,
     choices: string[],
     durationSeconds: number,
-    channelPointsEnabled: boolean = false,
+    _channelPointsEnabled: boolean = false,
     channelPointsPerVote: number | null = null
   ): Promise<{
     id: string
@@ -249,7 +249,7 @@ class TwitchPollService {
     title: string,
     choices: string[],
     durationSeconds: number,
-    channelPointsEnabled: boolean = false,
+    _channelPointsEnabled: boolean = false,
     channelPointsPerVote: number | null = null,
     context?: Partial<RetryContext>
   ): Promise<RetryResult<{ id: string; status: string }>> {

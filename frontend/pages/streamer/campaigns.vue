@@ -1,80 +1,92 @@
 <template>
 
-    <div class="min-h-screen py-6">
+    <div class="min-h-screen">
       <div class="space-y-6">
+        <!-- Header avec retour -->
+        <UCard>
+          <div class="flex items-center gap-4">
+            <UButton
+              color="neutral"
+              variant="soft"
+              size="xl"
+              square
+              class="group shrink-0"
+              to="/streamer"
+            >
+              <template #leading>
+                <UIcon name="i-lucide-arrow-left" class="size-6 sm:size-12 transition-transform duration-200 group-hover:-translate-x-1" />
+              </template>
+            </UButton>
+            <h1 class="text-xl sm:text-3xl font-bold text-primary">Mes campagnes</h1>
+          </div>
+        </UCard>
+
         <!-- Invitations en attente -->
         <UCard v-if="loading">
           <div class="text-center py-12">
-            <UIcon name="i-lucide-loader" class="size-12 text-primary-500 animate-spin mx-auto" />
-            <p class="text-gray-400 mt-4">Chargement...</p>
+            <UIcon name="i-game-icons-dice-twenty-faces-twenty" class="size-12 text-primary animate-spin-slow mx-auto" />
+            <p class="text-muted mt-4">Chargement...</p>
           </div>
         </UCard>
 
         <UCard v-else-if="invitations.length > 0">
           <template #header>
             <div class="flex items-center gap-3">
-              <div class="bg-yellow-500/10 p-2 rounded-lg">
-                <UIcon name="i-lucide-mail" class="size-6 text-yellow-500" />
-              </div>
-              <h2 class="text-xl font-semibold text-white">Invitations en attente</h2>
-              <UBadge color="warning" variant="soft">{{ invitations.length }}</UBadge>
+              <h2 class="text-xl font-semibold text-primary">Invitations en attente</h2>
+              <UBadge color="primary" variant="soft">{{ invitations.length }}</UBadge>
               <UBadge
-                v-if="isDev && invitations[0]?.id.startsWith('mock-')"
+                v-if="showMockBadge"
                 color="info"
                 variant="soft"
                 size="xs"
               >
-                📋 Données de test
+                Données de test
               </UBadge>
             </div>
           </template>
 
           <div class="space-y-4">
-            <UCard
+            <div
               v-for="invitation in invitations"
               :key="invitation.id"
-              variant="outline"
-              class="bg-gray-800/30"
+              class="flex flex-col sm:flex-row rounded-lg overflow-hidden bg-neutral-100"
             >
-              <div class="flex justify-between items-start gap-4">
-                <div class="flex-1">
-                  <div class="flex items-center gap-2 mb-2">
-                    <div class="bg-purple-500/10 p-2 rounded-lg">
-                      <UIcon name="i-lucide-folder-kanban" class="size-5 text-purple-400" />
-                    </div>
-                    <h3 class="font-semibold text-lg text-white">{{ invitation.campaign.name }}</h3>
-                  </div>
-                  <p v-if="invitation.campaign.description" class="text-gray-400 text-sm mb-3">
-                    {{ invitation.campaign.description }}
-                  </p>
-                  <div class="flex items-center gap-2 text-sm text-gray-500">
-                    <UIcon name="i-lucide-user" class="size-4" />
-                    <span>Invité par <strong class="text-gray-300">{{ invitation.campaign.ownerName }}</strong></span>
-                  </div>
-                  <div class="flex items-center gap-2 text-xs text-gray-500 mt-1">
-                    <UIcon name="i-lucide-calendar" class="size-3" />
-                    <span>{{ formatDate(invitation.invitedAt) }}</span>
-                  </div>
+              <!-- Contenu de la carte -->
+              <div class="flex-1 p-4 sm:p-6">
+                <div class="flex items-center gap-2 mb-2">
+                  <h3 class="font-semibold text-base sm:text-lg text-primary">{{ invitation.campaign.name }}</h3>
                 </div>
-                <div class="flex flex-col gap-2">
-                  <UButton
-                    color="success"
-                    size="sm"
-                    icon="i-lucide-check"
-                    label="Accepter"
-                    @click="handleAccept(invitation.id)"
-                  />
-                  <UButton
-                    color="error"
-                    variant="soft"
-                    size="sm"
-                    icon="i-lucide-x"
-                    label="Refuser"
-                    @click="handleDecline(invitation.id)"
-                  />
+                <p v-if="invitation.campaign.description" class="text-muted text-sm mb-3">
+                  {{ invitation.campaign.description }}
+                </p>
+                <div class="flex items-center gap-2 text-sm text-muted">
+                  <UIcon name="i-lucide-user" class="size-4 shrink-0" />
+                  <span class="truncate">Invité par <strong class="text-secondary">{{ invitation.campaign.ownerName }}</strong></span>
+                </div>
+                <div class="flex items-center gap-2 text-xs text-muted mt-1">
+                  <UIcon name="i-lucide-calendar" class="size-3 shrink-0" />
+                  <span>{{ formatDate(invitation.invitedAt) }}</span>
                 </div>
               </div>
-            </UCard>
+
+              <!-- Boutons d'action (colonne droite sur desktop, ligne en bas sur mobile) -->
+              <div class="flex sm:flex-col shrink-0">
+                <button
+                  class="flex-1 px-4 sm:px-6 py-3 sm:py-0 flex items-center justify-center gap-2 bg-success-100 hover:bg-success-200 text-success-600 font-medium transition-colors rounded-bl-lg sm:rounded-bl-none sm:rounded-tr-lg"
+                  @click="handleAccept(invitation.id)"
+                >
+                  <UIcon name="i-lucide-check" class="size-5" />
+                  <span>Accepter</span>
+                </button>
+                <button
+                  class="flex-1 px-4 sm:px-6 py-3 sm:py-0 flex items-center justify-center gap-2 bg-error-100 hover:bg-error-200 text-error-600 font-medium transition-colors rounded-br-lg"
+                  @click="handleDecline(invitation.id)"
+                >
+                  <UIcon name="i-lucide-x" class="size-5" />
+                  <span>Refuser</span>
+                </button>
+              </div>
+            </div>
           </div>
         </UCard>
 
@@ -82,60 +94,56 @@
         <UCard>
           <template #header>
             <div class="flex items-center gap-3">
-              <div class="bg-blue-500/10 p-2 rounded-lg">
-                <UIcon name="i-lucide-shield" class="size-6 text-blue-500" />
-              </div>
-              <h2 class="text-xl font-semibold text-white">Autorisations de sondages</h2>
-              <UBadge v-if="authorizationStatuses.length > 0" color="info" variant="soft">
+              <h2 class="text-xl font-semibold text-primary">Autorisations</h2>
+              <UBadge v-if="authorizationStatuses.length > 0" color="primary" variant="soft">
                 {{ authorizationStatuses.length }}
               </UBadge>
             </div>
           </template>
 
           <div v-if="loadingAuth" class="text-center py-12">
-            <UIcon name="i-lucide-loader" class="size-10 text-primary-500 animate-spin mx-auto" />
+            <UIcon name="i-game-icons-dice-twenty-faces-twenty" class="size-10 text-primary animate-spin-slow mx-auto" />
           </div>
 
           <div v-else-if="authorizationStatuses.length === 0" class="text-center py-12">
-            <div class="bg-gray-800/50 p-4 rounded-2xl mb-4 inline-block">
-              <UIcon name="i-lucide-shield-off" class="size-12 text-gray-600" />
+            <div class="bg-neutral-100 p-4 rounded-2xl mb-4 inline-block">
+              <UIcon name="i-lucide-shield-off" class="size-12 text-neutral-400" />
             </div>
-            <p class="text-gray-400 mb-2">Aucune campagne active</p>
-            <p class="text-sm text-gray-500">
+            <p class="text-muted mb-2">Aucune campagne active</p>
+            <p class="text-sm text-muted">
               Acceptez une invitation pour gérer vos autorisations de sondages
             </p>
           </div>
 
           <div v-else class="space-y-4">
-            <UCard
+            <div
               v-for="status in authorizationStatuses"
               :key="status.campaignId"
-              variant="outline"
-              :class="status.isAuthorized ? 'border-2 border-green-500/50' : ''"
+              class="rounded-lg overflow-hidden bg-primary-50"
             >
-              <template #header>
-                <div class="flex justify-between items-center">
-                  <div>
-                    <h3 class="text-lg font-semibold text-white">{{ status.campaignName }}</h3>
-                  </div>
-                  <UBadge
-                    :color="status.isAuthorized ? 'success' : 'neutral'"
-                    :label="status.isAuthorized ? 'Autorisé' : 'Non autorisé'"
-                    size="lg"
-                  />
-                </div>
-              </template>
+              <!-- Header -->
+              <div class="flex justify-between items-center p-4">
+                <h3 class="text-lg font-semibold text-primary">{{ status.campaignName }}</h3>
+                <UBadge
+                  :color="status.isAuthorized ? 'success' : 'warning'"
+                  :label="status.isAuthorized ? 'Autorisé' : 'Non autorisé'"
+                  size="lg"
+                />
+              </div>
 
-              <AuthorizationCard
-                :campaign-id="status.campaignId"
-                :is-owner="status.isOwner"
-                :is-authorized="status.isAuthorized"
-                :expires-at="status.expiresAt"
-                :remaining-seconds="status.remainingSeconds"
-                @authorize="handleAuthorize"
-                @revoke="handleRevokeAuth"
-              />
-            </UCard>
+              <!-- Content -->
+              <div class="px-4 pb-4">
+                <AuthorizationCard
+                  :campaign-id="status.campaignId"
+                  :is-owner="status.isOwner"
+                  :is-authorized="status.isAuthorized"
+                  :expires-at="status.expiresAt"
+                  :remaining-seconds="status.remainingSeconds"
+                  @authorize="handleAuthorize"
+                  @revoke="handleRevokeAuth"
+                />
+              </div>
+            </div>
           </div>
         </UCard>
 
@@ -143,72 +151,63 @@
         <UCard>
           <template #header>
             <div class="flex items-center gap-3">
-              <div class="bg-green-500/10 p-2 rounded-lg">
-                <UIcon name="i-lucide-folder-check" class="size-6 text-green-500" />
-              </div>
-              <h2 class="text-xl font-semibold text-white">Campagnes actives</h2>
-              <UBadge v-if="activeCampaigns.length > 0" color="success" variant="soft">
+              <h2 class="text-xl font-semibold text-primary">Campagnes actives</h2>
+              <UBadge v-if="activeCampaigns.length > 0" color="primary" variant="soft">
                 {{ activeCampaigns.length }}
               </UBadge>
             </div>
           </template>
 
           <div v-if="loading" class="text-center py-12">
-            <UIcon name="i-lucide-loader" class="size-10 text-primary-500 animate-spin mx-auto" />
+            <UIcon name="i-game-icons-dice-twenty-faces-twenty" class="size-10 text-primary animate-spin-slow mx-auto" />
           </div>
 
           <div v-else-if="activeCampaigns.length === 0" class="text-center py-12">
-            <div class="bg-gray-800/50 p-4 rounded-2xl mb-4 inline-block">
-              <UIcon name="i-lucide-folder-x" class="size-12 text-gray-600" />
+            <div class="bg-neutral-100 p-4 rounded-2xl mb-4 inline-block">
+              <UIcon name="i-lucide-folder-x" class="size-12 text-neutral-400" />
             </div>
-            <p class="text-gray-400 mb-2">Aucune campagne active</p>
-            <p class="text-sm text-gray-500">
+            <p class="text-muted mb-2">Aucune campagne active</p>
+            <p class="text-sm text-muted">
               Vous apparaîtrez ici une fois que vous aurez accepté une invitation
             </p>
           </div>
 
           <div v-else class="space-y-4">
-            <UCard
+            <div
               v-for="campaign in activeCampaigns"
               :key="campaign.id"
-              variant="outline"
-              class="bg-gray-800/30"
+              class="flex flex-col sm:flex-row rounded-lg overflow-hidden bg-neutral-100"
             >
-              <div class="flex justify-between items-start gap-4">
-                <div class="flex-1">
-                  <div class="flex items-center gap-2 mb-2">
-                    <div class="bg-green-500/10 p-2 rounded-lg">
-                      <UIcon name="i-lucide-folder-check" class="size-5 text-green-400" />
-                    </div>
-                    <h3 class="font-semibold text-lg text-white">{{ campaign.name }}</h3>
-                    <UBadge color="success" variant="soft" size="xs">Actif</UBadge>
-                  </div>
-                  <p v-if="campaign.description" class="text-gray-400 text-sm mb-3">
-                    {{ campaign.description }}
-                  </p>
-                  <div class="space-y-1">
-                    <div class="flex items-center gap-2 text-sm text-gray-500">
-                      <UIcon name="i-lucide-crown" class="size-4" />
-                      <span>Maître du jeu : <strong class="text-gray-300">{{ campaign.ownerName }}</strong></span>
-                    </div>
-                    <div class="flex items-center gap-2 text-xs text-gray-500">
-                      <UIcon name="i-lucide-calendar-check" class="size-3" />
-                      <span>Rejoint le {{ formatDate(campaign.joinedAt) }}</span>
-                    </div>
-                  </div>
+              <!-- Contenu de la carte -->
+              <div class="flex-1 p-4 sm:p-6">
+                <div class="flex items-center gap-2 mb-2">
+                  <h3 class="font-semibold text-base sm:text-lg text-primary">{{ campaign.name }}</h3>
+                  <UBadge color="success" variant="solid" size="xs">Actif</UBadge>
                 </div>
-                <div>
-                  <UButton
-                    color="error"
-                    variant="soft"
-                    size="sm"
-                    icon="i-lucide-log-out"
-                    label="Quitter"
-                    @click="handleLeave(campaign.id, campaign.name)"
-                  />
+                <p v-if="campaign.description" class="text-muted text-sm mb-3">
+                  {{ campaign.description }}
+                </p>
+                <div class="space-y-1">
+                  <div class="flex items-center gap-2 text-sm text-muted">
+                    <UIcon name="i-lucide-crown" class="size-4 shrink-0" />
+                    <span class="truncate">Maître du jeu : <strong class="text-secondary">{{ campaign.ownerName }}</strong></span>
+                  </div>
+                  <div class="flex items-center gap-2 text-xs text-muted">
+                    <UIcon name="i-lucide-calendar-check" class="size-3 shrink-0" />
+                    <span>Rejoint le {{ formatDate(campaign.joinedAt) }}</span>
+                  </div>
                 </div>
               </div>
-            </UCard>
+
+              <!-- Bouton quitter (carré, pleine hauteur) -->
+              <button
+                class="w-full sm:w-24 py-4 sm:py-0 self-stretch flex items-center justify-center gap-2 bg-error-100 hover:bg-error-200 text-error-600 transition-colors rounded-b-lg sm:rounded-b-none sm:rounded-r-lg"
+                @click="handleLeave(campaign.id, campaign.name)"
+              >
+                <UIcon name="i-lucide-log-out" class="size-6" />
+                <span class="sm:hidden font-medium">Quitter</span>
+              </button>
+            </div>
           </div>
         </UCard>
       </div>
@@ -220,7 +219,9 @@
 import { ref, onMounted, computed } from "vue";
 import AuthorizationCard from "@/components/AuthorizationCard.vue";
 import { useCampaigns } from "@/composables/useCampaigns";
+import { useMockData } from "@/composables/useMockData";
 import type { Campaign, CampaignInvitation, AuthorizationStatus } from "@/types";
+import type { MockDataModule } from "@/composables/useMockData";
 
 definePageMeta({
   layout: "authenticated" as const,
@@ -238,50 +239,27 @@ const {
   revokeAuthorization,
 } = useCampaigns();
 
+const { enabled: mockEnabled, loadMockData, withMockFallback, isMockData } = useMockData();
+
 const invitations = ref<CampaignInvitation[]>([]);
 const activeCampaigns = ref<Campaign[]>([]);
 const authorizationStatuses = ref<AuthorizationStatus[]>([]);
 const loading = ref(false);
 const loadingAuth = ref(false);
+const mockData = ref<MockDataModule | null>(null);
 
 // Mode développement
 const isDev = computed(() => import.meta.env.DEV);
 
-// Données fictives pour le développement
-const mockInvitations: CampaignInvitation[] = [
-  {
-    id: "mock-invitation-1",
-    campaign: {
-      id: "mock-campaign-1",
-      name: "🎭 Campagne des Ombres Perdues",
-      description: "Une aventure épique dans un monde de fantasy sombre où les héros doivent retrouver les fragments d'une ancienne relique.",
-      ownerName: "MaitreJeu_Epic",
-    },
-    invitedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // Il y a 2 jours
-  },
-  {
-    id: "mock-invitation-2",
-    campaign: {
-      id: "mock-campaign-2",
-      name: "🚀 Space Opera: Les Confins de l'Univers",
-      description: "Explorez les galaxies lointaines, combattez des aliens et découvrez les mystères de l'espace profond.",
-      ownerName: "GM_Cosmos",
-    },
-    invitedAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(), // Il y a 5 heures
-  },
-  {
-    id: "mock-invitation-3",
-    campaign: {
-      id: "mock-campaign-3",
-      name: "⚔️ Donjons & Dragons : La Quête du Graal",
-      description: null,
-      ownerName: "DungeonMaster_Pro",
-    },
-    invitedAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(), // Il y a 30 minutes
-  },
-];
+// Vérifie si les données affichées sont mockées
+const showMockBadge = computed(() => {
+  return isDev.value && invitations.value.length > 0 && isMockData(invitations.value[0]?.id);
+});
 
 onMounted(async () => {
+  // Charger les données mockées si disponibles
+  mockData.value = await loadMockData();
+
   await loadData();
   await loadAuthorizationStatus();
 });
@@ -294,16 +272,15 @@ const loadData = async () => {
       fetchActiveCampaigns(),
     ]);
 
-    // En mode dev, ajouter les données fictives si pas d'invitations réelles
-    if (isDev.value && invitationsData.length === 0) {
-      invitations.value = mockInvitations;
-    } else {
-      invitations.value = invitationsData;
-    }
-
-    activeCampaigns.value = campaignsData;
+    // Utiliser le système centralisé de mock data
+    invitations.value = withMockFallback(invitationsData, mockData.value?.mockInvitations ?? []);
+    activeCampaigns.value = withMockFallback(campaignsData, mockData.value?.mockCampaigns ?? []);
   } catch {
-    // Error handled silently
+    // En cas d'erreur, utiliser les mock data si disponibles
+    if (mockEnabled.value && mockData.value) {
+      invitations.value = mockData.value.mockInvitations;
+      activeCampaigns.value = mockData.value.mockCampaigns;
+    }
   } finally {
     loading.value = false;
   }
@@ -314,15 +291,19 @@ const loadAuthorizationStatus = async () => {
   try {
     const data = await getAuthorizationStatus();
     // Transform snake_case API response to camelCase
-    authorizationStatuses.value = data.map((item) => ({
+    const apiStatuses: AuthorizationStatus[] = data.map((item) => ({
       campaignId: item.campaign_id,
       campaignName: item.campaign_name,
       isAuthorized: item.is_authorized,
       expiresAt: item.expires_at,
       remainingSeconds: item.remaining_seconds,
     }));
+    authorizationStatuses.value = withMockFallback(apiStatuses, mockData.value?.mockAuthorizationStatuses ?? []);
   } catch {
-    // Error handled silently
+    // En cas d'erreur, utiliser les mock data si disponibles
+    if (mockEnabled.value && mockData.value) {
+      authorizationStatuses.value = mockData.value.mockAuthorizationStatuses;
+    }
   } finally {
     loadingAuth.value = false;
   }

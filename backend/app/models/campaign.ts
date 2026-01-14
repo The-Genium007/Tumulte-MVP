@@ -5,6 +5,7 @@ import { user as User } from './user.js'
 import { campaignMembership as CampaignMembership } from './campaign_membership.js'
 import { pollTemplate as PollTemplate } from './poll_template.js'
 import { pollInstance as PollInstance } from './poll_instance.js'
+import { poll as Poll } from './poll.js'
 
 class Campaign extends BaseModel {
   @column({ isPrimary: true })
@@ -44,7 +45,12 @@ class Campaign extends BaseModel {
   @hasMany(() => PollInstance, {
     foreignKey: 'campaignId',
   })
-  declare polls: HasMany<typeof PollInstance>
+  declare pollInstances: HasMany<typeof PollInstance>
+
+  @hasMany(() => Poll, {
+    foreignKey: 'campaignId',
+  })
+  declare polls: HasMany<typeof Poll>
 }
 
 export { Campaign as campaign }

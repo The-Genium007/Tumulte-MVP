@@ -6,7 +6,7 @@ import type {
   PollInstance,
   StreamerSearchResult,
 } from "~/types";
-import type { Campaign as ApiCampaign } from "~/types/api";
+import type { Campaign as ApiCampaign, Poll } from "~/types/api";
 
 /**
  * Create mock user for tests
@@ -125,8 +125,9 @@ export function createMockPollTemplate(
 export function createMockPollInstance(
   overrides: Partial<PollInstance> = {},
 ): PollInstance {
-  return {
+  const base: PollInstance = {
     id: "poll-instance-123",
+    pollId: null,
     templateId: "poll-template-123",
     campaignId: "campaign-123",
     title: "Test Poll Question?",
@@ -138,8 +139,18 @@ export function createMockPollInstance(
     finalTotalVotes: null,
     finalVotesByOption: null,
     createdAt: new Date().toISOString(),
-    ...overrides,
   };
+
+  // Merge overrides, filtering out undefined values to preserve null defaults
+  return Object.entries(overrides).reduce(
+    (acc, [key, value]) => {
+      if (value !== undefined) {
+        (acc as Record<string, unknown>)[key] = value;
+      }
+      return acc;
+    },
+    { ...base },
+  );
 }
 
 /**
@@ -153,6 +164,27 @@ export function createMockStreamerSearchResult(
     login: "searchedstreamer",
     displayName: "Searched Streamer",
     profileImageUrl: "https://example.com/searched.png",
+    ...overrides,
+  };
+}
+
+/**
+ * Create mock poll for tests (new Poll → Campaign direct link)
+ */
+export function createMockPoll(overrides: Partial<Poll> = {}): Poll {
+  return {
+    id: "poll-123",
+    campaignId: "campaign-123",
+    question: "Quelle direction prendre ?",
+    options: ["Nord", "Sud", "Est"],
+    type: "STANDARD",
+    durationSeconds: 60,
+    orderIndex: 0,
+    channelPointsPerVote: null,
+    channelPointsEnabled: false,
+    lastLaunchedAt: null,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
     ...overrides,
   };
 }

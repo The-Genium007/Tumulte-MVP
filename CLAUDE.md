@@ -242,3 +242,108 @@ cd frontend
 npm install
 npm run dev
 ```
+
+---
+
+## Development Roadmap - Responsive & PWA
+
+### Overview
+
+Making Tumulte accessible on mobile, tablet and desktop with:
+- Mobile navigation (bottom bar)
+- Responsive layouts for all pages
+- PWA installation on all platforms
+- Limitation message for Overlay Studio on mobile
+
+### Phase 1: PWA Desktop Infrastructure
+
+**Files to create:**
+- `frontend/composables/usePwaInstall.ts` - PWA installation management
+- `frontend/components/PwaInstallPrompt.vue` - Installation banner
+- `frontend/types/pwa.d.ts` - PWA types
+
+**Files to modify:**
+- `frontend/components/UserMenu.vue` - Add install button
+
+### Phase 2: Mobile Navigation (Bottom Bar)
+
+**File to create:** `frontend/components/BottomNavigation.vue`
+
+**Structure:**
+- Fixed bottom bar (`fixed bottom-0 inset-x-0`)
+- Height: 64px (with safe-area-inset-bottom for iPhone)
+- 3-4 items based on role (GM or Streamer)
+- Visible only on mobile (`lg:hidden`)
+
+**GM Items:**
+| Icon | Label | Route |
+|------|-------|-------|
+| `i-lucide-home` | Home | `/mj` |
+| `i-lucide-folder` | Campaigns | `/mj/campaigns` |
+| `i-lucide-settings` | Settings | `/settings` |
+
+**Streamer Items:**
+| Icon | Label | Route |
+|------|-------|-------|
+| `i-lucide-home` | Home | `/streamer` |
+| `i-lucide-mail` | Invitations | `/streamer/campaigns` |
+| `i-lucide-settings` | Settings | `/settings` |
+
+### Phase 3: GM Pages - Responsive
+
+**Pages to adapt:**
+- `pages/mj/index.vue` - PollControlCard grid responsive
+- `components/mj/CampaignDashboard.vue` - Heights responsive
+- `components/mj/EventRow.vue` - Height + truncate
+- `pages/mj/campaigns/create.vue` - Width responsive
+- `pages/mj/campaigns/[id]/index.vue` - Member layout
+- `pages/mj/campaigns/[id]/polls/create.vue` - Form responsive
+
+### Phase 4: Streamer Pages - Responsive
+
+**Pages to adapt:**
+- `pages/streamer/index.vue` - Buttons responsive
+- `pages/streamer/campaigns.vue` - List responsive
+- `pages/streamer/studio.vue` - Add limitation message for mobile
+
+### Phase 5: Common Components - Responsive
+
+**Files to adapt:**
+- `components/AppHeader.vue` - Mobile simplification
+- `components/AppFooter.vue` - Hide/adapt for mobile
+- All modals - Width responsive
+- All dropdowns - Position verification
+
+### CSS Utilities to Add
+
+```css
+/* Safe areas for PWA */
+.safe-area-top { padding-top: env(safe-area-inset-top); }
+.safe-area-bottom { padding-bottom: env(safe-area-inset-bottom); }
+
+/* Mobile viewport height */
+.min-h-screen-mobile { min-height: 100dvh; }
+
+/* Touch targets minimum 44px */
+.touch-target { min-height: 44px; min-width: 44px; }
+```
+
+### Device Testing Checklist
+
+| Device | Viewport | Priority |
+|--------|----------|----------|
+| iPhone SE | 375x667 | High |
+| iPhone 14 | 390x844 | High |
+| iPad Mini | 768x1024 | High |
+| Desktop 1280px | 1280x800 | High |
+| Desktop 1920px | 1920x1080 | High |
+
+### Validation Checklist per Page
+
+- [ ] No horizontal scroll
+- [ ] Readable text (min 14px)
+- [ ] Touch targets min 44px
+- [ ] Buttons accessible by thumb
+- [ ] Modals don't overflow
+- [ ] Forms usable
+- [ ] Smooth navigation

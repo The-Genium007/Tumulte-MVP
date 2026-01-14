@@ -1,34 +1,33 @@
 <template>
   <div
-    class="min-h-screen flex items-center justify-center bg-linear-to-br from-gray-950 via-purple-950/20 to-gray-950"
+    class="min-h-screen flex items-center justify-center bg-page px-4"
   >
     <UCard class="w-full max-w-md">
       <template #header>
         <div class="text-center space-y-3">
           <div class="flex justify-center">
-            <div class="bg-primary-500/10 p-4 rounded-2xl">
-              <UIcon name="i-lucide-chart-bar" class="size-12 text-primary-500" />
-            </div>
+            <img src="~/assets/images/logo.png" alt="Tumulte" class="size-24" />
           </div>
-          <h1 class="text-3xl font-bold text-white">Sondage Multi-Stream</h1>
-          <p class="text-sm text-gray-400">
-            Système de sondages Twitch synchronisés
+          <h1 class="text-3xl font-bold text-primary">Tumulte</h1>
+          <p class="text-sm text-muted">
+            Système de Table-Top Twitch synchronisés
           </p>
         </div>
       </template>
 
       <div class="space-y-6">
-        <p class="text-gray-300 text-center">
-          Connectez-vous avec votre compte Twitch pour accéder au système de
-          sondages multi-streams.
+        <p class="text-secondary text-center">
+          Connectez-vous avec votre compte Twitch pour accéder a Tumulte.
         </p>
 
         <UButton
           block
           size="xl"
-          color="primary"
+          color="neutral"
+          variant="solid"
           icon="i-simple-icons-twitch"
           trailing-icon="i-lucide-arrow-right"
+          class="bg-[#9146FF] hover:bg-[#7c3aed] text-white"
           @click="handleLogin"
         >
           Se connecter avec Twitch

@@ -1,7 +1,6 @@
 import { useAuthStore } from "@/stores/auth";
 import { usePollControlStore } from "@/stores/pollControl";
 import { getSupportSnapshot } from "@/utils/supportTelemetry";
-import { useSupportTrigger } from "@/composables/useSupportTrigger";
 
 /**
  * Patterns de données sensibles à filtrer
@@ -92,13 +91,24 @@ const buildPerformanceSnapshot = () => {
   };
 };
 
+type BugReportResult = {
+  message: string;
+  githubIssueUrl: string | null;
+  discordSent: boolean;
+};
+
+type SuggestionResult = {
+  message: string;
+  githubDiscussionUrl: string | null;
+  discordSent: boolean;
+};
+
 export const useSupportReporter = () => {
   const config = useRuntimeConfig();
   const API_URL = config.public.apiBase;
 
   const authStore = useAuthStore();
   const pollControlStore = usePollControlStore();
-  const { triggerSupportForError } = useSupportTrigger();
 
   const buildStoreSnapshot = () => ({
     auth: {
@@ -127,7 +137,11 @@ export const useSupportReporter = () => {
   ) => {
     const snapshot = includeDiagnostics
       ? getSupportSnapshot()
-      : { consoleLogs: [], errors: [], sessionId: "" };
+      : {
+          consoleLogs: [],
+          errors: [],
+          sessionId: getSupportSnapshot().sessionId,
+        };
     const resolved = Intl.DateTimeFormat().resolvedOptions();
 
     return {
@@ -171,12 +185,20 @@ export const useSupportReporter = () => {
     return [];
   };
 
-  const sendSupportReport = async (
+  /**
+   * Envoie un rapport de bug vers Discord #support-bugs + GitHub Issue
+   */
+  const sendBugReport = async (
+    title: string,
     description: string,
     options?: { includeDiagnostics?: boolean },
-  ) => {
-    if (!description || !description.trim()) {
-      throw new Error("Merci de décrire le problème avant l'envoi.");
+  ): Promise<BugReportResult> => {
+    if (!title || title.trim().length < 5) {
+      throw new Error("Le titre doit faire au moins 5 caractères.");
+    }
+
+    if (!description || description.trim().length < 10) {
+      throw new Error("La description doit faire au moins 10 caractères.");
     }
 
     const includeDiagnostics = options?.includeDiagnostics ?? true;
@@ -197,16 +219,73 @@ export const useSupportReporter = () => {
 
     // Sanitize les données pour retirer les informations sensibles
     const payload = sanitizeObject({
+      title: title.trim(),
       description: description.trim(),
+      includeDiagnostics,
       frontend: buildFrontendContext(description, includeDiagnostics),
       backendLogs,
     }) as {
+      title: string;
       description: string;
+      includeDiagnostics: boolean;
       frontend: ReturnType<typeof buildFrontendContext>;
       backendLogs: unknown[];
     };
 
     const response = await fetch(`${API_URL}/support/report`, {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Session-Id": getSupportSnapshot().sessionId || "",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      throw new Error(
+        errorData?.error || "Impossible d'envoyer le rapport de bug.",
+      );
+    }
+
+    const result = await response.json();
+    return {
+      message: result.message || "Bug signalé",
+      githubIssueUrl: result.githubIssueUrl || null,
+      discordSent: result.discordSent ?? false,
+    };
+  };
+
+  /**
+   * Envoie une suggestion vers Discord #suggestions + crée une GitHub Discussion
+   */
+  const sendSuggestion = async (
+    title: string,
+    description: string,
+  ): Promise<SuggestionResult> => {
+    if (!title || title.trim().length < 5) {
+      throw new Error("Le titre doit faire au moins 5 caractères.");
+    }
+
+    if (!description || description.trim().length < 10) {
+      throw new Error("La description doit faire au moins 10 caractères.");
+    }
+
+    if (!authStore.user) {
+      try {
+        await authStore.fetchMe();
+      } catch {
+        // ignore, le backend renverra 401 si nécessaire
+      }
+    }
+
+    const payload = {
+      title: title.trim(),
+      description: description.trim(),
+    };
+
+    const response = await fetch(`${API_URL}/support/suggestion`, {
       method: "POST",
       credentials: "include",
       headers: {
@@ -217,21 +296,18 @@ export const useSupportReporter = () => {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
-      const error = new Error(
-        errorData?.error || "Impossible d'envoyer le ticket Discord.",
+      throw new Error(
+        errorData?.error || "Impossible d'envoyer la suggestion.",
       );
-      // Note: On utilise un try/catch interne pour éviter une boucle infinie
-      // si le trigger lui-même échoue
-      try {
-        triggerSupportForError("support_send", error);
-      } catch {
-        // Ignore pour éviter boucle infinie
-      }
-      throw error;
     }
 
-    return response.json().catch(() => ({}));
+    const result = await response.json();
+    return {
+      message: result.message || "Suggestion envoyée",
+      githubDiscussionUrl: result.githubDiscussionUrl || null,
+      discordSent: result.discordSent ?? false,
+    };
   };
 
-  return { sendSupportReport };
+  return { sendBugReport, sendSuggestion };
 };

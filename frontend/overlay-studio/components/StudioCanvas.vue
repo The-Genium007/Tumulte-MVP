@@ -23,7 +23,7 @@
         <!-- Grille de référence (adaptée à 1920x1080, divisions de 100px) -->
         <TresGridHelper
           v-if="showGrid"
-          :args="[2000, 20, '#444444', '#333333']"
+          :args="[2000, 20, '#8a7d6a', '#b5aa99']"
           :rotation-x="Math.PI / 2"
         />
 
@@ -323,7 +323,7 @@ onUnmounted(() => {
 // Props du canvas
 const canvasProps = computed(() => ({
   alpha: true,
-  clearColor: "#1a1a2e",
+  clearColor: "#b5aa99", // Couleur neutre du thème clair (neutral-300)
   shadows: false,
   windowSize: false,
 }));
@@ -524,17 +524,17 @@ const handleTransformEnd = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #0a0a12;
+  background: var(--color-neutral-300);
 }
 
 .canvas-wrapper {
   position: relative;
-  background: #1a1a2e;
+  background: var(--color-bg-muted);
   border-radius: 8px;
   overflow: visible; /* Important pour le gizmo */
   box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.1),
-    0 4px 24px rgba(0, 0, 0, 0.5);
+    0 0 0 1px var(--color-neutral-200),
+    0 4px 24px rgba(0, 0, 0, 0.1);
 }
 
 .canvas-info {
@@ -544,14 +544,15 @@ const handleTransformEnd = () => {
   display: flex;
   gap: 12px;
   font-size: 12px;
-  color: #888;
+  color: var(--color-text-muted);
   z-index: 10;
 }
 
 .info-item {
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(255, 255, 255, 0.9);
   padding: 4px 8px;
   border-radius: 4px;
+  border: 1px solid var(--color-neutral-200);
 }
 
 /* Snap guides */
@@ -565,16 +566,16 @@ const handleTransformEnd = () => {
   top: 0;
   bottom: 0;
   width: 1px;
-  background: #f472b6;
-  box-shadow: 0 0 4px #f472b6;
+  background: var(--color-primary-500);
+  box-shadow: 0 0 4px var(--color-primary-400);
 }
 
 .snap-guide-horizontal {
   left: 0;
   right: 0;
   height: 1px;
-  background: #f472b6;
-  box-shadow: 0 0 4px #f472b6;
+  background: var(--color-primary-500);
+  box-shadow: 0 0 4px var(--color-primary-400);
 }
 
 /* Panneau propriétés élément */
@@ -585,7 +586,7 @@ const handleTransformEnd = () => {
   display: flex;
   gap: 8px;
   font-size: 12px;
-  color: #888;
+  color: var(--color-text-muted);
   z-index: 10;
   align-items: center;
 }
@@ -594,19 +595,20 @@ const handleTransformEnd = () => {
   display: flex;
   align-items: center;
   gap: 4px;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(255, 255, 255, 0.9);
   padding: 4px 8px;
   border-radius: 4px;
+  border: 1px solid var(--color-neutral-200);
 }
 
 .property-label {
-  color: #666;
+  color: var(--color-text-disabled);
   font-weight: 500;
   min-width: 12px;
 }
 
 .property-value {
-  color: #ccc;
+  color: var(--color-text-secondary);
   cursor: pointer;
   min-width: 40px;
   text-align: right;
@@ -616,16 +618,16 @@ const handleTransformEnd = () => {
 }
 
 .property-value:hover {
-  background: rgba(147, 51, 234, 0.3);
-  color: #fff;
+  background: var(--color-primary-100);
+  color: var(--color-text-primary);
 }
 
 .property-input {
   width: 50px;
-  background: rgba(147, 51, 234, 0.2);
-  border: 1px solid #9333ea;
+  background: var(--color-primary-50);
+  border: 1px solid var(--color-primary-300);
   border-radius: 2px;
-  color: #fff;
+  color: var(--color-text-primary);
   font-size: 12px;
   padding: 2px 4px;
   text-align: right;
@@ -633,12 +635,13 @@ const handleTransformEnd = () => {
 }
 
 .property-input:focus {
-  background: rgba(147, 51, 234, 0.3);
+  background: var(--color-primary-100);
+  border-color: var(--color-primary-400);
 }
 
 .property-separator {
   width: 1px;
   height: 16px;
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--color-neutral-300);
 }
 </style>

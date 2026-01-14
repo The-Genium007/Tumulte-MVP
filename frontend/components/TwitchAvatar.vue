@@ -5,14 +5,14 @@
       :src="imageUrl"
       :alt="displayName"
       :class="[
-        'rounded-full ring-2 ring-purple-500/20',
+        'rounded-full ring-2 ring-brand-200',
         sizeClasses
       ]"
     />
     <div
       v-else
       :class="[
-        'rounded-full ring-2 ring-purple-500/20 bg-purple-500/20 flex items-center justify-center',
+        'rounded-full ring-2 ring-brand-200 bg-brand-medium flex items-center justify-center',
         sizeClasses
       ]"
     >

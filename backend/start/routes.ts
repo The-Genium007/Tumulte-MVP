@@ -82,75 +82,36 @@ router
       '#controllers/mj/campaigns_controller.removeMember'
     )
 
-    // Poll Sessions (nested sous campaigns OU standalone)
-    router.get(
-      '/campaigns/:campaignId/sessions',
-      '#controllers/mj/poll_sessions_controller.indexByCampaign'
-    )
-    router.post(
-      '/campaigns/:campaignId/sessions',
-      '#controllers/mj/poll_sessions_controller.storeByCampaign'
-    )
-    router.delete(
-      '/campaigns/:campaignId/sessions/:id',
-      '#controllers/mj/poll_sessions_controller.destroy'
-    )
-    router.get('/sessions/:id', '#controllers/mj/poll_sessions_controller.show')
-    router.put('/sessions/:id', '#controllers/mj/poll_sessions_controller.update')
-    router.delete('/sessions/:id', '#controllers/mj/poll_sessions_controller.destroy')
-    router.post('/sessions/:id/polls', '#controllers/mj/poll_sessions_controller.addPoll')
-    router.put('/sessions/:id/polls/:pollId', '#controllers/mj/poll_sessions_controller.updatePoll')
-    router.delete(
-      '/sessions/:id/polls/:pollId',
-      '#controllers/mj/poll_sessions_controller.deletePoll'
-    )
-    router.put(
-      '/sessions/:id/polls/reorder',
-      '#controllers/mj/poll_sessions_controller.reorderPolls'
-    )
-
-    // Lancement de session avec Health Check
-    router.post(
-      '/campaigns/:campaignId/sessions/:sessionId/launch',
-      '#controllers/mj/poll_sessions_controller.launch'
-    )
-    // Status de session (validation état frontend/backend)
-    router.get(
-      '/campaigns/:campaignId/sessions/:sessionId/status',
-      '#controllers/mj/poll_sessions_controller.status'
-    )
-    // Heartbeat de session (synchronisation temps réel)
-    router.post(
-      '/campaigns/:campaignId/sessions/:sessionId/heartbeat',
-      '#controllers/mj/poll_sessions_controller.heartbeat'
-    )
-
-    // Poll Templates (nested sous campaigns OU standalone)
-    router.get(
-      '/campaigns/:campaignId/templates',
-      '#controllers/mj/poll_templates_controller.indexByCampaign'
-    )
-    router.post(
-      '/campaigns/:campaignId/templates',
-      '#controllers/mj/poll_templates_controller.storeByCampaign'
-    )
-    router.get('/templates', '#controllers/mj/poll_templates_controller.index')
-    router.get('/templates/:id', '#controllers/mj/poll_templates_controller.show')
-    router.put('/templates/:id', '#controllers/mj/poll_templates_controller.update')
-    router.delete('/templates/:id', '#controllers/mj/poll_templates_controller.destroy')
-
-    // Active Session (récupérer la session/poll en cours)
-    router.get('/active-session', '#controllers/mj/active_session_controller.show')
-
-    // Polls (lancement et contrôle) - Rate limited to prevent spam
-    router
-      .post('/campaigns/:campaignId/polls/launch', '#controllers/mj/polls_controller.launch')
-      .use(middleware.rateLimit({ maxRequests: 20, windowSeconds: 60, keyPrefix: 'poll_launch' }))
-    router.get('/polls', '#controllers/mj/polls_controller.index')
+    // Polls (templates liés directement aux campagnes)
+    // CRUD des polls (templates de sondages)
+    router.get('/campaigns/:campaignId/polls', '#controllers/mj/polls_controller.indexByCampaign')
+    router.post('/campaigns/:campaignId/polls', '#controllers/mj/polls_controller.store')
     router.get('/polls/:id', '#controllers/mj/polls_controller.show')
+    router.put('/polls/:id', '#controllers/mj/polls_controller.update')
+    router.delete('/polls/:id', '#controllers/mj/polls_controller.destroy')
+
+    // Lancement d'un poll depuis son template - Rate limited
+    router
+      .post('/polls/:id/launch', '#controllers/mj/polls_controller.launchFromPoll')
+      .use(middleware.rateLimit({ maxRequests: 20, windowSeconds: 60, keyPrefix: 'poll_launch' }))
+
+    // Contrôle des poll instances
     router.post('/polls/:id/cancel', '#controllers/mj/polls_controller.cancel')
     router.get('/polls/:id/results', '#controllers/mj/polls_controller.results')
     router.get('/polls/:id/live', '#controllers/mj/polls_controller.live')
+    router.get('/polls/:id/instance', '#controllers/mj/polls_controller.showInstance')
+
+    // Poll instances (legacy - pour compatibilité)
+    router.get('/campaigns/:campaignId/polls/instances', '#controllers/mj/polls_controller.index')
+    router
+      .post('/campaigns/:campaignId/polls/launch', '#controllers/mj/polls_controller.launch')
+      .use(
+        middleware.rateLimit({
+          maxRequests: 20,
+          windowSeconds: 60,
+          keyPrefix: 'poll_launch_legacy',
+        })
+      )
 
     // Streamers (recherche Twitch)
     router.get('/streamers', '#controllers/mj/streamers_controller.index')
@@ -280,6 +241,7 @@ router
 router
   .group(() => {
     router.post('/report', [supportController, 'report'])
+    router.post('/suggestion', [supportController, 'suggestion'])
     router.get('/logs', [supportController, 'getLogs'])
   })
   .prefix('/support')

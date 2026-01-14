@@ -1,5 +1,24 @@
 <template>
-  <div class="studio-layout">
+  <!-- Message pour mobile/tablette -->
+  <div v-if="!isDesktop" class="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-page">
+    <UIcon name="i-lucide-monitor" class="size-16 text-primary-500 mb-6" />
+    <h1 class="text-2xl font-bold text-primary mb-4">Éditeur non disponible</h1>
+    <p class="text-muted mb-8 max-w-md">
+      L'éditeur d'overlay est optimisé pour les écrans larges.
+      Veuillez utiliser un ordinateur pour accéder à cette fonctionnalité.
+    </p>
+    <UButton
+      to="/streamer"
+      color="primary"
+      size="lg"
+      icon="i-lucide-arrow-left"
+    >
+      Retour au tableau de bord
+    </UButton>
+  </div>
+
+  <!-- Contenu normal pour desktop -->
+  <div v-else class="studio-layout">
     <!-- Toolbar -->
     <header class="studio-toolbar">
       <div class="toolbar-left">
@@ -60,7 +79,7 @@
 
               <div class="config-dropdown-content">
                 <div v-if="loading" class="config-dropdown-empty">
-                  <UIcon name="i-lucide-loader-2" class="size-6 animate-spin text-gray-400" />
+                  <UIcon name="i-game-icons-dice-twenty-faces-twenty" class="size-6 animate-spin-slow text-muted" />
                 </div>
 
                 <div v-else-if="api.configs.value.length === 0" class="config-dropdown-empty">
@@ -144,6 +163,10 @@
             v-model="newConfigName"
             placeholder="Ma configuration"
             autofocus
+            :ui="{
+              root: 'ring-0 border-0 rounded-lg overflow-hidden',
+              base: 'px-3.5 py-2.5 bg-primary-100 text-primary-500 placeholder:text-primary-400 rounded-lg',
+            }"
             @keyup.enter="createNewConfig"
           />
         </UFormField>
@@ -190,7 +213,7 @@
         <div class="sidebar-section">
           <h3 class="sidebar-title">Calques</h3>
           <div v-if="elements.length === 0" class="empty-layers">
-            <p class="text-gray-500 text-sm">Aucun élément</p>
+            <p class="text-muted text-sm">Aucun élément</p>
           </div>
           <div v-else class="layers-list">
             <div
@@ -253,6 +276,10 @@
             <UInput
               :model-value="selectedElement.name"
               size="sm"
+              :ui="{
+                root: 'ring-0 border-0 rounded-lg overflow-hidden',
+                base: 'px-3.5 py-2.5 bg-primary-100 text-primary-500 placeholder:text-primary-400 rounded-lg',
+              }"
               @update:model-value="updateName"
             />
           </div>
@@ -268,6 +295,10 @@
                   :model-value="selectedElement.position.x"
                   size="sm"
                   step="0.1"
+                  :ui="{
+                    root: 'ring-0 border-0 rounded-lg overflow-hidden',
+                    base: 'px-3.5 py-2.5 bg-primary-100 text-primary-500 placeholder:text-primary-400 rounded-lg',
+                  }"
                   @update:model-value="(v: string | number) => updatePosition('x', Number(v))"
                 />
               </div>
@@ -278,6 +309,10 @@
                   :model-value="selectedElement.position.y"
                   size="sm"
                   step="0.1"
+                  :ui="{
+                    root: 'ring-0 border-0 rounded-lg overflow-hidden',
+                    base: 'px-3.5 py-2.5 bg-primary-100 text-primary-500 placeholder:text-primary-400 rounded-lg',
+                  }"
                   @update:model-value="(v: string | number) => updatePosition('y', Number(v))"
                 />
               </div>
@@ -295,6 +330,10 @@
                   :model-value="selectedElement.scale.x"
                   size="sm"
                   step="0.1"
+                  :ui="{
+                    root: 'ring-0 border-0 rounded-lg overflow-hidden',
+                    base: 'px-3.5 py-2.5 bg-primary-100 text-primary-500 placeholder:text-primary-400 rounded-lg',
+                  }"
                   @update:model-value="(v: string | number) => updateScale('x', Number(v))"
                 />
               </div>
@@ -305,6 +344,10 @@
                   :model-value="selectedElement.scale.y"
                   size="sm"
                   step="0.1"
+                  :ui="{
+                    root: 'ring-0 border-0 rounded-lg overflow-hidden',
+                    base: 'px-3.5 py-2.5 bg-primary-100 text-primary-500 placeholder:text-primary-400 rounded-lg',
+                  }"
                   @update:model-value="(v: string | number) => updateScale('y', Number(v))"
                 />
               </div>
@@ -348,6 +391,7 @@ import { computed, onMounted, onUnmounted, provide, ref } from "vue";
 import { useOverlayStudioStore } from "~/overlay-studio/stores/overlayStudio";
 import { useOverlayStudioApi } from "~/overlay-studio/composables/useOverlayStudioApi";
 import { useUndoRedo, UNDO_REDO_KEY } from "~/overlay-studio/composables/useUndoRedo";
+import { useDevice } from "~/composables/useDevice";
 import StudioCanvas from "~/overlay-studio/components/StudioCanvas.vue";
 import type { OverlayElementType } from "~/overlay-studio/types";
 
@@ -355,6 +399,8 @@ definePageMeta({
   layout: "studio" as const,
   middleware: ["auth"],
 });
+
+const { isDesktop } = useDevice();
 
 const store = useOverlayStudioStore();
 const api = useOverlayStudioApi();
@@ -699,7 +745,7 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background: #0f0f1a;
+  background: var(--color-bg-page);
   overflow: hidden;
 }
 
@@ -709,8 +755,8 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem 1rem;
-  background: #1a1a2e;
-  border-bottom: 1px solid #2a2a3e;
+  background: var(--color-bg-muted);
+  border-bottom: 1px solid var(--color-neutral-200);
 }
 
 .toolbar-left,
@@ -728,19 +774,19 @@ onUnmounted(() => {
   width: 32px;
   height: 32px;
   border-radius: 6px;
-  color: #888;
+  color: var(--color-text-muted);
   transition: all 0.2s;
 }
 
 .back-link:hover {
-  background: #2a2a3e;
-  color: white;
+  background: var(--color-neutral-100);
+  color: var(--color-text-primary);
 }
 
 .toolbar-title {
   font-size: 1.125rem;
   font-weight: 600;
-  color: white;
+  color: var(--color-text-primary);
 }
 
 .undo-redo-buttons {
@@ -748,7 +794,7 @@ onUnmounted(() => {
   gap: 2px;
   margin-left: 0.5rem;
   padding-left: 0.75rem;
-  border-left: 1px solid #2a2a3e;
+  border-left: 1px solid var(--color-neutral-200);
 }
 
 /* Main */
@@ -763,15 +809,15 @@ onUnmounted(() => {
 /* Sidebars */
 .studio-sidebar,
 .studio-inspector {
-  background: #1a1a2e;
-  border-right: 1px solid #2a2a3e;
+  background: var(--color-bg-muted);
+  border-right: 1px solid var(--color-neutral-200);
   overflow-y: auto;
 }
 
 .studio-inspector {
   position: relative;
   border-right: none;
-  border-left: 1px solid #2a2a3e;
+  border-left: 1px solid var(--color-neutral-200);
   width: 280px;
   transition: width 0.3s ease;
   overflow: hidden;
@@ -795,14 +841,14 @@ onUnmounted(() => {
   transform: translateY(-50%);
   width: 24px;
   height: 48px;
-  background: #1a1a2e;
-  border: 1px solid #2a2a3e;
+  background: var(--color-bg-muted);
+  border: 1px solid var(--color-neutral-200);
   border-right: none;
   border-radius: 6px 0 0 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #888;
+  color: var(--color-text-muted);
   cursor: pointer;
   transition: right 0.3s ease, background 0.2s, color 0.2s;
   z-index: 20;
@@ -813,13 +859,13 @@ onUnmounted(() => {
 }
 
 .inspector-toggle:hover {
-  background: #2a2a3e;
-  color: white;
+  background: var(--color-neutral-100);
+  color: var(--color-text-primary);
 }
 
 .sidebar-section {
   padding: 1rem;
-  border-bottom: 1px solid #2a2a3e;
+  border-bottom: 1px solid var(--color-neutral-200);
 }
 
 .sidebar-title {
@@ -827,7 +873,7 @@ onUnmounted(() => {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #888;
+  color: var(--color-text-muted);
   margin-bottom: 0.75rem;
 }
 
@@ -844,19 +890,19 @@ onUnmounted(() => {
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem;
-  background: #0f0f1a;
-  border: 1px solid #2a2a3e;
+  background: var(--color-bg-page);
+  border: 1px solid var(--color-neutral-200);
   border-radius: 8px;
-  color: #888;
+  color: var(--color-text-muted);
   font-size: 0.75rem;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .element-item:hover {
-  background: #2a2a3e;
-  border-color: #9333ea;
-  color: white;
+  background: var(--color-neutral-100);
+  border-color: var(--color-primary-400);
+  color: var(--color-text-primary);
 }
 
 /* Layers */
@@ -878,18 +924,18 @@ onUnmounted(() => {
   padding: 0.5rem 0.75rem;
   border-radius: 6px;
   cursor: pointer;
-  color: #888;
+  color: var(--color-text-muted);
   transition: all 0.2s;
 }
 
 .layer-item:hover {
-  background: #2a2a3e;
-  color: white;
+  background: var(--color-neutral-100);
+  color: var(--color-text-primary);
 }
 
 .layer-item.selected {
-  background: rgba(147, 51, 234, 0.2);
-  color: white;
+  background: var(--color-primary-100);
+  color: var(--color-text-primary);
 }
 
 .layer-name {
@@ -918,18 +964,18 @@ onUnmounted(() => {
   width: 24px;
   height: 24px;
   border-radius: 4px;
-  color: #888;
+  color: var(--color-text-muted);
   transition: all 0.2s;
 }
 
 .layer-action:hover {
-  background: #3a3a4e;
-  color: white;
+  background: var(--color-neutral-200);
+  color: var(--color-text-primary);
 }
 
 /* Canvas */
 .studio-canvas {
-  background: #0a0a12;
+  background: var(--color-neutral-300);
   padding: 1.5rem;
   min-width: 0; /* Permet au flex de réduire si nécessaire */
 }
@@ -947,7 +993,7 @@ onUnmounted(() => {
   height: 100%;
   padding: 2rem;
   text-align: center;
-  color: #666;
+  color: var(--color-text-disabled);
   gap: 1rem;
 }
 
@@ -958,7 +1004,7 @@ onUnmounted(() => {
 .inspector-field label {
   display: block;
   font-size: 0.75rem;
-  color: #888;
+  color: var(--color-text-muted);
   margin-bottom: 0.25rem;
 }
 
@@ -969,7 +1015,7 @@ onUnmounted(() => {
 .inspector-group > label {
   display: block;
   font-size: 0.75rem;
-  color: #888;
+  color: var(--color-text-muted);
   margin-bottom: 0.5rem;
 }
 
@@ -987,7 +1033,7 @@ onUnmounted(() => {
 
 .vector-input span {
   font-size: 0.75rem;
-  color: #666;
+  color: var(--color-text-disabled);
   width: 16px;
 }
 
@@ -997,7 +1043,7 @@ onUnmounted(() => {
   gap: 0.5rem;
   margin-top: 1.5rem;
   padding-top: 1rem;
-  border-top: 1px solid #2a2a3e;
+  border-top: 1px solid var(--color-neutral-200);
 }
 
 /* Config list items */
@@ -1007,18 +1053,18 @@ onUnmounted(() => {
   justify-content: space-between;
   padding: 0.75rem;
   border-radius: 8px;
-  background: var(--ui-bg-muted);
+  background: var(--color-neutral-100);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .config-item:hover {
-  background: var(--ui-bg-elevated);
+  background: var(--color-neutral-200);
 }
 
 .config-item.active {
-  background: rgba(147, 51, 234, 0.15);
-  border: 1px solid rgba(147, 51, 234, 0.3);
+  background: var(--color-primary-100);
+  border: 1px solid var(--color-primary-300);
 }
 
 .config-info {
@@ -1028,6 +1074,7 @@ onUnmounted(() => {
 
 .config-name {
   font-weight: 500;
+  color: var(--color-text-primary);
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -1035,7 +1082,7 @@ onUnmounted(() => {
 
 .config-date {
   font-size: 0.75rem;
-  color: var(--ui-text-muted);
+  color: var(--color-text-muted);
   margin-top: 0.25rem;
 }
 
@@ -1060,14 +1107,14 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   padding: 0.5rem;
-  border-bottom: 1px solid #2a2a3e;
+  border-bottom: 1px solid var(--color-neutral-200);
   margin-bottom: 0.5rem;
 }
 
 .config-dropdown-title {
   font-size: 0.875rem;
   font-weight: 600;
-  color: white;
+  color: var(--color-text-primary);
 }
 
 .config-dropdown-content {
@@ -1082,7 +1129,7 @@ onUnmounted(() => {
   justify-content: center;
   padding: 1.5rem;
   text-align: center;
-  color: #666;
+  color: var(--color-text-disabled);
   gap: 0.5rem;
   font-size: 0.875rem;
 }

@@ -4,7 +4,7 @@ import logger from '@adonisjs/core/services/logger'
 import { CampaignMembershipRepository } from '#repositories/campaign_membership_repository'
 import { streamer as Streamer } from '#models/streamer'
 import { TokenRefreshService } from '#services/auth/token_refresh_service'
-import { webSocketService as WebSocketService } from '#services/websocket_service'
+import { webSocketService as WebSocketService } from '#services/websocket/websocket_service'
 
 @inject()
 export class AuthorizationService {

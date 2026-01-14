@@ -1,232 +1,40 @@
 <template>
-  <div class="min-h-screen py-6">
+  <div class="min-h-screen">
     <div class="space-y-6">
-        <!-- Campaigns and Streamers Grid -->
-        <div v-if="campaignsLoaded && campaigns.length > 0" class="grid grid-cols-2 gap-6">
-          <!-- Campaign List (1/2) -->
-          <UCard class="flex flex-col">
-            <template #header>
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                  <div class="bg-purple-500/10 p-3 rounded-xl">
-                    <UIcon name="i-lucide-folder-kanban" class="size-6 text-purple-500" />
-                  </div>
-                  <div>
-                    <h2 class="text-xl font-semibold text-white">Campagnes actives</h2>
-                    <p class="text-sm text-gray-400">Sélectionnez une campagne pour gérer vos sondages</p>
-                  </div>
-                </div>
-                <UButton
-                  color="neutral"
-                  variant="soft"
-                  icon="i-lucide-folders"
-                  label="Toutes les campagnes"
-                  @click="router.push('/mj/campaigns')"
-                />
-              </div>
-            </template>
+        <!-- Carte 1: Sélecteur de campagne -->
+        <MjCampaignSelectorCard
+          v-if="campaignsLoaded && effectiveCampaigns.length > 0"
+          v-model="selectedCampaignId"
+          :campaigns="effectiveCampaigns"
+        />
 
-            <div class="space-y-2 overflow-y-auto max-h-[calc(3*5.5rem+1rem)]">
-              <div
-                v-for="campaign in sortedCampaigns"
-                :key="campaign.id"
-                class="flex items-center justify-between p-4 rounded-lg cursor-pointer transition-all"
-                :class="
-                  selectedCampaignId === campaign.id
-                    ? 'bg-purple-500/20 border border-purple-500/50'
-                    : 'bg-gray-800/30 hover:bg-gray-800/50 border border-transparent'
-                "
-                @click="selectCampaign(campaign.id)"
-              >
-                <div class="flex items-center gap-3">
-                  <div
-                    class="w-2 h-2 rounded-full"
-                    :class="
-                      selectedCampaignId === campaign.id
-                        ? 'bg-purple-500'
-                        : 'bg-gray-600'
-                    "
-                  ></div>
-                  <div>
-                    <h3 class="font-semibold text-white">{{ campaign.name }}</h3>
-                    <p class="text-sm text-gray-400">
-                      {{ campaign.activeMemberCount || 0 }} streamer(s)
-                    </p>
-                  </div>
-                </div>
-                <UButton
-                  color="neutral"
-                  variant="ghost"
-                  icon="i-lucide-settings"
-                  square
-                  @click.stop="router.push(`/mj/campaigns/${campaign.id}`)"
-                />
-              </div>
-            </div>
-          </UCard>
-
-          <!-- Streamers List (1/2) -->
-          <UCard class="flex flex-col">
-            <template #header>
-              <div class="flex items-center gap-3">
-                <UIcon name="i-lucide-users" class="size-6 text-primary-500" />
-                <div>
-                  <h2 class="text-xl font-semibold text-white">Streamers connectés</h2>
-                  <p v-if="selectedCampaignId" class="text-xs text-gray-400">
-                    {{ selectedCampaignStreamers.length }} membre(s)
-                  </p>
-                </div>
-              </div>
-            </template>
-
-            <!-- Loading -->
-            <div
-              v-if="streamersLoading"
-              class="flex flex-col items-center justify-center py-12"
-            >
-              <UIcon
-                name="i-lucide-loader"
-                class="size-10 text-primary-500 animate-spin mb-4"
-              />
-              <p class="text-gray-400 text-sm">Chargement...</p>
-            </div>
-
-            <!-- No Campaign Selected -->
-            <div
-              v-else-if="!selectedCampaignId"
-              class="text-center py-12"
-            >
-              <div class="bg-purple-500/10 p-4 rounded-2xl mb-4 inline-block">
-                <UIcon name="i-lucide-arrow-left" class="size-12 text-purple-500" />
-              </div>
-              <p class="text-gray-400 text-sm">
-                Sélectionnez une campagne pour voir les streamers
-              </p>
-            </div>
-
-            <!-- Empty State -->
-            <div
-              v-else-if="selectedCampaignStreamers.length === 0"
-              class="text-center py-12"
-            >
-              <div class="bg-purple-500/10 p-4 rounded-2xl mb-4 inline-block">
-                <UIcon name="i-lucide-user-plus" class="size-12 text-purple-500" />
-              </div>
-              <p class="text-gray-400 text-sm">Aucun streamer dans cette campagne</p>
-            </div>
-
-            <!-- Streamers List -->
-            <div v-else class="space-y-3 overflow-y-auto max-h-[calc(3*5.5rem+1rem)]">
-              <div
-                v-for="streamer in selectedCampaignStreamers"
-                :key="streamer.id"
-                class="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg"
-              >
-                <div class="flex items-center gap-2">
-                  <div class="relative">
-                    <TwitchAvatar
-                      :image-url="streamer.profileImageUrl"
-                      :display-name="streamer.twitchDisplayName"
-                      size="sm"
-                    />
-                    <LiveBadge :live-status="liveStatus[streamer.twitchUserId]" />
-                  </div>
-                  <div>
-                    <p class="font-semibold text-white text-sm">
-                      {{ streamer.twitchDisplayName }}
-                    </p>
-                    <a
-                      :href="`https://www.twitch.tv/${streamer.twitchLogin}`"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      class="text-xs text-gray-400 hover:text-purple-400 transition-colors"
-                    >
-                      @{{ streamer.twitchLogin }}
-                    </a>
-                  </div>
-                </div>
-                <div class="flex items-center gap-2">
-                  <UBadge
-                    v-if="streamer.broadcasterType === 'partner'"
-                    label="Partenaire"
-                    color="primary"
-                    variant="soft"
-                    size="xs"
-                  />
-                  <UBadge
-                    v-else-if="streamer.broadcasterType === 'affiliate'"
-                    label="Affilié"
-                    color="info"
-                    variant="soft"
-                    size="xs"
-                  />
-                  <UBadge
-                    v-else
-                    label="Non-affilié"
-                    color="warning"
-                    variant="soft"
-                    size="xs"
-                  />
-                  <UBadge
-                    :label="streamer.isActive ? 'Actif' : 'Inactif'"
-                    :color="streamer.isActive ? 'success' : 'neutral'"
-                    variant="soft"
-                    size="xs"
-                  />
-                  <!-- Badge d'autorisation -->
-                  <UBadge
-                    v-if="streamer.isOwner"
-                    color="primary"
-                    variant="soft"
-                    size="xs"
-                  >
-                    <div class="flex items-center gap-1">
-                      <UIcon name="i-lucide-infinity" class="size-3" />
-                      <span>Permanent</span>
-                    </div>
-                  </UBadge>
-                  <UBadge
-                    v-else-if="streamer.isPollAuthorized"
-                    color="success"
-                    variant="soft"
-                    size="xs"
-                  >
-                    <div class="flex items-center gap-1">
-                      <UIcon name="i-lucide-shield-check" class="size-3" />
-                      <span>{{ formatAuthTime(streamer.authorizationRemainingSeconds) }}</span>
-                    </div>
-                  </UBadge>
-                  <UBadge
-                    v-else
-                    label="Non autorisé"
-                    color="neutral"
-                    variant="soft"
-                    size="xs"
-                  />
-                </div>
-              </div>
-            </div>
-          </UCard>
-        </div>
+        <!-- Carte 2: Dashboard de la campagne sélectionnée -->
+        <MjCampaignDashboard
+          v-if="campaignsLoaded && selectedCampaignId && currentCampaign"
+          :campaign="currentCampaign"
+          :members="campaignMembers"
+          :live-status="liveStatus"
+          :members-loading="streamersLoading"
+        />
 
         <!-- No Campaign Message -->
-        <UCard v-else-if="campaignsLoaded && campaigns.length === 0">
+        <UCard v-else-if="campaignsLoaded && effectiveCampaigns.length === 0">
           <div class="text-center py-12">
-            <div class="bg-yellow-500/10 p-6 rounded-2xl mb-6 inline-block">
+            <div class="bg-yellow-light rounded-2xl mb-6 inline-block">
               <UIcon name="i-lucide-alert-circle" class="size-16 text-yellow-500" />
             </div>
-            <h2 class="text-2xl font-bold text-white mb-2">
+            <h2 class="text-2xl font-bold text-primary mb-2">
               Aucune campagne disponible
             </h2>
-            <p class="text-gray-400 mb-6 max-w-md mx-auto">
-              Créez une campagne pour commencer à gérer vos sondages multi-streams
+            <p class="text-muted mb-6 max-w-md mx-auto">
+              Créez votre premiere campagne pour commencer à configurer vos sondages
             </p>
             <UButton
               color="primary"
               size="lg"
               icon="i-lucide-plus"
               label="Créer ma première campagne"
-              @click="router.push('/mj/campaigns')"
+              @click="router.push('/mj/campaigns/create')"
             />
           </div>
         </UCard>
@@ -248,243 +56,14 @@
           @close="handleCloseOrCancel"
         />
 
-        <!-- Poll Sessions -->
-        <UCard>
-          <template #header>
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-3">
-                <UIcon name="i-lucide-list-checks" class="size-6 text-primary-500" />
-                <h2 class="text-xl font-semibold text-white">Sessions de sondages</h2>
-              </div>
-              <UButton
-                color="primary"
-                icon="i-lucide-plus"
-                label="Créer une session"
-                @click="showCreateSessionModal = true"
-              />
-            </div>
-          </template>
-
-          <!-- No Campaign Selected -->
-          <div
-            v-if="!selectedCampaignId"
-            class="text-center py-16"
-          >
-            <div class="bg-purple-500/10 p-6 rounded-2xl mb-4 inline-block">
-              <UIcon name="i-lucide-arrow-left" class="size-16 text-purple-500" />
-            </div>
-            <p class="text-gray-400">Sélectionnez une campagne pour gérer vos sessions</p>
-          </div>
-
-          <!-- Loading -->
-          <div
-            v-else-if="sessionsLoading"
-            class="flex flex-col items-center justify-center py-16"
-          >
-            <UIcon
-              name="i-lucide-loader"
-              class="size-12 text-primary-500 animate-spin mb-4"
-            />
-            <p class="text-gray-400">Chargement des sessions...</p>
-          </div>
-
-          <!-- Empty State -->
-          <div
-            v-else-if="sessions.length === 0"
-            class="text-center py-16"
-          >
-            <div class="bg-primary-500/10 p-6 rounded-2xl mb-6 inline-block">
-              <UIcon name="i-lucide-list-plus" class="size-16 text-primary-500" />
-            </div>
-            <h3 class="text-xl font-bold text-white mb-2">Aucune session créée</h3>
-            <p class="text-gray-400 mb-6">
-              Créez votre première session pour commencer
-            </p>
-            <UButton
-              color="primary"
-              icon="i-lucide-plus"
-              label="Créer une session"
-              @click="showCreateSessionModal = true"
-            />
-          </div>
-
-          <!-- Sessions List -->
-          <div v-else class="space-y-3">
-            <div
-              v-for="session in sessions"
-              :key="session.id"
-              class="flex items-center justify-between p-4 rounded-lg bg-gray-800/30 hover:bg-gray-800/50 transition-colors"
-            >
-              <div class="flex items-center gap-4">
-                <div class="bg-purple-500/10 p-3 rounded-lg">
-                  <UIcon name="i-lucide-list-checks" class="size-6 text-purple-500" />
-                </div>
-                <div>
-                  <h3 class="font-semibold text-white">{{ session.name }}</h3>
-                  <p class="text-sm text-gray-400">
-                    {{ session.pollsCount }} sondage(s) · {{ session.defaultDurationSeconds }}s par défaut
-                  </p>
-                </div>
-              </div>
-              <div class="flex gap-2">
-                <UButton
-                  variant="soft"
-                  color="neutral"
-                  icon="i-lucide-plus"
-                  label="Sondage"
-                  size="sm"
-                  @click="navigateToSessionPolls(session)"
-                />
-                <UButton
-                  color="primary"
-                  variant="soft"
-                  icon="i-lucide-rocket"
-                  label="Lancer"
-                  size="sm"
-                  :loading="launchSessionLoading && pendingLaunchSessionId === session.id"
-                  :disabled="launchSessionLoading || !!activeSession"
-                  @click="launchSession(session)"
-                />
-              </div>
-            </div>
-          </div>
-        </UCard>
+        <!-- Mes événements (sondages) -->
+        <MjEventsCard
+          v-if="selectedCampaignId"
+          :campaign-id="selectedCampaignId"
+          max-height="500px"
+        />
 
       </div>
-
-      <!-- Create Session Modal -->
-      <UModal v-model:open="showCreateSessionModal">
-        <template #header>
-          <h3 class="text-xl font-bold text-white">Créer une session</h3>
-        </template>
-
-        <template #body>
-          <div class="space-y-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-300 mb-2">Nom de la session</label>
-              <UInput
-                v-model="newSession.name"
-                type="text"
-                placeholder="Ex: Session d'exploration"
-                size="lg"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-300 mb-2">
-                Durée par défaut des sondages (secondes)
-              </label>
-              <UInput
-                v-model.number="newSession.defaultDurationSeconds"
-                type="number"
-                :min="15"
-                :max="1800"
-                size="lg"
-              />
-              <p class="text-xs text-gray-400 mt-2">
-                {{ Math.floor(newSession.defaultDurationSeconds / 60) }}m
-                {{ newSession.defaultDurationSeconds % 60 }}s
-              </p>
-            </div>
-          </div>
-        </template>
-
-        <template #footer>
-          <div class="flex justify-end gap-3">
-            <UButton color="neutral" variant="soft" label="Annuler" @click="showCreateSessionModal = false" />
-            <UButton
-              color="primary"
-              icon="i-lucide-check"
-              label="Créer"
-              :loading="creating"
-              @click="handleCreateSession"
-            />
-          </div>
-        </template>
-      </UModal>
-
-      <!-- Delete Session Confirmation Modal -->
-      <UModal v-model:open="showDeleteSessionConfirm">
-        <template #header>
-          <h3 class="text-xl font-bold text-white">Confirmer la suppression</h3>
-        </template>
-
-        <template #body>
-          <div class="space-y-4">
-            <div class="flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
-              <UIcon name="i-lucide-alert-triangle" class="size-8 text-red-500" />
-              <div>
-                <p class="text-white font-semibold">Attention !</p>
-                <p class="text-gray-300 text-sm">
-                  Êtes-vous sûr de vouloir supprimer la session "{{ currentSession?.name }}" ?
-                </p>
-              </div>
-            </div>
-            <p class="text-gray-400 text-sm">
-              Tous les sondages associés à cette session seront également supprimés. Cette action est irréversible.
-            </p>
-          </div>
-        </template>
-
-        <template #footer>
-          <div class="flex justify-end gap-3">
-            <UButton
-              color="neutral"
-              variant="soft"
-              label="Annuler"
-              @click="showDeleteSessionConfirm = false"
-            />
-            <UButton
-              color="error"
-              icon="i-lucide-trash-2"
-              label="Supprimer définitivement"
-              :loading="deleting"
-              @click="confirmDeleteSession"
-            />
-          </div>
-        </template>
-      </UModal>
-
-      <!-- Close Active Session Confirmation Modal -->
-      <UModal v-model:open="showCloseSessionConfirm">
-        <template #header>
-          <h3 class="text-xl font-bold text-white">Fermer la session active</h3>
-        </template>
-
-        <template #body>
-          <div class="space-y-4">
-            <div class="flex items-center gap-3 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
-              <UIcon name="i-lucide-alert-triangle" class="size-8 text-yellow-500" />
-              <div>
-                <p class="text-white font-semibold">Attention !</p>
-                <p class="text-gray-300 text-sm">
-                  Êtes-vous sûr de vouloir fermer la session de sondage en cours ?
-                </p>
-              </div>
-            </div>
-            <p class="text-gray-400 text-sm">
-              La progression actuelle (sondages lancés, résultats) sera perdue. Vous pourrez relancer la session plus tard.
-            </p>
-          </div>
-        </template>
-
-        <template #footer>
-          <div class="flex justify-end gap-3">
-            <UButton
-              color="neutral"
-              variant="soft"
-              label="Annuler"
-              @click="showCloseSessionConfirm = false"
-            />
-            <UButton
-              color="error"
-              icon="i-lucide-x"
-              label="Fermer la session"
-              @click="confirmCloseSession"
-            />
-          </div>
-        </template>
-      </UModal>
 
       <!-- Modal d'erreur Health Check avec Teleport -->
       <Teleport to="body">
@@ -512,32 +91,32 @@
               <UCard v-if="showHealthCheckError" class="max-w-lg mx-4">
                 <template #header>
                   <div class="flex items-center gap-3">
-                    <div class="p-2 rounded-lg bg-error-500/10">
+                    <div class="p-2 rounded-lg bg-error-light">
                       <UIcon name="i-lucide-alert-triangle" class="size-6 text-error-500" />
                     </div>
                     <div>
-                      <h3 class="text-lg font-semibold text-white">Tokens expirés</h3>
-                      <p class="text-sm text-gray-400 mt-0.5">Reconnexion requise</p>
+                      <h3 class="text-lg font-semibold text-primary">Tokens expirés</h3>
+                      <p class="text-sm text-muted mt-0.5">Reconnexion requise</p>
                     </div>
                   </div>
                 </template>
 
                 <div class="space-y-4">
-                  <div class="p-4 rounded-lg bg-error-500/10 border border-error-500/30">
-                    <p class="text-sm text-gray-300 mb-2">
+                  <div class="p-4 rounded-lg bg-error-light border border-error-light">
+                    <p class="text-sm text-secondary mb-2">
                       Les streamers suivants doivent se reconnecter pour rafraîchir leur token Twitch :
                     </p>
-                    <ul class="list-disc list-inside text-sm text-white space-y-1 ml-2">
+                    <ul class="list-disc list-inside text-sm text-primary space-y-1 ml-2">
                       <li v-for="streamerName in expiredStreamersNames" :key="streamerName">
                         {{ streamerName }}
                       </li>
                     </ul>
                   </div>
 
-                  <div class="p-3 rounded-lg bg-blue-500/10 border border-blue-500/30">
+                  <div class="p-3 rounded-lg bg-info-light border border-info-light">
                     <div class="flex items-start gap-2">
-                      <UIcon name="i-lucide-info" class="size-4 text-blue-400 mt-0.5 shrink-0" />
-                      <p class="text-xs text-gray-300">
+                      <UIcon name="i-lucide-info" class="size-4 text-info-500 mt-0.5 shrink-0" />
+                      <p class="text-xs text-secondary">
                         Les streamers concernés doivent se déconnecter puis se reconnecter à Tumulte pour renouveler leur autorisation Twitch.
                       </p>
                     </div>
@@ -560,10 +139,10 @@
         </Transition>
       </Teleport>
 
-      <!-- Waiting List Modal (streamers not ready) -->
+      <!-- Waiting List Modal (streamers not ready) - handled by EventsCard now -->
       <WaitingListModal
         :live-statuses="liveStatus"
-        @launched="handleWaitingListLaunched"
+        @launched="() => {}"
         @cancelled="() => {}"
       />
   </div>
@@ -574,13 +153,15 @@ import { ref, reactive, computed, onMounted, watch } from "vue";
 import { storeToRefs } from "pinia";
 import { useRoute, useRouter } from "vue-router";
 import { usePollTemplates } from "@/composables/usePollTemplates";
-import { useCampaigns, type CampaignMember } from "@/composables/useCampaigns";
+import { useCampaigns } from "@/composables/useCampaigns";
+import type { CampaignMembership } from "@/types";
 import { usePollControlStore } from "@/stores/pollControl";
-import { useReadiness } from "@/composables/useReadiness";
 import { useWebSocket } from "@/composables/useWebSocket";
 import { useSupportTrigger } from "@/composables/useSupportTrigger";
 import { useActionButton } from "@/composables/useActionButton";
+import { useMockData } from "@/composables/useMockData";
 import { loggers } from "@/utils/logger";
+import type { MockDataModule } from "@/composables/useMockData";
 
 definePageMeta({
   layout: "authenticated" as const,
@@ -596,16 +177,22 @@ const {
   deleteTemplate,
   launchPoll,
 } = usePollTemplates();
-const { campaigns, fetchCampaigns, selectedCampaign, getCampaignMembers, getLiveStatus } = useCampaigns();
+const { campaigns, fetchCampaigns, getCampaignMembers, getLiveStatus } = useCampaigns();
 const { triggerSupportForError } = useSupportTrigger();
+const { enabled: mockEnabled, loadMockData, withMockFallback } = useMockData();
+
+// Mock data
+const mockData = ref<MockDataModule | null>(null);
+
+// Local ref pour les campagnes effectives (permet le mock data fallback)
+const effectiveCampaigns = ref<typeof campaigns.value>([]);
 
 // WebSocket setup
 const { subscribeToPoll } = useWebSocket();
 // Note: currentPollInstanceId est maintenant dans le store Pinia
 const pollSubscriptionCleanup = ref<(() => void) | null>(null);
 
-// Readiness (for waiting list modal)
-const { launchSession: launchSessionWithReadiness } = useReadiness();
+// NOTE: Session launch with readiness check is now handled by MjEventsCard
 
 // Interfaces
 interface Poll {
@@ -616,16 +203,10 @@ interface Poll {
   channelPointsPerVote?: number | null;
 }
 
-interface Session {
+// Interface pour l'état de session active (contrôle du poll)
+// Note: "Session" ici fait référence à l'état de contrôle actif, pas à l'ancienne entité PollSession
+interface ActivePollSession {
   id: string;
-  name: string;
-  pollsCount: number;
-  defaultDurationSeconds: number;
-}
-
-interface ActiveSession {
-  id: string;
-  name: string;
   defaultDurationSeconds: number;
 }
 
@@ -644,29 +225,19 @@ interface StreamerDisplay {
 
 // Campaign management
 const campaignsLoaded = ref(false);
-const selectedCampaignId = ref<string | null>(null);
 
-// Trier les campagnes : la campagne sélectionnée en premier
-const sortedCampaigns = computed(() => {
-  if (!selectedCampaignId.value) {
-    return campaigns.value;
-  }
+// Utiliser le composable pour la persistance localStorage
+const { selectedCampaignId, loadFromStorage } = useSelectedCampaign();
 
-  const selected = campaigns.value.find(c => c.id === selectedCampaignId.value);
-  const others = campaigns.value.filter(c => c.id !== selectedCampaignId.value);
-
-  return selected ? [selected, ...others] : campaigns.value;
-});
-
-// Fonction de sélection de campagne
-const selectCampaign = (campaignId: string) => {
-  selectedCampaignId.value = campaignId;
-};
+// Computed pour la campagne actuellement sélectionnée
+const currentCampaign = computed(() =>
+  effectiveCampaigns.value.find((c) => c.id === selectedCampaignId.value) || null
+);
 
 
 // Streamers data
 const streamersLoading = ref(false);
-const campaignMembers = ref<CampaignMember[]>([]);
+const campaignMembers = ref<CampaignMembership[]>([]);
 
 // Live status
 import type { LiveStatusMap } from "@/types";
@@ -691,7 +262,7 @@ const selectedCampaignStreamers = computed<StreamerDisplay[]>(() => {
     }));
 });
 
-const formatAuthTime = (seconds: number | null): string => {
+const _formatAuthTime = (seconds: number | null): string => {
   if (!seconds) return 'Non autorisé';
 
   // Si l'autorisation est > 1 an (31536000 secondes), c'est "permanent"
@@ -709,9 +280,18 @@ const formatAuthTime = (seconds: number | null): string => {
 const fetchLiveStatus = async (campaignId: string) => {
   try {
     const status = await getLiveStatus(campaignId);
-    liveStatus.value = status;
+    // Utiliser mock data si vide et mock activé
+    if (mockEnabled.value && Object.keys(status).length === 0 && mockData.value) {
+      liveStatus.value = mockData.value.mockLiveStatus;
+    } else {
+      liveStatus.value = status;
+    }
   } catch (error) {
     loggers.campaign.error("Error fetching live status:", error);
+    // Fallback sur mock data en cas d'erreur
+    if (mockEnabled.value && mockData.value) {
+      liveStatus.value = mockData.value.mockLiveStatus;
+    }
   }
 };
 
@@ -723,12 +303,22 @@ const loadCampaignMembers = async (campaignId: string) => {
       getCampaignMembers(campaignId),
       fetchLiveStatus(campaignId),
     ]);
-    campaignMembers.value = members;
+    // Utiliser mock data si vide
+    // Cast nécessaire car getCampaignMembers retourne un type légèrement différent de CampaignMembership
+    campaignMembers.value = withMockFallback(
+      members as unknown as CampaignMembership[],
+      mockData.value?.mockMembers ?? []
+    );
     loggers.campaign.debug('Campaign members loaded:', campaignMembers.value);
     loggers.campaign.debug('Streamers with images:', selectedCampaignStreamers.value);
   } catch (error) {
     loggers.campaign.error('Failed to load campaign members:', error);
-    campaignMembers.value = [];
+    // Fallback sur mock data en cas d'erreur
+    if (mockEnabled.value && mockData.value) {
+      campaignMembers.value = mockData.value.mockMembers;
+    } else {
+      campaignMembers.value = [];
+    }
   } finally {
     streamersLoading.value = false;
   }
@@ -815,22 +405,11 @@ const _handleDeleteTemplate = async (templateId: string) => {
 };
 
 // ==========================================
-// POLL SESSIONS MANAGEMENT
+// POLL CONTROL (Active Poll State)
 // ==========================================
 
-// Sessions data
-const sessions = ref<Session[]>([]);
-const sessionsLoading = ref(false);
-const showCreateSessionModal = ref(false);
-const showDeleteSessionConfirm = ref(false);
+// UI state for modals
 const showCloseSessionConfirm = ref(false);
-const currentSession = ref<Session | null>(null);
-const deleting = ref(false);
-
-const newSession = reactive({
-  name: "",
-  defaultDurationSeconds: 60,
-});
 
 // ==========================================
 // POLL CONTROL CARD (Live Session)
@@ -857,9 +436,6 @@ const { saveCurrentPollState, restorePollState, validateWithBackend, startHeartb
 // ==========================================
 // ACTION BUTTONS WITH DEBOUNCING (Phase 1)
 // ==========================================
-
-// Ref pour stocker la session en cours de lancement (pour le debouncing par session)
-const pendingLaunchSessionId = ref<string | null>(null);
 
 // Wrapper pour sendPoll avec debouncing
 const sendPollButton = useActionButton({
@@ -891,103 +467,6 @@ const currentPoll = computed<Poll | null>(() => {
   return activeSessionPolls.value[currentPollIndex.value] as Poll;
 });
 
-// Fonction pour lancer une session (interne)
-const launchSessionInternal = async (session: Session) => {
-  if (!selectedCampaignId.value) return;
-
-  // Vérifier si une session est déjà active
-  if (activeSession.value) {
-    return;
-  }
-
-  try {
-    // Utiliser le composable useReadiness pour lancer avec gestion de la waiting list
-    const result = await launchSessionWithReadiness(selectedCampaignId.value, session.id);
-
-    // Si échec (waiting list ouverte), on arrête là
-    if (!result.success) {
-      loggers.poll.debug('Waiting list modal opened');
-      return;
-    }
-
-    // Succès - configurer la session active
-    const responseData = result.data as { polls: Poll[] };
-    const polls = responseData?.polls || [];
-
-    // Vérifier s'il y a au moins un sondage
-    if (polls.length === 0) {
-      return;
-    }
-
-    activeSession.value = session;
-    activeSessionPolls.value = polls;
-    currentPollIndex.value = 0;
-    pollStatus.value = 'idle';
-    countdown.value = 0;
-    pollResults.value = null;
-    launchedPolls.value = [];
-    pollStartTime.value = null;
-    pollDuration.value = null;
-
-    // Sauvegarder explicitement l'état immédiatement
-    pollControlStore.saveState();
-
-    // Phase 3/5: Démarrer le heartbeat pour la nouvelle session
-    if (selectedCampaignId.value) {
-      startHeartbeat(selectedCampaignId.value, session.id);
-    }
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "Erreur inconnue";
-    loggers.poll.error('Session Launch Error:', errorMessage);
-    triggerSupportForError("session_launch", error);
-  } finally {
-    pendingLaunchSessionId.value = null;
-  }
-};
-
-// State pour le loading du bouton Lancer
-const launchSessionLoading = ref(false);
-const launchSessionLastClick = ref(0);
-const LAUNCH_SESSION_COOLDOWN = 1000;
-
-// Handler public pour lancer une session avec debouncing manuel
-// (useActionButton ne convient pas ici car on a besoin de passer la session en paramètre)
-const launchSession = async (session: Session) => {
-  const now = Date.now();
-
-  // Protection anti-double-clic
-  if (now - launchSessionLastClick.value < LAUNCH_SESSION_COOLDOWN) {
-    return;
-  }
-
-  // Ne pas lancer si déjà en cours
-  if (launchSessionLoading.value || pendingLaunchSessionId.value === session.id) {
-    return;
-  }
-
-  launchSessionLastClick.value = now;
-  launchSessionLoading.value = true;
-  pendingLaunchSessionId.value = session.id;
-
-  try {
-    await launchSessionInternal(session);
-  } finally {
-    launchSessionLoading.value = false;
-    // Cooldown avant de pouvoir relancer
-    setTimeout(() => {
-      pendingLaunchSessionId.value = null;
-    }, LAUNCH_SESSION_COOLDOWN);
-  }
-};
-
-// Handler quand la waiting list réussit à lancer
-const handleWaitingListLaunched = () => {
-  // Recharger les sessions pour mettre à jour l'état
-  if (selectedCampaignId.value) {
-    fetchSessions(selectedCampaignId.value);
-  }
-};
-
 // Gestion intelligente du bouton fermer/annuler (interne)
 const handleCloseOrCancelInternal = async () => {
   if (pollStatus.value === 'sending') {
@@ -1005,7 +484,7 @@ const handleCloseOrCancel = () => {
 };
 
 // Confirmer la fermeture de la session active
-const confirmCloseSession = () => {
+const _confirmCloseSession = () => {
   // Nettoyer la souscription WebSocket
   if (pollSubscriptionCleanup.value) {
     pollSubscriptionCleanup.value();
@@ -1103,7 +582,7 @@ const sendPollInternal = async () => {
 
   pollStatus.value = 'sending';
   pollStartTime.value = Date.now();
-  pollDuration.value = (activeSession.value as ActiveSession).defaultDurationSeconds;
+  pollDuration.value = (activeSession.value as ActivePollSession).defaultDurationSeconds;
   if (!launchedPolls.value.includes(currentPollIndex.value)) {
     launchedPolls.value.push(currentPollIndex.value);
   }
@@ -1244,7 +723,7 @@ const sendPollInternal = async () => {
     }
 
     // Démarrer le compte à rebours
-    countdown.value = (activeSession.value as ActiveSession).defaultDurationSeconds;
+    countdown.value = (activeSession.value as ActivePollSession).defaultDurationSeconds;
     startCountdown();
 
     // Sauvegarder l'état initial du poll lancé
@@ -1303,16 +782,29 @@ const startCountdown = () => {
 
 // Reprendre le countdown si un sondage était en cours lors du chargement
 onMounted(async () => {
+  // 0. Charger les mock data si disponibles
+  mockData.value = await loadMockData();
+
   // 1. Charger les campagnes d'abord
   await fetchCampaigns();
+  // Utiliser mock data si vide, sinon utiliser les campagnes de l'API
+  if (mockEnabled.value && campaigns.value.length === 0 && mockData.value) {
+    effectiveCampaigns.value = mockData.value.mockCampaigns;
+  } else {
+    effectiveCampaigns.value = [...campaigns.value];
+  }
   campaignsLoaded.value = true;
 
-  // Check if campaign is specified in URL
+  // Charger la campagne depuis localStorage d'abord
+  loadFromStorage();
+
+  // Check if campaign is specified in URL (priorité sur localStorage)
   const campaignFromUrl = route.query.campaign as string | undefined;
-  if (campaignFromUrl && campaigns.value.some((c) => c.id === campaignFromUrl)) {
+  if (campaignFromUrl && effectiveCampaigns.value.some((c) => c.id === campaignFromUrl)) {
     selectedCampaignId.value = campaignFromUrl;
-  } else if (campaigns.value.length > 0) {
-    selectedCampaignId.value = campaigns.value[0]?.id ?? null;
+  } else if (!selectedCampaignId.value || !effectiveCampaigns.value.some((c) => c.id === selectedCampaignId.value)) {
+    // Si pas de campagne valide dans localStorage, sélectionner la première
+    selectedCampaignId.value = effectiveCampaigns.value[0]?.id ?? null;
   }
 
   // 2. Forcer le rechargement de l'état depuis localStorage côté client
@@ -1332,7 +824,7 @@ onMounted(async () => {
     restorePollState(currentPollIndex.value);
 
     // Phase 3: Valider l'état local avec le backend
-    const sessionData = activeSession.value as ActiveSession;
+    const sessionData = activeSession.value as ActivePollSession;
     if (selectedCampaignId.value && sessionData.id) {
       loggers.poll.debug('Validating state with backend...');
       const wasSync = await validateWithBackend(selectedCampaignId.value, sessionData.id);
@@ -1444,108 +936,17 @@ onMounted(async () => {
 // NOTE: Les résultats sont maintenant reçus en temps réel via WebSocket (événements poll:update et poll:end)
 // Plus besoin de polling HTTP pour récupérer les résultats
 
-// Charger les sessions quand la campagne change
+// Charger les membres quand la campagne change
 watch(selectedCampaignId, async (newId) => {
   if (newId) {
-    selectedCampaign.value = campaigns.value.find((c) => c.id === newId) || null;
     await loadCampaignMembers(newId);
-    await fetchSessions(newId);
   } else {
     campaignMembers.value = [];
-    sessions.value = [];
   }
 });
 
-const fetchSessions = async (campaignId: string) => {
-  sessionsLoading.value = true;
-  try {
-    const response = await fetch(`${API_URL}/mj/campaigns/${campaignId}/sessions`, {
-      credentials: "include",
-    });
-    if (!response.ok) throw new Error("Failed to fetch sessions");
-    const data = await response.json();
-    sessions.value = data.data;
-  } catch (error) {
-    triggerSupportForError("session_fetch", error);
-  } finally {
-    sessionsLoading.value = false;
-  }
-};
-
-const handleCreateSession = async () => {
-  if (!newSession.name || !newSession.defaultDurationSeconds) {
-    return;
-  }
-
-  if (!selectedCampaignId.value) {
-    return;
-  }
-
-  creating.value = true;
-  try {
-    const response = await fetch(
-      `${API_URL}/mj/campaigns/${selectedCampaignId.value}/sessions`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(newSession),
-      }
-    );
-
-    if (!response.ok) throw new Error("Failed to create session");
-
-    showCreateSessionModal.value = false;
-    newSession.name = "";
-    newSession.defaultDurationSeconds = 60;
-
-    await fetchSessions(selectedCampaignId.value);
-  } catch (error) {
-    triggerSupportForError("session_create", error);
-  } finally {
-    creating.value = false;
-  }
-};
-
-const _handleDeleteSession = () => {
-  showDeleteSessionConfirm.value = true;
-};
-
-const confirmDeleteSession = async () => {
-  if (!selectedCampaignId.value || !currentSession.value) return;
-
-  deleting.value = true;
-  try {
-    const response = await fetch(
-      `${API_URL}/mj/campaigns/${selectedCampaignId.value}/sessions/${currentSession.value.id}`,
-      {
-        method: "DELETE",
-        credentials: "include",
-      }
-    );
-
-    if (!response.ok) throw new Error("Failed to delete session");
-
-    showDeleteSessionConfirm.value = false;
-    currentSession.value = null;
-
-    await fetchSessions(selectedCampaignId.value);
-  } catch (error) {
-    triggerSupportForError("session_delete", error);
-  } finally {
-    deleting.value = false;
-  }
-};
-
-// Navigation vers la page d'ajout de sondage depuis une session
-const navigateToSessionPolls = (session: Session) => {
-  if (!selectedCampaignId.value) return;
-
-  router.push({
-    path: `/mj/sessions/${session.id}/polls/create`,
-    query: { campaignId: selectedCampaignId.value }
-  });
-};
+// NOTE: Session management has been removed - polls are now directly linked to campaigns
+// Poll creation/editing is handled by MjEventsCard component
 
 // Reset modal on close
 watch(showCreateModal, (isOpen) => {

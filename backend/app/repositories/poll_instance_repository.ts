@@ -29,8 +29,16 @@ export class PollInstanceRepository {
     return await PollInstance.query().where('status', status)
   }
 
+  async findCompletedByCampaign(campaignId: string): Promise<PollInstance[]> {
+    return await PollInstance.query()
+      .where('campaignId', campaignId)
+      .where('status', 'ENDED')
+      .orderBy('ended_at', 'desc')
+  }
+
   async create(data: {
     templateId?: string | null
+    pollId?: string | null
     campaignId: string
     createdBy: string
     title: string

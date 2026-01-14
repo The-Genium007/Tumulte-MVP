@@ -6,11 +6,11 @@
 
 <style scoped>
 .card-footer {
-  padding-top: 1rem;
-  border-top: 1px solid rgb(229 231 235);
-  margin-top: 1rem;
+  padding-top: var(--spacing-4);
+  border-top: var(--border-width-1) solid var(--color-border-default);
+  margin-top: var(--spacing-4);
   display: flex;
-  gap: 0.75rem;
+  gap: var(--spacing-3);
   align-items: center;
   justify-content: flex-end;
 }

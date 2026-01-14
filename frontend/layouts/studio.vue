@@ -29,6 +29,6 @@ onMounted(async () => {
   width: 100vw;
   height: 100vh;
   overflow: hidden;
-  background: #0f0f1a;
+  background: var(--color-dark-bg-base);
 }
 </style>

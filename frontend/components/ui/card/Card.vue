@@ -32,40 +32,40 @@ const cardClasses = computed(() => {
 
 <style scoped>
 .card {
-  background-color: white;
-  border-radius: 0.5rem;
+  background-color: var(--color-bg-elevated);
+  border-radius: var(--radius-lg);
   overflow: hidden;
-  transition: all 0.2s ease;
+  transition: all var(--transition-normal) ease;
 }
 
 /* Variants */
 .card-default {
-  border: 1px solid rgb(229 231 235);
+  border: var(--border-width-1) solid var(--color-border-default);
 }
 
 .card-bordered {
-  border: 2px solid rgb(209 213 219);
+  border: var(--border-width-2) solid var(--color-border-strong);
 }
 
 .card-elevated {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--shadow-md);
 }
 
 /* Padding */
 .card-padding-none {
-  padding: 0;
+  padding: var(--spacing-0);
 }
 
 .card-padding-sm {
-  padding: 0.75rem;
+  padding: var(--spacing-3);
 }
 
 .card-padding-md {
-  padding: 1.25rem;
+  padding: var(--spacing-5);
 }
 
 .card-padding-lg {
-  padding: 2rem;
+  padding: var(--spacing-8);
 }
 
 /* Hoverable */
@@ -75,6 +75,6 @@ const cardClasses = computed(() => {
 
 .card-hoverable:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-lg);
 }
 </style>

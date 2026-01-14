@@ -1,13 +1,23 @@
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-gray-950 flex flex-col">
-    <!-- Header -->
-    <AppHeader />
+  <div class="min-h-screen bg-subtle flex flex-col">
+    <!-- PWA Install Prompt -->
+    <PwaInstallPrompt />
+
+    <!-- Header flottant -->
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 pt-6 max-w-7xl">
+      <AppHeader />
+    </div>
 
     <!-- Main Content -->
-    <main class="flex-1 flex flex-col">
+    <main class="flex-1 flex flex-col pb-20 lg:pb-0">
       <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-6 max-w-7xl flex-1">
+        <!-- Indicateur hors-ligne -->
+        <OfflineIndicator />
+
         <!-- Banner de permission notifications push -->
-        <NotificationsPushPermissionBanner />
+        <div class="pb-2">
+          <NotificationsPushPermissionBanner />
+        </div>
 
         <!-- Page Content -->
         <slot />
@@ -16,6 +26,9 @@
 
     <!-- Footer -->
     <AppFooter />
+
+    <!-- Bottom Navigation (mobile only) -->
+    <BottomNavigation />
 
     <!-- Widgets globaux -->
     <SupportWidget />

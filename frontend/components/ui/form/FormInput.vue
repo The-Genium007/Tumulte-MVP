@@ -49,13 +49,13 @@ const inputClasses = computed(() => {
   ]
 
   if (props.error) {
-    classes.push('border-red-300 focus:ring-red-500')
+    classes.push('border-error-300 focus:ring-error-500')
   } else {
-    classes.push('border-gray-300 focus:ring-indigo-500')
+    classes.push('border-neutral-300 focus:ring-brand-500')
   }
 
   if (props.disabled) {
-    classes.push('bg-gray-100 cursor-not-allowed')
+    classes.push('bg-disabled cursor-not-allowed')
   }
 
   return classes.join(' ')
@@ -71,6 +71,6 @@ const handleInput = (event: Event) => {
 
 <style scoped>
 .form-input::placeholder {
-  color: rgb(156 163 175);
+  color: var(--color-neutral-400);
 }
 </style>

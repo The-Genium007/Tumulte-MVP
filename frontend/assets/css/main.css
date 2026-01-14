@@ -1,7 +1,377 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
 
-/* Masquer les modals des gestionnaires de mots de passe */
+/* ============================================================================
+   TUMULTE - THEME CONFIGURATION
+   ============================================================================
+
+   Pour personnaliser le thème, modifiez uniquement les variables dans la
+   section "CONFIGURATION RAPIDE" ci-dessous. Les palettes complètes sont
+   générées automatiquement via OKLCH.
+
+   ============================================================================ */
+
+@theme {
+  /* ==========================================================================
+     🎨 CONFIGURATION RAPIDE - Modifiez ces valeurs pour changer le thème
+     ========================================================================== */
+
+  /* Couleur principale (brand/primary) - base: #0f0b04 */
+  --theme-brand: #0f0b04;
+  --theme-brand: oklch(0.152 0.018 85.45);
+
+  /* Couleur secondaire - base: #d8b790 */
+  --theme-secondary: #d8b790;
+  --theme-secondary: oklch(0.7986 0.0646 71.36);
+
+  /* Couleur de fond de page #F2E4D4*/
+  --theme-bg-page: #F2E4D4;
+  --theme-bg-page: oklch(0.9257 0.0263 71.18);
+
+  /* Couleurs sémantiques (modifier la teinte OKLCH si besoin) */
+  --theme-success: #4ade80;  /* Vert */
+  --theme-success: oklch(0.8537 0.1986 118.21);
+  --theme-error: #dc2626;     /* Rouge */
+  --theme-error: oklch(0.5808 0.2 32.75);
+  --theme-warning: #f59e0b;   /* Ambre */
+  --theme-warning: oklch(0.7353 0.1763 48.5);
+  --theme-info: #3b82f6;     /* Bleu */
+  --theme-info: oklch(0.7289 0.1494 241.58);
+  --theme-neutral: #737373;  /* Gris */
+  --theme-neutral: oklch(0.499 0.034 53.48);
+
+  /* Polices */
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  --font-heading: 'Aoboshi One', serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+
+  /* ==========================================================================
+     PALETTES GÉNÉRÉES - Ne pas modifier directement
+     ========================================================================== */
+
+  /* Brand / Primary - Palette générée depuis --theme-brand */
+  --color-brand-50: #f5f3f0;
+  --color-brand-100: #e8e4dd;
+  --color-brand-200: #d4cdc2;
+  --color-brand-300: #b5aa99;
+  --color-brand-400: #8a7d6a;
+  --color-brand-500: var(--theme-brand);
+  --color-brand-600: #0d0a03;
+  --color-brand-600: color-mix(in oklch, var(--theme-brand) 90%, black);
+  --color-brand-700: #0b0802;
+  --color-brand-700: color-mix(in oklch, var(--theme-brand) 80%, black);
+  --color-brand-800: #080602;
+  --color-brand-800: color-mix(in oklch, var(--theme-brand) 70%, black);
+  --color-brand-900: #060502;
+  --color-brand-900: color-mix(in oklch, var(--theme-brand) 60%, black);
+  --color-brand-950: #040301;
+  --color-brand-950: color-mix(in oklch, var(--theme-brand) 50%, black);
+
+  /* Alias primary → brand */
+  --color-primary-50: var(--color-brand-50);
+  --color-primary-100: var(--color-brand-100);
+  --color-primary-200: var(--color-brand-200);
+  --color-primary-300: var(--color-brand-300);
+  --color-primary-400: var(--color-brand-400);
+  --color-primary-500: var(--color-brand-500);
+  --color-primary-600: var(--color-brand-600);
+  --color-primary-700: var(--color-brand-700);
+  --color-primary-800: var(--color-brand-800);
+  --color-primary-900: var(--color-brand-900);
+  --color-primary-950: var(--color-brand-950);
+
+  /* Secondary - Palette générée depuis --theme-secondary */
+  --color-secondary-50: #f5f3f0;
+  --color-secondary-100: #e8e4dd;
+  --color-secondary-200: #d4cdc2;
+  --color-secondary-300: #b5aa99;
+  --color-secondary-400: #8a7d6a;
+  --color-secondary-500: var(--theme-secondary);
+  --color-secondary-600: #c2a582;
+  --color-secondary-600: color-mix(in oklch, var(--theme-secondary) 90%, black);
+  --color-secondary-700: #ad9374;
+  --color-secondary-700: color-mix(in oklch, var(--theme-secondary) 80%, black);
+  --color-secondary-800: #988166;
+  --color-secondary-800: color-mix(in oklch, var(--theme-secondary) 70%, black);
+  --color-secondary-900: #836f58;
+  --color-secondary-900: color-mix(in oklch, var(--theme-secondary) 60%, black);
+  --color-secondary-950: #6e5d4a;
+  --color-secondary-950: color-mix(in oklch, var(--theme-secondary) 50%, black);
+
+  /* Neutral - Palette OKLCH auto-générée */
+  --color-neutral-500: var(--theme-neutral);
+  --color-neutral-50: #fafafa;
+  --color-neutral-50: oklch(from var(--color-neutral-500) 98% 0.005 h);
+  --color-neutral-100: #f5f5f5;
+  --color-neutral-100: oklch(from var(--color-neutral-500) 96% 0.01 h);
+  --color-neutral-200: #e5e5e5;
+  --color-neutral-200: oklch(from var(--color-neutral-500) 92% 0.01 h);
+  --color-neutral-300: #d4d4d4;
+  --color-neutral-300: oklch(from var(--color-neutral-500) 82% 0.02 h);
+  --color-neutral-400: #a3a3a3;
+  --color-neutral-400: oklch(from var(--color-neutral-500) 65% 0.02 h);
+
+  /* Success - Palette OKLCH auto-générée */
+  --color-success-500: var(--theme-success);
+  --color-success-50: #f0fdf4;
+  --color-success-50: oklch(from var(--color-success-500) 97% 0.02 h);
+  --color-success-100: #dcfce7;
+  --color-success-100: oklch(from var(--color-success-500) 94% 0.04 h);
+  --color-success-200: #bbf7d0;
+  --color-success-200: oklch(from var(--color-success-500) 88% 0.08 h);
+  --color-success-300: #86efac;
+  --color-success-300: oklch(from var(--color-success-500) 82% 0.12 h);
+  --color-success-400: #4ade80;
+  --color-success-400: oklch(from var(--color-success-500) 80% 0.22 h);
+  --color-success-600: #22c55e;
+  --color-success-600: oklch(from var(--color-success-500) 55% 0.22 h);
+  --color-success-700: #16a34a;
+  --color-success-700: oklch(from var(--color-success-500) 45% 0.20 h);
+  --color-success-800: #15803d;
+  --color-success-800: oklch(from var(--color-success-500) 35% 0.16 h);
+  --color-success-900: #14532d;
+  --color-success-900: oklch(from var(--color-success-500) 25% 0.12 h);
+
+  /* Error - Palette OKLCH auto-générée */
+  --color-error-500: var(--theme-error);
+  --color-error-50: #fef2f2;
+  --color-error-50: oklch(from var(--color-error-500) 97% 0.02 h);
+  --color-error-100: #fee2e2;
+  --color-error-100: oklch(from var(--color-error-500) 94% 0.04 h);
+  --color-error-200: #fecaca;
+  --color-error-200: oklch(from var(--color-error-500) 88% 0.08 h);
+  --color-error-300: #fca5a5;
+  --color-error-300: oklch(from var(--color-error-500) 82% 0.12 h);
+  --color-error-400: #f87171;
+  --color-error-400: oklch(from var(--color-error-500) 70% 0.20 h);
+  --color-error-600: #dc2626;
+  --color-error-600: oklch(from var(--color-error-500) 55% 0.22 h);
+  --color-error-700: #b91c1c;
+  --color-error-700: oklch(from var(--color-error-500) 45% 0.20 h);
+  --color-error-800: #991b1b;
+  --color-error-800: oklch(from var(--color-error-500) 35% 0.16 h);
+  --color-error-900: #7f1d1d;
+  --color-error-900: oklch(from var(--color-error-500) 25% 0.12 h);
+
+  /* Warning - Palette OKLCH auto-générée */
+  --color-warning-500: var(--theme-warning);
+  --color-warning-50: #fffbeb;
+  --color-warning-50: oklch(from var(--color-warning-500) 97% 0.02 h);
+  --color-warning-100: #fef3c7;
+  --color-warning-100: oklch(from var(--color-warning-500) 94% 0.04 h);
+  --color-warning-200: #fde68a;
+  --color-warning-200: oklch(from var(--color-warning-500) 88% 0.08 h);
+  --color-warning-300: #fcd34d;
+  --color-warning-300: oklch(from var(--color-warning-500) 82% 0.12 h);
+  --color-warning-400: #fbbf24;
+  --color-warning-400: oklch(from var(--color-warning-500) 85% 0.18 h);
+  --color-warning-600: #d97706;
+  --color-warning-600: oklch(from var(--color-warning-500) 70% 0.16 h);
+  --color-warning-700: #b45309;
+  --color-warning-700: oklch(from var(--color-warning-500) 55% 0.14 h);
+  --color-warning-800: #92400e;
+  --color-warning-800: oklch(from var(--color-warning-500) 45% 0.12 h);
+  --color-warning-900: #78350f;
+  --color-warning-900: oklch(from var(--color-warning-500) 35% 0.10 h);
+
+  /* Info - Palette OKLCH auto-générée */
+  --color-info-500: var(--theme-info);
+  --color-info-50: #eff6ff;
+  --color-info-50: oklch(from var(--color-info-500) 97% 0.02 h);
+  --color-info-100: #dbeafe;
+  --color-info-100: oklch(from var(--color-info-500) 94% 0.04 h);
+  --color-info-200: #bfdbfe;
+  --color-info-200: oklch(from var(--color-info-500) 88% 0.08 h);
+  --color-info-300: #93c5fd;
+  --color-info-300: oklch(from var(--color-info-500) 82% 0.12 h);
+  --color-info-400: #60a5fa;
+  --color-info-400: oklch(from var(--color-info-500) 72% 0.18 h);
+  --color-info-600: #2563eb;
+  --color-info-600: oklch(from var(--color-info-500) 55% 0.16 h);
+  --color-info-700: #1d4ed8;
+  --color-info-700: oklch(from var(--color-info-500) 45% 0.14 h);
+  --color-info-800: #1e40af;
+  --color-info-800: oklch(from var(--color-info-500) 35% 0.12 h);
+  --color-info-900: #1e3a8a;
+  --color-info-900: oklch(from var(--color-info-500) 25% 0.10 h);
+
+  /* Live (utilise error) */
+  --color-live: var(--theme-error);
+
+  /* ==========================================================================
+     INTERFACE - BACKGROUNDS
+     ========================================================================== */
+  --color-bg-page: var(--theme-bg-page);
+  --color-bg-subtle: var(--theme-bg-page);
+  --color-bg-muted: #FFFFFF;
+  --color-bg-elevated: #FFFFFF;
+  --color-bg-inverse: #0f172a;
+  --color-bg-brand-light: #f5f3ff;
+  --color-bg-primary-light: #f5f3ff;
+  --color-bg-success-light: #f0fdf4;
+  --color-bg-error-light: #fef2f2;
+  --color-bg-warning-light: #fffbeb;
+  --color-bg-info-light: #eff6ff;
+
+  /* ==========================================================================
+     INTERFACE - TEXTES
+     ========================================================================== */
+  --color-text-primary: #0E0D04;
+  --color-text-secondary: #475569;
+  --color-text-muted: #64748b;
+  --color-text-disabled: #94a3b8;
+  --color-text-inverse: #ffffff;
+
+  /* ==========================================================================
+     DARK UI (Studio / Overlay Editor)
+     Teintes marron/beige sombres cohérentes avec le thème principal
+     ========================================================================== */
+  --color-dark-bg-base: #0f0d0a;
+  --color-dark-bg-surface: #1a1714;
+  --color-dark-bg-elevated: #2a2520;
+  --color-dark-bg-hover: #3a332c;
+  --color-dark-bg-deepest: #0a0908;
+  --color-dark-border: #2a2520;
+  --color-dark-text-primary: #f5f3f0;
+  --color-dark-text-secondary: #d8cfc4;
+  --color-dark-text-muted: #a89888;
+  --color-dark-text-subtle: #786858;
+
+  /* ==========================================================================
+     OVERLAY / POLL CARD
+     Accents marron/doré cohérents avec le thème principal
+     ========================================================================== */
+  --color-overlay-bg-dark: rgba(15, 13, 10, 0.95);
+  --color-overlay-bg-dark-alt: rgba(26, 23, 20, 0.9);
+  --color-overlay-shadow-brand: rgba(216, 183, 144, 0.4);
+  --color-overlay-shadow-brand-soft: rgba(216, 183, 144, 0.2);
+  --color-overlay-border-brand: rgba(216, 183, 144, 0.3);
+  --color-overlay-border-brand-soft: rgba(216, 183, 144, 0.15);
+  --color-overlay-highlight: rgba(255, 248, 240, 0.1);
+  --color-overlay-highlight-strong: rgba(255, 248, 240, 0.2);
+  --color-overlay-highlight-soft: rgba(255, 248, 240, 0.3);
+  --color-overlay-text-light: #f5efe8;
+  --color-overlay-backdrop: rgba(15, 13, 10, 0.5);
+
+  /* ==========================================================================
+     GIZMO / TRANSFORM HANDLES
+     Accents dorés pour la sélection
+     ========================================================================== */
+  --color-gizmo-border: #d8b790;
+  --color-gizmo-handle: #e8c9a0;
+  --color-gizmo-handle-glow: #d8b790;
+
+  /* ==========================================================================
+     GRADIENT BRAND
+     Dégradé marron/doré cohérent avec le thème
+     ========================================================================== */
+  --color-gradient-brand-start: #8a7d6a;
+  --color-gradient-brand-middle: #b5aa99;
+  --color-gradient-brand-end: #d8b790;
+}
+
+/* ============================================================================
+   THÈME CLAIR PERMANENT
+   ============================================================================ */
+
+:root {
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: light;
+}
+
+.dark {
+  --ui-text-dimmed: var(--ui-color-neutral-400);
+  --ui-text-muted: var(--ui-color-neutral-500);
+  --ui-text-toned: var(--ui-color-neutral-600);
+  --ui-text: var(--ui-color-neutral-700);
+  --ui-text-highlighted: var(--ui-color-neutral-900);
+  --ui-text-inverted: var(--color-white);
+  --ui-bg: var(--color-white);
+  --ui-bg-muted: var(--ui-color-neutral-50);
+  --ui-bg-elevated: var(--ui-color-neutral-100);
+  --ui-bg-accented: var(--ui-color-neutral-200);
+  --ui-bg-inverted: var(--ui-color-neutral-900);
+  --ui-border: var(--ui-color-neutral-200);
+  --ui-border-muted: var(--ui-color-neutral-200);
+  --ui-border-accented: var(--ui-color-neutral-300);
+  --ui-border-inverted: var(--ui-color-neutral-900);
+}
+
+/* ============================================================================
+   STYLES DE BASE
+   ============================================================================ */
+
+html {
+  background-color: var(--color-bg-page);
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-page);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  text-transform: uppercase;
+}
+
+/* ============================================================================
+   CLASSES UTILITAIRES
+   ============================================================================ */
+
+/* Backgrounds */
+.bg-page { background-color: var(--color-bg-page); }
+.bg-subtle { background-color: var(--color-bg-subtle); }
+.bg-muted { background-color: var(--color-bg-muted); }
+.bg-elevated { background-color: var(--color-bg-elevated); }
+.bg-inverse { background-color: var(--color-bg-inverse); }
+.bg-brand-light { background-color: var(--color-bg-brand-light); }
+.bg-primary-light { background-color: var(--color-bg-primary-light); }
+.bg-success-light { background-color: var(--color-bg-success-light); }
+.bg-error-light { background-color: var(--color-bg-error-light); }
+.bg-warning-light { background-color: var(--color-bg-warning-light); }
+.bg-info-light { background-color: var(--color-bg-info-light); }
+.bg-live { background-color: var(--color-live); }
+.bg-disabled { background-color: var(--color-neutral-100); }
+
+/* Textes */
+.text-primary { color: var(--color-text-primary); }
+.text-secondary { color: var(--color-text-secondary); }
+.text-muted { color: var(--color-text-muted); }
+.text-disabled { color: var(--color-text-disabled); }
+.text-inverse { color: var(--color-text-inverse); }
+
+/* Dark UI (Studio) */
+.dark-bg-base { background-color: var(--color-dark-bg-base); }
+.dark-bg-surface { background-color: var(--color-dark-bg-surface); }
+.dark-bg-elevated { background-color: var(--color-dark-bg-elevated); }
+.dark-bg-hover { background-color: var(--color-dark-bg-hover); }
+.dark-bg-deepest { background-color: var(--color-dark-bg-deepest); }
+.dark-border { border-color: var(--color-dark-border); }
+.dark-text-primary { color: var(--color-dark-text-primary); }
+.dark-text-secondary { color: var(--color-dark-text-secondary); }
+.dark-text-muted { color: var(--color-dark-text-muted); }
+.dark-text-subtle { color: var(--color-dark-text-subtle); }
+
+/* ============================================================================
+   SUPPRESSION GLOBALE DES BORDURES NUXT UI
+   ============================================================================ */
+
+[class*="ring-"] {
+  --tw-ring-offset-width: 0px !important;
+  --tw-ring-width: 0px !important;
+  --tw-ring-color: transparent !important;
+  box-shadow: none !important;
+}
+
+/* ============================================================================
+   MASQUER LES MODALS DES GESTIONNAIRES DE MOTS DE PASSE
+   ============================================================================ */
+
 [id^="1password"],
 [id^="lastpass"],
 [id^="bitwarden"],
@@ -14,4 +384,75 @@
   visibility: hidden !important;
   opacity: 0 !important;
   pointer-events: none !important;
+}
+
+/* ============================================================================
+   PWA & MOBILE SUPPORT
+   ============================================================================ */
+
+/* Safe areas pour PWA - Support des encoches et barres système */
+.safe-area-top { padding-top: env(safe-area-inset-top); }
+.safe-area-bottom { padding-bottom: env(safe-area-inset-bottom); }
+.safe-area-left { padding-left: env(safe-area-inset-left); }
+.safe-area-right { padding-right: env(safe-area-inset-right); }
+
+/* Hauteur viewport mobile - Utilise dvh pour gérer les barres d'adresse mobiles */
+.min-h-screen-mobile { min-height: 100dvh; }
+
+/* Touch targets minimum 44px - Recommandation WCAG pour accessibilité tactile */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* ============================================================================
+   SCROLLBAR PERSONNALISÉE
+   ============================================================================ */
+
+/* Webkit (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-neutral-100);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-primary-300);
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary-400);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: var(--color-primary-500);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-primary-300) var(--color-neutral-100);
+}
+
+/* ============================================================================
+   ANIMATION D20 LOADING
+   ============================================================================ */
+
+.animate-spin-slow {
+  animation: spin-slow 4.5s linear infinite;
+}
+
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }

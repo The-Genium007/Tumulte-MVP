@@ -38,15 +38,6 @@ export default class AuthController {
   constructor(private readonly twitchAuthService: TwitchAuthService) {}
 
   /**
-   * Masque une valeur sensible en logs
-   */
-  private maskSecret(value?: string | null): string {
-    if (!value) return 'undefined'
-    if (value.length <= 6) return `${value.slice(0, 2)}***`
-    return `${value.slice(0, 2)}***${value.slice(-4)}`
-  }
-
-  /**
    * Formate la réponse utilisateur (évite la duplication)
    */
   private formatUserResponse(user: User) {
@@ -100,16 +91,14 @@ export default class AuthController {
     // Générer l'URL d'autorisation Twitch
     const authUrl = this.twitchAuthService.getAuthorizationUrl(state)
 
-    logger.info({
-      message: 'Redirecting to Twitch OAuth',
-      redirectUri: env.get('TWITCH_REDIRECT_URI'),
-      clientId: env.get('TWITCH_CLIENT_ID'),
-      clientSecretMasked: this.maskSecret(env.get('TWITCH_CLIENT_SECRET')),
-      frontendUrl: env.get('FRONTEND_URL'),
-      nodeEnv: env.get('NODE_ENV'),
-      logLevel: env.get('LOG_LEVEL'),
-      sessionDriver: env.get('SESSION_DRIVER'),
-    })
+    // Log minimal en production pour éviter l'exposition de configuration
+    if (env.get('NODE_ENV') === 'development') {
+      logger.debug({
+        message: 'Redirecting to Twitch OAuth (dev details)',
+        redirectUri: env.get('TWITCH_REDIRECT_URI'),
+        clientId: env.get('TWITCH_CLIENT_ID'),
+      })
+    }
 
     return response.redirect(authUrl)
   }

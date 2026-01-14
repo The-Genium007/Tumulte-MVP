@@ -283,13 +283,13 @@ const handlePointerUp = () => {
 .poll-preview {
   background: linear-gradient(
     145deg,
-    rgba(0, 0, 0, 0.95),
-    rgba(17, 17, 17, 0.9)
+    var(--color-overlay-bg-dark),
+    var(--color-overlay-bg-dark-alt)
   );
   backdrop-filter: blur(16px);
   border-radius: 24px;
   padding: 32px;
-  box-shadow: 0 20px 60px rgba(147, 51, 234, 0.4);
+  box-shadow: 0 20px 60px var(--color-overlay-shadow-brand);
   cursor: move;
   user-select: none;
 }
@@ -298,7 +298,7 @@ const handlePointerUp = () => {
   text-align: center;
   margin-bottom: 24px;
   padding-bottom: 16px;
-  border-bottom: 2px solid rgba(147, 51, 234, 0.3);
+  border-bottom: 2px solid var(--color-overlay-border-brand);
 }
 
 .poll-options {
@@ -319,7 +319,7 @@ const handlePointerUp = () => {
 
 .option-bar-container {
   height: 6px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--color-overlay-highlight);
   border-radius: 3px;
   overflow: hidden;
 }

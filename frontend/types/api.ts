@@ -102,38 +102,37 @@ export interface PollTemplate {
   updatedAt: string;
 }
 
-export interface PollSession {
-  id: string;
-  ownerId: string;
-  campaignId: string;
-  name: string;
-  defaultDurationSeconds: number;
-  createdAt: string;
-  updatedAt: string;
-  polls?: Poll[];
-}
-
 export interface Poll {
   id: string;
-  sessionId: string;
+  campaignId: string;
   question: string;
   options: string[];
-  type: string;
+  type: "STANDARD" | "UNIQUE";
+  durationSeconds: number;
   orderIndex: number;
   channelPointsPerVote: number | null;
+  channelPointsEnabled: boolean;
+  lastLaunchedAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface PollInstance {
   id: string;
+  pollId: string | null;
   templateId: string | null;
   campaignId: string;
   createdBy: string;
   title: string;
   options: string[];
   durationSeconds: number;
-  status: "PENDING" | "RUNNING" | "COMPLETED" | "CANCELLED" | "FAILED";
+  status:
+    | "PENDING"
+    | "RUNNING"
+    | "COMPLETED"
+    | "CANCELLED"
+    | "FAILED"
+    | "ENDED";
   startedAt: string | null;
   endedAt: string | null;
   createdAt: string;
@@ -160,11 +159,18 @@ export interface AggregatedVotes {
 }
 
 export interface PollResults {
-  pollInstance: PollInstance;
-  aggregatedVotes: AggregatedVotes;
-  channelResults: ChannelResult[];
+  pollInstanceId: string;
+  campaignId: string;
+  title: string;
+  options: string[];
+  status: string;
   startedAt: string | null;
   endedAt: string | null;
+  totalVotes: number;
+  votesByOption: Record<string, number>;
+  percentages: Record<string, number>;
+  channels: ChannelResult[];
+  createdAt: string;
 }
 
 export interface ChannelResult {
@@ -206,9 +212,20 @@ export interface InviteStreamerRequest {
   streamerId: string;
 }
 
-export interface CreatePollSessionRequest {
-  name: string;
-  defaultDurationSeconds?: number;
+export interface CreatePollRequest {
+  question: string;
+  options: string[];
+  type?: "STANDARD" | "UNIQUE";
+  durationSeconds?: number;
+  channelPointsAmount?: number | null;
+}
+
+export interface UpdatePollRequest {
+  question?: string;
+  options?: string[];
+  type?: "STANDARD" | "UNIQUE";
+  durationSeconds?: number;
+  channelPointsAmount?: number | null;
 }
 
 export interface LaunchPollRequest {
@@ -216,11 +233,4 @@ export interface LaunchPollRequest {
   options: string[];
   durationSeconds?: number;
   templateId?: string | null;
-}
-
-export interface AddPollRequest {
-  question: string;
-  options: string[];
-  type?: string;
-  channelPointsPerVote?: number | null;
 }

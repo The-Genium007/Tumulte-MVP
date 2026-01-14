@@ -19,13 +19,31 @@ self.addEventListener("push", (event) => {
   const options = {
     body: payload.body,
     icon: payload.icon || "/pwa-192x192.png",
-    badge: payload.badge || "/pwa-192x192.png",
+    badge: payload.badge || "/pwa-64x64.png",
     data: payload.data || {},
     tag: payload.type, // Évite les notifications dupliquées du même type
     renotify: true,
-    requireInteraction: payload.type === "critical:alert",
+    requireInteraction: payload.type === "critical:alert" || payload.type === "campaign:invitation",
     timestamp: payload.timestamp ? new Date(payload.timestamp).getTime() : Date.now(),
   };
+
+  // Vibration patterns selon le type de notification
+  switch (payload.type) {
+    case "campaign:invitation":
+      // Double vibration pour attirer l'attention
+      options.vibrate = [200, 100, 200];
+      break;
+    case "poll:started":
+      // Vibration courte
+      options.vibrate = [150];
+      break;
+    case "critical:alert":
+      // Vibration longue et insistante
+      options.vibrate = [300, 100, 300, 100, 300];
+      break;
+    default:
+      options.vibrate = [100];
+  }
 
   // Actions par défaut selon le type
   if (payload.actions && payload.actions.length > 0) {
@@ -34,9 +52,13 @@ self.addEventListener("push", (event) => {
     switch (payload.type) {
       case "campaign:invitation":
         options.actions = [
+          { action: "accept", title: "Accepter" },
           { action: "view", title: "Voir" },
-          { action: "dismiss", title: "Plus tard" },
         ];
+        // Deep link vers les invitations
+        if (!options.data.url) {
+          options.data.url = "/streamer/invitations";
+        }
         break;
       case "poll:started":
         options.actions = [{ action: "view", title: "Voir le sondage" }];
@@ -60,6 +82,7 @@ self.addEventListener("notificationclick", (event) => {
   event.notification.close();
 
   const data = event.notification.data || {};
+  const notificationType = event.notification.tag;
 
   // Action "dismiss" = ne rien faire
   if (event.action === "dismiss") {
@@ -69,8 +92,28 @@ self.addEventListener("notificationclick", (event) => {
   // Déterminer l'URL de destination
   let url = "/";
 
-  if (data.url) {
-    url = data.url;
+  // Fonction de validation d'URL (sécurité: empêcher navigation vers domaines externes)
+  const validateUrl = (inputUrl) => {
+    if (!inputUrl) return null;
+    try {
+      const urlObj = new URL(inputUrl, self.location.origin);
+      // Autoriser uniquement les URLs same-origin
+      if (urlObj.origin === self.location.origin) {
+        return urlObj.pathname + urlObj.search + urlObj.hash;
+      }
+    } catch {
+      // URL invalide
+    }
+    return null;
+  };
+
+  // Action "accept" pour les invitations - rediriger vers les invitations
+  if (event.action === "accept" && notificationType === "campaign:invitation") {
+    url = "/streamer/invitations";
+  } else if (data.url) {
+    url = validateUrl(data.url) || "/";
+  } else if (data.invitationId) {
+    url = "/streamer/invitations";
   } else if (data.campaignId) {
     url = `/mj/campaigns/${data.campaignId}`;
   } else if (data.pollInstanceId) {

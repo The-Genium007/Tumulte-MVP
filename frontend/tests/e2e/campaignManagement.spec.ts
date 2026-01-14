@@ -16,7 +16,7 @@ test.describe("Campaign Management", () => {
     test("should redirect to login when accessing campaigns without auth", async ({
       page,
     }) => {
-      await page.goto("/mj/campaigns");
+      await page.goto("/mj");
 
       // Should redirect to login
       await page.waitForURL(/\/login/, { timeout: 10000 });

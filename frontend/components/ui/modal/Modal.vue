@@ -95,8 +95,8 @@ const handleOverlayClick = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 50;
-  padding: 1rem;
+  z-index: var(--z-modal);
+  padding: var(--spacing-4);
 }
 
 .modal-container {
@@ -108,9 +108,9 @@ const handleOverlayClick = () => {
 }
 
 .modal {
-  background-color: white;
-  border-radius: 0.5rem;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  background-color: var(--color-bg-elevated);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
   max-height: 90vh;
   display: flex;
   flex-direction: column;
@@ -136,47 +136,47 @@ const handleOverlayClick = () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1.25rem;
-  border-bottom: 1px solid rgb(229 231 235);
+  padding: var(--spacing-5);
+  border-bottom: var(--border-width-1) solid var(--color-border-default);
 }
 
 .modal-title {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: rgb(17 24 39);
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
 }
 
 .modal-close {
-  padding: 0.25rem;
-  color: rgb(156 163 175);
-  transition: color 0.2s;
+  padding: var(--spacing-1);
+  color: var(--color-neutral-400);
+  transition: color var(--transition-normal);
   background: none;
   border: none;
   cursor: pointer;
 }
 
 .modal-close:hover {
-  color: rgb(75 85 99);
+  color: var(--color-neutral-600);
 }
 
 .modal-body {
-  padding: 1.25rem;
+  padding: var(--spacing-5);
   overflow-y: auto;
   flex: 1;
 }
 
 .modal-footer {
   display: flex;
-  gap: 0.75rem;
+  gap: var(--spacing-3);
   justify-content: flex-end;
-  padding: 1.25rem;
-  border-top: 1px solid rgb(229 231 235);
+  padding: var(--spacing-5);
+  border-top: var(--border-width-1) solid var(--color-border-default);
 }
 
 /* Transitions */
 .modal-enter-active,
 .modal-leave-active {
-  transition: opacity 0.2s ease;
+  transition: opacity var(--transition-normal) ease;
 }
 
 .modal-enter-from,

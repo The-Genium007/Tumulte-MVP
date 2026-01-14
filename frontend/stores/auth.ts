@@ -4,6 +4,11 @@ import { useRouter } from "vue-router";
 import type { User } from "@/types";
 import { useSupportTrigger } from "@/composables/useSupportTrigger";
 import { usePushNotificationsStore } from "@/stores/pushNotifications";
+import {
+  storeUser,
+  getStoredUser,
+  clearUserData,
+} from "@/utils/offline-storage";
 
 export const useAuthStore = defineStore("auth", () => {
   const _router = useRouter();
@@ -14,13 +19,34 @@ export const useAuthStore = defineStore("auth", () => {
   // State
   const user = ref<User | null>(null);
   const loading = ref<boolean>(false);
+  const isOfflineData = ref<boolean>(false);
 
   // Computed
   const isAuthenticated = computed(() => user.value !== null);
 
+  /**
+   * Load user from offline storage (IndexedDB)
+   * Called on app initialization before API fetch
+   */
+  async function loadFromOfflineStorage(): Promise<void> {
+    try {
+      const storedUser = await getStoredUser();
+      if (storedUser && !user.value) {
+        user.value = storedUser;
+        isOfflineData.value = true;
+      }
+    } catch (error) {
+      console.warn("[AuthStore] Failed to load from offline storage:", error);
+    }
+  }
+
   // Actions
   async function fetchMe(): Promise<void> {
     loading.value = true;
+
+    // First, try to load from offline storage for instant display
+    await loadFromOfflineStorage();
+
     try {
       const response = await fetch(`${API_URL}/auth/me`, {
         credentials: "include",
@@ -30,9 +56,17 @@ export const useAuthStore = defineStore("auth", () => {
         throw new Error("Failed to fetch user");
       }
 
-      user.value = await response.json();
+      const freshUser = await response.json();
+      user.value = freshUser;
+      isOfflineData.value = false;
+
+      // Persist to offline storage
+      await storeUser(freshUser);
     } catch (error) {
-      user.value = null;
+      // If we have offline data, don't clear the user
+      if (!isOfflineData.value) {
+        user.value = null;
+      }
       triggerSupportForError("auth_fetch_me", error);
       throw error;
     } finally {
@@ -55,7 +89,11 @@ export const useAuthStore = defineStore("auth", () => {
       const pushStore = usePushNotificationsStore();
       pushStore.reset();
 
+      // Clear offline storage
+      await clearUserData();
+
       user.value = null;
+      isOfflineData.value = false;
       _router.push({ name: "login" });
     } catch (error) {
       console.error("Logout failed:", error);
@@ -68,6 +106,7 @@ export const useAuthStore = defineStore("auth", () => {
     // State
     user,
     loading,
+    isOfflineData,
 
     // Computed
     isAuthenticated,

@@ -1,15 +1,15 @@
 <template>
-  <UModal v-model:open="store.isModalOpen" :prevent-close="isRetrying">
+  <UModal v-model:open="store.isModalOpen" :prevent-close="isRetrying" class="w-full max-w-2xl mx-4">
     <template #header>
       <div class="flex items-center gap-3">
-        <div class="bg-warning-500/10 p-2 rounded-lg">
+        <div class="bg-warning-light p-2 rounded-lg">
           <UIcon name="i-lucide-users" class="size-6 text-warning-500" />
         </div>
         <div>
-          <h3 class="text-xl font-semibold text-white">
+          <h3 class="text-xl font-semibold text-primary">
             En attente des streamers
           </h3>
-          <p class="text-sm text-gray-400">
+          <p class="text-sm text-muted">
             {{ store.readyCount }} / {{ store.totalCount }} prêts
           </p>
         </div>
@@ -39,7 +39,7 @@
           <!-- Séparateur si on a des prêts et non prêts -->
           <div
             v-if="store.unreadyStreamers.length > 0 && store.readyStreamers.length > 0"
-            class="border-t border-gray-700 my-3"
+            class="border-t border-default my-3"
           />
 
           <!-- Streamers prêts ensuite -->
@@ -73,20 +73,22 @@
     </template>
 
     <template #footer>
-      <div class="flex justify-between gap-3 w-full">
+      <div class="flex flex-col sm:flex-row justify-between gap-3 w-full">
         <UButton
           color="neutral"
           variant="soft"
           label="Annuler"
+          class="w-full sm:w-auto"
           :disabled="isRetrying"
           @click="handleCancel"
         />
 
-        <div class="flex gap-2">
+        <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <UButton
             v-if="store.unreadyStreamers.length > 0"
             color="warning"
             variant="soft"
+            class="w-full sm:w-auto"
             :loading="isNotifying"
             :disabled="isRetrying"
             @click="handleNotify"
@@ -97,6 +99,7 @@
 
           <UButton
             color="primary"
+            class="w-full sm:w-auto"
             :loading="isRetrying"
             :disabled="!store.allReady && !isRetrying"
             @click="handleRetry"

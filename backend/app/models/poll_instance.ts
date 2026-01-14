@@ -5,6 +5,7 @@ import { user as User } from './user.js'
 import { pollTemplate as PollTemplate } from './poll_template.js'
 import { pollChannelLink as PollChannelLink } from './poll_channel_link.js'
 import { campaign as Campaign } from './campaign.js'
+import { poll as Poll } from './poll.js'
 
 export type PollInstanceStatus = 'PENDING' | 'RUNNING' | 'ENDED'
 export type PollInstanceType = 'STANDARD' | 'UNIQUE'
@@ -15,6 +16,9 @@ class PollInstance extends BaseModel {
 
   @column()
   declare templateId: string | null
+
+  @column()
+  declare pollId: string | null
 
   @column()
   declare campaignId: string | null
@@ -83,6 +87,11 @@ class PollInstance extends BaseModel {
     foreignKey: 'campaignId',
   })
   declare campaign: BelongsTo<typeof Campaign>
+
+  @belongsTo(() => Poll, {
+    foreignKey: 'pollId',
+  })
+  declare poll: BelongsTo<typeof Poll>
 
   @hasMany(() => PollChannelLink, {
     foreignKey: 'pollInstanceId',

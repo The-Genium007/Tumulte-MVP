@@ -1,12 +1,13 @@
 <p align="center">
-  <h1 align="center">Tumulte</h1>
-  <p align="center">
-    <strong>Multi-stream Twitch poll system for Tabletop RPG sessions</strong>
-  </p>
+  <img src="frontend/assets/images/logo.png" alt="Tumulte Logo" width="80" />
+</p>
+<h1 align="center">Tumulte</h1>
+<p align="center">
+  <strong>Multi-stream Twitch poll system for Tabletop RPG sessions</strong>
 </p>
 
 <p align="center">
-  <a href="https://github.com/The-Genium007/tumulte/releases"><img src="https://img.shields.io/badge/version-0.3.0-blue.svg" alt="Version"></a>
+  <a href="https://github.com/The-Genium007/tumulte/releases"><img src="https://img.shields.io/badge/version-0.4.0-blue.svg" alt="Version"></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT"></a>
   <br>
   <img src="https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white" alt="TypeScript">

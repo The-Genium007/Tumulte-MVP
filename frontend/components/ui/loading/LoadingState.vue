@@ -27,12 +27,12 @@ withDefaults(defineProps<Props>(), {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1rem;
-  padding: 3rem;
+  gap: var(--spacing-4);
+  padding: var(--spacing-12);
 }
 
 .loading-message {
-  color: rgb(107 114 128);
-  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
 }
 </style>

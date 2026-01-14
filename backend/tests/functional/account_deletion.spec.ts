@@ -13,7 +13,6 @@ import { campaign as Campaign } from '#models/campaign'
 import { campaignMembership as CampaignMembership } from '#models/campaign_membership'
 import { pollTemplate as PollTemplate } from '#models/poll_template'
 import { pollInstance as PollInstance } from '#models/poll_instance'
-import { pollSession as PollSession } from '#models/poll_session'
 import db from '@adonisjs/lucid/services/db'
 
 test.group('Account Deletion (GDPR Anonymization)', (group) => {
@@ -181,31 +180,6 @@ test.group('Account Deletion (GDPR Anonymization)', (group) => {
     assert.equal(updatedInstances[0].title, 'Sondage supprimé')
   })
 
-  test('should anonymize poll sessions owned by user', async ({ assert }) => {
-    const user = await createTestUser({})
-    const campaign = await createTestCampaign({ ownerId: user.id })
-
-    await PollSession.create({
-      ownerId: user.id,
-      campaignId: campaign.id,
-      name: 'Session du 15 janvier',
-      defaultDurationSeconds: 60,
-    })
-
-    const shortId = user.id.substring(0, 8)
-
-    // Simulate anonymization
-    await PollSession.query()
-      .where('ownerId', user.id)
-      .update({
-        name: `Session supprimée ${shortId}`,
-      })
-
-    const updatedSessions = await PollSession.query().where('ownerId', user.id)
-    assert.lengthOf(updatedSessions, 1)
-    assert.equal(updatedSessions[0].name, `Session supprimée ${shortId}`)
-  })
-
   test('full account deletion should anonymize all related data in transaction', async ({
     assert,
   }) => {
@@ -248,13 +222,6 @@ test.group('Account Deletion (GDPR Anonymization)', (group) => {
       options: JSON.stringify(['A', 'B']) as unknown as string[],
       durationSeconds: 30,
       isDefault: false,
-    })
-
-    await PollSession.create({
-      ownerId: user.id,
-      campaignId: campaign.id,
-      name: 'Session Test',
-      defaultDurationSeconds: 60,
     })
 
     await createTestPollInstance({
@@ -305,13 +272,6 @@ test.group('Account Deletion (GDPR Anonymization)', (group) => {
         title: 'Sondage supprimé',
       })
 
-      // Anonymize sessions
-      await PollSession.query({ client: trx })
-        .where('ownerId', user.id)
-        .update({
-          name: `Session supprimée ${shortId}`,
-        })
-
       // Anonymize user
       user.useTransaction(trx)
       user.displayName = `Utilisateur supprimé ${shortId}`
@@ -340,9 +300,6 @@ test.group('Account Deletion (GDPR Anonymization)', (group) => {
 
     const templates = await PollTemplate.query().where('ownerId', user.id)
     assert.equal(templates[0].title, 'Sondage supprimé')
-
-    const sessions = await PollSession.query().where('ownerId', user.id)
-    assert.equal(sessions[0].name, `Session supprimée ${shortId}`)
 
     const instances = await PollInstance.query().where('createdBy', user.id)
     assert.equal(instances[0].title, 'Sondage supprimé')

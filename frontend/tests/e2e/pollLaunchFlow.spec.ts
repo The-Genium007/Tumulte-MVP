@@ -13,7 +13,8 @@ test.describe("Poll Launch Flow", () => {
     test("should redirect to login when accessing poll create without auth", async ({
       page,
     }) => {
-      await page.goto("/mj/sessions/some-session-id/polls/create");
+      // New architecture: polls are created directly under campaigns
+      await page.goto("/mj/campaigns/some-campaign-id/polls/create");
 
       // Should redirect to login
       await page.waitForURL(/\/login/, { timeout: 10000 });

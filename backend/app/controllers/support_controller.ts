@@ -3,14 +3,15 @@ import logger from '@adonisjs/core/services/logger'
 import env from '#start/env'
 import { campaign as Campaign } from '#models/campaign'
 import { campaignMembership as CampaignMembership } from '#models/campaign_membership'
-import { supportReportService as SupportReportService } from '#services/support_report_service'
+import { supportReportService } from '#services/support_report_service'
 import type { BackendContext, FrontendContext } from '#services/support_report_service'
 import { backendLogService } from '#services/support/backend_log_service'
 
 export default class SupportController {
-  private readonly supportReportService = new SupportReportService()
-  private readonly backendLogService = backendLogService
-
+  /**
+   * Envoie un rapport de bug vers Discord #support-bugs
+   * POST /support/report
+   */
   async report({ auth, request, response }: HttpContext) {
     const user = auth.user
     if (!user) {
@@ -20,13 +21,23 @@ export default class SupportController {
     await user.load((loader) => loader.load('streamer'))
 
     const body = request.body() ?? {}
-    const description = typeof body.description === 'string' ? body.description : ''
+    const title = typeof body.title === 'string' ? body.title.trim() : ''
+    const description = typeof body.description === 'string' ? body.description.trim() : ''
+    const includeDiagnostics = body.includeDiagnostics !== false // true par défaut
     const frontend: FrontendContext | undefined =
       body.frontend && typeof body.frontend === 'object' ? body.frontend : undefined
 
+    if (!title || title.length < 5) {
+      return response.badRequest({ error: 'Title must be at least 5 characters' })
+    }
+
+    if (!description || description.length < 10) {
+      return response.badRequest({ error: 'Description must be at least 10 characters' })
+    }
+
     const backendContext: BackendContext = {
       nodeEnv: env.get('NODE_ENV'),
-      appVersion: process.env.npm_package_version,
+      appVersion: env.get('APP_VERSION', '0.3.0'),
     }
 
     // Count campaigns owned by user
@@ -48,10 +59,12 @@ export default class SupportController {
     const requestId = typeof request.id === 'function' ? request.id() : undefined
 
     try {
-      await this.supportReportService.send({
+      const result = await supportReportService.sendBugReport({
         user,
         streamer: user.streamer,
+        title,
         description,
+        includeDiagnostics,
         frontend,
         backendContext,
         requestContext: {
@@ -65,17 +78,69 @@ export default class SupportController {
       })
 
       return response.ok({
-        message: 'Support report envoyé',
+        message: 'Rapport de bug envoyé',
+        githubIssueUrl: result.githubIssueUrl,
+        discordSent: result.discordSent,
       })
     } catch (error) {
       logger.error({
-        message: 'Failed to send support report',
-        error: error?.message,
-        stack: error?.stack,
+        message: 'Failed to send bug report',
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
       })
 
       return response.internalServerError({
-        error: 'Unable to send support report',
+        error: 'Unable to send bug report',
+      })
+    }
+  }
+
+  /**
+   * Envoie une suggestion vers Discord #suggestions + GitHub Issue
+   * POST /support/suggestion
+   */
+  async suggestion({ auth, request, response }: HttpContext) {
+    const user = auth.user
+    if (!user) {
+      return response.unauthorized({ error: 'Unauthenticated' })
+    }
+
+    await user.load((loader) => loader.load('streamer'))
+
+    const body = request.body() ?? {}
+    const title = typeof body.title === 'string' ? body.title.trim() : ''
+    const description = typeof body.description === 'string' ? body.description.trim() : ''
+
+    if (!title || title.length < 5) {
+      return response.badRequest({ error: 'Title must be at least 5 characters' })
+    }
+
+    if (!description || description.length < 10) {
+      return response.badRequest({ error: 'Description must be at least 10 characters' })
+    }
+
+    try {
+      const result = await supportReportService.sendSuggestion({
+        user,
+        streamer: user.streamer,
+        title,
+        description,
+      })
+
+      return response.ok({
+        message: 'Suggestion envoyée',
+        githubDiscussionUrl: result.githubDiscussionUrl,
+        discordSent: result.discordSent,
+      })
+    } catch (error) {
+      logger.error({
+        message: 'Failed to send suggestion',
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      })
+
+      return response.internalServerError({
+        error: 'Unable to send suggestion',
       })
     }
   }
@@ -94,7 +159,7 @@ export default class SupportController {
     const limit = Math.min(Number(request.input('limit', 50)), 100)
 
     try {
-      const logs = await this.backendLogService.getUserLogs(user.id.toString(), limit)
+      const logs = await backendLogService.getUserLogs(user.id.toString(), limit)
 
       return response.ok({
         data: {
@@ -109,7 +174,7 @@ export default class SupportController {
       logger.error({
         message: 'Failed to get support logs',
         userId: user.id,
-        error: error?.message,
+        error: error instanceof Error ? error.message : String(error),
       })
 
       return response.internalServerError({

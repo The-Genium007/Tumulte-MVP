@@ -9,16 +9,18 @@ import app from '@adonisjs/core/services/app'
  * Capture toutes les erreurs non gérées et les log
  */
 export default class ErrorHandlerMiddleware {
-  async handle({ request, response }: HttpContext, next: NextFn) {
+  async handle({ request, response, auth }: HttpContext, next: NextFn) {
     try {
       await next()
     } catch (error) {
       const requestId = request.header('x-request-id')
+      const sessionId = request.header('x-session-id')
 
       // Logger l'erreur
       logger.error(
         {
           requestId,
+          sessionId,
           method: request.method(),
           url: request.url(),
           error:
@@ -35,9 +37,19 @@ export default class ErrorHandlerMiddleware {
 
       // Envoyer à Sentry si configuré
       if (error instanceof Error) {
+        // Ajouter contexte utilisateur pour corrélation
+        const user = auth.user
+        if (user) {
+          Sentry.setUser({
+            id: String(user.id),
+            username: user.displayName,
+          })
+        }
+
         Sentry.captureException(error, {
           tags: {
-            requestId,
+            requestId: requestId ?? undefined,
+            sessionId: sessionId ?? undefined,
             method: request.method(),
             url: request.url(),
           },

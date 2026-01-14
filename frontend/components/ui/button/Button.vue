@@ -80,72 +80,72 @@ const handleClick = (event: MouseEvent) => {
 
 /* Sizes */
 .button-sm {
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
-  line-height: 1.25rem;
+  padding: var(--spacing-2) var(--spacing-4);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm--line-height);
 }
 
 .button-md {
-  padding: 0.625rem 1.25rem;
-  font-size: 1rem;
-  line-height: 1.5rem;
+  padding: var(--spacing-2_5) var(--spacing-5);
+  font-size: var(--text-base);
+  line-height: var(--text-base--line-height);
 }
 
 .button-lg {
-  padding: 0.75rem 1.5rem;
-  font-size: 1.125rem;
-  line-height: 1.75rem;
+  padding: var(--spacing-3) var(--spacing-6);
+  font-size: var(--text-lg);
+  line-height: var(--text-lg--line-height);
 }
 
 /* Variants */
 .button-primary {
-  background-color: rgb(99 102 241);
-  color: white;
+  background-color: var(--color-brand-500);
+  color: var(--color-text-inverse);
 }
 
 .button-primary:hover:not(:disabled) {
-  background-color: rgb(79 70 229);
+  background-color: var(--color-brand-600);
 }
 
 .button-primary:focus {
-  outline-color: rgb(99 102 241);
+  outline-color: var(--color-brand-500);
 }
 
 .button-secondary {
-  background-color: rgb(107 114 128);
-  color: white;
+  background-color: var(--color-neutral-500);
+  color: var(--color-text-inverse);
 }
 
 .button-secondary:hover:not(:disabled) {
-  background-color: rgb(75 85 99);
+  background-color: var(--color-neutral-600);
 }
 
 .button-danger {
-  background-color: rgb(239 68 68);
-  color: white;
+  background-color: var(--color-error-500);
+  color: var(--color-text-inverse);
 }
 
 .button-danger:hover:not(:disabled) {
-  background-color: rgb(220 38 38);
+  background-color: var(--color-error-600);
 }
 
 .button-ghost {
   background-color: transparent;
-  color: rgb(107 114 128);
+  color: var(--color-neutral-500);
 }
 
 .button-ghost:hover:not(:disabled) {
-  background-color: rgb(243 244 246);
+  background-color: var(--color-neutral-100);
 }
 
 .button-outline {
   background-color: transparent;
-  border-color: rgb(209 213 219);
-  color: rgb(55 65 81);
+  border-color: var(--color-border-default);
+  color: var(--color-text-secondary);
 }
 
 .button-outline:hover:not(:disabled) {
-  background-color: rgb(249 250 251);
+  background-color: var(--color-neutral-50);
 }
 
 /* Spinner */

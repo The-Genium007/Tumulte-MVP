@@ -1,7 +1,8 @@
 import { DateTime } from 'luxon'
-import { BaseModel, column, belongsTo } from '@adonisjs/lucid/orm'
-import type { BelongsTo } from '@adonisjs/lucid/types/relations'
-import { pollSession as PollSession } from './poll_session.js'
+import { BaseModel, column, belongsTo, hasMany } from '@adonisjs/lucid/orm'
+import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
+import { campaign as Campaign } from './campaign.js'
+import { pollInstance as PollInstance } from './poll_instance.js'
 
 export type PollType = 'STANDARD' | 'UNIQUE'
 
@@ -9,8 +10,8 @@ class Poll extends BaseModel {
   @column({ isPrimary: true })
   declare id: string
 
-  @column({ columnName: 'session_id' })
-  declare sessionId: string
+  @column({ columnName: 'campaign_id' })
+  declare campaignId: string
 
   @column()
   declare question: string
@@ -40,6 +41,9 @@ class Poll extends BaseModel {
   declare type: PollType
 
   @column()
+  declare durationSeconds: number
+
+  @column()
   declare orderIndex: number
 
   @column()
@@ -48,6 +52,9 @@ class Poll extends BaseModel {
   @column()
   declare channelPointsAmount: number | null
 
+  @column.dateTime()
+  declare lastLaunchedAt: DateTime | null
+
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
 
@@ -55,10 +62,15 @@ class Poll extends BaseModel {
   declare updatedAt: DateTime
 
   // Relations
-  @belongsTo(() => PollSession, {
-    foreignKey: 'sessionId',
+  @belongsTo(() => Campaign, {
+    foreignKey: 'campaignId',
   })
-  declare session: BelongsTo<typeof PollSession>
+  declare campaign: BelongsTo<typeof Campaign>
+
+  @hasMany(() => PollInstance, {
+    foreignKey: 'pollId',
+  })
+  declare instances: HasMany<typeof PollInstance>
 }
 
 export { Poll as poll }

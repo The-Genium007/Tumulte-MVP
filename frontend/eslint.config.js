@@ -11,6 +11,28 @@ export default [
     languageOptions: {
       globals: {
         ...globals.browser,
+        // Vue 3 Composition API (auto-imported by Nuxt)
+        ref: 'readonly',
+        reactive: 'readonly',
+        computed: 'readonly',
+        watch: 'readonly',
+        watchEffect: 'readonly',
+        onMounted: 'readonly',
+        onUnmounted: 'readonly',
+        onBeforeMount: 'readonly',
+        onBeforeUnmount: 'readonly',
+        onUpdated: 'readonly',
+        onBeforeUpdate: 'readonly',
+        nextTick: 'readonly',
+        toRef: 'readonly',
+        toRefs: 'readonly',
+        shallowRef: 'readonly',
+        triggerRef: 'readonly',
+        defineProps: 'readonly',
+        defineEmits: 'readonly',
+        defineExpose: 'readonly',
+        defineModel: 'readonly',
+        withDefaults: 'readonly',
         // Nuxt 3 auto-imports
         definePageMeta: 'readonly',
         navigateTo: 'readonly',
@@ -27,6 +49,32 @@ export default [
         useToast: 'readonly',
         useModal: 'readonly',
         useColorMode: 'readonly',
+        // Project composables (auto-imported by Nuxt from composables/)
+        useAppVersion: 'readonly',
+        useActionButton: 'readonly',
+        useAuth: 'readonly',
+        useCampaigns: 'readonly',
+        useNotifications: 'readonly',
+        useOverlayConfig: 'readonly',
+        usePollInstance: 'readonly',
+        usePollTemplates: 'readonly',
+        usePushNotifications: 'readonly',
+        useReadiness: 'readonly',
+        useResilientWebSocket: 'readonly',
+        useSettings: 'readonly',
+        useSupportReporter: 'readonly',
+        useSupportWidget: 'readonly',
+        useOBSEvents: 'readonly',
+        useWebSocket: 'readonly',
+        useWorkerTimer: 'readonly',
+        useOnlineStatus: 'readonly',
+        useSupportTrigger: 'readonly',
+        useSelectedCampaign: 'readonly',
+        useOfflineFirst: 'readonly',
+        useMockData: 'readonly',
+        useDevice: 'readonly',
+        usePwaInstall: 'readonly',
+        useLoadingScreen: 'readonly',
       }
     }
   },
@@ -152,7 +200,7 @@ export default [
 
       // Allow single-word component names for UI components and pages
       "vue/multi-word-component-names": ["error", {
-        "ignores": ["Button", "Card", "Modal", "default", "authenticated", "index", "home", "about", "login", "create", "callback", "campaigns", "[id]", "[sessionId]", "studio"]
+        "ignores": ["Button", "Card", "Modal", "default", "authenticated", "index", "home", "about", "login", "create", "edit", "callback", "campaigns", "[id]", "[pollId]", "[sessionId]", "studio"]
       }],
 
       // Allow unused vars with underscore prefix

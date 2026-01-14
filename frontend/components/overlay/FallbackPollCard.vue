@@ -101,9 +101,11 @@ onUnmounted(() => {
 .poll-card {
   background: linear-gradient(
     145deg,
-    rgba(0, 0, 0, 0.95),
-    rgba(17, 17, 17, 0.9)
+    var(--color-overlay-bg-dark),
+    var(--color-overlay-bg-dark-alt)
   );
+  /* Fallback pour Safari et navigateurs anciens */
+  -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
   border-radius: 24px;
   padding: 2.5rem;
@@ -111,14 +113,14 @@ onUnmounted(() => {
   max-width: 550px;
   border: 2px solid transparent;
   background-image:
-    linear-gradient(145deg, rgba(0, 0, 0, 0.95), rgba(17, 17, 17, 0.9)),
-    linear-gradient(145deg, #9333ea, #ec4899);
+    linear-gradient(145deg, var(--color-overlay-bg-dark), var(--color-overlay-bg-dark-alt)),
+    linear-gradient(145deg, var(--color-gradient-brand-start), var(--color-gradient-brand-end));
   background-origin: border-box;
   background-clip: padding-box, border-box;
   box-shadow:
-    0 20px 60px rgba(147, 51, 234, 0.4),
-    0 0 80px rgba(147, 51, 234, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    0 20px 60px var(--color-overlay-shadow-brand),
+    0 0 80px var(--color-overlay-shadow-brand-soft),
+    inset 0 1px 0 var(--color-overlay-highlight);
 }
 
 .poll-header {
@@ -128,7 +130,7 @@ onUnmounted(() => {
   margin-bottom: 2rem;
   padding-bottom: 1.25rem;
   border-bottom: 2px solid transparent;
-  border-image: linear-gradient(90deg, transparent, rgba(147, 51, 234, 0.5), transparent)
+  border-image: linear-gradient(90deg, transparent, var(--color-overlay-shadow-brand), transparent)
     1;
 }
 
@@ -138,15 +140,15 @@ onUnmounted(() => {
   font-weight: 800;
   margin: 0;
   flex: 1;
-  text-shadow: 0 2px 10px rgba(147, 51, 234, 0.5);
-  background: linear-gradient(135deg, #ffffff 0%, #e0d0ff 100%);
+  text-shadow: 0 2px 10px var(--color-overlay-shadow-brand);
+  background: linear-gradient(135deg, #ffffff 0%, var(--color-overlay-text-light) 100%);
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 .poll-timer {
-  background: linear-gradient(135deg, #9333ea 0%, #ec4899 100%);
+  background: linear-gradient(135deg, var(--color-gradient-brand-start) 0%, var(--color-gradient-brand-end) 100%);
   color: white;
   padding: 0.75rem 1.25rem;
   border-radius: 12px;
@@ -155,9 +157,9 @@ onUnmounted(() => {
   min-width: 70px;
   text-align: center;
   box-shadow:
-    0 4px 15px rgba(147, 51, 234, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    0 4px 15px var(--color-overlay-shadow-brand),
+    inset 0 1px 0 var(--color-overlay-highlight-soft);
+  text-shadow: 0 2px 4px var(--color-overlay-backdrop);
 }
 
 .poll-options {
@@ -183,38 +185,38 @@ onUnmounted(() => {
   color: white;
   font-size: 1.25rem;
   font-weight: 600;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  text-shadow: 0 1px 3px var(--color-overlay-backdrop);
 }
 
 .option-percentage {
-  color: #e0d0ff;
+  color: var(--color-overlay-text-light);
   font-size: 1.375rem;
   font-weight: 800;
-  text-shadow: 0 2px 8px rgba(147, 51, 234, 0.8);
+  text-shadow: 0 2px 8px var(--color-overlay-shadow-brand);
 }
 
 .option-bar-container {
   background: linear-gradient(
     90deg,
-    rgba(147, 51, 234, 0.15),
-    rgba(236, 72, 153, 0.15)
+    var(--color-overlay-border-brand-soft),
+    var(--color-overlay-border-brand-soft)
   );
   border-radius: 9999px;
   height: 28px;
   overflow: hidden;
   position: relative;
-  border: 1px solid rgba(147, 51, 234, 0.3);
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--color-overlay-border-brand);
+  box-shadow: inset 0 2px 4px var(--color-overlay-backdrop);
 }
 
 .option-bar {
-  background: linear-gradient(90deg, #9333ea 0%, #c026d3 50%, #ec4899 100%);
+  background: linear-gradient(90deg, var(--color-gradient-brand-start) 0%, var(--color-gradient-brand-middle) 50%, var(--color-gradient-brand-end) 100%);
   height: 100%;
   border-radius: 9999px;
   transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow:
-    0 0 20px rgba(147, 51, 234, 0.8),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    0 0 20px var(--color-overlay-shadow-brand),
+    inset 0 1px 0 var(--color-overlay-highlight-soft);
   position: relative;
 }
 
@@ -225,7 +227,7 @@ onUnmounted(() => {
   left: 0;
   right: 0;
   height: 50%;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.2), transparent);
+  background: linear-gradient(180deg, var(--color-overlay-highlight-strong), transparent);
   border-radius: 9999px 9999px 0 0;
 }
 </style>

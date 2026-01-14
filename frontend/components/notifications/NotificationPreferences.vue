@@ -2,14 +2,8 @@
   <UCard>
     <template #header>
       <div class="flex items-center gap-3">
-        <div class="bg-blue-500/10 p-3 rounded-xl">
-          <UIcon name="i-lucide-bell" class="size-6 text-blue-500" />
-        </div>
         <div>
-          <h2 class="text-xl font-semibold text-white">Notifications push</h2>
-          <p class="text-sm text-gray-400">
-            Configurez vos préférences de notification
-          </p>
+          <h2 class="text-xl font-semibold text-primary">Notifications push</h2>
         </div>
       </div>
     </template>
@@ -39,8 +33,8 @@
         <!-- Toggle global -->
         <div class="flex items-center justify-between">
           <div>
-            <p class="font-medium text-white">Notifications push</p>
-            <p class="text-sm text-gray-400">
+            <p class="font-medium text-primary">Notifications push</p>
+            <p class="text-sm text-muted">
               {{
                 isCurrentBrowserSubscribed
                   ? "Actif sur cet appareil"
@@ -58,22 +52,24 @@
 
         <!-- Toggles par type -->
         <div class="space-y-4">
-          <h3 class="text-lg font-medium text-white">Types de notifications</h3>
+          <h3 class="text-lg font-medium text-primary">Types de notifications</h3>
 
-          <div
-            v-for="pref in notificationTypes"
-            :key="pref.key"
-            class="flex items-center justify-between py-2"
-          >
-            <div>
-              <p class="font-medium text-white">{{ pref.label }}</p>
-              <p class="text-sm text-gray-400">{{ pref.description }}</p>
+          <div class="grid grid-cols-2 gap-4">
+            <div
+              v-for="pref in notificationTypes"
+              :key="pref.key"
+              class="flex items-center justify-between p-3 bg-neutral-100 rounded-lg"
+            >
+              <div>
+                <p class="font-medium text-primary">{{ pref.label }}</p>
+                <p class="text-sm text-muted">{{ pref.description }}</p>
+              </div>
+              <USwitch
+                :model-value="localPreferences[pref.key]"
+                :disabled="!localPreferences.pushEnabled"
+                @update:model-value="(value: boolean) => handleUpdate(pref.key, value)"
+              />
             </div>
-            <USwitch
-              :model-value="localPreferences[pref.key]"
-              :disabled="!localPreferences.pushEnabled"
-              @update:model-value="(value: boolean) => handleUpdate(pref.key, value)"
-            />
           </div>
         </div>
 
@@ -81,20 +77,20 @@
 
         <!-- Liste des appareils -->
         <div v-if="subscriptions.length > 0" class="space-y-4">
-          <h3 class="text-lg font-medium text-white">Appareils enregistrés</h3>
+          <h3 class="text-lg font-medium text-primary">Appareils enregistrés</h3>
 
           <div
             v-for="sub in subscriptions"
             :key="sub.id"
-            class="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg"
+            class="flex items-center justify-between p-3 bg-neutral-100 rounded-lg"
           >
             <div class="flex items-center gap-3">
-              <UIcon name="i-lucide-smartphone" class="size-5 text-gray-400" />
+              <UIcon name="i-lucide-smartphone" class="size-5 text-muted" />
               <div>
-                <p class="font-medium text-white">
+                <p class="font-medium text-primary">
                   {{ getDeviceName(sub) }}
                 </p>
-                <p class="text-xs text-gray-500">
+                <p class="text-xs text-muted">
                   Dernière utilisation : {{ formatDate(sub.lastUsedAt) }}
                 </p>
               </div>

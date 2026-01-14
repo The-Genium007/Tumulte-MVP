@@ -1,5 +1,6 @@
 import { describe, test, expect, beforeEach, vi } from "vitest";
 import { usePollInstance } from "~/composables/usePollInstance";
+import { createMockPollInstance } from "../../helpers/mockFactory";
 
 // Mock fetch globally
 global.fetch = vi.fn();
@@ -17,14 +18,13 @@ describe("usePollInstance Composable", () => {
     } as ReturnType<typeof useRuntimeConfig>);
   });
 
-  test("fetchPollInstance() should fetch poll details", async () => {
-    const mockPollInstance = {
+  test("fetchPollInstance() should fetch poll instance details", async () => {
+    const mockPollInstance = createMockPollInstance({
       id: "poll-instance-123",
-      templateId: "template-123",
+      pollId: "poll-123",
       status: "RUNNING",
       startedAt: "2024-01-01T00:00:00Z",
-      endsAt: "2024-01-01T00:01:00Z",
-    };
+    });
 
     vi.mocked(fetch).mockResolvedValueOnce({
       ok: true,
@@ -41,7 +41,7 @@ describe("usePollInstance Composable", () => {
     expect(result).toEqual(mockPollInstance);
   });
 
-  test("fetchPollInstance() should handle errors", async () => {
+  test("fetchPollInstance() should handle 404 errors", async () => {
     vi.mocked(fetch).mockResolvedValueOnce({
       ok: false,
       status: 404,
@@ -55,48 +55,37 @@ describe("usePollInstance Composable", () => {
     );
   });
 
-  test("fetchActiveSession() should fetch active session", async () => {
-    const mockSession = {
-      id: "session-123",
-      campaignId: "campaign-123",
-      status: "ACTIVE",
+  test("fetchPollInstance() should handle network errors", async () => {
+    vi.mocked(fetch).mockRejectedValueOnce(new Error("Network error"));
+
+    const { fetchPollInstance } = usePollInstance();
+
+    await expect(fetchPollInstance("poll-instance-123")).rejects.toThrow(
+      "Network error",
+    );
+  });
+
+  test("fetchPollInstance() should return ended poll instance with results", async () => {
+    const mockPollInstance = createMockPollInstance({
+      id: "poll-instance-456",
+      pollId: "poll-456",
+      status: "ENDED",
       startedAt: "2024-01-01T00:00:00Z",
-    };
+      endedAt: "2024-01-01T00:01:00Z",
+      finalTotalVotes: 100,
+      finalVotesByOption: { "0": 60, "1": 40 },
+    });
 
     vi.mocked(fetch).mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ data: mockSession }),
+      json: async () => ({ data: mockPollInstance }),
     } as Response);
 
-    const { fetchActiveSession } = usePollInstance();
-    const result = await fetchActiveSession();
+    const { fetchPollInstance } = usePollInstance();
+    const result = await fetchPollInstance("poll-instance-456");
 
-    expect(fetch).toHaveBeenCalledWith(
-      "http://localhost:3333/api/v2/mj/active-session",
-      { credentials: "include" },
-    );
-    expect(result).toEqual(mockSession);
-  });
-
-  test("fetchActiveSession() should handle errors", async () => {
-    vi.mocked(fetch).mockResolvedValueOnce({
-      ok: false,
-      status: 404,
-      statusText: "No active session",
-    } as Response);
-
-    const { fetchActiveSession } = usePollInstance();
-
-    await expect(fetchActiveSession()).rejects.toThrow(
-      "Failed to fetch active session: No active session",
-    );
-  });
-
-  test("fetchActiveSession() should handle network errors", async () => {
-    vi.mocked(fetch).mockRejectedValueOnce(new Error("Network error"));
-
-    const { fetchActiveSession } = usePollInstance();
-
-    await expect(fetchActiveSession()).rejects.toThrow("Network error");
+    expect(result.status).toBe("ENDED");
+    expect(result.finalTotalVotes).toBe(100);
+    expect(result.finalVotesByOption).toEqual({ "0": 60, "1": 40 });
   });
 });

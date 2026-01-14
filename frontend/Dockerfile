@@ -20,7 +20,9 @@ COPY . .
 
 # Build arguments for runtime URLs (no default, must be provided via .env or build args)
 ARG NUXT_PUBLIC_API_BASE
+ARG NUXT_PUBLIC_SENTRY_DSN
 ENV NUXT_PUBLIC_API_BASE=${NUXT_PUBLIC_API_BASE}
+ENV NUXT_PUBLIC_SENTRY_DSN=${NUXT_PUBLIC_SENTRY_DSN}
 ENV NODE_ENV=production
 
 # Build Nuxt application

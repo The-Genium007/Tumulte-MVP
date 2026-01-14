@@ -18,6 +18,15 @@ const mockComponents = {
     template: '<i class="u-icon" :class="name"></i>',
     props: ["name"],
   },
+  UModal: {
+    template: '<div class="u-modal" v-if="open"><slot name="content" /></div>',
+    props: ["open"],
+  },
+  UCard: {
+    template:
+      '<div class="u-card"><slot name="header" /><slot /><slot name="footer" /></div>',
+    props: [],
+  },
 };
 
 describe("AuthorizationCard Component", () => {
@@ -60,7 +69,7 @@ describe("AuthorizationCard Component", () => {
       },
     });
 
-    expect(wrapper.text()).toContain("Autoriser pour 12 heures");
+    expect(wrapper.text()).toContain("Autoriser");
   });
 
   test("should emit authorize event when authorize button clicked", async () => {
@@ -76,7 +85,7 @@ describe("AuthorizationCard Component", () => {
       },
     });
 
-    const authorizeButton = wrapper.findAll("button.u-button")[0];
+    const authorizeButton = wrapper.find("button");
     await authorizeButton.trigger("click");
 
     expect(wrapper.emitted("authorize")).toBeTruthy();
@@ -169,7 +178,7 @@ describe("AuthorizationCard Component", () => {
       },
     });
 
-    expect(wrapper.text()).toContain("Révoquer l'autorisation");
+    expect(wrapper.text()).toContain("Révoquer");
   });
 
   test("should not show revoke button for owner", () => {
@@ -186,12 +195,10 @@ describe("AuthorizationCard Component", () => {
       },
     });
 
-    expect(wrapper.text()).not.toContain("Révoquer l'autorisation");
+    expect(wrapper.text()).not.toContain("Révoquer");
   });
 
   test("should show confirm dialog when revoke button clicked", async () => {
-    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
-
     const wrapper = mount(AuthorizationCard, {
       props: {
         campaignId: "campaign-123",
@@ -205,19 +212,16 @@ describe("AuthorizationCard Component", () => {
       },
     });
 
-    const buttons = wrapper.findAll("button.u-button");
+    const buttons = wrapper.findAll("button");
     const revokeButton = buttons[buttons.length - 1]; // Last button is revoke
 
     await revokeButton.trigger("click");
 
-    expect(confirmSpy).toHaveBeenCalledWith(
-      "Êtes-vous sûr de vouloir révoquer l'autorisation ?",
-    );
+    // Modal should be shown
+    expect(wrapper.find(".u-modal").exists()).toBe(true);
   });
 
   test("should emit revoke event when confirmed", async () => {
-    vi.spyOn(window, "confirm").mockReturnValue(true);
-
     const wrapper = mount(AuthorizationCard, {
       props: {
         campaignId: "campaign-123",
@@ -231,18 +235,21 @@ describe("AuthorizationCard Component", () => {
       },
     });
 
-    const buttons = wrapper.findAll("button.u-button");
+    // Click revoke button to open modal
+    const buttons = wrapper.findAll("button");
     const revokeButton = buttons[buttons.length - 1];
-
     await revokeButton.trigger("click");
+
+    // Click confirm button in modal
+    const modalButtons = wrapper.findAll(".u-modal button.u-button");
+    const confirmButton = modalButtons[modalButtons.length - 1]; // Last button is confirm
+    await confirmButton.trigger("click");
 
     expect(wrapper.emitted("revoke")).toBeTruthy();
     expect(wrapper.emitted("revoke")?.[0]).toEqual(["campaign-123"]);
   });
 
   test("should not emit revoke event when cancelled", async () => {
-    vi.spyOn(window, "confirm").mockReturnValue(false);
-
     const wrapper = mount(AuthorizationCard, {
       props: {
         campaignId: "campaign-123",
@@ -256,10 +263,15 @@ describe("AuthorizationCard Component", () => {
       },
     });
 
-    const buttons = wrapper.findAll("button.u-button");
+    // Click revoke button to open modal
+    const buttons = wrapper.findAll("button");
     const revokeButton = buttons[buttons.length - 1];
-
     await revokeButton.trigger("click");
+
+    // Click cancel button in modal
+    const modalButtons = wrapper.findAll(".u-modal button.u-button");
+    const cancelButton = modalButtons[0]; // First button is cancel
+    await cancelButton.trigger("click");
 
     expect(wrapper.emitted("revoke")).toBeFalsy();
   });
@@ -350,8 +362,7 @@ describe("AuthorizationCard Component", () => {
     });
 
     const cardDiv = wrapper.find(".rounded-lg");
-    expect(cardDiv.classes()).toContain("bg-yellow-500/5");
-    expect(cardDiv.classes()).toContain("border-yellow-500/20");
+    expect(cardDiv.classes()).toContain("bg-warning-100");
   });
 
   test("should apply green border when authorized", () => {
@@ -368,8 +379,7 @@ describe("AuthorizationCard Component", () => {
     });
 
     const cardDiv = wrapper.findAll(".rounded-lg")[0];
-    expect(cardDiv.classes()).toContain("bg-green-500/5");
-    expect(cardDiv.classes()).toContain("border-green-500/20");
+    expect(cardDiv.classes()).toContain("bg-success-100");
   });
 
   test("should handle zero remainingSeconds", () => {

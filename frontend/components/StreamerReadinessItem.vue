@@ -1,7 +1,7 @@
 <template>
   <div
     class="flex items-center justify-between p-3 rounded-lg transition-colors"
-    :class="streamer.isReady ? 'bg-green-500/10' : 'bg-red-500/10'"
+    :class="streamer.isReady ? 'bg-success-light' : 'bg-error-light'"
   >
     <div class="flex items-center gap-3">
       <!-- Avatar avec indicateur de statut -->
@@ -11,35 +11,35 @@
           :src="streamer.streamerAvatar"
           :alt="streamer.streamerName"
           class="size-10 rounded-full ring-2"
-          :class="streamer.isReady ? 'ring-green-500' : 'ring-red-500'"
+          :class="streamer.isReady ? 'ring-success-500' : 'ring-error-500'"
         />
         <div
           v-else
           class="size-10 rounded-full flex items-center justify-center ring-2"
           :class="
             streamer.isReady
-              ? 'bg-green-500/20 ring-green-500'
-              : 'bg-red-500/20 ring-red-500'
+              ? 'bg-success-medium ring-success-500'
+              : 'bg-error-medium ring-error-500'
           "
         >
-          <UIcon name="i-lucide-user" class="size-5 text-gray-400" />
+          <UIcon name="i-lucide-user" class="size-5 text-muted" />
         </div>
 
         <!-- Badge live -->
         <div
           v-if="liveStatus?.is_live"
-          class="absolute -bottom-1 -right-1 bg-red-500 text-white text-xs px-1 rounded font-bold"
+          class="absolute -bottom-1 -right-1 bg-error-500 text-primary text-xs px-1 rounded font-bold"
         >
           LIVE
         </div>
       </div>
 
       <div>
-        <p class="font-medium text-white">{{ streamer.streamerName }}</p>
-        <p v-if="!streamer.isReady" class="text-xs text-red-400">
+        <p class="font-medium text-primary">{{ streamer.streamerName }}</p>
+        <p v-if="!streamer.isReady" class="text-xs text-error-400">
           {{ issueText }}
         </p>
-        <p v-else class="text-xs text-green-400">Pret</p>
+        <p v-else class="text-xs text-success-400">Pret</p>
       </div>
     </div>
 
@@ -48,7 +48,7 @@
       <UIcon
         :name="streamer.isReady ? 'i-lucide-check-circle' : 'i-lucide-x-circle'"
         class="size-6"
-        :class="streamer.isReady ? 'text-green-500' : 'text-red-500'"
+        :class="streamer.isReady ? 'text-success-500' : 'text-error-500'"
       />
     </div>
   </div>

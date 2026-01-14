@@ -1,11 +1,11 @@
 <template>
-  <UModal v-model:open="isOpen">
+  <UModal v-model:open="isOpen" class="w-full max-w-lg mx-4">
     <template #header>
       <div class="flex items-center gap-3">
-        <div class="bg-warning-500/10 p-2 rounded-lg">
+        <div class="bg-warning-light p-2 rounded-lg">
           <UIcon name="i-lucide-bell-off" class="size-6 text-warning-500" />
         </div>
-        <h3 class="text-xl font-semibold text-white">
+        <h3 class="text-xl font-semibold text-primary">
           Notifications désactivées
         </h3>
       </div>
@@ -13,18 +13,18 @@
 
     <template #body>
       <div class="space-y-4">
-        <p class="text-gray-300">
+        <p class="text-secondary">
           Les notifications push vous permettent de ne rien manquer :
         </p>
 
-        <ul class="space-y-2 text-gray-400">
+        <ul class="space-y-2 text-muted">
           <li class="flex items-start gap-2">
             <UIcon
               name="i-lucide-mail"
               class="size-5 text-primary-500 mt-0.5 shrink-0"
             />
             <span
-              ><strong class="text-white">Invitations</strong> - Soyez averti
+              ><strong class="text-primary">Invitations</strong> - Soyez averti
               quand un MJ vous invite à une campagne</span
             >
           </li>
@@ -34,7 +34,7 @@
               class="size-5 text-primary-500 mt-0.5 shrink-0"
             />
             <span
-              ><strong class="text-white">Sondages</strong> - Recevez une alerte
+              ><strong class="text-primary">Sondages</strong> - Recevez une alerte
               quand un sondage démarre ou se termine</span
             >
           </li>
@@ -44,7 +44,7 @@
               class="size-5 text-primary-500 mt-0.5 shrink-0"
             />
             <span
-              ><strong class="text-white">Alertes</strong> - Problèmes de
+              ><strong class="text-primary">Alertes</strong> - Problèmes de
               connexion, tokens expirés...</span
             >
           </li>
@@ -61,8 +61,14 @@
     </template>
 
     <template #footer>
-      <div class="flex justify-end gap-3">
-        <UButton color="neutral" variant="soft" label="Compris" @click="close" />
+      <div class="flex justify-end gap-3 w-full">
+        <UButton
+          color="neutral"
+          variant="soft"
+          label="Compris"
+          class="w-full sm:w-auto"
+          @click="close"
+        />
       </div>
     </template>
   </UModal>

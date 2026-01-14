@@ -77,8 +77,8 @@ export class PollAggregationService {
   async aggregateAndEmit(pollInstanceId: string): Promise<PollAggregatedVotes> {
     const aggregated = await this.getAggregatedVotes(pollInstanceId)
 
-    // Émettre via WebSocket
-    this.webSocketService.emitPollUpdate(pollInstanceId, aggregated)
+    // Émettre via WebSocket (maintenant async pour diffuser aux streamers)
+    await this.webSocketService.emitPollUpdate(pollInstanceId, aggregated)
 
     // Mettre en cache
     await this.redisService.cacheAggregatedVotes(pollInstanceId, aggregated)

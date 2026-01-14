@@ -1,3 +1,4 @@
+import { DateTime } from 'luxon'
 import { poll as Poll } from '#models/poll'
 
 export class PollRepository {
@@ -5,31 +6,57 @@ export class PollRepository {
     return await Poll.find(id)
   }
 
-  async findBySession(sessionId: string): Promise<Poll[]> {
-    return await Poll.query().where('sessionId', sessionId).orderBy('order_index', 'asc')
+  async findByCampaign(campaignId: string): Promise<Poll[]> {
+    return await Poll.query().where('campaignId', campaignId).orderBy('updated_at', 'desc')
+  }
+
+  async findByCampaignOrdered(campaignId: string): Promise<Poll[]> {
+    return await Poll.query().where('campaignId', campaignId).orderBy('order_index', 'asc')
   }
 
   async create(data: {
-    sessionId: string
+    campaignId: string
     question: string
     options: string[]
     type: string
-    orderIndex: number
-    channelPointsPerVote?: number | null
+    durationSeconds: number
+    orderIndex?: number
+    channelPointsAmount?: number | null
   }): Promise<Poll> {
+    const orderIndex = data.orderIndex ?? (await this.getNextOrderIndex(data.campaignId))
+
     return await Poll.create({
-      sessionId: data.sessionId,
+      campaignId: data.campaignId,
       question: data.question,
-      type: data.type as any,
-      orderIndex: data.orderIndex,
-      channelPointsAmount: data.channelPointsPerVote,
+      type: data.type as 'STANDARD' | 'UNIQUE',
+      durationSeconds: data.durationSeconds,
+      orderIndex,
+      channelPointsAmount: data.channelPointsAmount ?? null,
       channelPointsEnabled:
-        data.channelPointsPerVote !== null && data.channelPointsPerVote !== undefined,
-      options: JSON.stringify(data.options) as any,
+        data.channelPointsAmount !== null && data.channelPointsAmount !== undefined,
+      options: data.options,
     })
   }
 
-  async update(poll: Poll): Promise<Poll> {
+  async update(
+    poll: Poll,
+    data: {
+      question?: string
+      options?: string[]
+      type?: string
+      durationSeconds?: number
+      channelPointsAmount?: number | null
+    }
+  ): Promise<Poll> {
+    if (data.question !== undefined) poll.question = data.question
+    if (data.options !== undefined) poll.options = data.options
+    if (data.type !== undefined) poll.type = data.type as 'STANDARD' | 'UNIQUE'
+    if (data.durationSeconds !== undefined) poll.durationSeconds = data.durationSeconds
+    if (data.channelPointsAmount !== undefined) {
+      poll.channelPointsAmount = data.channelPointsAmount
+      poll.channelPointsEnabled = data.channelPointsAmount !== null
+    }
+
     await poll.save()
     return poll
   }
@@ -38,15 +65,22 @@ export class PollRepository {
     await poll.delete()
   }
 
-  async getNextOrderIndex(sessionId: string): Promise<number> {
-    const result = await Poll.query().where('sessionId', sessionId).max('order_index as maxIndex')
+  async getNextOrderIndex(campaignId: string): Promise<number> {
+    const result = await Poll.query().where('campaignId', campaignId).max('order_index as maxIndex')
     const maxIndex = result[0]?.$extras?.maxIndex
     return maxIndex !== null && maxIndex !== undefined ? maxIndex + 1 : 0
   }
 
-  async reorderPolls(sessionId: string, pollIds: string[]): Promise<void> {
+  async updateLastLaunchedAt(pollId: string): Promise<void> {
+    await Poll.query().where('id', pollId).update({ lastLaunchedAt: DateTime.now().toISO() })
+  }
+
+  async reorderPolls(campaignId: string, pollIds: string[]): Promise<void> {
     for (const [i, pollId] of pollIds.entries()) {
-      await Poll.query().where('id', pollId).where('sessionId', sessionId).update({ orderIndex: i })
+      await Poll.query()
+        .where('id', pollId)
+        .where('campaignId', campaignId)
+        .update({ orderIndex: i })
     }
   }
 }

@@ -7,7 +7,6 @@ import { campaign as Campaign } from '#models/campaign'
 import { campaignMembership as CampaignMembership } from '#models/campaign_membership'
 import { pollTemplate as PollTemplate } from '#models/poll_template'
 import { pollInstance as PollInstance } from '#models/poll_instance'
-import { pollSession as PollSession } from '#models/poll_session'
 import { pollChannelLink as PollChannelLink } from '#models/poll_channel_link'
 
 /**
@@ -100,12 +99,8 @@ export default class AccountController {
           title: `Sondage supprimé`,
         })
 
-        // 8. Anonymiser les PollSessions créées par l'utilisateur
-        await PollSession.query({ client: trx })
-          .where('ownerId', user.id)
-          .update({
-            name: `Session supprimée ${shortId}`,
-          })
+        // 8. Anonymiser les Polls créés par l'utilisateur (via ses campagnes)
+        // Les polls sont liés aux campagnes, qui sont déjà anonymisées ci-dessus
 
         // 9. Anonymiser le User
         user.useTransaction(trx)
