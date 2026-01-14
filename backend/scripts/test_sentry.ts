@@ -64,7 +64,7 @@ Sentry.addBreadcrumb({
   data: {
     url: 'https://api.example.com/data',
     method: 'GET',
-    status_code: 200,
+    statusCode: 200,
   },
 })
 Sentry.addBreadcrumb({
