@@ -2,8 +2,6 @@
 
     <div class="min-h-screen">
       <div class="space-y-6">
-        <!-- Banner notifications push (persistent - disparaît uniquement quand le navigateur est enregistré) -->
-        <NotificationsPushPermissionBanner persistent />
 
         <!-- Alert pour invitations en attente -->
         <UCard v-if="invitationCount > 0">
