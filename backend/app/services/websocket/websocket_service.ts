@@ -92,7 +92,7 @@ class WebSocketService {
   /**
    * Émet l'événement de mise à jour d'un sondage
    */
-  emitPollUpdate(pollInstanceId: string, aggregated: PollAggregatedVotes): void {
+  async emitPollUpdate(pollInstanceId: string, aggregated: PollAggregatedVotes): Promise<void> {
     const channel = `poll:${pollInstanceId}`
 
     const data: PollUpdateEvent = {
@@ -109,6 +109,7 @@ class WebSocketService {
       totalVotes: aggregated.totalVotes,
     })
 
+    // Émettre vers le canal général du poll (pour dashboard MJ)
     transmit.broadcast(channel, {
       event: 'poll:update',
       data,
@@ -120,6 +121,34 @@ class WebSocketService {
       pollInstanceId,
       totalVotes: aggregated.totalVotes,
     })
+
+    // Émettre vers chaque streamer membre de la campagne (pour les overlays)
+    try {
+      const pollInstance = await PollInstance.find(pollInstanceId)
+
+      if (pollInstance?.campaignId) {
+        const memberships = await CampaignMembership.query()
+          .where('campaignId', pollInstance.campaignId)
+          .where('status', 'ACTIVE')
+
+        for (const membership of memberships) {
+          transmit.broadcast(`streamer:${membership.streamerId}:polls`, {
+            event: 'poll:update',
+            data: {
+              ...data,
+              campaign_id: String(pollInstance.campaignId),
+            },
+          })
+        }
+
+        logger.debug(
+          `WebSocket: poll:update emitted for poll ${pollInstanceId} to ${memberships.length} streamers`
+        )
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      logger.error(`WebSocket: failed to emit poll:update to streamers: ${errorMessage}`)
+    }
   }
 
   /**

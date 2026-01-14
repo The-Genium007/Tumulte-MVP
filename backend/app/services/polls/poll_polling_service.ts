@@ -118,8 +118,8 @@ export class PollPollingService {
           const cached = await redisService.getCachedAggregatedVotes(pollInstanceId)
 
           if (cached) {
-            // Émettre les résultats via WebSocket
-            this.webSocketService.emitPollUpdate(pollInstanceId, cached)
+            // Émettre les résultats via WebSocket (maintenant async pour diffuser aux streamers)
+            await this.webSocketService.emitPollUpdate(pollInstanceId, cached)
 
             logger.debug({
               event: 'realtime_broadcast_emitted',

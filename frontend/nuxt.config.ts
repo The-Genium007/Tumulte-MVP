@@ -57,7 +57,7 @@ export default defineNuxtConfig({
     public: {
       apiBase: process.env.NUXT_PUBLIC_API_BASE || "http://localhost:3333",
       sentryDsn: process.env.NUXT_PUBLIC_SENTRY_DSN || "",
-      sentryEnvironment: process.env.NODE_ENV || "development",
+      envSuffix: process.env.ENV_SUFFIX || "dev",
     },
   },
 

@@ -32,21 +32,42 @@ const dsn =
   import.meta.env.VITE_SENTRY_DSN ||
   import.meta.env.NUXT_PUBLIC_SENTRY_DSN ||
   "";
-const environment = import.meta.env.MODE || "development";
+
+// Utiliser ENV_SUFFIX pour distinguer staging et production
+const envSuffix =
+  import.meta.env.VITE_ENV_SUFFIX || import.meta.env.ENV_SUFFIX || "dev";
+const environment =
+  envSuffix === "prod"
+    ? "production"
+    : envSuffix === "staging"
+      ? "staging"
+      : "development";
+const isProduction = envSuffix === "prod";
 
 if (dsn) {
   Sentry.init({
     dsn,
     environment,
 
-    // Performance monitoring (10% en prod)
-    tracesSampleRate: environment === "production" ? 0.1 : 1.0,
+    // Performance monitoring (10% en prod, 50% en staging pour mieux tester)
+    tracesSampleRate: isProduction
+      ? 0.1
+      : environment === "staging"
+        ? 0.5
+        : 1.0,
 
     // Session Replay pour debug visuel
     replaysSessionSampleRate: 0.1,
     replaysOnErrorSampleRate: 1.0,
 
-    integrations: [Sentry.replayIntegration()],
+    integrations: [
+      Sentry.replayIntegration(),
+      Sentry.captureConsoleIntegration({
+        levels: ["error", "warn"], // Capturer console.error et console.warn
+      }),
+      Sentry.contextLinesIntegration(), // Plus de contexte autour des erreurs
+      Sentry.extraErrorDataIntegration(), // Données d'erreur enrichies
+    ],
 
     // Filtrer les erreurs non pertinentes
     ignoreErrors: [
