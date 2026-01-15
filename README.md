@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/The-Genium007/tumulte/releases"><img src="https://img.shields.io/badge/version-0.4.0-blue.svg" alt="Version"></a>
+  <a href="https://github.com/The-Genium007/tumulte/releases"><img src="https://img.shields.io/badge/version-0.5.0-blue.svg" alt="Version"></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT"></a>
   <br>
   <img src="https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white" alt="TypeScript">
@@ -53,6 +53,7 @@
 - **Synchronized Polls** - Launch polls that appear simultaneously on all participating streams
 - **Real-time Aggregation** - View votes from all chats in real-time
 - **Session Control** - Full control over when and how polls are launched
+- **🎲 VTT Integration** - Connect Foundry VTT, Roll20, or Alchemy RPG to display dice rolls on overlays (v0.5.0+)
 
 ### For Streamers
 - **One-click Auth** - OAuth Twitch authentication
@@ -122,6 +123,33 @@ MJ_TWITCH_IDS=123456789,987654321
 | Frontend | http://localhost:3000 |
 | Backend API | http://localhost:3333 |
 | OBS Overlay | http://localhost:3000/overlay/{streamerId} |
+| VTT Webhook | http://localhost:3333/webhooks/vtt/dice-roll |
+
+### VTT Integration (v0.5.0+)
+
+To integrate your Virtual Tabletop:
+
+```bash
+# Run the VTT provider seeder
+cd backend
+node ace db:seed
+
+# Create a test VTT connection
+node ace vtt:create-test
+
+# Install the Foundry VTT module
+# See modules-vtt/foundry/README.md for details
+```
+
+**Supported VTT Platforms:**
+- ✅ **Foundry VTT** (v11+) - Module ready
+- 📋 **Roll20** (API Script for Pro) - Coming soon
+- 📋 **Alchemy RPG** (Browser Extension) - Coming soon
+
+**Documentation:**
+- [VTT Integration Complete Guide](./VTT_INTEGRATION_COMPLETE.md)
+- [Quick Start Testing Guide](./VTT_QUICK_START.md)
+- [Foundry Module README](./modules-vtt/foundry/README.md)
 
 ---
 
@@ -197,8 +225,14 @@ docker compose exec backend node ace migration:status
 
 > **Full roadmap**: [GitHub Project Board](https://github.com/users/The-Genium007/projects/4)
 
-- **v0.4.0** - Visual Identity
-- **v0.5.0** - VTT Integrations
+- **v0.4.0** - Visual Identity ✅
+- **v0.5.0** - VTT Integrations 🎲 (In Progress)
+  - Backend API & WebSocket ✅
+  - Foundry VTT Module ✅
+  - Roll20 API Script 📋
+  - Alchemy RPG Extension 📋
+  - Frontend GM Pages 📋
+  - Overlay Components 📋
 - **v0.6.0** - Gamification
 - **v0.7.0** - Gamification Advanced
 - **v0.8.0** - Advanced Overlay

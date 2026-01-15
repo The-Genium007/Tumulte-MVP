@@ -5,6 +5,7 @@ import type {
   PollEndEvent,
   ReadinessChangeEvent,
   PreviewCommandEvent,
+  DiceRollEvent,
 } from "@/types";
 import { useSupportTrigger } from "@/composables/useSupportTrigger";
 import { loggers } from "@/utils/logger";
@@ -638,6 +639,8 @@ export const useWebSocket = () => {
       // eslint-disable-next-line @typescript-eslint/naming-convention
       onLeftCampaign?: (data: { campaign_id: string }) => void;
       onPreviewCommand?: (data: PreviewCommandEvent) => void;
+      onDiceRoll?: (data: DiceRollEvent) => void;
+      onDiceRollCritical?: (data: DiceRollEvent) => void;
     },
   ): (() => Promise<void>) => {
     if (!client.value) {
@@ -683,6 +686,16 @@ export const useWebSocket = () => {
         case "preview:command":
           if (callbacks.onPreviewCommand) {
             callbacks.onPreviewCommand(message.data as PreviewCommandEvent);
+          }
+          break;
+        case "dice-roll:new":
+          if (callbacks.onDiceRoll) {
+            callbacks.onDiceRoll(message.data as DiceRollEvent);
+          }
+          break;
+        case "dice-roll:critical":
+          if (callbacks.onDiceRollCritical) {
+            callbacks.onDiceRollCritical(message.data as DiceRollEvent);
           }
           break;
         default:

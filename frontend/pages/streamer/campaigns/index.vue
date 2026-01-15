@@ -73,7 +73,7 @@
               <div class="flex sm:flex-col shrink-0">
                 <button
                   class="flex-1 px-4 sm:px-6 py-3 sm:py-0 flex items-center justify-center gap-2 bg-success-100 hover:bg-success-200 text-success-600 font-medium transition-colors rounded-bl-lg sm:rounded-bl-none sm:rounded-tr-lg"
-                  @click="handleAccept(invitation.id)"
+                  @click="handleAccept(invitation)"
                 >
                   <UIcon name="i-lucide-check" class="size-5" />
                   <span>Accepter</span>
@@ -89,6 +89,18 @@
             </div>
           </div>
         </UCard>
+
+        <!-- Modal de sélection de personnage -->
+        <CharacterSelectionModal
+          v-model="showCharacterModal"
+          :characters="characters"
+          :loading="acceptLoading"
+          title="Choisir votre personnage"
+          description="Sélectionnez le personnage que vous allez jouer dans cette campagne."
+          confirm-label="Accepter et rejoindre"
+          @confirm="handleConfirmAccept"
+          @cancel="showCharacterModal = false"
+        />
 
         <!-- Autorisations de sondages -->
         <UCard>
@@ -197,6 +209,17 @@
                     <span>Rejoint le {{ formatDate(campaign.joinedAt) }}</span>
                   </div>
                 </div>
+                <!-- Bouton Paramètres -->
+                <div class="mt-4">
+                  <UButton
+                    color="neutral"
+                    variant="soft"
+                    size="sm"
+                    icon="i-lucide-settings"
+                    label="Paramètres"
+                    :to="`/streamer/campaigns/${campaign.id}/settings`"
+                  />
+                </div>
               </div>
 
               <!-- Bouton quitter (carré, pleine hauteur) -->
@@ -218,9 +241,11 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue";
 import AuthorizationCard from "@/components/AuthorizationCard.vue";
+import CharacterSelectionModal from "@/components/streamer/CharacterSelectionModal.vue";
 import { useCampaigns } from "@/composables/useCampaigns";
+import { useCampaignCharacters } from "@/composables/useCampaignCharacters";
 import { useMockData } from "@/composables/useMockData";
-import type { Campaign, CampaignInvitation, AuthorizationStatus } from "@/types";
+import type { Campaign, CampaignInvitation, AuthorizationStatus, Character } from "@/types";
 import type { MockDataModule } from "@/composables/useMockData";
 
 definePageMeta({
@@ -228,9 +253,10 @@ definePageMeta({
   middleware: ["auth"],
 });
 
+const toast = useToast();
+
 const {
   fetchInvitations,
-  acceptInvitation,
   declineInvitation,
   fetchActiveCampaigns,
   leaveCampaign,
@@ -238,6 +264,12 @@ const {
   grantAuthorization,
   revokeAuthorization,
 } = useCampaigns();
+
+const {
+  characters,
+  fetchCharacters,
+  acceptInvitationWithCharacter,
+} = useCampaignCharacters();
 
 const { enabled: mockEnabled, loadMockData, withMockFallback, isMockData } = useMockData();
 
@@ -247,6 +279,11 @@ const authorizationStatuses = ref<AuthorizationStatus[]>([]);
 const loading = ref(false);
 const loadingAuth = ref(false);
 const mockData = ref<MockDataModule | null>(null);
+
+// Character selection modal state
+const showCharacterModal = ref(false);
+const selectedInvitation = ref<CampaignInvitation | null>(null);
+const acceptLoading = ref(false);
 
 // Mode développement
 const isDev = computed(() => import.meta.env.DEV);
@@ -327,12 +364,45 @@ const handleRevokeAuth = async (campaignId: string) => {
   }
 };
 
-const handleAccept = async (id: string) => {
+const handleAccept = async (invitation: CampaignInvitation) => {
+  selectedInvitation.value = invitation;
   try {
-    await acceptInvitation(id);
-    await loadData();
+    await fetchCharacters(invitation.campaign.id);
+    showCharacterModal.value = true;
   } catch {
-    // Error handled silently
+    toast.add({
+      title: "Erreur",
+      description: "Impossible de charger les personnages",
+      color: "error",
+    });
+  }
+};
+
+const handleConfirmAccept = async (characterId: string) => {
+  if (!selectedInvitation.value) return;
+
+  acceptLoading.value = true;
+  try {
+    await acceptInvitationWithCharacter(selectedInvitation.value.id, characterId);
+
+    toast.add({
+      title: "Invitation acceptée",
+      description: "Vous avez rejoint la campagne avec succès",
+      color: "success",
+    });
+
+    showCharacterModal.value = false;
+    selectedInvitation.value = null;
+    await loadData();
+    await loadAuthorizationStatus();
+  } catch (error) {
+    toast.add({
+      title: "Erreur",
+      description: error instanceof Error ? error.message : "Impossible d'accepter l'invitation",
+      color: "error",
+    });
+  } finally {
+    acceptLoading.value = false;
   }
 };
 

@@ -9,14 +9,24 @@ import dbService from '@adonisjs/lucid/services/db'
 export async function truncate(): Promise<void> {
   // List all tables in dependency order (children first, parents last)
   const tables = [
+    // VTT tables
+    'token_revocation_lists',
+    'dice_rolls',
+    'character_assignments',
+    'characters',
+    'vtt_connections',
+    'vtt_providers',
+    // Poll tables
     'poll_results',
     'poll_sessions',
     'poll_instances',
     'poll_templates',
     'poll_channel_links',
+    // Campaign tables
     'campaign_memberships',
     'streamers',
     'campaigns',
+    // Other tables
     'overlay_configs',
     'notification_preferences',
     'push_subscriptions',

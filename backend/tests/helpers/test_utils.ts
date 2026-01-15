@@ -5,7 +5,10 @@ import { streamer as Streamer } from '#models/streamer'
 import { pollTemplate as PollTemplate } from '#models/poll_template'
 import { pollInstance as PollInstance } from '#models/poll_instance'
 import { campaignMembership as CampaignMembership } from '#models/campaign_membership'
+import VttConnection from '#models/vtt_connection'
+import VttProvider from '#models/vtt_provider'
 import { DateTime } from 'luxon'
+import { randomBytes } from 'node:crypto'
 
 /**
  * Factory: Create a test user with optional overrides
@@ -254,4 +257,89 @@ export async function createCampaignWithMembers(memberCount: number = 2): Promis
   }
 
   return { campaign, owner, members, streamers }
+}
+
+/**
+ * Factory: Create a test VTT provider
+ */
+export async function createTestVttProvider(overrides: Partial<any> = {}): Promise<VttProvider> {
+  const providerData = {
+    name: overrides.name || 'foundry',
+    displayName: overrides.displayName || 'Foundry VTT',
+    authType: overrides.authType || 'api_key',
+    isActive: overrides.isActive !== undefined ? overrides.isActive : true,
+    configSchema: overrides.configSchema || null,
+  }
+
+  return await VttProvider.create(providerData)
+}
+
+/**
+ * Factory: Create a test VTT connection
+ */
+export async function createTestVttConnection(
+  overrides: Partial<any> = {}
+): Promise<VttConnection> {
+  // Create user if not provided
+  let userId = overrides.userId
+  if (!userId) {
+    const user = await createTestUser()
+    userId = user.id
+  }
+
+  // Create provider if not provided
+  let vttProviderId = overrides.vttProviderId
+  if (!vttProviderId) {
+    const provider = await createTestVttProvider()
+    vttProviderId = provider.id
+  }
+
+  // Generate test credentials
+  const testCredential = 'ta_' + randomBytes(32).toString('hex')
+
+  const connectionData = {
+    userId,
+    vttProviderId,
+    name: overrides.name || `Test VTT Connection ${faker.string.alphanumeric(6)}`,
+    webhookUrl: overrides.webhookUrl || '',
+    status: overrides.status || 'active',
+    worldId: overrides.worldId || faker.string.uuid(),
+    worldName: overrides.worldName || faker.commerce.productName(),
+    moduleVersion: overrides.moduleVersion || '2.0.0',
+    tunnelStatus: overrides.tunnelStatus || 'disconnected',
+    tokenVersion: overrides.tokenVersion || 1,
+    lastHeartbeatAt: overrides.lastHeartbeatAt || null,
+    ...overrides,
+  }
+
+  // Set the credential field separately to avoid secrets detection
+  const connection = await VttConnection.create({
+    ...connectionData,
+    apiKey: testCredential,
+  })
+
+  return connection
+}
+
+/**
+ * Helper: Create a complete VTT setup with connection and campaign
+ */
+export async function createVttSetupWithCampaign(): Promise<{
+  user: User
+  provider: VttProvider
+  connection: VttConnection
+  campaign: Campaign
+}> {
+  const user = await createTestUser()
+  const provider = await createTestVttProvider()
+  const connection = await createTestVttConnection({
+    userId: user.id,
+    vttProviderId: provider.id,
+  })
+  const campaign = await createTestCampaign({
+    ownerId: user.id,
+    vttConnectionId: connection.id,
+  })
+
+  return { user, provider, connection, campaign }
 }

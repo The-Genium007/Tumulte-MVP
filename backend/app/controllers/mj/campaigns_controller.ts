@@ -7,6 +7,9 @@ import { ReadinessService } from '#services/campaigns/readiness_service'
 import { StreamerRepository } from '#repositories/streamer_repository'
 import { TwitchApiService } from '#services/twitch/twitch_api_service'
 import { PushNotificationService } from '#services/notifications/push_notification_service'
+import VttImportService from '#services/vtt/vtt_import_service'
+import VttConnection from '#models/vtt_connection'
+import { campaign as Campaign } from '#models/campaign'
 import { CampaignDto } from '#dtos/campaigns/campaign_dto'
 import { CampaignDetailDto } from '#dtos/campaigns/campaign_detail_dto'
 import { CampaignInvitationDto } from '#dtos/campaigns/campaign_invitation_dto'
@@ -16,6 +19,7 @@ import {
   updateCampaignSchema,
 } from '#validators/campaigns/create_campaign_validator'
 import { inviteStreamerSchema } from '#validators/campaigns/invite_streamer_validator'
+import { importCampaignValidator } from '#validators/campaigns/import_campaign_validator'
 
 /**
  * Contrôleur pour la gestion des campagnes (MJ)
@@ -27,7 +31,8 @@ export default class CampaignsController {
     private membershipService: MembershipService,
     private readinessService: ReadinessService,
     private streamerRepository: StreamerRepository,
-    private twitchApiService: TwitchApiService
+    private twitchApiService: TwitchApiService,
+    private vttImportService: VttImportService
   ) {}
 
   /**
@@ -360,6 +365,49 @@ export default class CampaignsController {
         notified: userIds.length,
         streamers: unreadyStreamers.map((s) => s.streamerName),
       },
+    })
+  }
+
+  /**
+   * Importe une campagne depuis un VTT
+   * POST /api/v2/mj/campaigns/import
+   */
+  async importFromVtt({ auth, request, response }: HttpContext) {
+    const data = await request.validateUsing(importCampaignValidator)
+
+    const userId = auth.user!.id
+
+    // Valider que la connexion VTT appartient au GM
+    const connection = await VttConnection.query()
+      .where('id', data.vttConnectionId)
+      .where('user_id', userId)
+      .first()
+
+    if (!connection) {
+      return response.notFound({ error: 'VTT connection not found' })
+    }
+
+    // Vérifier que la campagne n'existe pas déjà
+    const existing = await Campaign.query()
+      .where('vtt_connection_id', data.vttConnectionId)
+      .where('vtt_campaign_id', data.vttCampaignId)
+      .first()
+
+    if (existing) {
+      return response.badRequest({ error: 'Campaign already imported' })
+    }
+
+    // Import via service
+    const campaign = await this.vttImportService.importCampaign({
+      userId,
+      vttConnectionId: data.vttConnectionId,
+      vttCampaignId: data.vttCampaignId,
+      name: data.name,
+      description: data.description,
+    })
+
+    return response.created({
+      data: CampaignDto.fromModel(campaign),
     })
   }
 }

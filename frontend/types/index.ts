@@ -278,3 +278,35 @@ export interface PreviewCommandEvent {
   duration?: number;
   mockData?: PreviewMockData;
 }
+
+// Character types (VTT Integration)
+export interface Character {
+  id: string;
+  name: string;
+  avatarUrl: string | null;
+  characterType: "pc" | "npc";
+  vttCharacterId: string;
+}
+
+export interface CampaignSettings {
+  campaign: Campaign;
+  assignedCharacter: Character | null;
+  canChangeCharacter: boolean;
+}
+
+// Dice Roll types (VTT Integration)
+export interface DiceRollEvent {
+  id: string;
+  characterId: string;
+  characterName: string;
+  characterAvatar: string | null;
+  rollFormula: string;
+  result: number;
+  diceResults: number[];
+  isCritical: boolean;
+  criticalType: "success" | "failure" | null;
+  isHidden: boolean;
+  rollType: string | null;
+  rolledAt: string;
+  isOwnCharacter?: boolean;
+}

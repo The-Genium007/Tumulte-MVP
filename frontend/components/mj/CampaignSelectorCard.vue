@@ -16,8 +16,8 @@ const modelValue = defineModel<string | null>({ required: true });
         <UButton
           color="primary"
           icon="i-lucide-plus"
-          label="Créer une campagne"
-          to="/mj/campaigns/create"
+          label="Ajouter une campagne"
+          to="/mj/campaigns/import"
         />
       </div>
     </template>

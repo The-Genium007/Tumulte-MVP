@@ -1,0 +1,13 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "name": "pre-commit-validation",
+        "description": "Validation automatique (lint + typecheck) avant chaque commit",
+        "path": ".claude/hooks/pre-commit-validation.sh",
+        "enabled": true,
+        "blocking": true
+      }
+    ]
+  }
+}

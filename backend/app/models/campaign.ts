@@ -6,6 +6,9 @@ import { campaignMembership as CampaignMembership } from './campaign_membership.
 import { pollTemplate as PollTemplate } from './poll_template.js'
 import { pollInstance as PollInstance } from './poll_instance.js'
 import { poll as Poll } from './poll.js'
+import VttConnection from '#models/vtt_connection'
+import Character from '#models/character'
+import DiceRoll from '#models/dice_roll'
 
 class Campaign extends BaseModel {
   @column({ isPrimary: true })
@@ -19,6 +22,22 @@ class Campaign extends BaseModel {
 
   @column({ columnName: 'owner_id' })
   declare ownerId: string
+
+  // VTT fields
+  @column()
+  declare vttConnectionId: string | null
+
+  @column()
+  declare vttCampaignId: string | null
+
+  @column()
+  declare vttCampaignName: string | null
+
+  @column()
+  declare vttData: object | null
+
+  @column.dateTime()
+  declare lastVttSyncAt: DateTime | null
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
@@ -51,6 +70,16 @@ class Campaign extends BaseModel {
     foreignKey: 'campaignId',
   })
   declare polls: HasMany<typeof Poll>
+
+  // VTT Relations
+  @belongsTo(() => VttConnection)
+  declare vttConnection: BelongsTo<typeof VttConnection>
+
+  @hasMany(() => Character)
+  declare characters: HasMany<typeof Character>
+
+  @hasMany(() => DiceRoll)
+  declare diceRolls: HasMany<typeof DiceRoll>
 }
 
 export { Campaign as campaign }

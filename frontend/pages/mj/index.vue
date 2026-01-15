@@ -33,8 +33,8 @@
               color="primary"
               size="lg"
               icon="i-lucide-plus"
-              label="Créer ma première campagne"
-              @click="router.push('/mj/campaigns/create')"
+              label="Ajouter une campagne"
+              @click="router.push('/mj/campaigns/import')"
             />
           </div>
         </UCard>

@@ -44,9 +44,11 @@ import SupportWidget from '@/components/SupportWidget.vue'
 import DevModeIndicator from '@/components/DevModeIndicator.vue'
 import { useAuth } from '@/composables/useAuth'
 import { usePushNotifications } from '@/composables/usePushNotifications'
+import { useVttAutoSync } from '@/composables/useVttAutoSync'
 
 const { fetchMe } = useAuth()
 const { initialize: initializePushNotifications } = usePushNotifications()
+const { initialize: initializeVttSync } = useVttAutoSync()
 
 // Charger l'utilisateur au montage initial du layout
 // Nécessaire car la page /mj ou /streamer est la première chargée après login
@@ -56,6 +58,9 @@ onMounted(async () => {
     // Initialiser les notifications push après l'authentification
     // Cela charge : subscriptions backend, preferences, et browserEndpoint
     await initializePushNotifications()
+
+    // Synchroniser les connexions VTT et récupérer les campagnes disponibles
+    await initializeVttSync()
   } catch (error) {
     console.error('[AuthenticatedLayout] Failed to load user:', error)
   }

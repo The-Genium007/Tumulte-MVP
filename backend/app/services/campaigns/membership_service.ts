@@ -1,6 +1,9 @@
 import { inject } from '@adonisjs/core'
 import logger from '@adonisjs/core/services/logger'
+import db from '@adonisjs/lucid/services/db'
 import { campaignMembership as CampaignMembership } from '#models/campaign_membership'
+import Character from '#models/character'
+import CharacterAssignment from '#models/character_assignment'
 import { DateTime } from 'luxon'
 import { PushNotificationService } from '#services/notifications/push_notification_service'
 
@@ -187,6 +190,70 @@ export class MembershipService {
       .where('campaignId', campaignId)
       .where('status', 'ACTIVE')
       .preload('streamer')
+  }
+
+  /**
+   * Accepter une invitation avec assignation de personnage (transaction atomique)
+   */
+  async acceptInvitationWithCharacter(
+    membershipId: string,
+    streamerId: string,
+    characterId: string
+  ): Promise<void> {
+    const membership = await CampaignMembership.find(membershipId)
+
+    if (!membership) {
+      throw new Error('Invitation not found')
+    }
+
+    if (membership.streamerId !== streamerId) {
+      throw new Error('Not authorized to accept this invitation')
+    }
+
+    if (membership.status !== 'PENDING') {
+      throw new Error('Invitation already processed')
+    }
+
+    // Vérifier que le personnage existe et appartient à la campagne
+    const character = await Character.query()
+      .where('id', characterId)
+      .where('campaignId', membership.campaignId)
+      .where('characterType', 'pc')
+      .first()
+
+    if (!character) {
+      throw new Error('Character not found or not available for this campaign')
+    }
+
+    // Transaction atomique : accepter l'invitation ET assigner le personnage
+    await db.transaction(async (trx) => {
+      // 1. Accepter l'invitation
+      membership.status = 'ACTIVE'
+      membership.acceptedAt = DateTime.now()
+      membership.useTransaction(trx)
+      await membership.save()
+
+      // 2. Supprimer toute assignation existante pour ce streamer dans cette campagne
+      await CharacterAssignment.query({ client: trx })
+        .where('streamerId', streamerId)
+        .where('campaignId', membership.campaignId)
+        .delete()
+
+      // 3. Créer la nouvelle assignation de personnage
+      await CharacterAssignment.create(
+        {
+          characterId,
+          streamerId,
+          campaignId: membership.campaignId,
+        },
+        { client: trx }
+      )
+    })
+
+    logger.info(
+      { membershipId, streamerId, campaignId: membership.campaignId, characterId },
+      'Invitation accepted with character assignment'
+    )
   }
 }
 

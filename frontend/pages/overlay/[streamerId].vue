@@ -18,17 +18,25 @@
         @state-change="handlePollStateChange"
       />
     </template>
+
+    <!-- Dice Roll Overlay (VTT Integration) -->
+    <DiceRollOverlay
+      :dice-roll="currentDiceRoll"
+      :auto-hide-delay="5000"
+      @hidden="handleDiceRollHidden"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import LivePollElement from "@/overlay-studio/components/LivePollElement.vue";
+import DiceRollOverlay from "@/components/overlay/DiceRollOverlay.vue";
 import { useWebSocket } from "@/composables/useWebSocket";
 import { useOverlayConfig } from "@/composables/useOverlayConfig";
 import { useWorkerTimer } from "@/composables/useWorkerTimer";
 import { useOBSEvents } from "@/composables/useOBSEvents";
-import type { PollStartEvent } from "@/types";
+import type { PollStartEvent, DiceRollEvent } from "@/types";
 
 // State pour l'indicateur de connexion
 const isWsConnected = ref(true);
@@ -77,6 +85,10 @@ const activePoll = ref<
 const percentages = ref<Record<number, number>>({});
 const isEnding = ref(false);
 
+// État du dice roll actif (VTT Integration)
+const currentDiceRoll = ref<DiceRollEvent | null>(null);
+const diceRollQueue = ref<DiceRollEvent[]>([]);
+
 const { subscribeToStreamerPolls } = useWebSocket();
 
 // Handler pour les changements d'état du poll (émis par LivePollElement)
@@ -91,6 +103,40 @@ const handlePollStateChange = (newState: string) => {
       isEnding.value = false;
       console.log("[Overlay] Poll state cleared, ready for next poll");
     }, 100);
+  }
+};
+
+// Handler pour les dice rolls (VTT Integration)
+const handleDiceRoll = (data: DiceRollEvent) => {
+  console.log("[Overlay] Dice roll received:", data);
+
+  // SECURITY: Never display hidden rolls on overlay (GM secret rolls)
+  if (data.isHidden) {
+    console.log("[Overlay] Ignoring hidden roll (GM secret)");
+    return;
+  }
+
+  // Si un dice roll est déjà affiché, ajouter à la queue
+  if (currentDiceRoll.value) {
+    diceRollQueue.value.push(data);
+    console.log("[Overlay] Dice roll queued, queue size:", diceRollQueue.value.length);
+  } else {
+    currentDiceRoll.value = data;
+  }
+};
+
+const handleDiceRollHidden = () => {
+  console.log("[Overlay] Dice roll hidden");
+  currentDiceRoll.value = null;
+
+  // Afficher le prochain dice roll de la queue
+  if (diceRollQueue.value.length > 0) {
+    const nextRoll = diceRollQueue.value.shift();
+    if (nextRoll) {
+      setTimeout(() => {
+        currentDiceRoll.value = nextRoll;
+      }, 500); // Petit délai entre les rolls
+    }
   }
 };
 
@@ -238,6 +284,26 @@ const setupWebSocketSubscription = () => {
       if (activePoll.value?.campaign_id === data.campaign_id) {
         activePoll.value = null;
         isEnding.value = false;
+      }
+    },
+
+    // VTT Integration - Dice Rolls
+    onDiceRoll: (data) => {
+      handleDiceRoll(data);
+    },
+
+    onDiceRollCritical: (data) => {
+      // SECURITY: Never display hidden rolls on overlay (GM secret rolls)
+      if (data.isHidden) {
+        console.log("[Overlay] Ignoring hidden critical roll (GM secret)");
+        return;
+      }
+
+      // Les rolls critiques passent devant la queue
+      if (currentDiceRoll.value) {
+        diceRollQueue.value.unshift(data); // Ajouter au début de la queue
+      } else {
+        currentDiceRoll.value = data;
       }
     },
   });

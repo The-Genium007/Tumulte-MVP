@@ -58,6 +58,7 @@ router
     // Campaigns
     router.get('/campaigns', '#controllers/mj/campaigns_controller.index')
     router.post('/campaigns', '#controllers/mj/campaigns_controller.store')
+    router.post('/campaigns/import', '#controllers/mj/campaigns_controller.importFromVtt')
     router.get('/campaigns/:id', '#controllers/mj/campaigns_controller.show')
     router.put('/campaigns/:id', '#controllers/mj/campaigns_controller.update')
     router.delete('/campaigns/:id', '#controllers/mj/campaigns_controller.destroy')
@@ -113,6 +114,48 @@ router
         })
       )
 
+    // VTT Connections - Static routes FIRST (before :id routes)
+    router.get('/vtt-connections', '#controllers/mj/vtt_connections_controller.index')
+    router.post('/vtt-connections', '#controllers/mj/vtt_connections_controller.store')
+    router.get('/vtt-connections/sync-all', '#controllers/mj/vtt_connections_controller.syncAll')
+    router.get('/vtt-providers', '#controllers/mj/vtt_connections_controller.listProviders')
+
+    // VTT Secure Pairing - Static routes (must be before :id)
+    router.get(
+      '/vtt-connections/start-pairing',
+      '#controllers/mj/vtt_connections_controller.startPairingSession'
+    )
+    router.post(
+      '/vtt-connections/pair',
+      '#controllers/mj/vtt_connections_controller.initiatePairing'
+    )
+    router.post(
+      '/vtt-connections/pair-with-code',
+      '#controllers/mj/vtt_connections_controller.pairWithCode'
+    )
+    router.post(
+      '/vtt-connections/test-pairing',
+      '#controllers/mj/vtt_connections_controller.testPairing'
+    )
+    router.post(
+      '/vtt-connections/refresh-token',
+      '#controllers/mj/vtt_connections_controller.refreshToken'
+    )
+
+    // VTT Connections - Dynamic :id routes AFTER static routes
+    router.get('/vtt-connections/:id', '#controllers/mj/vtt_connections_controller.show')
+    router.put('/vtt-connections/:id', '#controllers/mj/vtt_connections_controller.update')
+    router.delete('/vtt-connections/:id', '#controllers/mj/vtt_connections_controller.destroy')
+    router.post(
+      '/vtt-connections/:id/regenerate-key',
+      '#controllers/mj/vtt_connections_controller.regenerateApiKey'
+    )
+    router.post(
+      '/vtt-connections/:id/sync-campaigns',
+      '#controllers/mj/vtt_connections_controller.syncCampaigns'
+    )
+    router.post('/vtt-connections/:id/revoke', '#controllers/mj/vtt_connections_controller.revoke')
+
     // Streamers (recherche Twitch)
     router.get('/streamers', '#controllers/mj/streamers_controller.index')
     router.get('/streamers/search', '#controllers/mj/streamers_controller.search')
@@ -158,6 +201,30 @@ router
 
     // Overlay URL
     router.get('/overlay-url', '#controllers/streamer/campaigns_controller.getOverlayUrl')
+
+    // Characters (VTT Integration)
+    router.get(
+      '/campaigns/:campaignId/characters',
+      '#controllers/streamer/characters_controller.index'
+    )
+    router.post(
+      '/campaigns/:campaignId/characters/:characterId/assign',
+      '#controllers/streamer/characters_controller.assign'
+    )
+    router.delete(
+      '/campaigns/:campaignId/characters/unassign',
+      '#controllers/streamer/characters_controller.unassign'
+    )
+
+    // Campaign Settings (Character Assignment)
+    router.get(
+      '/campaigns/:campaignId/settings',
+      '#controllers/streamer/campaigns_controller.getSettings'
+    )
+    router.put(
+      '/campaigns/:campaignId/character',
+      '#controllers/streamer/campaigns_controller.updateCharacter'
+    )
 
     // Overlay Studio - Configurations (avec rate limiting sur les mutations)
     router.get(
@@ -263,6 +330,37 @@ router
   })
   .prefix('/notifications')
   .use(middleware.auth({ guards: ['web', 'api'] }))
+
+// ==========================================
+// Routes VTT Webhooks (publiques, auth via Bearer token)
+// ==========================================
+router
+  .group(() => {
+    // Rate limited pour éviter les abus
+    router
+      .post('/dice-roll', '#controllers/webhooks/vtt_controller.diceRoll')
+      .use(middleware.rateLimit({ maxRequests: 100, windowSeconds: 60, keyPrefix: 'vtt_webhook' }))
+    router.post('/test', '#controllers/webhooks/vtt_controller.test')
+  })
+  .prefix('/webhooks/vtt')
+// Pas de middleware auth - authentification via Bearer token dans le controller
+
+// Foundry VTT Webhooks (public, auth via API key)
+router
+  .group(() => {
+    // Pairing flow endpoints (called by Foundry module)
+    router.post(
+      '/request-pairing',
+      '#controllers/webhooks/foundry_webhook_controller.requestPairing'
+    )
+    router.get('/pairing-status', '#controllers/webhooks/foundry_webhook_controller.pairingStatus')
+
+    // Connection management
+    router.post('/revoke', '#controllers/webhooks/foundry_webhook_controller.revoke')
+    router.post('/ping', '#controllers/webhooks/foundry_webhook_controller.ping')
+    router.post('/status', '#controllers/webhooks/foundry_webhook_controller.status')
+  })
+  .prefix('/webhooks/foundry')
 
 // ==========================================
 // Transmit WebSocket routes
