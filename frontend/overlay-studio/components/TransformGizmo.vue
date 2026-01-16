@@ -115,6 +115,12 @@ const baseSize = computed(() => {
     return { width, height };
   }
 
+  if (props.element.type === "dice") {
+    // La zone de dés à scale 1 = tout le canvas (1920x1080)
+    // Le gizmo doit correspondre au canvas complet
+    return { width: 1920 / 2, height: 1080 / 2 };
+  }
+
   // Pour les autres types, taille par défaut
   return { width: 100, height: 100 };
 });

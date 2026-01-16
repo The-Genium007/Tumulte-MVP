@@ -446,6 +446,11 @@ const handleResize = (
     const optionCount = pollProps.mockData.options.length;
     baseHeight = (80 + optionCount * 70 + 50 + 64) * 2;
     baseWidth = pollProps.layout.maxWidth * 2;
+  } else if (el.type === "dice") {
+    // La zone de dés à scale 1 = tout le canvas (1920x1080)
+    // Cohérent avec le calcul du TransformGizmo
+    baseWidth = 1920 / 2;
+    baseHeight = 1080 / 2;
   }
 
   // Calculer les nouveaux facteurs d'échelle

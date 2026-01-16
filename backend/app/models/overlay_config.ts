@@ -8,7 +8,7 @@ import { streamer as Streamer } from './streamer.js'
  */
 export interface OverlayElement {
   id: string
-  type: 'text' | 'image' | 'shape' | 'particle' | 'poll'
+  type: 'text' | 'image' | 'shape' | 'particle' | 'poll' | 'dice'
   name: string
   position: { x: number; y: number; z: number }
   rotation: { x: number; y: number; z: number }
@@ -81,8 +81,87 @@ class OverlayConfig extends BaseModel {
   }
 
   /**
-   * Retourne une configuration par défaut avec un élément poll
-   * Position: x=664 (droite du centre), y=0 (centre vertical), scale 50%
+   * Retourne les propriétés par défaut pour un élément dice
+   */
+  static getDefaultDiceProperties(): Record<string, unknown> {
+    return {
+      colors: {
+        baseColor: '#1a1a2e',
+        numberColor: '#ffffff',
+        criticalSuccessGlow: '#ffd700',
+        criticalFailureGlow: '#ff4444',
+      },
+      textures: {
+        enabled: false,
+        textureUrl: null,
+      },
+      physics: {
+        gravity: -30,
+        bounciness: 0.4,
+        friction: 0.3,
+        rollForce: 1,
+        spinForce: 1,
+      },
+      resultText: {
+        enabled: true,
+        typography: {
+          fontFamily: 'Inter',
+          fontSize: 64,
+          fontWeight: 800,
+          color: '#ffffff',
+          textShadow: {
+            enabled: true,
+            color: 'rgba(0, 0, 0, 0.8)',
+            blur: 8,
+            offsetX: 0,
+            offsetY: 4,
+          },
+        },
+        offsetY: 50,
+        fadeInDelay: 0.3,
+        persistDuration: 3,
+      },
+      audio: {
+        rollSound: { enabled: true, volume: 0.7 },
+        criticalSuccessSound: { enabled: true, volume: 0.9 },
+        criticalFailureSound: { enabled: true, volume: 0.9 },
+      },
+      animations: {
+        entry: {
+          type: 'throw',
+          duration: 0.5,
+        },
+        settle: {
+          timeout: 5,
+        },
+        result: {
+          glowIntensity: 1.5,
+          glowDuration: 0.5,
+        },
+        exit: {
+          type: 'fade',
+          duration: 0.5,
+          delay: 2,
+        },
+      },
+      layout: {
+        maxDice: 10,
+        diceSize: 1,
+      },
+      mockData: {
+        rollFormula: '2d20+5',
+        diceTypes: ['d20', 'd20'],
+        diceValues: [18, 7],
+        isCritical: false,
+        criticalType: null,
+      },
+    }
+  }
+
+  /**
+   * Retourne une configuration par défaut avec un élément poll et un élément dice
+   * Position poll: x=664 (droite du centre), y=0 (centre vertical), scale 50%
+   * Position dice: x=0, y=0 (coin supérieur gauche), scale 100%
    */
   static getDefaultConfigWithPoll(): OverlayConfigData {
     return {
@@ -194,6 +273,17 @@ class OverlayConfig extends BaseModel {
               totalDuration: 60,
             },
           },
+        },
+        {
+          id: 'default_dice',
+          type: 'dice',
+          name: 'Dés 3D par défaut',
+          position: { x: 0, y: 0, z: 0 },
+          rotation: { x: 0, y: 0, z: 0 },
+          scale: { x: 1, y: 1, z: 1 },
+          visible: true,
+          locked: false,
+          properties: this.getDefaultDiceProperties(),
         },
       ],
     }

@@ -28,88 +28,222 @@
       </div>
     </div>
 
-    <!-- Animations (pour l'élément sélectionné) -->
-    <div v-if="selectedElement" class="controls-section">
-      <h4 class="section-title">Animations</h4>
-      <div class="animation-buttons">
-        <UButton
-          color="primary"
-          variant="soft"
-          icon="i-heroicons-play"
-          :disabled="isPlaying"
-          @click="$emit('playEntry')"
-        >
-          Entry
-        </UButton>
-        <UButton
-          color="primary"
-          variant="soft"
-          icon="i-heroicons-arrow-path"
-          :disabled="currentState !== 'active'"
-          @click="handleLoopToggle"
-        >
-          {{ isLoopPlaying ? "Stop Loop" : "Loop" }}
-        </UButton>
-        <UButton
-          color="primary"
-          variant="soft"
-          icon="i-heroicons-trophy"
-          :disabled="currentState !== 'active' && currentState !== 'result'"
-          @click="$emit('playResult')"
-        >
-          Result
-        </UButton>
-        <UButton
-          color="primary"
-          variant="soft"
-          icon="i-heroicons-arrow-right-start-on-rectangle"
-          :disabled="currentState === 'hidden' || currentState === 'exiting'"
-          @click="$emit('playExit')"
-        >
-          Exit
-        </UButton>
+    <!-- Contrôles pour élément DICE -->
+    <template v-if="selectedElement && selectedElement.type === 'dice'">
+      <!-- Configuration du lancer -->
+      <div class="controls-section">
+        <h4 class="section-title">Configuration du lancer</h4>
+
+        <!-- Type de dé -->
+        <div class="dice-type-selector">
+          <span class="field-label">Type de dé</span>
+          <div class="dice-type-buttons">
+            <UButton
+              v-for="dieType in standardDiceTypes"
+              :key="dieType"
+              :color="selectedDiceType === dieType ? 'primary' : 'neutral'"
+              :variant="selectedDiceType === dieType ? 'solid' : 'soft'"
+              size="sm"
+              @click="selectedDiceType = dieType"
+            >
+              {{ dieType }}
+            </UButton>
+          </div>
+          <!-- Dés exotiques (pliables) -->
+          <UButton
+            color="neutral"
+            variant="ghost"
+            size="xs"
+            class="exotic-toggle"
+            @click="showExoticDice = !showExoticDice"
+          >
+            <UIcon :name="showExoticDice ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" />
+            Dés exotiques
+          </UButton>
+          <div v-if="showExoticDice" class="dice-type-buttons exotic">
+            <UButton
+              v-for="dieType in exoticDiceTypes"
+              :key="dieType"
+              :color="selectedDiceType === dieType ? 'primary' : 'neutral'"
+              :variant="selectedDiceType === dieType ? 'solid' : 'soft'"
+              size="xs"
+              @click="selectedDiceType = dieType"
+            >
+              {{ dieType }}
+            </UButton>
+          </div>
+        </div>
+
+        <!-- Nombre de dés -->
+        <div class="dice-count-selector">
+          <span class="field-label">Nombre de dés</span>
+          <div class="dice-count-controls">
+            <UButton
+              color="neutral"
+              variant="soft"
+              size="sm"
+              square
+              :disabled="diceCount <= 1"
+              @click="diceCount = Math.max(1, diceCount - 1)"
+            >
+              <UIcon name="i-heroicons-minus" />
+            </UButton>
+            <span class="dice-count-value">{{ diceCount }}</span>
+            <UButton
+              color="neutral"
+              variant="soft"
+              size="sm"
+              square
+              :disabled="diceCount >= 10"
+              @click="diceCount = Math.min(10, diceCount + 1)"
+            >
+              <UIcon name="i-heroicons-plus" />
+            </UButton>
+          </div>
+        </div>
+
+        <!-- Résultat attendu -->
+        <div class="result-selector">
+          <span class="field-label">
+            Résultat attendu
+            <span class="result-range">({{ resultMin }} - {{ resultMax }})</span>
+          </span>
+          <div class="result-input-group">
+            <UInput
+              v-model.number="expectedResult"
+              type="number"
+              :min="resultMin"
+              :max="resultMax"
+              size="sm"
+              class="result-input"
+            />
+            <span class="result-formula">{{ diceCount }}{{ selectedDiceType }}</span>
+          </div>
+        </div>
       </div>
 
-      <div class="animation-actions">
-        <UButton
-          block
-          color="primary"
-          icon="i-heroicons-play-circle"
-          :disabled="isPlaying"
-          @click="$emit('playFullSequence')"
-        >
-          Séquence complète
-        </UButton>
-        <UButton
-          block
-          color="neutral"
-          variant="ghost"
-          icon="i-heroicons-arrow-path"
-          @click="$emit('reset')"
-        >
-          Reset
-        </UButton>
-      </div>
+      <!-- Actions -->
+      <div class="controls-section">
+        <h4 class="section-title">Actions</h4>
+        <div class="animation-actions">
+          <UButton
+            block
+            color="primary"
+            icon="i-lucide-dices"
+            :disabled="isPlaying"
+            @click="handleRollDice"
+          >
+            Lancer les dés
+          </UButton>
+          <UButton
+            block
+            color="neutral"
+            variant="ghost"
+            icon="i-heroicons-arrow-path"
+            @click="$emit('reset')"
+          >
+            Reset
+          </UButton>
+        </div>
 
-      <!-- État actuel -->
-      <div class="current-state">
-        <span class="state-label">État:</span>
-        <UBadge
-          :color="getStateColor(currentState)"
-          variant="subtle"
-          size="sm"
-        >
-          {{ currentState }}
-        </UBadge>
+        <!-- État actuel -->
+        <div class="current-state">
+          <span class="state-label">État:</span>
+          <UBadge
+            :color="getStateColor(currentState)"
+            variant="subtle"
+            size="sm"
+          >
+            {{ currentState }}
+          </UBadge>
+        </div>
       </div>
-    </div>
+    </template>
+
+    <!-- Contrôles pour élément POLL -->
+    <template v-else-if="selectedElement && selectedElement.type === 'poll'">
+      <div class="controls-section">
+        <h4 class="section-title">Animations</h4>
+        <div class="animation-buttons">
+          <UButton
+            color="primary"
+            variant="soft"
+            icon="i-heroicons-play"
+            :disabled="isPlaying"
+            @click="$emit('playEntry')"
+          >
+            Entry
+          </UButton>
+          <UButton
+            color="primary"
+            variant="soft"
+            icon="i-heroicons-arrow-path"
+            :disabled="currentState !== 'active'"
+            @click="handleLoopToggle"
+          >
+            {{ isLoopPlaying ? "Stop Loop" : "Loop" }}
+          </UButton>
+          <UButton
+            color="primary"
+            variant="soft"
+            icon="i-heroicons-trophy"
+            :disabled="currentState !== 'active' && currentState !== 'result'"
+            @click="$emit('playResult')"
+          >
+            Result
+          </UButton>
+          <UButton
+            color="primary"
+            variant="soft"
+            icon="i-heroicons-arrow-right-start-on-rectangle"
+            :disabled="currentState === 'hidden' || currentState === 'exiting'"
+            @click="$emit('playExit')"
+          >
+            Exit
+          </UButton>
+        </div>
+
+        <div class="animation-actions">
+          <UButton
+            block
+            color="primary"
+            icon="i-heroicons-play-circle"
+            :disabled="isPlaying"
+            @click="$emit('playFullSequence')"
+          >
+            Séquence complète
+          </UButton>
+          <UButton
+            block
+            color="neutral"
+            variant="ghost"
+            icon="i-heroicons-arrow-path"
+            @click="$emit('reset')"
+          >
+            Reset
+          </UButton>
+        </div>
+
+        <!-- État actuel -->
+        <div class="current-state">
+          <span class="state-label">État:</span>
+          <UBadge
+            :color="getStateColor(currentState)"
+            variant="subtle"
+            size="sm"
+          >
+            {{ currentState }}
+          </UBadge>
+        </div>
+      </div>
+    </template>
 
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
-import type { OverlayElement } from "../types";
+import { ref, computed, watch } from "vue";
+import type { OverlayElement, DiceType, DiceRollEvent } from "../types";
 import type { AnimationState } from "../composables/useAnimationController";
 
 const props = defineProps<{
@@ -128,10 +262,23 @@ const emit = defineEmits<{
   (e: "playExit"): void;
   (e: "playFullSequence"): void;
   (e: "reset"): void;
+  (e: "rollDice", data: DiceRollEvent): void;
 }>();
 
+// Types de dés disponibles
+const standardDiceTypes: DiceType[] = ["d4", "d6", "d8", "d10", "d12", "d20", "d100"];
+const exoticDiceTypes: DiceType[] = ["d3", "d5", "d7", "d14", "d16", "d24", "d30"];
+
+// État pour les contrôles de poll
 const isLoopPlaying = ref(false);
 
+// État pour les contrôles de dés
+const showExoticDice = ref(false);
+const selectedDiceType = ref<DiceType>("d20");
+const diceCount = ref(1);
+const expectedResult = ref(10);
+
+// Élément sélectionné
 const selectedElement = computed(() => {
   if (!props.selectedElementId) return null;
   return props.elements.find((el) => el.id === props.selectedElementId) || null;
@@ -143,6 +290,79 @@ const isPlaying = computed(() => {
   );
 });
 
+// Calcul des bornes min/max pour le résultat
+const getDiceMaxValue = (diceType: DiceType): number => {
+  const match = diceType.match(/d(\d+)/);
+  return match ? parseInt(match[1], 10) : 20;
+};
+
+const resultMin = computed(() => diceCount.value);
+const resultMax = computed(() => diceCount.value * getDiceMaxValue(selectedDiceType.value));
+
+// Réajuster le résultat attendu si hors limites
+watch([selectedDiceType, diceCount], () => {
+  const min = resultMin.value;
+  const max = resultMax.value;
+  if (expectedResult.value < min) {
+    expectedResult.value = min;
+  } else if (expectedResult.value > max) {
+    expectedResult.value = max;
+  }
+});
+
+// Distribuer le total sur plusieurs dés
+const distributeTotal = (total: number, count: number, maxPerDie: number): number[] => {
+  const values: number[] = [];
+  let remaining = total;
+
+  for (let i = 0; i < count; i++) {
+    const diceLeft = count - i;
+    // Minimum requis pour les dés restants (chacun doit avoir au moins 1)
+    const minForRest = diceLeft - 1;
+    // Maximum possible pour les dés restants
+    const maxForRest = (diceLeft - 1) * maxPerDie;
+
+    // Ce dé doit avoir au moins (remaining - maxForRest) et au plus (remaining - minForRest)
+    const minThisDie = Math.max(1, remaining - maxForRest);
+    const maxThisDie = Math.min(maxPerDie, remaining - minForRest);
+
+    // Choisir une valeur aléatoire dans l'intervalle
+    const value = Math.floor(Math.random() * (maxThisDie - minThisDie + 1)) + minThisDie;
+    values.push(value);
+    remaining -= value;
+  }
+
+  return values;
+};
+
+// Lancer les dés
+const handleRollDice = () => {
+  const maxPerDie = getDiceMaxValue(selectedDiceType.value);
+  const diceResults = distributeTotal(expectedResult.value, diceCount.value, maxPerDie);
+
+  // Détection critique
+  const isCriticalSuccess = diceResults.every((v) => v === maxPerDie);
+  const isCriticalFailure = diceResults.every((v) => v === 1);
+
+  const diceRollEvent: DiceRollEvent = {
+    id: `preview-${Date.now()}`,
+    characterId: "preview",
+    characterName: "Preview",
+    characterAvatar: null,
+    rollFormula: `${diceCount.value}${selectedDiceType.value}`,
+    result: expectedResult.value,
+    diceResults,
+    rollType: "preview",
+    rolledAt: new Date().toISOString(),
+    isCritical: isCriticalSuccess || isCriticalFailure,
+    criticalType: isCriticalSuccess ? "success" : isCriticalFailure ? "failure" : null,
+    isHidden: false,
+  };
+
+  emit("rollDice", diceRollEvent);
+};
+
+// Toggle loop pour les polls
 const handleLoopToggle = () => {
   if (isLoopPlaying.value) {
     emit("stopLoop");
@@ -244,6 +464,87 @@ const getStateColor = (
   color: var(--color-text-primary);
 }
 
+.element-chevron {
+  color: var(--color-text-muted);
+  transition: transform 0.2s;
+}
+
+/* Dice controls styles */
+.dice-type-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.field-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.dice-type-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.dice-type-buttons.exotic {
+  padding-top: 0.25rem;
+}
+
+.exotic-toggle {
+  align-self: flex-start;
+  margin-top: 0.25rem;
+}
+
+.dice-count-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.dice-count-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.dice-count-value {
+  font-size: 1.25rem;
+  font-weight: 600;
+  min-width: 2rem;
+  text-align: center;
+  color: var(--color-text-primary);
+}
+
+.result-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.result-range {
+  font-weight: 400;
+  color: var(--color-text-muted);
+}
+
+.result-input-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.result-input {
+  width: 80px;
+}
+
+.result-formula {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+}
+
+/* Poll controls styles */
 .animation-buttons {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -270,10 +571,5 @@ const getStateColor = (
 .state-label {
   font-size: 0.75rem;
   color: var(--color-text-muted);
-}
-
-.element-chevron {
-  color: var(--color-text-muted);
-  transition: transform 0.2s;
 }
 </style>

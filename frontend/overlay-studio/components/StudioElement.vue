@@ -1,8 +1,18 @@
 <template>
   <!-- Poll (sondage) -->
-  <!-- NOTE: Ajouter de nouveaux types d'éléments ici avec v-else-if -->
   <StudioPollElement
     v-if="element.type === 'poll'"
+    :element="element"
+    :is-selected="isSelected"
+    @select="handleSelect"
+    @move-start="handleMoveStart"
+    @move="handleMove"
+    @move-end="handleMoveEnd"
+  />
+
+  <!-- Dice (dés 3D) -->
+  <StudioDiceElement
+    v-else-if="element.type === 'dice'"
     :element="element"
     :is-selected="isSelected"
     @select="handleSelect"
@@ -16,6 +26,7 @@
 import type { Object3D } from "three";
 import type { OverlayElement } from "../types";
 import StudioPollElement from "./StudioPollElement.vue";
+import { StudioDiceElement } from "../dice/components";
 
 defineProps<{
   element: OverlayElement;

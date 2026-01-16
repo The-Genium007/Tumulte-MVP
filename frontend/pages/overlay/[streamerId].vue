@@ -17,6 +17,19 @@
         :is-ending="isEnding"
         @state-change="handlePollStateChange"
       />
+      <!-- DiceBox pour les éléments de type dice -->
+      <div
+        v-else-if="element.type === 'dice'"
+        class="dice-element"
+        :style="getDiceContainerStyle(element)"
+      >
+        <DiceBoxClient
+          :notation="currentDiceNotation"
+          :sounds="true"
+          :volume="50"
+          @roll-complete="handleDiceRollComplete"
+        />
+      </div>
     </template>
 
     <!-- Dice Roll Overlay (VTT Integration) -->
@@ -32,6 +45,7 @@
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import LivePollElement from "@/overlay-studio/components/LivePollElement.vue";
 import DiceRollOverlay from "@/components/overlay/DiceRollOverlay.vue";
+// Note: LiveDiceElement a été remplacé par DiceBox - voir DiceBox.client.vue
 import { useWebSocket } from "@/composables/useWebSocket";
 import { useOverlayConfig } from "@/composables/useOverlayConfig";
 import { useWorkerTimer } from "@/composables/useWorkerTimer";
@@ -57,6 +71,9 @@ definePageMeta({
 // Récupérer le streamerId depuis les paramètres de route
 const route = useRoute();
 const streamerId = computed(() => route.params.streamerId as string);
+
+// Mode preview activé via query param ?preview=true
+const _isPreviewMode = computed(() => route.query.preview === "true");
 
 // Charger la configuration de l'overlay
 const { visibleElements, fetchConfig } = useOverlayConfig(streamerId);
@@ -89,7 +106,36 @@ const isEnding = ref(false);
 const currentDiceRoll = ref<DiceRollEvent | null>(null);
 const diceRollQueue = ref<DiceRollEvent[]>([]);
 
+// État séparé pour les dés 3D configurés dans l'overlay studio
+// Les dice rolls sont envoyés aux deux systèmes (2D simple et 3D configuré)
+const currentDiceRollFor3D = ref<DiceRollEvent | null>(null);
+
+// Notation actuelle pour DiceBox (format: "2d20@5,15" pour résultats forcés)
+const currentDiceNotation = ref("");
+
 const { subscribeToStreamerPolls } = useWebSocket();
+
+// Style du container de dés basé sur la position de l'élément
+// Note: DiceBox occupe tout l'espace disponible, la position définit le coin supérieur gauche
+const getDiceContainerStyle = (element: { position: { x: number; y: number }; scale: { x: number; y: number } }) => {
+  // Taille par défaut pour le DiceBox (1920x1080 = format overlay standard)
+  const baseWidth = 1920;
+  const baseHeight = 1080;
+  return {
+    position: 'absolute' as const,
+    left: `${element.position.x}px`,
+    top: `${element.position.y}px`,
+    width: `${baseWidth * element.scale.x}px`,
+    height: `${baseHeight * element.scale.y}px`,
+  };
+};
+
+// Handler pour quand DiceBox termine un lancer
+const handleDiceRollComplete = (results: unknown) => {
+  console.log("[Overlay] DiceBox roll complete:", results);
+  // Nettoyer la notation après le lancer
+  currentDiceNotation.value = "";
+};
 
 // Handler pour les changements d'état du poll (émis par LivePollElement)
 const handlePollStateChange = (newState: string) => {
@@ -116,7 +162,19 @@ const handleDiceRoll = (data: DiceRollEvent) => {
     return;
   }
 
-  // Si un dice roll est déjà affiché, ajouter à la queue
+  // Envoyer aux dés 3D configurés dans l'overlay studio (si présents)
+  // Les dés 3D gèrent leur propre état et queue en interne
+  currentDiceRollFor3D.value = data;
+
+  // Construire la notation DiceBox avec résultats forcés si disponibles
+  // Format: "2d20@5,15" pour forcer les résultats à 5 et 15
+  let notation = data.rollFormula;
+  if (data.diceResults && data.diceResults.length > 0) {
+    notation += "@" + data.diceResults.join(",");
+  }
+  currentDiceNotation.value = notation;
+
+  // Si un dice roll est déjà affiché (overlay 2D simple), ajouter à la queue
   if (currentDiceRoll.value) {
     diceRollQueue.value.push(data);
     console.log("[Overlay] Dice roll queued, queue size:", diceRollQueue.value.length);
@@ -439,5 +497,10 @@ html, body, #__nuxt {
     transform: scale(1.2);
     opacity: 1;
   }
+}
+
+/* Container pour DiceBox */
+.dice-element {
+  z-index: 10;
 }
 </style>

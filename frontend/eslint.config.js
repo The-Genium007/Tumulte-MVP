@@ -218,7 +218,9 @@ export default [
       ".output/**",
       "coverage/**",
       "nuxt.config.ts",
-      "tailwind.config.ts"
+      "tailwind.config.ts",
+      // DiceBox - code externe copié tel quel (voir ~/Downloads/dice-box-threejs-main)
+      "lib/dicebox/**"
     ]
   }
 ];

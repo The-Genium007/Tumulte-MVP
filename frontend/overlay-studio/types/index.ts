@@ -2,11 +2,14 @@
  * Types pour l'Overlay Studio
  */
 
+// Réexporter DiceRollEvent depuis les types principaux
+export type { DiceRollEvent } from "~/types";
+
 /**
  * Types d'éléments disponibles dans l'éditeur
  * NOTE: Structure extensible - ajouter de nouveaux types ici
  */
-export type OverlayElementType = "poll";
+export type OverlayElementType = "poll" | "dice";
 
 /**
  * Position 3D d'un élément
@@ -161,11 +164,133 @@ export interface PollProperties {
   mockData: PollMockData;
 }
 
+// ===== INTERFACES SPÉCIFIQUES AU DICE =====
+
+/**
+ * Types de dés supportés
+ * Standard: d4, d6, d8, d10, d12, d20, d100 (Zocchihedron)
+ * Exotiques: d3, d5, d7, d14, d16, d24, d30
+ */
+export type DiceType =
+  | "d4"
+  | "d6"
+  | "d8"
+  | "d10"
+  | "d12"
+  | "d20"
+  | "d100"
+  | "d3"
+  | "d5"
+  | "d7"
+  | "d14"
+  | "d16"
+  | "d24"
+  | "d30";
+
+/**
+ * Configuration des couleurs des dés
+ */
+export interface DiceColorConfig {
+  baseColor: string;
+  numberColor: string;
+  criticalSuccessGlow: string;
+  criticalFailureGlow: string;
+}
+
+/**
+ * Configuration de la physique des dés
+ */
+export interface DicePhysicsConfig {
+  gravity: number;
+  bounciness: number;
+  friction: number;
+  rollForce: number;
+  spinForce: number;
+}
+
+/**
+ * Configuration des textures des dés
+ */
+export interface DiceTextureConfig {
+  enabled: boolean;
+  textureUrl: string | null;
+}
+
+/**
+ * Configuration du texte de résultat flottant
+ */
+export interface DiceResultTextConfig {
+  enabled: boolean;
+  typography: TypographySettings;
+  offsetY: number;
+  fadeInDelay: number;
+  persistDuration: number;
+}
+
+/**
+ * Configuration audio des dés
+ */
+export interface DiceAudioConfig {
+  rollSound: AudioSettings;
+  criticalSuccessSound: AudioSettings;
+  criticalFailureSound: AudioSettings;
+}
+
+/**
+ * Configuration des animations des dés
+ */
+export interface DiceAnimationsConfig {
+  entry: {
+    type: "drop" | "throw" | "appear";
+    duration: number;
+  };
+  settle: {
+    timeout: number;
+  };
+  result: {
+    glowIntensity: number;
+    glowDuration: number;
+  };
+  exit: {
+    type: "fade" | "fall";
+    duration: number;
+    delay: number;
+  };
+}
+
+/**
+ * Données mock pour l'aperçu des dés dans le studio
+ */
+export interface DiceMockData {
+  rollFormula: string;
+  diceTypes: DiceType[];
+  diceValues: number[];
+  isCritical: boolean;
+  criticalType: "success" | "failure" | null;
+}
+
+/**
+ * Propriétés spécifiques pour un élément dice (dés 3D)
+ */
+export interface DiceProperties {
+  colors: DiceColorConfig;
+  textures: DiceTextureConfig;
+  physics: DicePhysicsConfig;
+  resultText: DiceResultTextConfig;
+  audio: DiceAudioConfig;
+  animations: DiceAnimationsConfig;
+  layout: {
+    maxDice: number;
+    diceSize: number;
+  };
+  mockData: DiceMockData;
+}
+
 /**
  * Union des propriétés possibles
  * NOTE: Ajouter de nouveaux types de propriétés ici
  */
-export type ElementProperties = PollProperties;
+export type ElementProperties = PollProperties | DiceProperties;
 
 /**
  * Élément dans l'overlay

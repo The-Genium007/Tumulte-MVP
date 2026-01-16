@@ -354,6 +354,28 @@
             </div>
           </div>
 
+          <!-- Inspecteur spécifique au type d'élément -->
+          <template v-if="selectedElement.type === 'dice'">
+            <div class="inspector-separator" />
+            <DiceInspector
+              :colors="(selectedElement.properties as DiceProperties).colors"
+              :physics="(selectedElement.properties as DiceProperties).physics"
+              :animations="(selectedElement.properties as DiceProperties).animations"
+              :audio="(selectedElement.properties as DiceProperties).audio"
+              :result-text="(selectedElement.properties as DiceProperties).resultText"
+              :layout="(selectedElement.properties as DiceProperties).layout"
+              :mock-data="(selectedElement.properties as DiceProperties).mockData"
+              @update-colors="updateDiceColors"
+              @update-physics="updateDicePhysics"
+              @update-animations="updateDiceAnimations"
+              @update-audio="updateDiceAudio"
+              @update-result-text="updateDiceResultText"
+              @update-layout="updateDiceLayout"
+              @update-mock-data="updateDiceMockData"
+              @play-preview="playDicePreview"
+            />
+          </template>
+
           <!-- Actions -->
           <div class="inspector-actions">
             <UButton
@@ -393,7 +415,8 @@ import { useOverlayStudioApi } from "~/overlay-studio/composables/useOverlayStud
 import { useUndoRedo, UNDO_REDO_KEY } from "~/overlay-studio/composables/useUndoRedo";
 import { useDevice } from "~/composables/useDevice";
 import StudioCanvas from "~/overlay-studio/components/StudioCanvas.vue";
-import type { OverlayElementType } from "~/overlay-studio/types";
+import DiceInspector from "~/overlay-studio/components/inspector/DiceInspector.vue";
+import type { OverlayElementType, DiceProperties } from "~/overlay-studio/types";
 
 definePageMeta({
   layout: "studio" as const,
@@ -439,6 +462,7 @@ const loading = computed(() => api.loading.value);
 // NOTE: Ajouter de nouveaux types ici
 const elementTypes = [
   { type: "poll" as const, label: "Sondage", icon: "i-lucide-bar-chart-3" },
+  { type: "dice" as const, label: "Dés 3D", icon: "i-lucide-dice-5" },
 ];
 
 // Icône selon le type
@@ -507,6 +531,71 @@ const updateScale = (axis: "x" | "y" | "z", value: number) => {
       [axis]: value,
     });
   }
+};
+
+// Mise à jour des propriétés de dice
+const updateDiceProperty = (path: string, value: unknown) => {
+  if (!selectedElement.value || selectedElement.value.type !== "dice") return;
+
+  const props = selectedElement.value.properties as DiceProperties;
+  const keys = path.split(".");
+  const newProps = JSON.parse(JSON.stringify(props));
+
+  let current: Record<string, unknown> = newProps;
+  for (let i = 0; i < keys.length - 1; i++) {
+    current = current[keys[i]] as Record<string, unknown>;
+  }
+  current[keys[keys.length - 1]] = value;
+
+  store.updateElement(selectedElement.value.id, { properties: newProps });
+  pushSnapshot(`Modifier ${path}`);
+};
+
+const updateDiceColors = (colors: Partial<DiceProperties["colors"]>) => {
+  if (!selectedElement.value) return;
+  const props = selectedElement.value.properties as DiceProperties;
+  updateDiceProperty("colors", { ...props.colors, ...colors });
+};
+
+const updateDicePhysics = (physics: Partial<DiceProperties["physics"]>) => {
+  if (!selectedElement.value) return;
+  const props = selectedElement.value.properties as DiceProperties;
+  updateDiceProperty("physics", { ...props.physics, ...physics });
+};
+
+const updateDiceAnimations = (animations: Partial<DiceProperties["animations"]>) => {
+  if (!selectedElement.value) return;
+  const props = selectedElement.value.properties as DiceProperties;
+  updateDiceProperty("animations", { ...props.animations, ...animations });
+};
+
+const updateDiceAudio = (audio: Partial<DiceProperties["audio"]>) => {
+  if (!selectedElement.value) return;
+  const props = selectedElement.value.properties as DiceProperties;
+  updateDiceProperty("audio", { ...props.audio, ...audio });
+};
+
+const updateDiceResultText = (resultText: Partial<DiceProperties["resultText"]>) => {
+  if (!selectedElement.value) return;
+  const props = selectedElement.value.properties as DiceProperties;
+  updateDiceProperty("resultText", { ...props.resultText, ...resultText });
+};
+
+const updateDiceLayout = (layout: Partial<DiceProperties["layout"]>) => {
+  if (!selectedElement.value) return;
+  const props = selectedElement.value.properties as DiceProperties;
+  updateDiceProperty("layout", { ...props.layout, ...layout });
+};
+
+const updateDiceMockData = (mockData: Partial<DiceProperties["mockData"]>) => {
+  if (!selectedElement.value) return;
+  const props = selectedElement.value.properties as DiceProperties;
+  updateDiceProperty("mockData", { ...props.mockData, ...mockData });
+};
+
+const playDicePreview = () => {
+  // TODO: Implémenter la lecture de la preview dans le canvas
+  console.log("Play dice preview");
 };
 
 // Sauvegarde
@@ -1035,6 +1124,12 @@ onUnmounted(() => {
   font-size: 0.75rem;
   color: var(--color-text-disabled);
   width: 16px;
+}
+
+.inspector-separator {
+  height: 1px;
+  background: var(--color-neutral-200);
+  margin: 1rem 0;
 }
 
 .inspector-actions {
