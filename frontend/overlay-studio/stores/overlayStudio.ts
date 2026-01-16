@@ -31,6 +31,10 @@ export const useOverlayStudioStore = defineStore("overlayStudio", () => {
   const showGrid = ref(true);
   const isDragging = ref(false);
 
+  // ===== État de sauvegarde =====
+  const isDirty = ref(false);
+  const lastSavedSnapshot = ref<string | null>(null);
+
   // ===== Canvas =====
   const canvasWidth = ref(1920);
   const canvasHeight = ref(1080);
@@ -259,6 +263,7 @@ export const useOverlayStudioStore = defineStore("overlayStudio", () => {
 
     elements.value.push(element);
     selectedElementId.value = element.id;
+    isDirty.value = true;
 
     return element;
   }
@@ -273,16 +278,24 @@ export const useOverlayStudioStore = defineStore("overlayStudio", () => {
       if (selectedElementId.value === id) {
         selectedElementId.value = null;
       }
+      isDirty.value = true;
     }
   }
 
   /**
    * Met à jour un élément
+   * Remplace l'élément entier pour garantir la réactivité Vue sur les propriétés imbriquées
    */
   function updateElement(id: string, updates: Partial<OverlayElement>): void {
-    const element = elements.value.find((el) => el.id === id);
-    if (element) {
-      Object.assign(element, updates);
+    const index = elements.value.findIndex((el) => el.id === id);
+    if (index !== -1) {
+      const element = elements.value[index];
+      // Remplacer l'élément entier pour garantir la réactivité
+      elements.value[index] = {
+        ...element,
+        ...updates,
+      };
+      isDirty.value = true;
     }
   }
 
@@ -387,6 +400,9 @@ export const useOverlayStudioStore = defineStore("overlayStudio", () => {
     canvasHeight.value = config.canvas.height;
     elements.value = config.elements;
     selectedElementId.value = null;
+    // Sauvegarder le snapshot initial et marquer comme propre
+    lastSavedSnapshot.value = JSON.stringify(config);
+    isDirty.value = false;
   }
 
   /**
@@ -398,6 +414,16 @@ export const useOverlayStudioStore = defineStore("overlayStudio", () => {
     editMode.value = "translate";
     canvasWidth.value = 1920;
     canvasHeight.value = 1080;
+    lastSavedSnapshot.value = null;
+    isDirty.value = false;
+  }
+
+  /**
+   * Marque la configuration actuelle comme sauvegardée
+   */
+  function markAsSaved(): void {
+    lastSavedSnapshot.value = JSON.stringify(getCurrentConfig());
+    isDirty.value = false;
   }
 
   /**
@@ -425,6 +451,7 @@ export const useOverlayStudioStore = defineStore("overlayStudio", () => {
     isDragging,
     canvasWidth,
     canvasHeight,
+    isDirty,
 
     // Computed
     selectedElement,
@@ -453,5 +480,6 @@ export const useOverlayStudioStore = defineStore("overlayStudio", () => {
     loadConfig,
     resetEditor,
     restoreSnapshot,
+    markAsSaved,
   };
 });

@@ -150,6 +150,18 @@
           size="sm"
           to="/streamer/overlay-preview"
         />
+        <!-- Indicateur de sauvegarde -->
+        <div v-if="isDirty || isAutoSaving" class="save-indicator">
+          <template v-if="isAutoSaving">
+            <UIcon name="i-lucide-loader-2" class="size-4 animate-spin text-primary-500" />
+            <span class="save-indicator-text">Sauvegarde...</span>
+          </template>
+          <template v-else>
+            <span class="save-indicator-dot" />
+            <span class="save-indicator-text">Non sauvegardé</span>
+          </template>
+        </div>
+
         <UButton
           color="primary"
           icon="i-lucide-save"
@@ -160,6 +172,13 @@
         />
       </div>
     </header>
+
+    <!-- Modal: Modifications non sauvegardées -->
+    <UnsavedChangesModal
+      v-model:open="showUnsavedModal"
+      @confirm="confirmLeave"
+      @cancel="cancelLeave"
+    />
 
     <!-- Modal: Prévisualisation des dés -->
     <UModal v-model:open="showDicePreview" :ui="{ content: 'sm:max-w-2xl' }">
@@ -396,14 +415,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, provide, ref } from "vue";
+import { computed, nextTick, onMounted, onUnmounted, provide, ref, watch } from "vue";
 import { useOverlayStudioStore } from "~/overlay-studio/stores/overlayStudio";
 import { useOverlayStudioApi } from "~/overlay-studio/composables/useOverlayStudioApi";
 import { useUndoRedo, UNDO_REDO_KEY } from "~/overlay-studio/composables/useUndoRedo";
+import { useUnsavedChangesGuard } from "~/overlay-studio/composables/useUnsavedChangesGuard";
 import { useDevice } from "~/composables/useDevice";
 import StudioCanvas from "~/overlay-studio/components/StudioCanvas.vue";
 import DiceInspector from "~/overlay-studio/components/inspector/DiceInspector.vue";
 import PollInspector from "~/overlay-studio/components/inspector/PollInspector.vue";
+import UnsavedChangesModal from "~/overlay-studio/components/UnsavedChangesModal.vue";
 import type { OverlayElementType, DiceProperties, PollProperties } from "~/overlay-studio/types";
 
 definePageMeta({
@@ -421,6 +442,13 @@ const toast = useToast();
 const undoRedo = useUndoRedo(store);
 provide(UNDO_REDO_KEY, undoRedo);
 const { canUndo, canRedo, undoLabel, redoLabel, undo, redo, pushSnapshot, initialize: initializeHistory } = undoRedo;
+
+// Guard pour les modifications non sauvegardées
+const { showUnsavedModal, confirmLeave, cancelLeave } = useUnsavedChangesGuard();
+
+// État dirty du store
+const isDirty = computed(() => store.isDirty);
+const isAutoSaving = computed(() => api.autoSaving.value);
 
 // Undo/Redo handlers
 const handleUndo = () => {
@@ -458,6 +486,17 @@ const elementTypes = [
   { type: "poll" as const, label: "Sondage", icon: "i-lucide-bar-chart-3" },
   { type: "dice" as const, label: "Dés 3D", icon: "i-lucide-dice-5" },
 ];
+
+// Auto-save: surveiller les modifications et sauvegarder automatiquement
+watch(
+  () => store.isDirty,
+  (dirty) => {
+    if (dirty && currentConfigId.value) {
+      // Déclencher l'auto-save (debounced dans le composable API)
+      api.autoSave(currentConfigId.value, store.getCurrentConfig());
+    }
+  },
+);
 
 // Icône selon le type
 const getElementIcon = (type: OverlayElementType): string => {
@@ -720,6 +759,8 @@ const handleSave = async () => {
         name: currentConfigName.value,
         config: configData,
       });
+      // Marquer comme sauvegardé (reset du dirty state)
+      store.markAsSaved();
       toast.add({
         title: "Sauvegardé",
         color: "success",
@@ -778,6 +819,9 @@ const createNewConfig = async () => {
     currentConfigName.value = newConfig.name;
     showNewConfigModal.value = false;
     newConfigName.value = "";
+
+    // Marquer comme sauvegardé (la config vient d'être créée)
+    store.markAsSaved();
 
     toast.add({
       title: "Configuration créée",
@@ -980,6 +1024,36 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+}
+
+/* Indicateur de sauvegarde */
+.save-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  background: var(--color-warning-50);
+  border: 1px solid var(--color-warning-200);
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  color: var(--color-warning-700);
+}
+
+.save-indicator-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--color-warning-500);
+  border-radius: 50%;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.save-indicator-text {
+  font-weight: 500;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
 .back-link {

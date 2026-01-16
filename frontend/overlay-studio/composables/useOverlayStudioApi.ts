@@ -1,7 +1,9 @@
 import { ref, readonly } from "vue";
+import { useDebounceFn } from "@vueuse/core";
 import type { OverlayConfig, OverlayConfigData } from "../types";
 import type { PreviewCommand, PreviewMockData } from "@/types";
 import { useSupportTrigger } from "@/composables/useSupportTrigger";
+import { useOverlayStudioStore } from "../stores/overlayStudio";
 
 /**
  * API response types
@@ -31,6 +33,10 @@ export const useOverlayStudioApi = () => {
   const currentConfig = ref<OverlayConfig | null>(null);
   const loading = ref(false);
   const saving = ref(false);
+  const autoSaving = ref(false);
+
+  // Auto-save delay en millisecondes
+  const AUTO_SAVE_DELAY = 2000;
 
   /**
    * Récupère toutes les configurations du streamer
@@ -277,6 +283,60 @@ export const useOverlayStudioApi = () => {
   };
 
   /**
+   * Auto-save debounced - sauvegarde automatique après un délai sans modification
+   * Appelle markAsSaved() sur le store après une sauvegarde réussie
+   */
+  const autoSave = useDebounceFn(
+    async (id: string, configData: OverlayConfigData) => {
+      if (autoSaving.value || saving.value) return;
+
+      autoSaving.value = true;
+      try {
+        const response = await fetch(
+          `${API_URL}/streamer/overlay-studio/configs/${id}`,
+          {
+            method: "PUT",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ config: configData }),
+          },
+        );
+
+        if (!response.ok) {
+          console.error("[AutoSave] Failed to save config");
+          return;
+        }
+
+        const data = await response.json();
+        const updatedConfig = mapDetailResponseToConfig(data.data);
+
+        // Update in list
+        const index = configs.value.findIndex((c) => c.id === id);
+        if (index !== -1) {
+          configs.value[index] = updatedConfig;
+        }
+
+        // Update current if same
+        if (currentConfig.value?.id === id) {
+          currentConfig.value = updatedConfig;
+        }
+
+        // Marquer comme sauvegardé dans le store
+        const store = useOverlayStudioStore();
+        store.markAsSaved();
+
+        console.log("[AutoSave] Config saved successfully");
+      } catch (error) {
+        console.error("[AutoSave] Error:", error);
+        // Ne pas trigger le support pour l'auto-save - pas critique
+      } finally {
+        autoSaving.value = false;
+      }
+    },
+    AUTO_SAVE_DELAY,
+  );
+
+  /**
    * Map API response to OverlayConfig (list item)
    */
   const mapResponseToConfig = (
@@ -316,6 +376,7 @@ export const useOverlayStudioApi = () => {
     currentConfig: readonly(currentConfig),
     loading: readonly(loading),
     saving: readonly(saving),
+    autoSaving: readonly(autoSaving),
 
     // Methods
     fetchConfigs,
@@ -325,5 +386,6 @@ export const useOverlayStudioApi = () => {
     deleteConfig,
     activateConfig,
     sendPreviewCommand,
+    autoSave,
   };
 };
