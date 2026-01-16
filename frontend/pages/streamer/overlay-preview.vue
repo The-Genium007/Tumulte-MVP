@@ -19,9 +19,14 @@
           </UButton>
           <div class="preview-title-section">
             <h2 class="preview-title">Prévisualisation Overlay</h2>
-            <UBadge v-if="configName" color="primary" variant="soft">
-              {{ configName }}
-            </UBadge>
+            <USelect
+              v-model="selectedConfigId"
+              :items="configOptions"
+              placeholder="Sélectionner une configuration"
+              size="sm"
+              class="config-selector"
+              @update:model-value="loadSelectedConfig"
+            />
           </div>
         </div>
         <div v-if="isDev" class="preview-actions">
@@ -53,9 +58,14 @@
           <h2 class="preview-title">Prévisualisation</h2>
         </div>
         <div class="mobile-bottom-row">
-          <UBadge v-if="configName" color="primary" variant="soft" size="lg">
-            {{ configName }}
-          </UBadge>
+          <USelect
+            v-model="selectedConfigId"
+            :items="configOptions"
+            placeholder="Configuration"
+            size="sm"
+            class="config-selector-mobile"
+            @update:model-value="loadSelectedConfig"
+          />
           <UButton
             v-if="isDev"
             color="primary"
@@ -171,8 +181,36 @@ const CANVAS_HEIGHT = 1080;
 
 // État local
 const loading = ref(true);
-const configName = ref<string | null>(null);
+const selectedConfigId = ref<string | undefined>(undefined);
 const selectedElementId = ref<string | null>(null);
+
+// Options pour le sélecteur de configuration
+const configOptions = computed(() =>
+  api.configs.value.map((c) => ({
+    label: c.name + (c.isActive ? " (Active)" : ""),
+    value: c.id,
+  })),
+);
+
+// Charger une configuration sélectionnée
+const loadSelectedConfig = async (configId: string | undefined) => {
+  if (!configId) return;
+
+  try {
+    loading.value = true;
+    const fullConfig = await api.fetchConfig(configId);
+    store.loadConfig(fullConfig.config);
+
+    // Réinitialiser les états des éléments
+    for (const element of store.elements) {
+      elementStates.value[element.id] = "hidden";
+    }
+  } catch (error) {
+    console.error("Failed to load config:", error);
+  } finally {
+    loading.value = false;
+  }
+};
 const canvasWrapper = ref<HTMLElement | null>(null);
 const canvasContainer = ref<HTMLElement | null>(null);
 
@@ -244,13 +282,15 @@ let resizeObserver: ResizeObserver | null = null;
 // Charger la configuration au montage
 onMounted(async () => {
   try {
-    // Toujours charger les configs pour récupérer le nom de la config active
+    // Charger la liste des configs
     const configs = await api.fetchConfigs();
+
+    // Trouver la config active par défaut
     const activeConfig = configs.find((c) => c.isActive);
 
     if (activeConfig) {
-      // Définir le nom de la config
-      configName.value = activeConfig.name;
+      // Sélectionner la config active
+      selectedConfigId.value = activeConfig.id;
 
       // Si le store est vide (on ne vient pas du Studio), charger les éléments
       if (store.elements.length === 0) {
@@ -548,6 +588,15 @@ const handleRollDice = async (data: DiceRollEvent) => {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+}
+
+.config-selector {
+  min-width: 200px;
+}
+
+.config-selector-mobile {
+  flex: 1;
+  min-width: 0;
 }
 
 .preview-title {

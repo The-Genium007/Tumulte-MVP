@@ -28,6 +28,16 @@
         <h1 class="toolbar-title">Overlay Studio</h1>
         <UBadge color="warning" variant="soft">Beta</UBadge>
 
+        <!-- Bouton Nouveau -->
+        <UButton
+          color="neutral"
+          variant="ghost"
+          icon="i-lucide-file-plus"
+          size="sm"
+          title="Nouvelle configuration (vider le canvas)"
+          @click="handleNewCanvas"
+        />
+
         <!-- Undo/Redo buttons -->
         <div class="undo-redo-buttons">
           <UButton
@@ -157,7 +167,7 @@
         <h3 class="text-lg font-semibold">Nouvelle configuration</h3>
       </template>
 
-      <div class="p-4">
+      <template #body>
         <UFormField label="Nom de la configuration">
           <UInput
             v-model="newConfigName"
@@ -170,7 +180,7 @@
             @keyup.enter="createNewConfig"
           />
         </UFormField>
-      </div>
+      </template>
 
       <template #footer>
         <div class="flex justify-end gap-2">
@@ -598,24 +608,34 @@ const playDicePreview = () => {
   console.log("Play dice preview");
 };
 
+// Nouvelle configuration vierge (bouton "Nouveau" dans la toolbar)
+const handleNewCanvas = () => {
+  store.resetEditor();
+  currentConfigId.value = null;
+  currentConfigName.value = "";
+  // Réinitialiser l'historique undo/redo
+  initializeHistory();
+};
+
 // Sauvegarde
 const handleSave = async () => {
   try {
     const configData = store.getCurrentConfig();
 
     if (currentConfigId.value) {
-      // Mise à jour d'une configuration existante
+      // Mode modification : sauvegarde directe
       await api.updateConfig(currentConfigId.value, {
         name: currentConfigName.value,
         config: configData,
       });
       toast.add({
-        title: "Configuration sauvegardée",
+        title: "Sauvegardé",
         color: "success",
         icon: "i-lucide-check",
       });
     } else {
-      // Nouvelle configuration - ouvrir le modal pour le nom
+      // Nouvelle config : ouvrir modale pour nommer
+      newConfigName.value = "";
       showNewConfigModal.value = true;
     }
   } catch (error) {
@@ -641,10 +661,24 @@ const createNewConfig = async () => {
     return;
   }
 
+  const name = newConfigName.value.trim();
+
+  // Vérifier si une config avec ce nom existe déjà
+  const existingConfig = api.configs.value.find((c) => c.name === name);
+  if (existingConfig) {
+    toast.add({
+      title: "Nom déjà utilisé",
+      description: "Une configuration avec ce nom existe déjà. Veuillez choisir un autre nom.",
+      color: "error",
+      icon: "i-lucide-alert-circle",
+    });
+    return;
+  }
+
   try {
     const configData = store.getCurrentConfig();
     const newConfig = await api.createConfig({
-      name: newConfigName.value.trim(),
+      name,
       config: configData,
     });
 
