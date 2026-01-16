@@ -14,7 +14,7 @@ const vector3Schema = z.object({
  */
 const overlayElementSchema = z.object({
   id: z.string(),
-  type: z.enum(['text', 'image', 'shape', 'particle']),
+  type: z.enum(['poll', 'dice']),
   name: z.string().max(100),
   position: vector3Schema,
   rotation: vector3Schema,
