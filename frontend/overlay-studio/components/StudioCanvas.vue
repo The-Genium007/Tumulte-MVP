@@ -20,10 +20,10 @@
         <!-- Lumière ambiante -->
         <TresAmbientLight :intensity="1" />
 
-        <!-- Grille de référence (adaptée à 1920x1080, divisions de 100px) -->
+        <!-- Grille de référence (adaptée à 1920x1080, divisions de 100px = synchro avec magnétisme) -->
         <TresGridHelper
           v-if="showGrid"
-          :args="[2000, 20, '#8a7d6a', '#b5aa99']"
+          :args="[2000, 20, '#60584c', '#8a7d6a']"
           :rotation-x="Math.PI / 2"
         />
 
@@ -44,12 +44,12 @@
       <div
         v-if="showSnapGuideX"
         class="snap-guide snap-guide-vertical"
-        :style="{ left: '50%' }"
+        :style="{ left: snapGuideXStyle }"
       />
       <div
         v-if="showSnapGuideY"
         class="snap-guide snap-guide-horizontal"
-        :style="{ top: '50%' }"
+        :style="{ top: snapGuideYStyle }"
       />
 
       <!-- Gizmo de transformation 2D (overlay HTML) -->
@@ -170,7 +170,7 @@ import { useOverlayStudioStore } from "../stores/overlayStudio";
 import { useInjectedUndoRedo } from "../composables/useUndoRedo";
 import type { PollProperties } from "../types";
 import StudioElement from "./StudioElement.vue";
-import TransformGizmo from "./TransformGizmo.vue";
+import TransformGizmo, { type ActiveEdges } from "./TransformGizmo.vue";
 
 const store = useOverlayStudioStore();
 
@@ -257,7 +257,11 @@ const cancelEditing = () => {
 // Snap guides
 const showSnapGuideX = ref(false);
 const showSnapGuideY = ref(false);
-const SNAP_THRESHOLD = 15; // Distance en pixels canvas pour activer le snap
+const snapGuideXPosition = ref(0); // Position X du guide vertical en coordonnées canvas
+const snapGuideYPosition = ref(0); // Position Y du guide horizontal en coordonnées canvas
+const SNAP_THRESHOLD = 15; // Distance en pixels canvas pour activer le snap sur les axes centraux
+const SNAP_THRESHOLD_GRID = 4; // Distance réduite pour les autres lignes de grille
+const GRID_SPACING = 100; // Espacement de la grille en pixels canvas (synchro avec TresGridHelper)
 
 // Ratio 16:9 fixe
 const ASPECT_RATIO = 16 / 9;
@@ -357,6 +361,21 @@ const scaleFactor = computed(() => {
   return wrapperWidth.value / canvasWidth.value;
 });
 
+// Styles des guides de snap (position dynamique basée sur la grille)
+const snapGuideXStyle = computed(() => {
+  // Convertir la position canvas en pourcentage du wrapper
+  // Canvas X va de -960 à +960, on convertit en 0% à 100%
+  const percent = ((snapGuideXPosition.value + canvasWidth.value / 2) / canvasWidth.value) * 100;
+  return `${percent}%`;
+});
+
+const snapGuideYStyle = computed(() => {
+  // Convertir la position canvas en pourcentage du wrapper
+  // Canvas Y va de -540 à +540 (mais inversé: +540 = haut = 0%)
+  const percent = ((canvasHeight.value / 2 - snapGuideYPosition.value) / canvasHeight.value) * 100;
+  return `${percent}%`;
+});
+
 // Gestion du déplacement depuis l'élément (pixels écran)
 const handleElementMove = (elementId: string, deltaScreenX: number, deltaScreenY: number) => {
   const element = elements.value.find((el) => el.id === elementId);
@@ -393,28 +412,129 @@ const handleElementMove = (elementId: string, deltaScreenX: number, deltaScreenY
   });
 };
 
-// Gestion du déplacement avec snap au centre (depuis TransformGizmo)
-const handleMove = (deltaX: number, deltaY: number) => {
+// Trouver la ligne de grille la plus proche d'une position
+const findNearestGridLine = (position: number): number => {
+  return Math.round(position / GRID_SPACING) * GRID_SPACING;
+};
+
+// Calculer la demi-taille de l'élément en coordonnées canvas
+const getElementHalfSize = (element: typeof selectedElement.value) => {
+  if (!element) return { halfWidth: 0, halfHeight: 0 };
+
+  let baseWidth = 100;
+  let baseHeight = 100;
+
+  if (element.type === "poll") {
+    const pollProps = element.properties as PollProperties;
+    const optionCount = pollProps.mockData.options.length;
+    baseHeight = (80 + optionCount * 70 + 50 + 64) * 2;
+    baseWidth = pollProps.layout.maxWidth * 2;
+  } else if (element.type === "dice") {
+    baseWidth = 1920 / 2;
+    baseHeight = 1080 / 2;
+  }
+
+  return {
+    halfWidth: (baseWidth * element.scale.x) / 2,
+    halfHeight: (baseHeight * element.scale.y) / 2,
+  };
+};
+
+// Gestion du déplacement avec snap basé sur les bordures actives (depuis TransformGizmo)
+const handleMove = (deltaX: number, deltaY: number, activeEdges: ActiveEdges) => {
   if (!selectedElement.value) return;
 
   const el = selectedElement.value;
   let newX = el.position.x + deltaX;
   let newY = el.position.y + deltaY;
 
-  // Snap au centre vertical (X = 0)
-  if (Math.abs(newX) < SNAP_THRESHOLD) {
-    newX = 0;
-    showSnapGuideX.value = true;
-  } else {
-    showSnapGuideX.value = false;
-  }
+  const { halfWidth, halfHeight } = getElementHalfSize(el);
+  const hasActiveEdge = activeEdges.top || activeEdges.bottom || activeEdges.left || activeEdges.right;
 
-  // Snap au centre horizontal (Y = 0)
-  if (Math.abs(newY) < SNAP_THRESHOLD) {
-    newY = 0;
-    showSnapGuideY.value = true;
+  // Réinitialiser les guides
+  showSnapGuideX.value = false;
+  showSnapGuideY.value = false;
+
+  if (hasActiveEdge) {
+    // MODE BORDURE : Snap sur la grille basé sur le bord tenu
+
+    // Magnétisme horizontal (activé quand on tient par le haut ou le bas)
+    if (activeEdges.top || activeEdges.bottom) {
+      // Calculer la position du bord actif
+      let edgeY: number;
+      if (activeEdges.top) {
+        edgeY = newY + halfHeight; // Bord haut de l'élément
+      } else {
+        edgeY = newY - halfHeight; // Bord bas de l'élément
+      }
+
+      // Trouver la ligne de grille la plus proche
+      const nearestGridY = findNearestGridLine(edgeY);
+      const distanceToGrid = Math.abs(edgeY - nearestGridY);
+
+      // Seuil plus élevé pour l'axe central (Y=0), réduit pour les autres lignes
+      const threshold = nearestGridY === 0 ? SNAP_THRESHOLD : SNAP_THRESHOLD_GRID;
+
+      // Snap si le bord est proche d'une ligne de grille
+      if (distanceToGrid < threshold) {
+        if (activeEdges.top) {
+          newY = nearestGridY - halfHeight;
+        } else {
+          newY = nearestGridY + halfHeight;
+        }
+        snapGuideYPosition.value = nearestGridY;
+        showSnapGuideY.value = true;
+      }
+    }
+
+    // Magnétisme vertical (activé quand on tient par la gauche ou la droite)
+    if (activeEdges.left || activeEdges.right) {
+      // Calculer la position du bord actif
+      let edgeX: number;
+      if (activeEdges.left) {
+        edgeX = newX - halfWidth; // Bord gauche de l'élément
+      } else {
+        edgeX = newX + halfWidth; // Bord droit de l'élément
+      }
+
+      // Trouver la ligne de grille la plus proche
+      const nearestGridX = findNearestGridLine(edgeX);
+      const distanceToGrid = Math.abs(edgeX - nearestGridX);
+
+      // Seuil plus élevé pour l'axe central (X=0), réduit pour les autres lignes
+      const threshold = nearestGridX === 0 ? SNAP_THRESHOLD : SNAP_THRESHOLD_GRID;
+
+      // Snap si le bord est proche d'une ligne de grille
+      if (distanceToGrid < threshold) {
+        if (activeEdges.left) {
+          newX = nearestGridX + halfWidth;
+        } else {
+          newX = nearestGridX - halfWidth;
+        }
+        snapGuideXPosition.value = nearestGridX;
+        showSnapGuideX.value = true;
+      }
+    }
   } else {
-    showSnapGuideY.value = false;
+    // MODE CENTRAL : Snap du centre de l'élément sur la grille (comportement par défaut)
+
+    // Snap vertical (centre X sur la grille)
+    const nearestGridX = findNearestGridLine(newX);
+    const thresholdX = nearestGridX === 0 ? SNAP_THRESHOLD : SNAP_THRESHOLD_GRID;
+    if (Math.abs(newX - nearestGridX) < thresholdX) {
+      newX = nearestGridX;
+      snapGuideXPosition.value = nearestGridX;
+      showSnapGuideX.value = true;
+    }
+
+    // Snap horizontal (centre Y sur la grille)
+    const nearestGridY = findNearestGridLine(newY);
+    const thresholdY = nearestGridY === 0 ? SNAP_THRESHOLD : SNAP_THRESHOLD_GRID;
+    if (Math.abs(newY - nearestGridY) < thresholdY) {
+      newY = nearestGridY;
+      snapGuideYPosition.value = nearestGridY;
+      showSnapGuideY.value = true;
+    }
   }
 
   store.updateElementPosition(el.id, {

@@ -76,8 +76,16 @@ const props = defineProps<{
   containerHeight: number;
 }>();
 
+// Bordures actives pour le magnétisme (basé sur la proximité de la souris)
+export interface ActiveEdges {
+  top: boolean;
+  bottom: boolean;
+  left: boolean;
+  right: boolean;
+}
+
 const emit = defineEmits<{
-  move: [deltaX: number, deltaY: number];
+  move: [deltaX: number, deltaY: number, activeEdges: ActiveEdges];
   resize: [
     deltaWidth: number,
     deltaHeight: number,
@@ -89,6 +97,17 @@ const emit = defineEmits<{
   transformStart: [mode: "move" | "resize" | "rotate"];
   transformEnd: [];
 }>();
+
+// Seuil de proximité pour activer le magnétisme sur une bordure (en pixels écran)
+const EDGE_PROXIMITY_THRESHOLD = 50;
+
+// Bordures actives pendant le drag
+const activeEdges = ref<ActiveEdges>({
+  top: false,
+  bottom: false,
+  left: false,
+  right: false,
+});
 
 // État du drag
 type DragMode = "move" | "resize" | "rotate" | null;
@@ -163,11 +182,40 @@ const gizmoStyle = computed(() => {
   };
 });
 
+// Calculer les bordures actives basé sur la position de la souris par rapport au gizmo
+const calculateActiveEdges = (event: PointerEvent): ActiveEdges => {
+  const gizmoEl = document.querySelector(".transform-gizmo") as HTMLElement;
+  if (!gizmoEl) {
+    return { top: false, bottom: false, left: false, right: false };
+  }
+
+  const rect = gizmoEl.getBoundingClientRect();
+  const mouseX = event.clientX;
+  const mouseY = event.clientY;
+
+  // Distance de la souris à chaque bordure
+  const distanceToTop = Math.abs(mouseY - rect.top);
+  const distanceToBottom = Math.abs(mouseY - rect.bottom);
+  const distanceToLeft = Math.abs(mouseX - rect.left);
+  const distanceToRight = Math.abs(mouseX - rect.right);
+
+  return {
+    top: distanceToTop <= EDGE_PROXIMITY_THRESHOLD,
+    bottom: distanceToBottom <= EDGE_PROXIMITY_THRESHOLD,
+    left: distanceToLeft <= EDGE_PROXIMITY_THRESHOLD,
+    right: distanceToRight <= EDGE_PROXIMITY_THRESHOLD,
+  };
+};
+
 // Démarrer le déplacement
 const handleGizmoPointerDown = (event: PointerEvent) => {
   dragMode.value = "move";
   startX.value = event.clientX;
   startY.value = event.clientY;
+
+  // Calculer les bordures actives au début du drag
+  activeEdges.value = calculateActiveEdges(event);
+
   document.body.style.cursor = "move";
   emit("transformStart", "move");
   window.addEventListener("pointermove", handlePointerMove);
@@ -221,10 +269,13 @@ const handlePointerMove = (event: PointerEvent) => {
   const deltaScreenY = event.clientY - startY.value;
 
   if (dragMode.value === "move") {
+    // Recalculer les bordures actives pendant le drag
+    activeEdges.value = calculateActiveEdges(event);
+
     // Convertir le delta écran en delta canvas
     const deltaCanvasX = deltaScreenX / scale;
     const deltaCanvasY = -deltaScreenY / scale; // Inverser Y car canvas Y est inversé
-    emit("move", deltaCanvasX, deltaCanvasY);
+    emit("move", deltaCanvasX, deltaCanvasY, activeEdges.value);
     startX.value = event.clientX;
     startY.value = event.clientY;
   } else if (dragMode.value === "resize" && resizeHandle.value) {
