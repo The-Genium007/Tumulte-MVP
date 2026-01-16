@@ -112,7 +112,7 @@
               class="dice-container"
               :style="getDiceContainerStyle(element)"
             >
-              <DiceBoxClient
+              <DiceBox
                 :ref="(el: unknown) => setDiceBoxRef(element.id, el)"
                 :notation="selectedElementId === element.id ? currentDiceNotation : ''"
                 :sounds="true"

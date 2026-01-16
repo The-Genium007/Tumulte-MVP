@@ -47,6 +47,7 @@ onMounted(async () => {
     theme_colorset: props.colorset,
     theme_texture: props.texture,
     theme_material: props.material,
+    baseScale: 150, // 50% bigger than default (100)
     onRollComplete: (results: unknown) => {
       emit('rollComplete', results)
     },

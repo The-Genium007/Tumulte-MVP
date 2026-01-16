@@ -49,29 +49,6 @@
               {{ dieType }}
             </UButton>
           </div>
-          <!-- Dés exotiques (pliables) -->
-          <UButton
-            color="neutral"
-            variant="ghost"
-            size="xs"
-            class="exotic-toggle"
-            @click="showExoticDice = !showExoticDice"
-          >
-            <UIcon :name="showExoticDice ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" />
-            Dés exotiques
-          </UButton>
-          <div v-if="showExoticDice" class="dice-type-buttons exotic">
-            <UButton
-              v-for="dieType in exoticDiceTypes"
-              :key="dieType"
-              :color="selectedDiceType === dieType ? 'primary' : 'neutral'"
-              :variant="selectedDiceType === dieType ? 'solid' : 'soft'"
-              size="xs"
-              @click="selectedDiceType = dieType"
-            >
-              {{ dieType }}
-            </UButton>
-          </div>
         </div>
 
         <!-- Nombre de dés -->
@@ -266,14 +243,12 @@ const emit = defineEmits<{
 }>();
 
 // Types de dés disponibles
-const standardDiceTypes: DiceType[] = ["d4", "d6", "d8", "d10", "d12", "d20", "d100"];
-const exoticDiceTypes: DiceType[] = ["d3", "d5", "d7", "d14", "d16", "d24", "d30"];
+const standardDiceTypes: DiceType[] = ["d4", "d6", "d8", "d10", "d12", "d20"];
 
 // État pour les contrôles de poll
 const isLoopPlaying = ref(false);
 
 // État pour les contrôles de dés
-const showExoticDice = ref(false);
 const selectedDiceType = ref<DiceType>("d20");
 const diceCount = ref(1);
 const expectedResult = ref(10);

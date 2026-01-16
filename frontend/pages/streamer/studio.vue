@@ -161,6 +161,53 @@
       </div>
     </header>
 
+    <!-- Modal: Prévisualisation des dés -->
+    <UModal v-model:open="showDicePreview" :ui="{ content: 'sm:max-w-2xl' }">
+      <template #header>
+        <div class="flex items-center gap-2">
+          <UIcon name="i-lucide-dice-5" class="size-5 text-primary-500" />
+          <h3 class="text-lg font-semibold">Prévisualisation des dés</h3>
+        </div>
+      </template>
+
+      <template #body>
+        <div class="dice-preview-container">
+          <ClientOnly>
+            <DiceBox
+              ref="diceBoxRef"
+              :sounds="true"
+              :volume="50"
+              @roll-complete="handleDiceRollComplete"
+              @ready="handleDiceBoxReady"
+            />
+          </ClientOnly>
+        </div>
+      </template>
+
+      <template #footer>
+        <div class="flex justify-between items-center w-full">
+          <div class="text-sm text-muted">
+            <span v-if="dicePreviewNotation">{{ dicePreviewNotation }}</span>
+          </div>
+          <div class="flex gap-2">
+            <UButton
+              color="primary"
+              icon="i-lucide-dice-5"
+              label="Relancer"
+              :disabled="!diceBoxReady"
+              @click="rollDiceAgain"
+            />
+            <UButton
+              color="neutral"
+              variant="ghost"
+              label="Fermer"
+              @click="showDicePreview = false"
+            />
+          </div>
+        </div>
+      </template>
+    </UModal>
+
     <!-- Modal: Nouvelle configuration -->
     <UModal v-model:open="showNewConfigModal">
       <template #header>
@@ -419,7 +466,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, provide, ref } from "vue";
+import { computed, nextTick, onMounted, onUnmounted, provide, ref } from "vue";
 import { useOverlayStudioStore } from "~/overlay-studio/stores/overlayStudio";
 import { useOverlayStudioApi } from "~/overlay-studio/composables/useOverlayStudioApi";
 import { useUndoRedo, UNDO_REDO_KEY } from "~/overlay-studio/composables/useUndoRedo";
@@ -460,6 +507,12 @@ const showConfigDropdown = ref(false);
 const showNewConfigModal = ref(false);
 const newConfigName = ref("");
 const showInspector = ref(false);
+
+// État pour la prévisualisation des dés
+const showDicePreview = ref(false);
+const diceBoxRef = ref<{ roll: (notation: string) => Promise<void>; clear: () => void } | null>(null);
+const diceBoxReady = ref(false);
+const dicePreviewNotation = ref("");
 
 // État du store
 const elements = computed(() => store.elements);
@@ -603,9 +656,63 @@ const updateDiceMockData = (mockData: Partial<DiceProperties["mockData"]>) => {
   updateDiceProperty("mockData", { ...props.mockData, ...mockData });
 };
 
-const playDicePreview = () => {
-  // TODO: Implémenter la lecture de la preview dans le canvas
-  console.log("Play dice preview");
+// Prévisualisation des dés
+const playDicePreview = async () => {
+  if (!selectedElement.value || selectedElement.value.type !== "dice") return;
+
+  const props = selectedElement.value.properties as DiceProperties;
+  const mockData = props.mockData;
+
+  // Construire la notation avec les résultats forcés
+  // Format DiceBox: "2d20@5,15" pour forcer les résultats à 5 et 15
+  let notation = mockData.rollFormula;
+  if (mockData.diceValues && mockData.diceValues.length > 0) {
+    notation += "@" + mockData.diceValues.join(",");
+  }
+
+  dicePreviewNotation.value = notation;
+  showDicePreview.value = true;
+
+  // Attendre que la modale soit ouverte et le DiceBox prêt
+  await nextTick();
+
+  // Si le DiceBox est déjà prêt, lancer immédiatement
+  if (diceBoxReady.value && diceBoxRef.value) {
+    await rollDice(notation);
+  }
+};
+
+const handleDiceBoxReady = () => {
+  diceBoxReady.value = true;
+  // Si on a une notation en attente, lancer les dés
+  if (dicePreviewNotation.value && diceBoxRef.value) {
+    rollDice(dicePreviewNotation.value);
+  }
+};
+
+const handleDiceRollComplete = (results: unknown) => {
+  console.log("[Studio] Dice roll complete:", results);
+};
+
+const rollDice = async (notation: string) => {
+  if (!diceBoxRef.value) return;
+
+  // Clear les dés précédents avant de lancer
+  if (diceBoxRef.value.clear) {
+    diceBoxRef.value.clear();
+  }
+
+  try {
+    await diceBoxRef.value.roll(notation);
+  } catch (error) {
+    console.error("[Studio] Error rolling dice:", error);
+  }
+};
+
+const rollDiceAgain = () => {
+  if (dicePreviewNotation.value) {
+    rollDice(dicePreviewNotation.value);
+  }
 };
 
 // Nouvelle configuration vierge (bouton "Nouveau" dans la toolbar)
@@ -1267,5 +1374,15 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+}
+
+/* Dice Preview Container */
+.dice-preview-container {
+  position: relative;
+  width: 100%;
+  height: 400px;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border-radius: 8px;
+  overflow: hidden;
 }
 </style>

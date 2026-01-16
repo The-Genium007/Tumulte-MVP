@@ -643,14 +643,6 @@ const diceTypeOptions: { label: string; value: DiceType; maxValue: number }[] = 
   { label: "d10", value: "d10", maxValue: 10 },
   { label: "d12", value: "d12", maxValue: 12 },
   { label: "d20", value: "d20", maxValue: 20 },
-  { label: "d100", value: "d100", maxValue: 100 },
-  { label: "d3", value: "d3", maxValue: 3 },
-  { label: "d5", value: "d5", maxValue: 5 },
-  { label: "d7", value: "d7", maxValue: 7 },
-  { label: "d14", value: "d14", maxValue: 14 },
-  { label: "d16", value: "d16", maxValue: 16 },
-  { label: "d24", value: "d24", maxValue: 24 },
-  { label: "d30", value: "d30", maxValue: 30 },
 ];
 
 // État local pour les contrôles de prévisualisation

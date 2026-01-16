@@ -23,7 +23,7 @@
         class="dice-element"
         :style="getDiceContainerStyle(element)"
       >
-        <DiceBoxClient
+        <DiceBox
           :notation="currentDiceNotation"
           :sounds="true"
           :volume="50"
