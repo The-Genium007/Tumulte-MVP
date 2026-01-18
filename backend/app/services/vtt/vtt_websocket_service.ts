@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken'
 import { DateTime } from 'luxon'
 import VttConnection from '#models/vtt_connection'
 import TokenRevocationList from '#models/token_revocation_list'
+import { campaign as Campaign } from '#models/campaign'
 import env from '#start/env'
 import logger from '@adonisjs/core/services/logger'
 import VttWebhookService from '#services/vtt/vtt_webhook_service'
@@ -68,6 +69,20 @@ export default class VttWebSocketService {
         // Validate tokenVersion - if it doesn't match, token has been invalidated
         if (decoded.token_version !== connection.tokenVersion) {
           return next(new Error('Token has been invalidated'))
+        }
+
+        // Check if at least one campaign is still associated with this connection
+        const associatedCampaign = await Campaign.query()
+          .where('vtt_connection_id', connection.id)
+          .first()
+
+        if (!associatedCampaign) {
+          logger.warn('VTT connection has no associated campaign', { connectionId: connection.id })
+          return next(
+            new Error(
+              'CAMPAIGN_DELETED:The campaign associated with this connection no longer exists'
+            )
+          )
         }
 
         // Attach connection ID to socket
@@ -307,14 +322,23 @@ export default class VttWebSocketService {
       logger.info('Character update received', {
         connectionId,
         characterName: data.name,
+        characterId: data.characterId,
         campaignId: data.campaignId,
       })
 
       // Get the VTT connection
+      logger.info('Looking up VTT connection', { connectionId })
       const connection = await VttConnection.findOrFail(connectionId)
+      logger.info('VTT connection found', { connectionId, worldId: connection.worldId })
 
       // Update character via webhook service
       const webhookService = new VttWebhookService()
+      logger.info('Calling syncCharacter', {
+        connectionId,
+        campaignId: data.campaignId,
+        characterName: data.name,
+      })
+
       const character = await webhookService.syncCharacter(connection, data.campaignId, {
         vttCharacterId: data.characterId,
         name: data.name,
@@ -325,10 +349,22 @@ export default class VttWebSocketService {
         vttData: data.vttData,
       })
 
+      logger.info('Character synced successfully', {
+        characterId: character.id,
+        characterName: character.name,
+      })
+
       socket.emit('character:update:ack', { success: true, characterId: character.id })
     } catch (error) {
-      logger.error('Failed to handle character update', { error })
-      socket.emit('character:update:ack', { success: false, error: (error as Error).message })
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      const errorStack = error instanceof Error ? error.stack : undefined
+      logger.error('Failed to handle character update', {
+        error: errorMessage,
+        stack: errorStack,
+        connectionId: socket.vttConnectionId,
+        characterName: data?.name,
+      })
+      socket.emit('character:update:ack', { success: false, error: errorMessage })
     }
   }
 

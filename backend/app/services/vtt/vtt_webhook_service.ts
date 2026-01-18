@@ -140,10 +140,32 @@ export default class VttWebhookService {
       campaignId,
     })
 
-    const campaign = await Campaign.query()
+    // First try to find by both vtt_connection_id AND vtt_campaign_id
+    let campaign = await Campaign.query()
       .where('vtt_connection_id', vttConnection.id)
       .where('vtt_campaign_id', campaignId)
       .first()
+
+    // If not found, try by vtt_connection_id only (for backwards compatibility
+    // when vtt_campaign_id might be null or different)
+    if (!campaign) {
+      logger.info('Campaign not found with exact match, trying by connection only', {
+        vttConnectionId: vttConnection.id,
+        campaignId,
+      })
+
+      campaign = await Campaign.query().where('vtt_connection_id', vttConnection.id).first()
+
+      // If found, update the vtt_campaign_id for future lookups
+      if (campaign && !campaign.vttCampaignId) {
+        logger.info('Updating campaign vtt_campaign_id', {
+          campaignId: campaign.id,
+          vttCampaignId: campaignId,
+        })
+        campaign.vttCampaignId = campaignId
+        await campaign.save()
+      }
+    }
 
     if (!campaign) {
       logger.error('Campaign not found for character sync', {

@@ -5,6 +5,7 @@ import { user as User } from '#models/user'
 import { inject } from '@adonisjs/core'
 import logger from '@adonisjs/core/services/logger'
 import { DateTime } from 'luxon'
+import VttWebSocketService from '#services/vtt/vtt_websocket_service'
 
 /**
  * Service pour gérer la logique métier des campagnes
@@ -13,7 +14,8 @@ import { DateTime } from 'luxon'
 export class CampaignService {
   constructor(
     private campaignRepository: CampaignRepository,
-    private membershipRepository: CampaignMembershipRepository
+    private membershipRepository: CampaignMembershipRepository,
+    private vttWebSocketService: VttWebSocketService
   ) {}
 
   /**
@@ -101,6 +103,7 @@ export class CampaignService {
 
   /**
    * Supprimer une campagne
+   * Révoque également la connexion VTT si elle existe
    */
   async deleteCampaign(campaignId: string, ownerId: string): Promise<void> {
     const campaign = await this.campaignRepository.findById(campaignId)
@@ -111,6 +114,37 @@ export class CampaignService {
 
     if (campaign.ownerId !== ownerId) {
       throw new Error('Not authorized to delete this campaign')
+    }
+
+    logger.info(
+      { campaignId, vttConnectionId: campaign.vttConnectionId },
+      'Deleting campaign, checking for VTT connection'
+    )
+
+    // Revoke VTT connection if exists (notifies Foundry module via WebSocket)
+    if (campaign.vttConnectionId) {
+      try {
+        logger.info(
+          { campaignId, vttConnectionId: campaign.vttConnectionId },
+          'Revoking VTT connection before campaign deletion'
+        )
+        await this.vttWebSocketService.revokeConnection(
+          campaign.vttConnectionId,
+          'Campaign deleted by owner'
+        )
+        logger.info(
+          { campaignId, vttConnectionId: campaign.vttConnectionId },
+          'VTT connection revoked due to campaign deletion'
+        )
+      } catch (error) {
+        // Log but don't fail deletion if revocation fails
+        logger.warn(
+          { campaignId, vttConnectionId: campaign.vttConnectionId, error },
+          'Failed to revoke VTT connection during campaign deletion'
+        )
+      }
+    } else {
+      logger.info({ campaignId }, 'No VTT connection to revoke for this campaign')
     }
 
     await this.campaignRepository.delete(campaign)

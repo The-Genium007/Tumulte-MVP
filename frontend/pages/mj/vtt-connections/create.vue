@@ -69,22 +69,35 @@
           </UAlert>
 
           <!-- Code Input -->
-          <div class="w-full lg:w-2/3">
+          <div class="w-full max-w-64">
             <label class="block text-sm font-bold text-secondary ml-4 uppercase mb-2">
               Code de connexion <span class="text-error-500">*</span>
             </label>
-            <UInput
-              v-model="pairingCode"
-              type="text"
-              placeholder="ABC-123"
-              size="lg"
-              :disabled="pairing"
-              :ui="{
-                root: 'ring-0 border-0 rounded-lg overflow-hidden',
-                base: 'px-3.5 py-2.5 bg-primary-100 text-primary-500 placeholder:text-primary-400 rounded-lg font-mono text-2xl tracking-widest text-center uppercase',
-              }"
-              @input="formatCode"
-            />
+            <div class="flex items-center gap-2">
+              <UInput
+                v-model="pairingCode"
+                type="text"
+                placeholder="ABC-123"
+                size="lg"
+                :disabled="pairing"
+                :ui="{
+                  root: 'ring-0 border-0 rounded-lg overflow-hidden flex-1',
+                  base: 'px-3.5 py-2.5 bg-primary-100 text-primary-500 placeholder:text-primary-400 rounded-lg font-mono text-2xl tracking-widest text-center uppercase',
+                }"
+                @input="formatCode"
+              />
+              <UButton
+                color="primary"
+                variant="solid"
+                size="lg"
+                square
+                :disabled="pairing"
+                title="Coller depuis le presse-papier"
+                @click="pasteFromClipboard"
+              >
+                <UIcon name="i-lucide-clipboard-paste" class="size-5" />
+              </UButton>
+            </div>
             <p v-if="codeError" class="text-xs text-error-500 mt-2 ml-4">
               {{ codeError }}
             </p>
@@ -119,7 +132,7 @@
                 La campagne <strong>{{ pairingSuccess.campaign.name }}</strong> a été créée automatiquement.
               </p>
               <p class="mt-2 text-sm text-muted flex items-center gap-2">
-                <UIcon name="i-lucide-loader-2" class="animate-spin size-4" />
+                <UIcon name="i-game-icons-dice-twenty-faces-twenty" class="animate-spin size-4" />
                 Redirection vers votre campagne...
               </p>
             </template>
@@ -307,6 +320,21 @@ const formatCode = () => {
   pairingCode.value = value;
   codeError.value = "";
   pairingError.value = "";
+};
+
+// Paste from clipboard
+const pasteFromClipboard = async () => {
+  try {
+    const text = await navigator.clipboard.readText();
+    pairingCode.value = text;
+    formatCode();
+  } catch {
+    toast.add({
+      title: "Erreur",
+      description: "Impossible d'accéder au presse-papier",
+      color: "error",
+    });
+  }
 };
 
 const handlePairing = async () => {
