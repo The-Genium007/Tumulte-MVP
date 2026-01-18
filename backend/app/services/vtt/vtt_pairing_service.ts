@@ -8,6 +8,7 @@ import TokenRevocationList from '#models/token_revocation_list'
 import encryption from '@adonisjs/core/services/encryption'
 import env from '#start/env'
 
+/* eslint-disable @typescript-eslint/naming-convention -- JWT standard claims use snake_case */
 export interface PairingClaims {
   sub: string // 'vtt:foundry' | 'vtt:roll20' | 'vtt:alchemy'
   aud: string // 'tumulte:api'
@@ -22,6 +23,7 @@ export interface PairingClaims {
   nonce: string
   jti: string
 }
+/* eslint-enable @typescript-eslint/naming-convention */
 
 export interface PairingUrlParts {
   token: string
@@ -46,12 +48,12 @@ export interface SessionTokens {
 
 @inject()
 export default class VttPairingService {
-  private readonly JWT_SECRET: string
-  private readonly SESSION_TOKEN_EXPIRY = 3600 // 1 hour in seconds
-  private readonly REFRESH_TOKEN_EXPIRY = 604800 // 7 days in seconds
+  private readonly jwtSecret: string
+  private readonly sessionTokenExpiry = 3600 // 1 hour in seconds
+  private readonly refreshTokenExpiry = 604800 // 7 days in seconds
 
   constructor() {
-    this.JWT_SECRET = env.get('APP_KEY')
+    this.jwtSecret = env.get('APP_KEY')
   }
 
   /**
@@ -98,7 +100,7 @@ export default class VttPairingService {
       }
 
       // Verify JWT signature and decode
-      const decoded = jwt.verify(token, this.JWT_SECRET, {
+      const decoded = jwt.verify(token, this.jwtSecret, {
         algorithms: ['HS256'],
         audience: 'tumulte:api',
       }) as PairingClaims
@@ -272,6 +274,7 @@ export default class VttPairingService {
     const refreshJti = randomBytes(16).toString('hex')
 
     // Session token (short-lived) - includes tokenVersion for validation
+    /* eslint-disable camelcase -- JWT payload uses snake_case by convention */
     const sessionToken = jwt.sign(
       {
         jti: sessionJti,
@@ -280,9 +283,9 @@ export default class VttPairingService {
         type: 'session',
         token_version: tokenVersion,
         iat: now,
-        exp: now + this.SESSION_TOKEN_EXPIRY,
+        exp: now + this.sessionTokenExpiry,
       },
-      this.JWT_SECRET,
+      this.jwtSecret,
       { algorithm: 'HS256' }
     )
 
@@ -295,16 +298,17 @@ export default class VttPairingService {
         type: 'refresh',
         token_version: tokenVersion,
         iat: now,
-        exp: now + this.REFRESH_TOKEN_EXPIRY,
+        exp: now + this.refreshTokenExpiry,
       },
-      this.JWT_SECRET,
+      this.jwtSecret,
       { algorithm: 'HS256' }
     )
+    /* eslint-enable camelcase */
 
     return {
       sessionToken,
       refreshToken,
-      expiresIn: this.SESSION_TOKEN_EXPIRY,
+      expiresIn: this.sessionTokenExpiry,
     }
   }
 
@@ -315,7 +319,7 @@ export default class VttPairingService {
   async refreshSessionToken(refreshToken: string): Promise<SessionTokens> {
     try {
       // Verify refresh token
-      const decoded = jwt.verify(refreshToken, this.JWT_SECRET, {
+      const decoded = jwt.verify(refreshToken, this.jwtSecret, {
         algorithms: ['HS256'],
       }) as any
 

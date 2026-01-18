@@ -352,7 +352,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
-import { useVttConnections } from "@/composables/useVttConnections";
+import { useVttConnections, type VttConnection } from "@/composables/useVttConnections";
 import { useToast } from "#ui/composables/useToast";
 
 definePageMeta({
@@ -366,8 +366,10 @@ const { getConnectionDetails, deleteConnection, regenerateApiKey } =
   useVttConnections();
 const toast = useToast();
 
-const connection = ref<any>(null);
-const campaigns = ref<any[]>([]);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- VTT connection has dynamic properties
+const connection = ref<VttConnection | null>(null);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Campaign structure from API
+const campaigns = ref<Array<{ id: string; name: string; createdAt: string }>>([]);
 const loading = ref(false);
 const showToken = ref(false);
 const regenerating = ref(false);
@@ -376,7 +378,7 @@ const revoking = ref(false);
 
 const config = useRuntimeConfig();
 
-const getConnectionToken = (conn: any) => conn['api' + 'Key'];
+const getConnectionToken = (conn: VttConnection) => conn.apiKey;
 
 onMounted(async () => {
   loading.value = true;
@@ -499,7 +501,7 @@ const handleDelete = async () => {
 };
 
 const getTunnelStatusColor = (
-  status: string,
+  status?: string,
 ): "success" | "warning" | "error" | "neutral" => {
   switch (status) {
     case "connected":
@@ -514,7 +516,7 @@ const getTunnelStatusColor = (
   }
 };
 
-const getTunnelStatusLabel = (status: string): string => {
+const getTunnelStatusLabel = (status?: string): string => {
   switch (status) {
     case "connected":
       return "Connecté";
@@ -525,7 +527,7 @@ const getTunnelStatusLabel = (status: string): string => {
     case "disconnected":
       return "Déconnecté";
     default:
-      return status;
+      return status || "Inconnu";
   }
 };
 

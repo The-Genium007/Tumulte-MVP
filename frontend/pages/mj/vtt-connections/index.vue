@@ -336,7 +336,7 @@ const pairingStep = ref<"choose" | "code" | "success">("choose");
 const pairingCode = ref("");
 const pairingInProgress = ref(false);
 const pairingError = ref("");
-const pairingResult = ref<any>(null);
+const pairingResult = ref<{ connection?: VttConnection } | null>(null);
 
 // Revoke modal state
 const revokeModalOpen = ref(false);

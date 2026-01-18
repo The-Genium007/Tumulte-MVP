@@ -11,19 +11,19 @@ import VttSyncService from '#services/vtt/vtt_sync_service'
 
 interface VttSocket extends Socket {
   vttConnectionId?: string
-  heartbeatInterval?: NodeJS.Timeout
-  heartbeatTimeout?: NodeJS.Timeout
+  heartbeatIntervalTimer?: NodeJS.Timeout
+  heartbeatTimeoutTimer?: NodeJS.Timeout
 }
 
 @inject()
 export default class VttWebSocketService {
-  private readonly JWT_SECRET: string
-  private readonly HEARTBEAT_INTERVAL = 30000 // 30 seconds
-  private readonly HEARTBEAT_TIMEOUT = 60000 // 60 seconds
+  private readonly jwtSecret: string
+  private readonly heartbeatInterval = 30000 // 30 seconds
+  private readonly heartbeatTimeout = 60000 // 60 seconds
   private io?: Server
 
   constructor() {
-    this.JWT_SECRET = env.get('APP_KEY')
+    this.jwtSecret = env.get('APP_KEY')
   }
 
   /**
@@ -45,7 +45,7 @@ export default class VttWebSocketService {
         }
 
         // Verify JWT token
-        const decoded = jwt.verify(token, this.JWT_SECRET, {
+        const decoded = jwt.verify(token, this.jwtSecret, {
           algorithms: ['HS256'],
         }) as any
 
@@ -174,19 +174,19 @@ export default class VttWebSocketService {
    */
   private setupHeartbeat(socket: VttSocket, connection: VttConnection): void {
     // Clear any existing intervals
-    if (socket.heartbeatInterval) {
-      clearInterval(socket.heartbeatInterval)
+    if (socket.heartbeatIntervalTimer) {
+      clearInterval(socket.heartbeatIntervalTimer)
     }
-    if (socket.heartbeatTimeout) {
-      clearTimeout(socket.heartbeatTimeout)
+    if (socket.heartbeatTimeoutTimer) {
+      clearTimeout(socket.heartbeatTimeoutTimer)
     }
 
     // Send ping every 30 seconds
-    socket.heartbeatInterval = setInterval(() => {
+    socket.heartbeatIntervalTimer = setInterval(() => {
       socket.emit('ping', { timestamp: Date.now() })
 
       // Set timeout for pong response
-      socket.heartbeatTimeout = setTimeout(async () => {
+      socket.heartbeatTimeoutTimer = setTimeout(async () => {
         logger.warn('VTT heartbeat timeout', { connectionId: connection.id })
 
         // Update connection status
@@ -195,14 +195,14 @@ export default class VttWebSocketService {
 
         // Disconnect socket
         socket.disconnect(true)
-      }, this.HEARTBEAT_TIMEOUT - this.HEARTBEAT_INTERVAL)
-    }, this.HEARTBEAT_INTERVAL)
+      }, this.heartbeatTimeout - this.heartbeatInterval)
+    }, this.heartbeatInterval)
 
     // Handle pong response
     socket.on('pong', async () => {
       // Clear timeout
-      if (socket.heartbeatTimeout) {
-        clearTimeout(socket.heartbeatTimeout)
+      if (socket.heartbeatTimeoutTimer) {
+        clearTimeout(socket.heartbeatTimeoutTimer)
       }
 
       // Update last heartbeat timestamp
@@ -537,7 +537,8 @@ export default class VttWebSocketService {
   private async broadcastToOverlay(campaignId: string, event: string, data: any): Promise<void> {
     try {
       // Import transmit dynamically to avoid circular dependency
-      const transmit = (await import('@adonisjs/transmit/services/main')).default
+      const transmitModule = await import('@adonisjs/transmit/services/main')
+      const transmit = transmitModule.default
 
       // Broadcast to all streamers in the campaign
       transmit.broadcast(`overlay/${campaignId}/combat`, {
@@ -560,11 +561,11 @@ export default class VttWebSocketService {
       const connectionId = socket.vttConnectionId!
 
       // Clear heartbeat intervals
-      if (socket.heartbeatInterval) {
-        clearInterval(socket.heartbeatInterval)
+      if (socket.heartbeatIntervalTimer) {
+        clearInterval(socket.heartbeatIntervalTimer)
       }
-      if (socket.heartbeatTimeout) {
-        clearTimeout(socket.heartbeatTimeout)
+      if (socket.heartbeatTimeoutTimer) {
+        clearTimeout(socket.heartbeatTimeoutTimer)
       }
 
       // Update connection status

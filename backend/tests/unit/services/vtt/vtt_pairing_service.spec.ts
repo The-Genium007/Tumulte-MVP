@@ -1,5 +1,4 @@
 import { test } from '@japa/runner'
-import { DateTime } from 'luxon'
 import jwt from 'jsonwebtoken'
 import testUtils from '#tests/helpers/database'
 import env from '#start/env'
@@ -9,7 +8,8 @@ import {
   createTestVttConnection,
 } from '#tests/helpers/test_utils'
 import VttConnection from '#models/vtt_connection'
-import TokenRevocationList from '#models/token_revocation_list'
+
+/* eslint-disable camelcase -- JWT standard claims use snake_case */
 
 test.group('VttPairingService - parsePairingUrl', () => {
   test('should parse valid foundry:// URL', async ({ assert }) => {

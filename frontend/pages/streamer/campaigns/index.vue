@@ -245,7 +245,7 @@ import CharacterSelectionModal from "@/components/streamer/CharacterSelectionMod
 import { useCampaigns } from "@/composables/useCampaigns";
 import { useCampaignCharacters } from "@/composables/useCampaignCharacters";
 import { useMockData } from "@/composables/useMockData";
-import type { Campaign, CampaignInvitation, AuthorizationStatus, Character } from "@/types";
+import type { Campaign, CampaignInvitation, AuthorizationStatus } from "@/types";
 import type { MockDataModule } from "@/composables/useMockData";
 
 definePageMeta({

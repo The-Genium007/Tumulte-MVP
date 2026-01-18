@@ -363,6 +363,7 @@ const isDev = import.meta.dev;
 const mockPairingUrl = computed(() => {
   // Mock JWT payload (header.payload.signature format)
   // This is a simplified mock - in reality, the backend generates this with proper signing
+  /* eslint-disable camelcase -- JWT standard claims use snake_case */
   const mockPayload = {
     sub: "vtt:foundry",
     aud: "tumulte:api",
@@ -377,6 +378,7 @@ const mockPairingUrl = computed(() => {
     nonce: "mock-nonce-789",
     jti: "mock-jti-abc",
   };
+  /* eslint-enable camelcase */
 
   // Base64 encode (simplified for mock purposes)
   const mockToken = btoa(JSON.stringify(mockPayload));

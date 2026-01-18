@@ -1,6 +1,5 @@
 import { BaseSeeder } from '@adonisjs/lucid/seeders'
 import { campaign as Campaign } from '#models/campaign'
-import User from '#models/user'
 import VttConnection from '#models/vtt_connection'
 import { campaignMembership as CampaignMembership } from '#models/campaign_membership'
 import { poll as Poll } from '#models/poll'
@@ -67,7 +66,7 @@ export default class extends BaseSeeder {
     )
 
     // Poll 1.1 : Que faire du gobelin ?
-    const poll1_1 = await Poll.updateOrCreate(
+    const pollGoblin = await Poll.updateOrCreate(
       { campaignId: campaign1.id, question: 'Que faire du gobelin capturé ?' },
       {
         campaignId: campaign1.id,
@@ -87,9 +86,9 @@ export default class extends BaseSeeder {
 
     // Result du poll 1.1 (lancé et terminé)
     await PollResult.updateOrCreate(
-      { pollId: poll1_1.id, status: 'COMPLETED' },
+      { pollId: pollGoblin.id, status: 'COMPLETED' },
       {
-        pollId: poll1_1.id,
+        pollId: pollGoblin.id,
         campaignId: campaign1.id,
         status: 'COMPLETED',
         startedAt: DateTime.now().minus({ hours: 1, minutes: 30 }),
@@ -106,7 +105,7 @@ export default class extends BaseSeeder {
     )
 
     // Poll 1.2 : Direction à prendre
-    const poll1_2 = await Poll.updateOrCreate(
+    const pollDirection = await Poll.updateOrCreate(
       { campaignId: campaign1.id, question: 'Quelle direction explorer ensuite ?' },
       {
         campaignId: campaign1.id,
@@ -125,9 +124,9 @@ export default class extends BaseSeeder {
     )
 
     await PollResult.updateOrCreate(
-      { pollId: poll1_2.id, status: 'COMPLETED' },
+      { pollId: pollDirection.id, status: 'COMPLETED' },
       {
-        pollId: poll1_2.id,
+        pollId: pollDirection.id,
         campaignId: campaign1.id,
         status: 'COMPLETED',
         startedAt: DateTime.now().minus({ hours: 1 }),
@@ -144,7 +143,7 @@ export default class extends BaseSeeder {
     )
 
     // Poll 2.1 : Comment affronter le dragon ? (campagne 1, poll historique)
-    const poll2_1 = await Poll.updateOrCreate(
+    const pollDragon = await Poll.updateOrCreate(
       { campaignId: campaign1.id, question: 'Comment affronter le dragon ?' },
       {
         campaignId: campaign1.id,
@@ -158,9 +157,9 @@ export default class extends BaseSeeder {
     )
 
     await PollResult.updateOrCreate(
-      { pollId: poll2_1.id, status: 'COMPLETED' },
+      { pollId: pollDragon.id, status: 'COMPLETED' },
       {
-        pollId: poll2_1.id,
+        pollId: pollDragon.id,
         campaignId: campaign1.id,
         status: 'COMPLETED',
         startedAt: DateTime.now().minus({ days: 7, hours: -2 }),
@@ -208,7 +207,7 @@ export default class extends BaseSeeder {
     )
 
     // Poll 3.1 : Où chercher refuge ? (campagne 2)
-    const poll3_1 = await Poll.updateOrCreate(
+    const pollRefuge = await Poll.updateOrCreate(
       { campaignId: campaign2.id, question: 'Où chercher refuge pour la nuit ?' },
       {
         campaignId: campaign2.id,
@@ -227,9 +226,9 @@ export default class extends BaseSeeder {
     )
 
     await PollResult.updateOrCreate(
-      { pollId: poll3_1.id, status: 'COMPLETED' },
+      { pollId: pollRefuge.id, status: 'COMPLETED' },
       {
-        pollId: poll3_1.id,
+        pollId: pollRefuge.id,
         campaignId: campaign2.id,
         status: 'COMPLETED',
         startedAt: DateTime.now().minus({ days: 3, hours: -3 }),

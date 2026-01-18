@@ -61,6 +61,7 @@ const props = withDefaults(
   },
 );
 
+ 
 const emit = defineEmits<{
   "update:modelValue": [value: string];
   "update:opacity": [value: number];
@@ -72,7 +73,7 @@ const inputUi = {
 };
 
 // Convertit hex en rgba si opacité < 100
-const displayColor = computed(() => {
+const _displayColor = computed(() => {
   if (!props.showOpacity || props.opacity === 100) {
     return props.modelValue;
   }

@@ -18,7 +18,12 @@ export interface VttConnection {
   apiKey: string;
   webhookUrl: string;
   status: "pending" | "active" | "expired" | "revoked";
+  tunnelStatus?: "connecting" | "connected" | "disconnected" | "error";
+  worldId?: string;
+  worldName?: string;
+  moduleVersion?: string;
   lastWebhookAt: string | null;
+  lastHeartbeatAt?: string | null;
   createdAt: string;
   updatedAt: string;
   provider?: VttProvider;

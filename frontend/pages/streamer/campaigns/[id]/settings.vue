@@ -2,7 +2,7 @@
 import { ref, onMounted } from "vue";
 import CharacterSelectionModal from "@/components/streamer/CharacterSelectionModal.vue";
 import { useCampaignCharacters } from "@/composables/useCampaignCharacters";
-import type { Character, CampaignSettings } from "@/types";
+import type { CampaignSettings } from "@/types";
 
 definePageMeta({
   layout: "authenticated" as const,
@@ -35,7 +35,7 @@ const loadSettings = async () => {
   loading.value = true;
   try {
     settings.value = await getCampaignSettings(campaignId.value);
-  } catch (error) {
+  } catch {
     toast.add({
       title: "Erreur",
       description: "Impossible de charger les paramètres",
