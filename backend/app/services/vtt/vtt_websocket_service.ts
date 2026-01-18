@@ -227,6 +227,28 @@ export default class VttWebSocketService {
   }
 
   /**
+   * Check if a campaign is still associated with this connection
+   * If not, notify the client and disconnect
+   * @returns true if campaign exists, false if it was deleted (and client was notified)
+   */
+  private async checkCampaignExistsOrNotify(socket: VttSocket): Promise<boolean> {
+    const connectionId = socket.vttConnectionId!
+    const campaign = await Campaign.query().where('vtt_connection_id', connectionId).first()
+
+    if (!campaign) {
+      logger.warn('Campaign deleted while connected, notifying client', { connectionId })
+      socket.emit('connection:revoked', {
+        reason: 'The campaign associated with this connection no longer exists',
+        timestamp: DateTime.now().toISO(),
+      })
+      socket.disconnect(true)
+      return false
+    }
+
+    return true
+  }
+
+  /**
    * Handle dice roll event from VTT
    */
   private async handleDiceRoll(socket: VttSocket, data: any): Promise<void> {
@@ -251,6 +273,11 @@ export default class VttWebSocketService {
         abilityRaw: data.abilityRaw,
         modifiers: data.modifiers,
       })
+
+      // Check if campaign still exists
+      if (!(await this.checkCampaignExistsOrNotify(socket))) {
+        return
+      }
 
       // Get the VTT connection
       const connection = await VttConnection.findOrFail(connectionId)
@@ -325,6 +352,11 @@ export default class VttWebSocketService {
         characterId: data.characterId,
         campaignId: data.campaignId,
       })
+
+      // Check if campaign still exists
+      if (!(await this.checkCampaignExistsOrNotify(socket))) {
+        return
+      }
 
       // Get the VTT connection
       logger.info('Looking up VTT connection', { connectionId })
