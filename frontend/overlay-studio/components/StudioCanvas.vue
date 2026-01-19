@@ -169,6 +169,10 @@ import type { Object3D } from "three";
 import { useOverlayStudioStore } from "../stores/overlayStudio";
 import { useInjectedUndoRedo } from "../composables/useUndoRedo";
 import type { PollProperties } from "../types";
+import {
+  calculatePollGizmoSize,
+  DICE_GIZMO_SIZE,
+} from "../utils/gizmo-size";
 import StudioElement from "./StudioElement.vue";
 import TransformGizmo, { type ActiveEdges } from "./TransformGizmo.vue";
 
@@ -418,6 +422,7 @@ const findNearestGridLine = (position: number): number => {
 };
 
 // Calculer la demi-taille de l'élément en coordonnées canvas
+// Utilise les utilitaires centralisés de utils/gizmo-size.ts
 const getElementHalfSize = (element: typeof selectedElement.value) => {
   if (!element) return { halfWidth: 0, halfHeight: 0 };
 
@@ -426,12 +431,12 @@ const getElementHalfSize = (element: typeof selectedElement.value) => {
 
   if (element.type === "poll") {
     const pollProps = element.properties as PollProperties;
-    const optionCount = pollProps.mockData.options.length;
-    baseHeight = (80 + optionCount * 70 + 50 + 64) * 2;
-    baseWidth = pollProps.layout.maxWidth * 2;
+    const gizmoSize = calculatePollGizmoSize(pollProps);
+    baseWidth = gizmoSize.width;
+    baseHeight = gizmoSize.height;
   } else if (element.type === "dice") {
-    baseWidth = 1920 / 2;
-    baseHeight = 1080 / 2;
+    baseWidth = DICE_GIZMO_SIZE.width;
+    baseHeight = DICE_GIZMO_SIZE.height;
   }
 
   return {
@@ -537,6 +542,20 @@ const handleMove = (deltaX: number, deltaY: number, activeEdges: ActiveEdges) =>
     }
   }
 
+  // Contrainte : empêcher l'élément de sortir du canvas (1920x1080, origine au centre)
+  const canvasHalfWidth = 960;
+  const canvasHalfHeight = 540;
+
+  // Limiter X pour que le bord de l'élément ne dépasse pas
+  const minX = -canvasHalfWidth + halfWidth;
+  const maxX = canvasHalfWidth - halfWidth;
+  newX = Math.max(minX, Math.min(maxX, newX));
+
+  // Limiter Y pour que le bord de l'élément ne dépasse pas
+  const minY = -canvasHalfHeight + halfHeight;
+  const maxY = canvasHalfHeight - halfHeight;
+  newY = Math.max(minY, Math.min(maxY, newY));
+
   store.updateElementPosition(el.id, {
     x: newX,
     y: newY,
@@ -557,20 +576,18 @@ const handleResize = (
   const el = selectedElement.value;
 
   // Calculer la taille de base selon le type d'élément
-  // NOTE: Ajouter de nouveaux types ici
+  // Utilise les utilitaires centralisés de utils/gizmo-size.ts
   let baseWidth = 100;
   let baseHeight = 100;
 
   if (el.type === "poll") {
     const pollProps = el.properties as PollProperties;
-    const optionCount = pollProps.mockData.options.length;
-    baseHeight = (80 + optionCount * 70 + 50 + 64) * 2;
-    baseWidth = pollProps.layout.maxWidth * 2;
+    const gizmoSize = calculatePollGizmoSize(pollProps);
+    baseWidth = gizmoSize.width;
+    baseHeight = gizmoSize.height;
   } else if (el.type === "dice") {
-    // La zone de dés à scale 1 = tout le canvas (1920x1080)
-    // Cohérent avec le calcul du TransformGizmo
-    baseWidth = 1920 / 2;
-    baseHeight = 1080 / 2;
+    baseWidth = DICE_GIZMO_SIZE.width;
+    baseHeight = DICE_GIZMO_SIZE.height;
   }
 
   // Calculer les nouveaux facteurs d'échelle
@@ -604,15 +621,35 @@ const handleResize = (
   }
 };
 
-// Gestion de la rotation
+// Seuil de snap angulaire en radians (~2 degrés)
+const ROTATION_SNAP_THRESHOLD = (2 * Math.PI) / 180;
+// Angles de snap (0°, 90°, 180°, 270°, 360°)
+const ROTATION_SNAP_ANGLES = [0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2, 2 * Math.PI];
+
+// Gestion de la rotation avec magnétisme sur les angles cardinaux
 const handleRotate = (deltaAngle: number) => {
   if (!selectedElement.value) return;
 
   const el = selectedElement.value;
+  let newRotation = el.rotation.z + deltaAngle;
+
+  // Normaliser l'angle entre 0 et 2π
+  while (newRotation < 0) newRotation += 2 * Math.PI;
+  while (newRotation >= 2 * Math.PI) newRotation -= 2 * Math.PI;
+
+  // Snap sur les angles cardinaux si proche
+  for (const snapAngle of ROTATION_SNAP_ANGLES) {
+    const diff = Math.abs(newRotation - snapAngle);
+    if (diff < ROTATION_SNAP_THRESHOLD || diff > 2 * Math.PI - ROTATION_SNAP_THRESHOLD) {
+      newRotation = snapAngle === 2 * Math.PI ? 0 : snapAngle;
+      break;
+    }
+  }
+
   store.updateElementRotation(el.id, {
     x: 0,
     y: 0,
-    z: el.rotation.z + deltaAngle,
+    z: newRotation,
   });
 };
 

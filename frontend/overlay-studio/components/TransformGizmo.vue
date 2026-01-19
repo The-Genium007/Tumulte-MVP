@@ -67,6 +67,11 @@
 <script setup lang="ts">
 import { computed, ref, onUnmounted } from "vue";
 import type { OverlayElement, PollProperties } from "../types";
+import {
+  calculatePollGizmoSize,
+  DICE_GIZMO_SIZE,
+  DEFAULT_GIZMO_SIZE,
+} from "../utils/gizmo-size";
 
 const props = defineProps<{
   element: OverlayElement | null;
@@ -119,29 +124,21 @@ const startX = ref(0);
 const startY = ref(0);
 const startRotation = ref(0);
 
-// Taille de base de l'élément
-// NOTE: Ajouter de nouveaux types ici
+// Taille de base de l'élément (utilise les utilitaires centralisés)
+// NOTE: Ajouter de nouveaux types dans utils/gizmo-size.ts
 const baseSize = computed(() => {
-  if (!props.element) return { width: 100, height: 100 };
+  if (!props.element) return DEFAULT_GIZMO_SIZE;
 
   if (props.element.type === "poll") {
     const pollProps = props.element.properties as PollProperties;
-    const optionCount = pollProps.mockData.options.length;
-    // Estimation : question ~80px + chaque option ~70px + progress ~50px + padding ~64px
-    // Le Html utilise :scale="0.5", donc on multiplie par 2 pour compenser
-    const height = (80 + optionCount * 70 + 50 + 64) * 2;
-    const width = pollProps.layout.maxWidth * 2;
-    return { width, height };
+    return calculatePollGizmoSize(pollProps);
   }
 
   if (props.element.type === "dice") {
-    // La zone de dés à scale 1 = tout le canvas (1920x1080)
-    // Le gizmo doit correspondre au canvas complet
-    return { width: 1920 / 2, height: 1080 / 2 };
+    return DICE_GIZMO_SIZE;
   }
 
-  // Pour les autres types, taille par défaut
-  return { width: 100, height: 100 };
+  return DEFAULT_GIZMO_SIZE;
 });
 
 // Facteur de conversion entre l'espace canvas (1920x1080) et l'espace écran
@@ -406,6 +403,7 @@ onUnmounted(() => {
   position: absolute;
   pointer-events: none;
   transform-origin: center center;
+  z-index: 1000;
 }
 
 .gizmo-border {

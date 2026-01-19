@@ -641,3 +641,19 @@ input[type="number"]::-webkit-outer-spin-button {
     transform: rotate(360deg);
   }
 }
+
+/* ============================================================================
+   OVERLAY STUDIO - Z-INDEX HIERARCHY
+   Le composant Html de TresJS crée un conteneur avec position absolute.
+   On doit s'assurer que le gizmo de transformation est au-dessus.
+   ============================================================================ */
+
+/* Conteneur Html de TresJS - z-index bas pour être sous le gizmo */
+.canvas-wrapper > div[style*="position: absolute"] {
+  z-index: 1 !important;
+}
+
+/* Gizmo de transformation - toujours au-dessus */
+.transform-gizmo {
+  z-index: 1000 !important;
+}
