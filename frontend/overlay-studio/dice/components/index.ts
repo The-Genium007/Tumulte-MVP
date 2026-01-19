@@ -1,3 +1,2 @@
-// Placeholder exports pour compatibilité avec le studio
-// Le vrai rendu de dés est fait via DiceBox.client.vue
+// Composants pour le Dice dans l'Overlay Studio
 export { default as StudioDiceElement } from "./StudioDiceElement.vue";

@@ -93,11 +93,12 @@ export const calculatePollGizmoSize = (
 };
 
 /**
- * Taille du gizmo pour les dés (couvre tout le canvas)
+ * Taille du gizmo pour les dés (couvre tout le canvas 1920x1080)
+ * Les dés utilisent l'espace complet comme arène de simulation 3D
  */
 export const DICE_GIZMO_SIZE = {
-  width: 1920 / 2,
-  height: 1080 / 2,
+  width: 1920,
+  height: 1080,
 };
 
 /**

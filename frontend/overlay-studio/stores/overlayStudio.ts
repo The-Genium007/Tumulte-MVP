@@ -257,15 +257,19 @@ export const useOverlayStudioStore = defineStore("overlayStudio", () => {
     type: OverlayElementType,
     position: Vector3 = { x: 0, y: 0, z: 0 },
   ): OverlayElement {
+    // Les éléments Dice sont toujours centrés et verrouillés (couvrent tout le canvas)
+    const isDice = type === "dice";
+    const finalPosition = isDice ? { x: 0, y: 0, z: 0 } : position;
+
     const element: OverlayElement = {
       id: generateId(),
       type,
       name: `${type.charAt(0).toUpperCase() + type.slice(1)} ${elements.value.length + 1}`,
-      position,
+      position: finalPosition,
       rotation: { x: 0, y: 0, z: 0 },
       scale: { x: 1, y: 1, z: 1 },
       visible: true,
-      locked: false,
+      locked: isDice, // Les Dice sont verrouillés car ils couvrent tout le canvas
       properties: getDefaultProperties(type),
     };
 

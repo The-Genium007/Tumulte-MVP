@@ -52,9 +52,9 @@
         :style="{ top: snapGuideYStyle }"
       />
 
-      <!-- Gizmo de transformation 2D (overlay HTML) -->
+      <!-- Gizmo de transformation 2D (overlay HTML) - masqué pour les éléments Dice -->
       <TransformGizmo
-        v-if="selectedElement"
+        v-if="selectedElement && selectedElement.type !== 'dice'"
         :element="selectedElement"
         :canvas-width="canvasWidth"
         :canvas-height="canvasHeight"

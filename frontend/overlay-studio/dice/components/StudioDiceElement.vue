@@ -5,8 +5,7 @@
     :rotation="[element.rotation.x, element.rotation.y, element.rotation.z]"
     :scale="[element.scale.x, element.scale.y, element.scale.z]"
   >
-    <!-- Rendu HTML via Html de @tresjs/cientos -->
-    <!-- scale=50 pour rendre le HTML visible dans l'espace 3D (1920x1080) -->
+    <!-- Zone de fond cliquable pour la sélection -->
     <Html
       :center="true"
       :transform="true"
@@ -18,11 +17,29 @@
         class="dice-preview"
         :style="containerStyle"
         @pointerdown.stop="handlePointerDown"
+        @click.stop
       >
-        <div class="dice-placeholder">
-          <UIcon name="i-lucide-dices" class="dice-icon" />
-          <span class="dice-label">Zone de dés 3D</span>
-          <span class="dice-sublabel">{{ Math.round(element.scale.x * 100) }}% × {{ Math.round(element.scale.y * 100) }}%</span>
+        <!-- Conteneur flex pour le dé 3D et le HUD -->
+        <div class="dice-content">
+          <!-- Zone du dé 3D (vrai DiceBox comme en production) -->
+          <div class="dice-3d-container">
+            <ClientOnly>
+              <DiceBox
+                ref="diceBoxRef"
+                :colorset="diceColorset"
+                :sounds="false"
+                @ready="onDiceBoxReady"
+              />
+            </ClientOnly>
+          </div>
+
+          <!-- HUD de résultat réel (même composant que l'overlay OBS) -->
+          <div class="hud-container">
+            <DiceRollOverlay
+              :dice-roll="mockDiceRollEvent"
+              :visible="true"
+            />
+          </div>
         </div>
       </div>
     </Html>
@@ -33,7 +50,10 @@
 import { computed, ref } from "vue";
 import { Html } from "@tresjs/cientos";
 import type { Object3D } from "three";
-import type { OverlayElement } from "../../types";
+import type { OverlayElement, DiceProperties } from "../../types";
+import type { DiceRollEvent } from "~/types";
+import DiceRollOverlay from "~/components/overlay/DiceRollOverlay.vue";
+import DiceBox from "~/components/DiceBox.client.vue";
 
 const props = defineProps<{
   element: OverlayElement;
@@ -48,107 +68,109 @@ const emit = defineEmits<{
 }>();
 
 const groupRef = ref<Object3D | null>(null);
+const diceBoxRef = ref<InstanceType<typeof DiceBox> | null>(null);
 
-// État du drag
-const isDragging = ref(false);
-const dragStartX = ref(0);
-const dragStartY = ref(0);
+// Propriétés typées du Dice
+const diceProperties = computed(() => props.element.properties as DiceProperties);
 
-// Style du conteneur basé sur l'échelle
-// Le DiceBox occupe 1920x1080 à scale 1, donc on calcule en proportion
-// La zone doit correspondre à tout le canvas à scale 1
-const containerStyle = computed(() => {
-  // Taille de base en pixels pour l'aperçu dans le studio
-  // Cohérent avec le gizmo (1920/2 x 1080/2)
-  const baseWidth = 1920 / 2;
-  const baseHeight = 1080 / 2;
+// Colorset pour le DiceBox basé sur la couleur de base
+// Le DiceBox utilise des presets de couleurs (white, red, blue, etc.)
+// On peut mapper la couleur personnalisée vers un preset ou utiliser "custom"
+const diceColorset = computed(() => {
+  // Pour l'instant, utiliser "white" par défaut
+  // TODO: Mapper diceProperties.colors.baseColor vers un colorset DiceBox
+  return "white";
+});
+
+// Quand le DiceBox est prêt, lancer un dé statique pour l'aperçu
+const onDiceBoxReady = async () => {
+  if (diceBoxRef.value) {
+    // Lancer un d20 pour l'aperçu
+    await diceBoxRef.value.roll("1d20");
+  }
+};
+
+// Création d'un DiceRollEvent mocké basé sur les mockData
+const mockDiceRollEvent = computed<DiceRollEvent>(() => {
+  const mock = diceProperties.value.mockData;
+  const totalResult = mock.diceValues.reduce((sum, val) => sum + val, 0);
+
   return {
-    width: `${baseWidth}px`,
-    height: `${baseHeight}px`,
+    id: "mock-preview",
+    characterId: "mock-char",
+    characterName: "Prévisualisation",
+    characterAvatar: null,
+    rollFormula: mock.rollFormula,
+    result: totalResult,
+    diceResults: mock.diceValues,
+    isCritical: mock.isCritical,
+    criticalType: mock.criticalType,
+    isHidden: false,
+    rollType: "skill",
+    rolledAt: new Date().toISOString(),
+    isOwnCharacter: false,
+    skill: null,
+    skillRaw: null,
+    ability: null,
+    abilityRaw: null,
+    modifiers: null,
   };
 });
 
-// Gestion du pointerdown pour démarrer le drag
+// Style du conteneur - couvre tout le canvas (1920x1080)
+const containerStyle = computed(() => {
+  return {
+    width: "1920px",
+    height: "1080px",
+  };
+});
+
+// Gestion du pointerdown - sélection uniquement, pas de drag
 const handlePointerDown = (event: PointerEvent) => {
   event.stopPropagation();
 
-  // Sélectionner l'élément
   if (groupRef.value) {
     emit("select", props.element.id, groupRef.value);
   }
-
-  // Démarrer le drag
-  isDragging.value = true;
-  dragStartX.value = event.clientX;
-  dragStartY.value = event.clientY;
-
-  emit("moveStart");
-  window.addEventListener("pointermove", handlePointerMove);
-  window.addEventListener("pointerup", handlePointerUp);
-};
-
-// Gestion du déplacement
-const handlePointerMove = (event: PointerEvent) => {
-  if (!isDragging.value) return;
-
-  const deltaX = event.clientX - dragStartX.value;
-  const deltaY = event.clientY - dragStartY.value;
-
-  // Émettre le delta en pixels écran (sera converti par le parent)
-  emit("move", deltaX, deltaY);
-
-  dragStartX.value = event.clientX;
-  dragStartY.value = event.clientY;
-};
-
-// Fin du drag
-const handlePointerUp = () => {
-  if (isDragging.value) {
-    isDragging.value = false;
-    emit("moveEnd");
-  }
-
-  window.removeEventListener("pointermove", handlePointerMove);
-  window.removeEventListener("pointerup", handlePointerUp);
 };
 </script>
 
 <style scoped>
 .dice-preview {
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(8px);
-  border-radius: 12px;
-  border: 2px dashed rgba(255, 255, 255, 0.3);
-  cursor: move;
+  background: transparent;
+  cursor: default;
   user-select: none;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.dice-placeholder {
+.dice-content {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 16px;
+  gap: 48px;
+  width: 100%;
+  height: 100%;
 }
 
-.dice-icon {
-  font-size: 48px;
-  color: rgba(255, 255, 255, 0.6);
+.dice-3d-container {
+  width: 500px;
+  height: 400px;
+  border-radius: 12px;
+  overflow: hidden;
 }
 
-.dice-label {
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.7);
-  font-weight: 600;
+.hud-container {
+  position: relative;
 }
 
-.dice-sublabel {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.4);
-  font-family: ui-monospace, monospace;
+/* Override le positionnement fixed du DiceRollOverlay pour l'afficher inline */
+.hud-container :deep(.dice-roll-container) {
+  position: relative !important;
+  top: auto !important;
+  left: auto !important;
+  transform: none !important;
 }
 </style>
