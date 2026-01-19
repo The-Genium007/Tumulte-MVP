@@ -109,7 +109,8 @@ export default defineAppConfig({
     },
     switch: {
       slots: {
-        root: "ring-0 border-0 bg-primary-100 data-[state=checked]:bg-primary-500",
+        root: "ring-0 border-0 bg-primary-100 data-[state=checked]:bg-primary-500 rounded-full overflow-hidden",
+        thumb: "bg-white ring-0 shadow-sm rounded-full",
       },
     },
     selectMenu: {

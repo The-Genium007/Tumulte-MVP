@@ -20,13 +20,11 @@
         <!-- No Campaign Message -->
         <UCard v-else-if="campaignsLoaded && campaigns.length === 0">
           <div class="text-center py-12">
-            <div class="bg-yellow-light rounded-2xl mb-6 inline-block">
-              <UIcon name="i-lucide-alert-circle" class="size-16 text-yellow-500" />
-            </div>
-            <h2 class="text-2xl font-bold text-primary mb-2">
+            <UIcon name="i-lucide-folder-x" class="size-12 text-neutral-400 mb-4" />
+            <h2 class="text-neutral-400 mb-2">
               Aucune campagne disponible
             </h2>
-            <p class="text-muted mb-6 max-w-md mx-auto">
+            <p class="text-neutral-400 mb-6 max-w-md mx-auto">
               Créez votre premiere campagne pour commencer à configurer vos sondages
             </p>
             <UButton

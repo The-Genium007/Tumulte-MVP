@@ -264,8 +264,22 @@ export default defineNuxtConfig({
           href: "https://fonts.gstatic.com",
           crossorigin: "anonymous",
         },
-        // Favicons - SVG moderne + PNG fallback
-        { rel: "icon", type: "image/svg+xml", href: "/pwa-icon.svg" },
+        // Favicon SVG (modern browsers: Chrome, Firefox, Edge)
+        { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
+        // ICO fallback with sizes to fix Chrome bug (prefers ICO over SVG without this)
+        {
+          rel: "icon",
+          type: "image/x-icon",
+          sizes: "32x32",
+          href: "/favicon.ico",
+        },
+        // PNG fallbacks for specific sizes
+        {
+          rel: "icon",
+          type: "image/png",
+          sizes: "48x48",
+          href: "/favicon-48x48.png",
+        },
         {
           rel: "icon",
           type: "image/png",
@@ -278,8 +292,12 @@ export default defineNuxtConfig({
           sizes: "16x16",
           href: "/favicon-16x16.png",
         },
-        // Apple Touch Icon
-        { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
+        // Apple Touch Icon avec taille explicite
+        {
+          rel: "apple-touch-icon",
+          sizes: "180x180",
+          href: "/apple-touch-icon.png",
+        },
         // Apple splash screens pour différents appareils iOS
         {
           rel: "apple-touch-startup-image",

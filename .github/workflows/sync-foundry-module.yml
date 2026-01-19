@@ -25,6 +25,11 @@ jobs:
         with:
           fetch-depth: 0  # Nécessaire pour git subtree (besoin de tout l'historique)
       
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+    
       - name: Inject API URL based on environment
         run: |
           BRANCH_NAME="${GITHUB_REF#refs/heads/}"
@@ -51,12 +56,7 @@ jobs:
           # Commit the change (needed for subtree split)
           git add modules-vtt/foundry/scripts/tumulte.js
           git commit -m "ci: inject API URL for ${BRANCH_NAME} environment"
-
-      - name: Configure Git
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
+          
       - name: Extract and push Foundry module
         env:
           FOUNDRY_REPO_TOKEN: ${{ secrets.FOUNDRY_MODULE_PAT }}

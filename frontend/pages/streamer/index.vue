@@ -42,9 +42,9 @@
           </div>
 
           <div v-else-if="authorizationStatuses.length === 0" class="text-center py-12">
-              <UIcon name="i-lucide-shield-off" class="size-12 text-primary" />
-            <p class="text-primary mb-2">Aucune campagne active</p>
-            <p class="text-sm text-primary-400">
+            <UIcon name="i-lucide-shield-off" class="size-12 text-neutral-400 mb-4" />
+            <p class="text-neutral-400 mb-2">Aucune campagne active</p>
+            <p class="text-sm text-neutral-400">
               Acceptez une invitation pour gérer vos autorisations de sondages
             </p>
           </div>

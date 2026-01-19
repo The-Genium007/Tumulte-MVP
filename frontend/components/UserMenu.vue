@@ -92,9 +92,6 @@
               </UBadge>
             </NuxtLink>
 
-            <!-- Divider -->
-            <div class="my-1 border-t border-default"></div>
-
             <!-- Installer l'application (PWA) -->
             <button
               v-if="canInstall"
@@ -114,6 +111,9 @@
               <UIcon name="i-lucide-crown" class="size-4" />
               <span>Tableau de bord MJ</span>
             </NuxtLink>
+
+            <!-- Divider -->
+            <div class="my-1 border-t border-default"></div>
 
             <!-- Réglages -->
             <NuxtLink
@@ -140,7 +140,7 @@
             <!-- Déconnexion -->
             <button
               @click="handleLogout"
-              class="w-full flex items-center gap-3 px-4 py-2 text-sm text-error-500 hover:bg-error-light rounded-lg transition-colors"
+              class="w-full flex items-center gap-3 px-4 py-2 text-sm text-error-500 hover:bg-error-100 rounded-lg transition-colors"
             >
               <UIcon name="i-lucide-log-out" class="size-4" />
               <span>Déconnexion</span>

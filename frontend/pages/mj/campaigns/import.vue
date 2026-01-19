@@ -51,20 +51,20 @@
           <div class="space-y-3">
             <UIcon
               name="i-lucide-plug"
-              class="size-16 text-muted mx-auto"
+              class="size-12 text-neutral-400 mx-auto mb-4"
             />
-            <h2 class="text-2xl font-semibold text-primary">
+            <h2 class="text-neutral-400">
               Aucun VTT configuré
             </h2>
-            <p class="text-muted max-w-md mx-auto">
+            <p class="text-neutral-400 max-w-md mx-auto">
               Pour importer une campagne, vous devez d'abord configurer une
-              connexion avec votre Virtual Tabletop (Foundry VTT, Roll20, ou
-              Alchemy RPG).
+              connexion avec votre Virtual Tabletop (Foundry VTT, Owlbear Rodeo, ou
+              TaleSpire).
             </p>
           </div>
 
           <div class="flex flex-col items-center gap-4 pt-4">
-            <h3 class="text-lg font-semibold text-secondary">
+            <h3 class="text-lg font-semibold text-primary">
               Choisissez votre VTT
             </h3>
             <div class="flex flex-wrap gap-3 justify-center">
@@ -76,20 +76,20 @@
                 @click="handleProviderSelect('foundry')"
               />
               <UButton
-                label="Roll20"
+                label="Owlbear Rodeo"
                 icon="i-lucide-dice-5"
                 size="lg"
                 color="primary"
                 variant="soft"
-                @click="handleProviderSelect('roll20')"
+                disabled
               />
               <UButton
-                label="Alchemy RPG"
+                label="TaleSpire"
                 icon="i-lucide-flask-conical"
                 size="lg"
                 color="primary"
                 variant="soft"
-                @click="handleProviderSelect('alchemy')"
+                disabled
               />
             </div>
           </div>
@@ -232,22 +232,22 @@
               @click="handleProviderSelectFromModal('foundry')"
             />
             <UButton
-              label="Roll20"
+              label="Owlbear Rodeo"
               icon="i-lucide-dice-5"
               size="lg"
               color="primary"
               variant="soft"
               block
-              @click="handleProviderSelectFromModal('roll20')"
+              disabled
             />
             <UButton
-              label="Alchemy RPG"
+              label="TaleSpire"
               icon="i-lucide-flask-conical"
               size="lg"
               color="primary"
               variant="soft"
               block
-              @click="handleProviderSelectFromModal('alchemy')"
+              disabled
             />
           </div>
         </div>

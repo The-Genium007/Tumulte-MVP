@@ -60,10 +60,7 @@
           >
             <template #description>
               <ol class="list-decimal list-inside space-y-2 mt-2">
-                <li>Installez le module Tumulte dans votre VTT (Foundry, Roll20, ou Alchemy RPG)</li>
-                <li>Ouvrez les paramètres du module</li>
-                <li>Cliquez sur "Connect to Tumulte"</li>
-                <li>Copiez le code affiché (ex: ABC-123) et collez-le ci-dessous</li>
+                <li v-for="(step, index) in providerInstructions" :key="index">{{ step }}</li>
               </ol>
             </template>
           </UAlert>
@@ -152,17 +149,9 @@
           </div>
         </div>
 
-        <template #footer>
-          <div class="flex justify-between items-center">
+        <template v-if="pairingSuccess" #footer>
+          <div class="flex justify-end">
             <UButton
-              v-if="!pairingSuccess"
-              color="neutral"
-              variant="soft"
-              label="Retour"
-              @click="_router.push('/mj/campaigns/import')"
-            />
-            <UButton
-              v-else
               color="primary"
               label="Continuer vers l'import de campagne"
               icon="i-lucide-arrow-right"
@@ -272,7 +261,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from "vue";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import { useToast } from "#ui/composables/useToast";
 
 definePageMeta({
@@ -281,8 +270,50 @@ definePageMeta({
 });
 
 const _router = useRouter();
+const route = useRoute();
 const toast = useToast();
 const config = useRuntimeConfig();
+
+// Provider instructions per VTT type
+type VttProvider = "foundry" | "owlbear" | "talespire";
+
+const instructionsByProvider: Record<VttProvider, string[]> = {
+  foundry: [
+    'Installez le module Tumulte dans Foundry VTT',
+    'Activez le module dans votre monde (Menu "Gérer les modules")',
+    'Ouvrez les paramètres du module "Tumulte Integration"',
+    'Cliquez sur "Manage Connection"',
+    'Cliquez sur "Connect to Tumulte"',
+    'Copiez le code affiché (ex: ABC-123) et collez-le ci-dessous',
+  ],
+  owlbear: [
+    'Installez le module Tumulte dans Owlbear Rodeo',
+    'Activez le module dans votre monde (Menu "Gérer les modules")',
+    'Ouvrez les paramètres du module "Tumulte Integration"',
+    'Cliquez sur "Manage Connection"',
+    'Cliquez sur "Connect to Tumulte"',
+    'Copiez le code affiché (ex: ABC-123) et collez-le ci-dessous',
+  ],
+  talespire: [
+    'Installez le module Tumulte dans TaleSpire',
+    'Activez le module dans votre monde (Menu "Gérer les modules")',
+    'Ouvrez les paramètres du module "Tumulte Integration"',
+    'Cliquez sur "Manage Connection"',
+    'Cliquez sur "Connect to Tumulte"',
+    'Copiez le code affiché (ex: ABC-123) et collez-le ci-dessous',
+  ],
+};
+
+// Get provider from URL query param, default to foundry
+const currentProvider = computed<VttProvider>(() => {
+  const provider = route.query.provider as string;
+  if (provider && provider in instructionsByProvider) {
+    return provider as VttProvider;
+  }
+  return "foundry";
+});
+
+const providerInstructions = computed(() => instructionsByProvider[currentProvider.value]);
 
 const pairingCode = ref("");
 const pairing = ref(false);

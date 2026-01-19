@@ -40,37 +40,6 @@
               <p class="text-lg font-semibold text-primary">{{ user?.email || 'Non renseigné' }}</p>
             </div>
           </div>
-
-          <!-- Informations Twitch -->
-          <div v-if="user?.streamer" class="mt-6 pt-6 border-t border-default">
-            <h3 class="text-lg font-semibold text-primary mb-4">Informations Twitch</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div>
-                <p class="text-sm text-muted mb-1">Nom Twitch</p>
-                <p class="text-lg font-semibold text-primary">{{ user.streamer.twitchDisplayName }}</p>
-              </div>
-              <div>
-                <p class="text-sm text-muted mb-1">Login Twitch</p>
-                <p class="text-lg font-semibold text-primary">{{ user.streamer.twitchLogin }}</p>
-              </div>
-              <div>
-                <p class="text-sm text-muted mb-1">Statut du compte</p>
-                <UBadge
-                  :label="user.streamer.isActive ? 'Actif' : 'Inactif'"
-                  :color="user.streamer.isActive ? 'success' : 'error'"
-                  variant="solid"
-                />
-              </div>
-              <div>
-                <p class="text-sm text-muted mb-1">Statut de connexion</p>
-                <UBadge
-                  label="Connecté"
-                  color="success"
-                  variant="solid"
-                />
-              </div>
-            </div>
-          </div>
         </UCard>
 
         <!-- Services connectés -->
@@ -85,8 +54,11 @@
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <!-- Twitch -->
-            <div v-if="user?.streamer" class="p-4 rounded-lg bg-neutral-100 border border-default">
-              <div class="flex items-center justify-between mb-3">
+            <button
+              class="p-4 rounded-lg bg-neutral-100 border border-default text-left transition-all duration-200 hover:ring-2 hover:ring-primary-500 hover:shadow-md cursor-pointer"
+              @click="showTwitchModal = true"
+            >
+              <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3">
                   <div class="p-2">
                     <UIcon name="i-lucide-twitch" class="size-6 text-brand-500" />
@@ -96,20 +68,23 @@
                     <p class="text-sm text-muted">Streaming et chat en direct</p>
                   </div>
                 </div>
-                <UBadge label="Connecté" color="success" variant="solid" />
+                <div class="flex items-center gap-2">
+                  <UBadge v-if="user?.streamer" label="Connecté" color="success" variant="solid" />
+                  <UIcon name="i-lucide-chevron-right" class="size-5 text-muted" />
+                </div>
               </div>
-            </div>
+            </button>
 
             <!-- Services futurs -->
             <div class="p-4 rounded-lg bg-neutral-100 border border-default opacity-60">
-              <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3">
                   <div class="p-2">
-                    <UIcon name="i-lucide-dice-6" class="size-6 text-neutral-500" />
+                    <UIcon name="i-lucide-video" class="size-6 text-neutral-500" />
                   </div>
                   <div>
-                    <h3 class="font-semibold text-primary">Roll20</h3>
-                    <p class="text-sm text-muted">Intégration parties Roll20</p>
+                    <h3 class="font-semibold text-primary">OBS Studio</h3>
+                    <p class="text-sm text-muted">Contrôle OBS Studio</p>
                   </div>
                 </div>
                 <UBadge label="Bientôt" color="info" variant="solid" />
@@ -117,7 +92,7 @@
             </div>
 
             <div class="p-4 rounded-lg bg-neutral-100 border border-default opacity-60">
-              <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3">
                   <div class="p-2">
                     <UIcon name="i-lucide-castle" class="size-6 text-neutral-500" />
@@ -132,14 +107,14 @@
             </div>
 
             <div class="p-4 rounded-lg bg-neutral-100 border border-default opacity-60">
-              <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3">
                   <div class="p-2">
                     <UIcon name="i-lucide-flask-conical" class="size-6 text-neutral-500" />
                   </div>
                   <div>
-                    <h3 class="font-semibold text-primary">Alchimie RPG</h3>
-                    <p class="text-sm text-muted">Compte Alchimie RPG</p>
+                    <h3 class="font-semibold text-primary">TaleSpire</h3>
+                    <p class="text-sm text-muted">Intégration TaleSpire</p>
                   </div>
                 </div>
                 <UBadge label="Bientôt" color="info" variant="solid" />
@@ -147,14 +122,14 @@
             </div>
 
             <div class="p-4 rounded-lg bg-neutral-100 border border-default opacity-60">
-              <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3">
                   <div class="p-2">
-                    <UIcon name="i-lucide-video" class="size-6 text-neutral-500" />
+                    <UIcon name="i-lucide-dice-6" class="size-6 text-neutral-500" />
                   </div>
                   <div>
-                    <h3 class="font-semibold text-primary">OBS Studio</h3>
-                    <p class="text-sm text-muted">Contrôle OBS Studio</p>
+                    <h3 class="font-semibold text-primary">Owlbear Rodeo</h3>
+                    <p class="text-sm text-muted">Intégration Owlbear Rodeo</p>
                   </div>
                 </div>
                 <UBadge label="Bientôt" color="info" variant="solid" />
@@ -166,70 +141,34 @@
         <!-- Notifications push -->
         <NotificationsNotificationPreferences />
 
-        <!-- Grille des zones de danger -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <!-- Révocation de compte -->
-          <UCard class="border-error-light">
+        <!-- Zone de danger -->
+        <UCard class="border-error-light">
           <template #header>
             <div class="flex items-center gap-3">
               <div>
-                <h2 class="text-xl font-semibold text-primary">Révoquer l'acces Twitch</h2>
+                <h2 class="text-xl font-semibold text-primary">Zone de danger</h2>
               </div>
             </div>
           </template>
 
-          <div class="space-y-4">
-            <div class="p-4 rounded-lg bg-error-light border-error-light">
-              <div class="flex flex-col sm:flex-row items-start justify-between gap-4">
-                <div class="flex-1">
-                  <h3 class="font-semibold text-primary mb-1">Bloque mon compte </h3>
-                  <p class="text-sm text-muted">
-                    Cette action bloquera toutes vos actions sur la platforme twitch.
-                  </p>
-                </div>
-                <UButton
-                  color="error"
-                  variant="solid"
-                  label="Révoquer l'acces"
-                  class="w-full sm:w-auto shrink-0"
-                  @click="showRevokeModal = true"
-                />
+          <div class="p-4 rounded-lg bg-error-light border-error-light">
+            <div class="flex flex-col sm:flex-row items-start justify-between gap-4">
+              <div class="flex-1">
+                <h3 class="font-semibold text-primary mb-1">Supprimer mon compte et mes données</h3>
+                <p class="text-sm text-muted">
+                  Cette action anonymisera toutes vos données personnelles de manière irréversible.
+                </p>
               </div>
+              <UButton
+                color="error"
+                variant="solid"
+                label="Supprimer le compte"
+                class="w-full sm:w-auto shrink-0"
+                @click="showDeleteModal = true"
+              />
             </div>
           </div>
         </UCard>
-
-          <!-- Suppression de compte -->
-          <UCard class="border-error-light">
-          <template #header>
-            <div class="flex items-center gap-3">
-              <div>
-                <h2 class="text-xl font-semibold text-primary">Suppression de compte</h2>
-              </div>
-            </div>
-          </template>
-
-          <div class="space-y-4">
-            <div class="p-4 rounded-lg bg-error-light border-error-light">
-              <div class="flex flex-col sm:flex-row items-start justify-between gap-4">
-                <div class="flex-1">
-                  <h3 class="font-semibold text-primary mb-1">Supprimer mon compte et mes données</h3>
-                  <p class="text-sm text-muted">
-                    Cette action anonymisera toutes vos données personnelles de manière irréversible.
-                  </p>
-                </div>
-                <UButton
-                  color="error"
-                  variant="solid"
-                  label="Supprimer le compte"
-                  class="w-full sm:w-auto shrink-0"
-                  @click="showDeleteModal = true"
-                />
-              </div>
-            </div>
-          </div>
-        </UCard>
-        </div>
       </div>
     </div>
 
@@ -237,9 +176,7 @@
     <UModal v-model:open="showDeleteModal" class="w-full max-w-lg mx-4">
       <template #header>
         <div class="flex items-center gap-3">
-          <div class="bg-error-light p-2 rounded-lg">
-            <UIcon name="i-lucide-alert-triangle" class="size-6 text-error-500" />
-          </div>
+          <UIcon name="i-lucide-alert-triangle" class="size-6 text-error-500" />
           <h3 class="text-xl font-semibold text-primary">Confirmer la suppression</h3>
         </div>
       </template>
@@ -274,8 +211,8 @@
       <template #footer>
         <div class="flex flex-col sm:flex-row justify-end gap-3 w-full">
           <UButton
-            color="neutral"
-            variant="soft"
+            color="primary"
+            variant="solid"
             label="Annuler"
             class="w-full sm:w-auto"
             @click="showDeleteModal = false"
@@ -338,6 +275,95 @@
       </template>
     </UModal>
 
+    <!-- Modal Twitch -->
+    <UModal v-model:open="showTwitchModal" class="w-full max-w-lg mx-4">
+      <template #header>
+        <div class="flex items-center gap-3">
+          <UIcon name="i-lucide-twitch" class="size-6 text-brand-500" />
+          <div>
+            <h3 class="text-xl font-semibold text-primary">Twitch</h3>
+            <p class="text-sm text-muted">Streaming et chat en direct</p>
+          </div>
+        </div>
+      </template>
+
+      <template #body>
+        <div class="space-y-4">
+          <!-- État connecté -->
+          <template v-if="user?.streamer">
+            <div class="p-4 rounded-lg bg-success-50 border border-success-200">
+              <div class="flex items-center gap-3">
+                <UIcon name="i-lucide-check-circle" class="size-5 text-success-500" />
+                <div>
+                  <p class="font-semibold text-success-700">Compte connecté</p>
+                  <p class="text-sm text-success-600">{{ user.streamer.twitchDisplayName }}</p>
+                </div>
+              </div>
+            </div>
+
+            <p class="text-sm text-muted">
+              Votre compte Twitch est lié à Tumulte. Vous pouvez lancer des sondages sur votre chaîne et participer aux campagnes en tant que streamer.
+            </p>
+
+            <UAlert
+              color="warning"
+              variant="soft"
+              icon="i-lucide-alert-circle"
+              title="Révoquer l'accès"
+              description="Révoquer l'accès désactivera votre compte streamer et bloquera toutes vos actions sur Twitch via Tumulte."
+            />
+          </template>
+
+          <!-- État non connecté -->
+          <template v-else>
+            <div class="p-4 rounded-lg bg-neutral-100 border border-default">
+              <div class="flex items-center gap-3">
+                <UIcon name="i-lucide-unplug" class="size-5 text-muted" />
+                <div>
+                  <p class="font-semibold text-primary">Non connecté</p>
+                  <p class="text-sm text-muted">Aucun compte Twitch lié</p>
+                </div>
+              </div>
+            </div>
+
+            <p class="text-sm text-muted">
+              Connectez votre compte Twitch pour lancer des sondages sur votre chaîne et participer aux campagnes en tant que streamer.
+            </p>
+          </template>
+        </div>
+      </template>
+
+      <template #footer>
+        <div class="flex flex-col sm:flex-row justify-end gap-3 w-full">
+          <UButton
+            color="primary"
+            variant="solid"
+            label="Fermer"
+            class="w-full sm:w-auto"
+            @click="showTwitchModal = false"
+          />
+          <UButton
+            v-if="user?.streamer"
+            color="error"
+            variant="solid"
+            label="Révoquer l'accès"
+            icon="i-lucide-unplug"
+            class="w-full sm:w-auto"
+            @click="showTwitchModal = false; showRevokeModal = true"
+          />
+          <UButton
+            v-else
+            color="primary"
+            variant="solid"
+            label="Connecter Twitch"
+            icon="i-lucide-twitch"
+            class="w-full sm:w-auto"
+            @click="connectTwitch"
+          />
+        </div>
+      </template>
+    </UModal>
+
 </template>
 
 <script setup lang="ts">
@@ -361,6 +387,7 @@ const deleteLoading = ref(false)
 
 const showRevokeModal = ref(false)
 const revokeLoading = ref(false)
+const showTwitchModal = ref(false)
 
 const goBackToDashboard = () => {
   // Tous les utilisateurs vont vers /streamer
@@ -396,5 +423,10 @@ const handleDeleteAccount = async () => {
   } finally {
     deleteLoading.value = false
   }
+}
+
+const connectTwitch = () => {
+  const config = useRuntimeConfig()
+  window.location.href = `${config.public.apiBase}/auth/twitch/redirect`
 }
 </script>

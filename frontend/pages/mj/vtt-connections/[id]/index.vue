@@ -158,11 +158,11 @@
                     Integration
                   </li>
                   <li>
-                    <strong>Roll20</strong> : Scripts → Configuration
+                    <strong>Owlbear Rodeo</strong> : Extensions → Tumulte Settings
                   </li>
                   <li>
-                    <strong>Alchemy RPG</strong> : Extension navigateur →
-                    Settings
+                    <strong>TaleSpire</strong> : Symbiotes → Tumulte
+                    Configuration
                   </li>
                 </ul>
               </div>
