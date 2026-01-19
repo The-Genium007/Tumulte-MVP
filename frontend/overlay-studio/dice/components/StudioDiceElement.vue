@@ -26,7 +26,10 @@
             <ClientOnly>
               <DiceBox
                 ref="diceBoxRef"
-                :colorset="diceColorset"
+                :custom-colorset="diceCustomColorset"
+                :texture="diceTexture"
+                :material="diceMaterial"
+                :light-intensity="diceLightIntensity"
                 :sounds="false"
                 @ready="onDiceBoxReady"
               />
@@ -38,6 +41,8 @@
             <DiceRollOverlay
               :dice-roll="mockDiceRollEvent"
               :visible="true"
+              :hud-config="diceProperties.hud"
+              :critical-colors="diceProperties.colors"
             />
           </div>
         </div>
@@ -47,7 +52,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
+import { useDebounceFn } from "@vueuse/core";
 import { Html } from "@tresjs/cientos";
 import type { Object3D } from "three";
 import type { OverlayElement, DiceProperties } from "../../types";
@@ -73,22 +79,50 @@ const diceBoxRef = ref<InstanceType<typeof DiceBox> | null>(null);
 // Propriétés typées du Dice
 const diceProperties = computed(() => props.element.properties as DiceProperties);
 
-// Colorset pour le DiceBox basé sur la couleur de base
-// Le DiceBox utilise des presets de couleurs (white, red, blue, etc.)
-// On peut mapper la couleur personnalisée vers un preset ou utiliser "custom"
-const diceColorset = computed(() => {
-  // Pour l'instant, utiliser "white" par défaut
-  // TODO: Mapper diceProperties.colors.baseColor vers un colorset DiceBox
-  return "white";
+// Configuration custom colorset pour le DiceBox
+const diceCustomColorset = computed(() => {
+  const { colors } = diceProperties.value.diceBox;
+  return {
+    foreground: colors.foreground,
+    background: colors.background,
+    outline: colors.outline,
+  };
 });
+
+// Texture du dé
+const diceTexture = computed(() => diceProperties.value.diceBox.texture);
+
+// Matériau du dé
+const diceMaterial = computed(() => diceProperties.value.diceBox.material);
+
+// Intensité lumineuse de la scène 3D
+const diceLightIntensity = computed(() => diceProperties.value.diceBox.lightIntensity);
 
 // Quand le DiceBox est prêt, lancer un dé statique pour l'aperçu
 const onDiceBoxReady = async () => {
   if (diceBoxRef.value) {
-    // Lancer un d20 pour l'aperçu
-    await diceBoxRef.value.roll("1d20");
+    const formula = diceProperties.value.mockData.rollFormula || "1d20";
+    await diceBoxRef.value.roll(formula);
   }
 };
+
+// Fonction debounced pour relancer le dé après modification des propriétés visuelles
+const debouncedReroll = useDebounceFn(async () => {
+  if (diceBoxRef.value) {
+    const formula = diceProperties.value.mockData.rollFormula || "1d20";
+    await diceBoxRef.value.roll(formula);
+  }
+}, 500);
+
+// Watcher sur les propriétés visuelles du dé (couleurs, texture, matériau)
+// Relance automatiquement le dé après 500ms d'inactivité pour voir les changements
+watch(
+  () => diceProperties.value.diceBox,
+  () => {
+    debouncedReroll();
+  },
+  { deep: true }
+);
 
 // Création d'un DiceRollEvent mocké basé sur les mockData
 const mockDiceRollEvent = computed<DiceRollEvent>(() => {

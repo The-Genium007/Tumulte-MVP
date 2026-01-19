@@ -364,17 +364,18 @@
           <!-- Inspecteur spécifique au type d'élément -->
           <template v-if="selectedElement.type === 'dice'">
             <DiceInspector
+              :dice-box="(selectedElement.properties as DiceProperties).diceBox"
+              :hud="(selectedElement.properties as DiceProperties).hud"
               :colors="(selectedElement.properties as DiceProperties).colors"
               :animations="(selectedElement.properties as DiceProperties).animations"
               :audio="(selectedElement.properties as DiceProperties).audio"
-              :result-text="(selectedElement.properties as DiceProperties).resultText"
               :mock-data="(selectedElement.properties as DiceProperties).mockData"
+              @update-dice-box="updateDiceBox"
+              @update-hud="updateDiceHud"
               @update-colors="updateDiceColors"
               @update-animations="updateDiceAnimations"
               @update-audio="updateDiceAudio"
-              @update-result-text="updateDiceResultText"
               @update-mock-data="updateDiceMockData"
-              @play-preview="playDicePreview"
             />
           </template>
 
@@ -582,6 +583,36 @@ const updateDiceProperty = (path: string, value: unknown) => {
   debouncedPushSnapshot(`Modifier ${path}`, `dice.${path}`);
 };
 
+const updateDiceBox = (diceBox: Partial<DiceProperties["diceBox"]>) => {
+  if (!selectedElement.value) return;
+  const props = selectedElement.value.properties as DiceProperties;
+  // Deep merge pour colors
+  const merged = { ...props.diceBox };
+  for (const key of Object.keys(diceBox) as (keyof typeof diceBox)[]) {
+    if (key === "colors" && diceBox.colors) {
+      merged.colors = { ...merged.colors, ...diceBox.colors };
+    } else {
+      (merged as Record<string, unknown>)[key] = diceBox[key];
+    }
+  }
+  updateDiceProperty("diceBox", merged);
+};
+
+const updateDiceHud = (hud: Partial<DiceProperties["hud"]>) => {
+  if (!selectedElement.value) return;
+  const props = selectedElement.value.properties as DiceProperties;
+  // Deep merge pour les sous-sections du HUD
+  const merged = JSON.parse(JSON.stringify(props.hud));
+  for (const key of Object.keys(hud) as (keyof typeof hud)[]) {
+    if (hud[key] && typeof hud[key] === "object") {
+      merged[key] = { ...merged[key], ...hud[key] };
+    } else {
+      merged[key] = hud[key];
+    }
+  }
+  updateDiceProperty("hud", merged);
+};
+
 const updateDiceColors = (colors: Partial<DiceProperties["colors"]>) => {
   if (!selectedElement.value) return;
   const props = selectedElement.value.properties as DiceProperties;
@@ -591,19 +622,31 @@ const updateDiceColors = (colors: Partial<DiceProperties["colors"]>) => {
 const updateDiceAnimations = (animations: Partial<DiceProperties["animations"]>) => {
   if (!selectedElement.value) return;
   const props = selectedElement.value.properties as DiceProperties;
-  updateDiceProperty("animations", { ...props.animations, ...animations });
+  // Deep merge pour les animations imbriquées
+  const merged = JSON.parse(JSON.stringify(props.animations));
+  for (const key of Object.keys(animations) as (keyof typeof animations)[]) {
+    if (animations[key] && typeof animations[key] === "object") {
+      merged[key] = { ...merged[key], ...animations[key] };
+    } else {
+      merged[key] = animations[key];
+    }
+  }
+  updateDiceProperty("animations", merged);
 };
 
 const updateDiceAudio = (audio: Partial<DiceProperties["audio"]>) => {
   if (!selectedElement.value) return;
   const props = selectedElement.value.properties as DiceProperties;
-  updateDiceProperty("audio", { ...props.audio, ...audio });
-};
-
-const updateDiceResultText = (resultText: Partial<DiceProperties["resultText"]>) => {
-  if (!selectedElement.value) return;
-  const props = selectedElement.value.properties as DiceProperties;
-  updateDiceProperty("resultText", { ...props.resultText, ...resultText });
+  // Deep merge pour les sous-sections audio
+  const merged = JSON.parse(JSON.stringify(props.audio));
+  for (const key of Object.keys(audio) as (keyof typeof audio)[]) {
+    if (audio[key] && typeof audio[key] === "object") {
+      merged[key] = { ...merged[key], ...audio[key] };
+    } else {
+      merged[key] = audio[key];
+    }
+  }
+  updateDiceProperty("audio", merged);
 };
 
 const updateDiceMockData = (mockData: Partial<DiceProperties["mockData"]>) => {
@@ -763,32 +806,6 @@ const updatePollMockData = (mockData: Partial<PollProperties["mockData"]>) => {
 const playPollPreview = () => {
   // TODO: Implémenter la prévisualisation du sondage
   console.log("[Studio] Poll preview requested");
-};
-
-// Prévisualisation des dés
-const playDicePreview = async () => {
-  if (!selectedElement.value || selectedElement.value.type !== "dice") return;
-
-  const props = selectedElement.value.properties as DiceProperties;
-  const mockData = props.mockData;
-
-  // Construire la notation avec les résultats forcés
-  // Format DiceBox: "2d20@5,15" pour forcer les résultats à 5 et 15
-  let notation = mockData.rollFormula;
-  if (mockData.diceValues && mockData.diceValues.length > 0) {
-    notation += "@" + mockData.diceValues.join(",");
-  }
-
-  dicePreviewNotation.value = notation;
-  showDicePreview.value = true;
-
-  // Attendre que la modale soit ouverte et le DiceBox prêt
-  await nextTick();
-
-  // Si le DiceBox est déjà prêt, lancer immédiatement
-  if (diceBoxReady.value && diceBoxRef.value) {
-    await rollDice(notation);
-  }
 };
 
 const handleDiceBoxReady = () => {
