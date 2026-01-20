@@ -60,7 +60,9 @@ jobs:
 
       - name: Prepare Nuxt (generate .nuxt types)
         working-directory: ./frontend
-        run: npx nuxt prepare
+        run: |
+          rm -rf .nuxt
+          npx nuxt prepare
 
       - name: TypeCheck frontend
         working-directory: ./frontend
@@ -188,9 +190,11 @@ jobs:
         working-directory: ./frontend
         run: npm ci
 
-      - name: Prepare Nuxt (generate .nuxt/tsconfig.json)
+      - name: Prepare Nuxt (generate .nuxt types)
         working-directory: ./frontend
-        run: npx nuxt prepare
+        run: |
+          rm -rf .nuxt
+          npx nuxt prepare
 
       - name: Run frontend unit tests with coverage
         working-directory: ./frontend
