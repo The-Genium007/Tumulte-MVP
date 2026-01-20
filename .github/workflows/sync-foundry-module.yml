@@ -11,13 +11,25 @@ on:
       - main
     paths:
       - 'modules-vtt/foundry/**'
+  
+  # Déclenchement manuel avec choix de branche
+  workflow_dispatch:
+    inputs:
+      target_branch:
+        description: 'Branche cible (staging ou main)'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - main
+
 
 jobs:
   sync-to-foundry-repo:
     name: Sync to Tumulte-Foundry-module
     runs-on: ubuntu-latest
-    # Ne se lance que si c'est un push (donc après merge d'une PR validée)
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
 
     steps:
       - name: Checkout Tumulte (full history for subtree)
@@ -25,14 +37,52 @@ jobs:
         with:
           fetch-depth: 0  # Nécessaire pour git subtree (besoin de tout l'historique)
       
+      - name: Determine target branch
+        id: branch
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "name=${{ github.event.inputs.target_branch }}" >> $GITHUB_OUTPUT
+          else
+            echo "name=${GITHUB_REF#refs/heads/}" >> $GITHUB_OUTPUT
+          fi
+          echo "📌 Target branch: $(cat $GITHUB_OUTPUT | grep name | cut -d= -f2)"
+
+      - name: Check if sync is needed
+        id: check_sync
+        env:
+          FOUNDRY_REPO_TOKEN: ${{ secrets.FOUNDRY_MODULE_PAT }}
+        run: |
+          BRANCH_NAME="${{ steps.branch.outputs.name }}"
+          
+          # Cloner le repo cible pour comparer
+          git clone --depth 1 --branch ${BRANCH_NAME} \
+            https://x-access-token:${FOUNDRY_REPO_TOKEN}@github.com/The-Genium007/Tumulte-Foundry-module.git \
+            /tmp/foundry-module-target 2>/dev/null || {
+              echo "📦 Target branch doesn't exist yet, sync needed"
+              echo "needed=true" >> $GITHUB_OUTPUT
+              exit 0
+            }
+          
+          # Comparer les contenus (ignorer .git)
+          if diff -rq --exclude='.git' modules-vtt/foundry/ /tmp/foundry-module-target/ > /dev/null 2>&1; then
+            echo "✅ Content is already in sync, skipping"
+            echo "needed=false" >> $GITHUB_OUTPUT
+          else
+            echo "📦 Content differs, sync needed"
+            diff -rq --exclude='.git' modules-vtt/foundry/ /tmp/foundry-module-target/ || true
+            echo "needed=true" >> $GITHUB_OUTPUT
+          fi
+
       - name: Configure Git
+        if: steps.check_sync.outputs.needed == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
     
       - name: Inject API URL based on environment
+        if: steps.check_sync.outputs.needed == 'true'
         run: |
-          BRANCH_NAME="${GITHUB_REF#refs/heads/}"
+          BRANCH_NAME="${{ steps.branch.outputs.name }}"
 
           if [ "${BRANCH_NAME}" = "main" ]; then
             API_URL="https://api.tumulte.app"
@@ -58,6 +108,7 @@ jobs:
           git commit -m "ci: inject API URL for ${BRANCH_NAME} environment"
 
       - name: Debug token presence
+        if: steps.check_sync.outputs.needed == 'true'
         env:
           FOUNDRY_REPO_TOKEN: ${{ secrets.FOUNDRY_MODULE_PAT }}
         run: |
@@ -69,11 +120,12 @@ jobs:
           fi
 
       - name: Extract and push Foundry module
+        if: steps.check_sync.outputs.needed == 'true'
         env:
           FOUNDRY_REPO_TOKEN: ${{ secrets.FOUNDRY_MODULE_PAT }}
         run: |
           # Déterminer la branche cible (même nom que la branche actuelle)
-          BRANCH_NAME="${GITHUB_REF#refs/heads/}"
+          BRANCH_NAME="${{ steps.branch.outputs.name }}"
           echo "📦 Syncing modules-vtt/foundry to branch: ${BRANCH_NAME}"
 
           # Extraire le subtree dans une branche temporaire
@@ -93,14 +145,20 @@ jobs:
 
       - name: Summary
         run: |
-          BRANCH_NAME="${GITHUB_REF#refs/heads/}"
-          echo "## 🎮 Foundry Module Sync Complete" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- **Source**: \`modules-vtt/foundry\` in Tumulte" >> $GITHUB_STEP_SUMMARY
-          echo "- **Target**: \`${BRANCH_NAME}\` branch in [Tumulte-Foundry-module](https://github.com/The-Genium007/Tumulte-Foundry-module)" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          if [ "${BRANCH_NAME}" = "main" ]; then
-            echo "🏷️ **Production release** - Ready for Foundry VTT users!" >> $GITHUB_STEP_SUMMARY
+          BRANCH_NAME="${{ steps.branch.outputs.name }}"
+          if [ "${{ steps.check_sync.outputs.needed }}" = "true" ]; then
+            echo "## 🎮 Foundry Module Sync Complete" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "- **Source**: \`modules-vtt/foundry\` in Tumulte" >> $GITHUB_STEP_SUMMARY
+            echo "- **Target**: \`${BRANCH_NAME}\` branch in [Tumulte-Foundry-module](https://github.com/The-Genium007/Tumulte-Foundry-module)" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            if [ "${BRANCH_NAME}" = "main" ]; then
+              echo "🏷️ **Production release** - Ready for Foundry VTT users!" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "🧪 **Staging release** - Available for testing" >> $GITHUB_STEP_SUMMARY
+            fi
           else
-            echo "🧪 **Staging release** - Available for testing" >> $GITHUB_STEP_SUMMARY
+            echo "## ⏭️ Foundry Module Sync Skipped" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Content is already in sync with \`${BRANCH_NAME}\` branch." >> $GITHUB_STEP_SUMMARY
           fi
