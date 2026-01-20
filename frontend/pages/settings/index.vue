@@ -353,7 +353,7 @@
           label="Révoquer l'accès"
           icon="i-lucide-unplug"
           class="w-full sm:w-auto"
-          @click="showTwitchModal = false; showRevokeModal = true"
+          @click="openRevokeModal"
         />
         <UButton
           v-else
@@ -431,5 +431,10 @@ const handleDeleteAccount = async () => {
 const connectTwitch = () => {
   const config = useRuntimeConfig()
   window.location.href = `${config.public.apiBase}/auth/twitch/redirect`
+}
+
+const openRevokeModal = () => {
+  showTwitchModal.value = false
+  showRevokeModal.value = true
 }
 </script>
