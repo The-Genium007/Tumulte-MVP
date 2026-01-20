@@ -14,7 +14,7 @@ export function validateRequest(schema: z.ZodSchema) {
       const validatedData = await schema.parseAsync(request.all())
 
       // Remplacer le body avec les données validées
-      request.updateBody(validatedData)
+      request.updateBody(validatedData as Record<string, unknown>)
 
       await next()
     } catch (error) {
@@ -26,17 +26,17 @@ export function validateRequest(schema: z.ZodSchema) {
             requestId,
             method: request.method(),
             url: request.url(),
-            errors: error.errors,
+            errors: error.issues,
           },
           'Validation failed'
         )
 
         return response.badRequest({
           error: 'Validation failed',
-          details: error.errors.map((err) => ({
-            field: err.path.join('.'),
-            message: err.message,
-            code: err.code,
+          details: error.issues.map((issue) => ({
+            field: issue.path.join('.'),
+            message: issue.message,
+            code: issue.code,
           })),
         })
       }

@@ -171,40 +171,40 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed } from 'vue'
 
 export interface FilterConfig {
-  blur: number;
-  brightness: number;
-  contrast: number;
-  saturation: number;
-  grayscale: number;
-  sepia: number;
-  hueRotate: number;
-  invert: number;
-  opacity: number;
+  blur: number
+  brightness: number
+  contrast: number
+  saturation: number
+  grayscale: number
+  sepia: number
+  hueRotate: number
+  invert: number
+  opacity: number
 }
 
 interface FilterPreset {
-  label: string;
-  values: Partial<FilterConfig>;
-  css: string;
+  label: string
+  values: Partial<FilterConfig>
+  css: string
 }
 
 const props = withDefaults(
   defineProps<{
-    modelValue: FilterConfig;
-    showBlur?: boolean;
-    showBrightness?: boolean;
-    showContrast?: boolean;
-    showSaturation?: boolean;
-    showGrayscale?: boolean;
-    showSepia?: boolean;
-    showHueRotate?: boolean;
-    showInvert?: boolean;
-    showOpacity?: boolean;
-    showReset?: boolean;
-    showPresets?: boolean;
+    modelValue: FilterConfig
+    showBlur?: boolean
+    showBrightness?: boolean
+    showContrast?: boolean
+    showSaturation?: boolean
+    showGrayscale?: boolean
+    showSepia?: boolean
+    showHueRotate?: boolean
+    showInvert?: boolean
+    showOpacity?: boolean
+    showReset?: boolean
+    showPresets?: boolean
   }>(),
   {
     showBlur: true,
@@ -218,12 +218,12 @@ const props = withDefaults(
     showOpacity: false,
     showReset: true,
     showPresets: true,
-  },
-);
+  }
+)
 
 const emit = defineEmits<{
-  "update:modelValue": [value: FilterConfig];
-}>();
+  'update:modelValue': [value: FilterConfig]
+}>()
 
 const defaultValues: FilterConfig = {
   blur: 0,
@@ -235,67 +235,65 @@ const defaultValues: FilterConfig = {
   hueRotate: 0,
   invert: 0,
   opacity: 100,
-};
+}
 
 const presets: FilterPreset[] = [
   {
-    label: "Normal",
+    label: 'Normal',
     values: defaultValues,
-    css: "none",
+    css: 'none',
   },
   {
-    label: "Vintage",
+    label: 'Vintage',
     values: { brightness: 110, contrast: 90, saturation: 80, sepia: 20 },
-    css: "brightness(110%) contrast(90%) saturate(80%) sepia(20%)",
+    css: 'brightness(110%) contrast(90%) saturate(80%) sepia(20%)',
   },
   {
-    label: "Noir & Blanc",
+    label: 'Noir & Blanc',
     values: { grayscale: 100 },
-    css: "grayscale(100%)",
+    css: 'grayscale(100%)',
   },
   {
-    label: "Vif",
+    label: 'Vif',
     values: { brightness: 105, contrast: 110, saturation: 130 },
-    css: "brightness(105%) contrast(110%) saturate(130%)",
+    css: 'brightness(105%) contrast(110%) saturate(130%)',
   },
   {
-    label: "Dramatique",
+    label: 'Dramatique',
     values: { contrast: 140, brightness: 90 },
-    css: "contrast(140%) brightness(90%)",
+    css: 'contrast(140%) brightness(90%)',
   },
   {
-    label: "Froid",
+    label: 'Froid',
     values: { brightness: 100, saturation: 90, hueRotate: 180 },
-    css: "saturate(90%) hue-rotate(180deg)",
+    css: 'saturate(90%) hue-rotate(180deg)',
   },
-];
+]
 
 const hasChanges = computed(() => {
   return Object.keys(defaultValues).some(
-    (key) => props.modelValue[key as keyof FilterConfig] !== defaultValues[key as keyof FilterConfig],
-  );
-});
+    (key) =>
+      props.modelValue[key as keyof FilterConfig] !== defaultValues[key as keyof FilterConfig]
+  )
+})
 
-const updateField = <K extends keyof FilterConfig>(
-  field: K,
-  value: FilterConfig[K],
-) => {
-  emit("update:modelValue", {
+const updateField = <K extends keyof FilterConfig>(field: K, value: FilterConfig[K]) => {
+  emit('update:modelValue', {
     ...props.modelValue,
     [field]: value,
-  });
-};
+  })
+}
 
 const resetFilters = () => {
-  emit("update:modelValue", { ...defaultValues });
-};
+  emit('update:modelValue', { ...defaultValues })
+}
 
 const applyPreset = (preset: FilterPreset) => {
-  emit("update:modelValue", {
+  emit('update:modelValue', {
     ...defaultValues,
     ...preset.values,
-  });
-};
+  })
+}
 </script>
 
 <style scoped>

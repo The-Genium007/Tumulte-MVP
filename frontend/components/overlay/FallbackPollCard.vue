@@ -14,22 +14,13 @@
       </div>
 
       <div class="poll-options">
-        <div
-          v-for="(option, index) in poll.options"
-          :key="index"
-          class="poll-option"
-        >
+        <div v-for="(option, index) in poll.options" :key="index" class="poll-option">
           <div class="option-header">
             <span class="option-label">{{ option }}</span>
-            <span class="option-percentage"
-              >{{ percentages[index as number] || 0 }}%</span
-            >
+            <span class="option-percentage">{{ percentages[index as number] || 0 }}%</span>
           </div>
           <div class="option-bar-container">
-            <div
-              class="option-bar"
-              :style="{ width: `${percentages[index as number] || 0}%` }"
-            />
+            <div class="option-bar" :style="{ width: `${percentages[index as number] || 0}%` }" />
           </div>
         </div>
       </div>
@@ -38,63 +29,63 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onUnmounted } from "vue";
+import { ref, watch, onUnmounted } from 'vue'
 
 interface PollData {
-  pollInstanceId: string;
-  title: string;
-  options: string[];
-  endsAt?: string;
+  pollInstanceId: string
+  title: string
+  options: string[]
+  endsAt?: string
 }
 
 const props = defineProps<{
-  poll: PollData | null;
-  percentages: Record<number, number>;
-}>();
+  poll: PollData | null
+  percentages: Record<number, number>
+}>()
 
-const remainingTime = ref(0);
-let timerInterval: ReturnType<typeof setInterval> | null = null;
+const remainingTime = ref(0)
+let timerInterval: ReturnType<typeof setInterval> | null = null
 
 const startTimer = (endsAt: string | undefined) => {
-  if (!endsAt) return;
+  if (!endsAt) return
   if (timerInterval) {
-    clearInterval(timerInterval);
+    clearInterval(timerInterval)
   }
 
   const updateTimer = () => {
-    const now = new Date().getTime();
-    const end = new Date(endsAt).getTime();
-    const diff = end - now;
+    const now = new Date().getTime()
+    const end = new Date(endsAt).getTime()
+    const diff = end - now
 
     if (diff <= 0) {
-      remainingTime.value = 0;
+      remainingTime.value = 0
       if (timerInterval) {
-        clearInterval(timerInterval);
+        clearInterval(timerInterval)
       }
     } else {
-      remainingTime.value = Math.floor(diff / 1000);
+      remainingTime.value = Math.floor(diff / 1000)
     }
-  };
+  }
 
-  updateTimer();
-  timerInterval = setInterval(updateTimer, 1000);
-};
+  updateTimer()
+  timerInterval = setInterval(updateTimer, 1000)
+}
 
 watch(
   () => props.poll,
   (newPoll) => {
     if (newPoll?.endsAt) {
-      startTimer(newPoll.endsAt);
+      startTimer(newPoll.endsAt)
     }
   },
-  { immediate: true },
-);
+  { immediate: true }
+)
 
 onUnmounted(() => {
   if (timerInterval) {
-    clearInterval(timerInterval);
+    clearInterval(timerInterval)
   }
-});
+})
 </script>
 
 <style scoped>
@@ -148,7 +139,11 @@ onUnmounted(() => {
 }
 
 .poll-timer {
-  background: linear-gradient(135deg, var(--color-gradient-brand-start) 0%, var(--color-gradient-brand-end) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--color-gradient-brand-start) 0%,
+    var(--color-gradient-brand-end) 100%
+  );
   color: white;
   padding: 0.75rem 1.25rem;
   border-radius: 12px;
@@ -210,7 +205,12 @@ onUnmounted(() => {
 }
 
 .option-bar {
-  background: linear-gradient(90deg, var(--color-gradient-brand-start) 0%, var(--color-gradient-brand-middle) 50%, var(--color-gradient-brand-end) 100%);
+  background: linear-gradient(
+    90deg,
+    var(--color-gradient-brand-start) 0%,
+    var(--color-gradient-brand-middle) 50%,
+    var(--color-gradient-brand-end) 100%
+  );
   height: 100%;
   border-radius: 9999px;
   transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
@@ -221,7 +221,7 @@ onUnmounted(() => {
 }
 
 .option-bar::before {
-  content: "";
+  content: '';
   position: absolute;
   top: 0;
   left: 0;

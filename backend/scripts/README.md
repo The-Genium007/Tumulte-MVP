@@ -30,6 +30,7 @@ L'erreur `E_ROW_NOT_FOUND` ne devrait **PAS** apparaître car elle est filtrée 
 ### Vérifications
 
 Pour chaque erreur, vérifiez :
+
 - ✅ Le message d'erreur
 - ✅ Les tags (`test: true`, `environment: test-script`)
 - ✅ Le contexte utilisateur (user id, username, email)

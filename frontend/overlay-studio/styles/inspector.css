@@ -1,0 +1,161 @@
+/**
+ * Styles partagés pour les inspecteurs de l'Overlay Studio
+ * Importé dans PollInspector.vue et DiceInspector.vue
+ */
+
+/* Inspector container */
+.inspector-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* Main sections */
+.inspector-section {
+  border-bottom: 1px solid var(--color-neutral-200);
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.section-header:hover {
+  background: var(--color-neutral-100);
+}
+
+.section-content {
+  padding: 0 1rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Sub-sections (collapsible) */
+.sub-section {
+  border-bottom: 1px solid var(--color-neutral-200);
+}
+
+.sub-section:last-child {
+  border-bottom: none;
+}
+
+.sub-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.5rem 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-neutral-500);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: color 0.15s ease;
+}
+
+.sub-section-header:hover {
+  color: var(--color-text-primary);
+}
+
+.sub-section-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-bottom: 0.75rem;
+}
+
+/* Field groups */
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.group-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-neutral-500);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.25rem;
+}
+
+/* Slider fields */
+.slider-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.slider-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.slider-header label {
+  font-size: 0.75rem;
+  color: var(--color-neutral-400);
+}
+
+.slider-value {
+  font-size: 0.75rem;
+  color: var(--color-text-primary);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Inline fields */
+.inline-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.inline-field label {
+  font-size: 0.75rem;
+  color: var(--color-neutral-400);
+}
+
+.input-with-unit {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.unit {
+  font-size: 0.75rem;
+  color: var(--color-neutral-400);
+}
+
+/* Checkbox fields */
+.checkbox-field {
+  padding: 0.25rem 0;
+}
+
+/* Generic field */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.field label {
+  font-size: 0.75rem;
+  color: var(--color-neutral-400);
+}

@@ -94,60 +94,60 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
-import NumberInput from "../shared/NumberInput.vue";
+import { computed, ref } from 'vue'
+import NumberInput from '../shared/NumberInput.vue'
 
 export interface PaddingConfig {
-  top: number;
-  right: number;
-  bottom: number;
-  left: number;
+  top: number
+  right: number
+  bottom: number
+  left: number
 }
 
 const props = withDefaults(
   defineProps<{
-    modelValue: PaddingConfig;
-    maxPadding?: number;
+    modelValue: PaddingConfig
+    maxPadding?: number
   }>(),
   {
     maxPadding: 64,
-  },
-);
+  }
+)
 
 const emit = defineEmits<{
-  "update:modelValue": [value: PaddingConfig];
-}>();
+  'update:modelValue': [value: PaddingConfig]
+}>()
 
-const individualSidesEnabled = ref(false);
+const individualSidesEnabled = ref(false)
 
 const uniformPadding = computed(() => {
-  const { top, right, bottom, left } = props.modelValue;
+  const { top, right, bottom, left } = props.modelValue
   // Retourne la valeur si tous les côtés sont égaux, sinon la moyenne
   if (top === right && right === bottom && bottom === left) {
-    return top;
+    return top
   }
-  return Math.round((top + right + bottom + left) / 4);
-});
+  return Math.round((top + right + bottom + left) / 4)
+})
 
 const previewStyle = computed(() => ({
   padding: `${Math.min(props.modelValue.top, 12)}px ${Math.min(props.modelValue.right, 12)}px ${Math.min(props.modelValue.bottom, 12)}px ${Math.min(props.modelValue.left, 12)}px`,
-}));
+}))
 
 const updateUniformPadding = (value: number) => {
-  emit("update:modelValue", {
+  emit('update:modelValue', {
     top: value,
     right: value,
     bottom: value,
     left: value,
-  });
-};
+  })
+}
 
 const updateSide = (side: keyof PaddingConfig, value: number) => {
-  emit("update:modelValue", {
+  emit('update:modelValue', {
     ...props.modelValue,
     [side]: Math.max(0, Math.min(value, props.maxPadding)),
-  });
-};
+  })
+}
 </script>
 
 <style scoped>

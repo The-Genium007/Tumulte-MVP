@@ -3,32 +3,32 @@
  * Provides reactive state for connection status detection
  */
 
-const isOnline = ref(true);
-const wasOffline = ref(false);
+const isOnline = ref(true)
+const wasOffline = ref(false)
 
-let initialized = false;
+let initialized = false
 
 function handleOnline() {
   // Track that we came back from offline
   if (!isOnline.value) {
-    wasOffline.value = true;
+    wasOffline.value = true
   }
-  isOnline.value = true;
+  isOnline.value = true
 }
 
 function handleOffline() {
-  isOnline.value = false;
+  isOnline.value = false
 }
 
 export const useOnlineStatus = () => {
   // Initialize only once (singleton pattern for event listeners)
-  if (!initialized && typeof window !== "undefined") {
-    isOnline.value = navigator.onLine;
+  if (!initialized && typeof window !== 'undefined') {
+    isOnline.value = navigator.onLine
 
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
 
-    initialized = true;
+    initialized = true
   }
 
   /**
@@ -36,22 +36,22 @@ export const useOnlineStatus = () => {
    * Call this after handling the "back online" state
    */
   const acknowledgeReconnection = () => {
-    wasOffline.value = false;
-  };
+    wasOffline.value = false
+  }
 
   /**
    * Force refresh the online status
    * Useful after a manual connectivity check
    */
   const refresh = () => {
-    if (typeof navigator !== "undefined") {
-      const currentlyOnline = navigator.onLine;
+    if (typeof navigator !== 'undefined') {
+      const currentlyOnline = navigator.onLine
       if (currentlyOnline && !isOnline.value) {
-        wasOffline.value = true;
+        wasOffline.value = true
       }
-      isOnline.value = currentlyOnline;
+      isOnline.value = currentlyOnline
     }
-  };
+  }
 
   return {
     /** Whether the browser reports being online */
@@ -64,5 +64,5 @@ export const useOnlineStatus = () => {
     acknowledgeReconnection,
     /** Force refresh the online status */
     refresh,
-  };
-};
+  }
+}

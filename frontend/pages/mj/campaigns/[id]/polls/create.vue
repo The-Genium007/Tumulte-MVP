@@ -1,120 +1,118 @@
 <script setup lang="ts">
-import { usePollsStore } from "~/stores/polls";
+import { usePollsStore } from '~/stores/polls'
 
 definePageMeta({
-  layout: "authenticated" as const,
-  middleware: ["auth"],
-});
+  layout: 'authenticated' as const,
+  middleware: ['auth'],
+})
 
-const route = useRoute();
-const router = useRouter();
-const toast = useToast();
-const pollsStore = usePollsStore();
+const route = useRoute()
+const router = useRouter()
+const toast = useToast()
+const pollsStore = usePollsStore()
 
-const campaignId = computed(() => route.params.id as string);
+const campaignId = computed(() => route.params.id as string)
 
 // Form state
 const form = ref({
-  question: "",
+  question: '',
   durationSeconds: 60,
-});
+})
 
-const options = ref<string[]>(["", ""]);
-const isSubmitting = ref(false);
-const useCustomDuration = ref(false);
-const customDurationSeconds = ref(60);
+const options = ref<string[]>(['', ''])
+const isSubmitting = ref(false)
+const useCustomDuration = ref(false)
+const customDurationSeconds = ref(60)
 
 // Validation
 const isFormValid = computed(() => {
-  const hasQuestion = form.value.question.trim().length > 0;
-  const validOptions = options.value.filter((opt) => opt.trim().length > 0);
-  const validDuration = form.value.durationSeconds >= 15 && form.value.durationSeconds <= 1800;
-  return hasQuestion && validOptions.length >= 2 && validDuration;
-});
+  const hasQuestion = form.value.question.trim().length > 0
+  const validOptions = options.value.filter((opt) => opt.trim().length > 0)
+  const validDuration = form.value.durationSeconds >= 15 && form.value.durationSeconds <= 1800
+  return hasQuestion && validOptions.length >= 2 && validDuration
+})
 
-const questionLength = computed(() => form.value.question.length);
+const questionLength = computed(() => form.value.question.length)
 
 // Duration presets
 const durationPresets = [
-  { label: "30s", value: 30 },
-  { label: "1min", value: 60 },
-  { label: "2min", value: 120 },
-  { label: "3min", value: 180 },
-  { label: "5min", value: 300 },
-];
+  { label: '30s', value: 30 },
+  { label: '1min', value: 60 },
+  { label: '2min', value: 120 },
+  { label: '3min', value: 180 },
+  { label: '5min', value: 300 },
+]
 
 const selectDuration = (value: number) => {
-  useCustomDuration.value = false;
-  form.value.durationSeconds = value;
-};
+  useCustomDuration.value = false
+  form.value.durationSeconds = value
+}
 
 const enableCustomDuration = () => {
-  useCustomDuration.value = true;
-  customDurationSeconds.value = form.value.durationSeconds;
-};
+  useCustomDuration.value = true
+  customDurationSeconds.value = form.value.durationSeconds
+}
 
 // Watch custom duration changes
 watch(customDurationSeconds, (val) => {
   if (useCustomDuration.value) {
-    form.value.durationSeconds = Math.max(15, Math.min(1800, val));
+    form.value.durationSeconds = Math.max(15, Math.min(1800, val))
   }
-});
+})
 
 // Options management
 const addOption = () => {
   if (options.value.length < 5) {
-    options.value.push("");
+    options.value.push('')
   }
-};
+}
 
 const removeOption = (index: number) => {
   if (options.value.length > 2) {
-    options.value.splice(index, 1);
+    options.value.splice(index, 1)
   }
-};
+}
 
 // Navigation
 const goBack = () => {
-  router.push("/mj");
-};
+  router.push('/mj')
+}
 
 // Submit
 const handleSubmit = async () => {
-  if (!isFormValid.value || isSubmitting.value) return;
+  if (!isFormValid.value || isSubmitting.value) return
 
-  isSubmitting.value = true;
+  isSubmitting.value = true
 
-  const validOptions = options.value
-    .filter((opt) => opt.trim().length > 0)
-    .map((opt) => opt.trim());
+  const validOptions = options.value.filter((opt) => opt.trim().length > 0).map((opt) => opt.trim())
 
   try {
     await pollsStore.createPoll(campaignId.value, {
       question: form.value.question.trim(),
       options: validOptions,
-      type: "UNIQUE",
+      type: 'UNIQUE',
       durationSeconds: form.value.durationSeconds,
       channelPointsAmount: null,
-    });
+    })
 
     toast.add({
-      title: "Sondage créé",
-      description: "Le sondage a été créé avec succès.",
-      color: "success",
-    });
+      title: 'Sondage créé',
+      description: 'Le sondage a été créé avec succès.',
+      color: 'success',
+    })
 
-    router.push("/mj");
+    router.push('/mj')
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Erreur inconnue";
+    const message = err instanceof Error ? err.message : 'Erreur inconnue'
     toast.add({
-      title: "Erreur",
+      title: 'Erreur',
       description: message,
-      color: "error",
-    });
+      color: 'error',
+    })
   } finally {
-    isSubmitting.value = false;
+    isSubmitting.value = false
   }
-};
+}
 </script>
 
 <template>
@@ -124,14 +122,7 @@ const handleSubmit = async () => {
       <UCard class="mb-8">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-4">
-            <UButton
-              color="neutral"
-              variant="soft"
-              size="xl"
-              square
-              class="group"
-              @click="goBack"
-            >
+            <UButton color="neutral" variant="soft" size="xl" square class="group" @click="goBack">
               <template #leading>
                 <UIcon
                   name="i-lucide-arrow-left"
@@ -141,9 +132,7 @@ const handleSubmit = async () => {
             </UButton>
             <div>
               <h1 class="text-3xl font-bold text-primary">Créer un sondage</h1>
-              <p class="text-neutral-400">
-                Ajoutez un nouveau sondage à votre campagne
-              </p>
+              <p class="text-neutral-400">Ajoutez un nouveau sondage à votre campagne</p>
             </div>
           </div>
         </div>
@@ -176,11 +165,7 @@ const handleSubmit = async () => {
               Réponses (2-5 max)
             </label>
             <div class="space-y-3 mt-1">
-              <div
-                v-for="(_, idx) in options"
-                :key="idx"
-                class="flex items-center gap-3"
-              >
+              <div v-for="(_, idx) in options" :key="idx" class="flex items-center gap-3">
                 <span
                   class="flex items-center justify-center size-10 rounded-full bg-neutral-100 text-sm font-medium text-primary-500 shrink-0"
                 >
@@ -222,9 +207,7 @@ const handleSubmit = async () => {
 
           <!-- Duration -->
           <div>
-            <label class="block text-sm font-medium text-primary-500 uppercase pl-2">
-              Durée
-            </label>
+            <label class="block text-sm font-medium text-primary-500 uppercase pl-2"> Durée </label>
             <div class="flex flex-wrap items-center gap-3 mt-1">
               <!-- Presets - 2 par ligne sur mobile, 5 sur desktop -->
               <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3 w-full sm:w-auto">
@@ -261,7 +244,10 @@ const handleSubmit = async () => {
               </div>
 
               <!-- Custom input -->
-              <div v-if="useCustomDuration" class="flex items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+              <div
+                v-if="useCustomDuration"
+                class="flex items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0"
+              >
                 <UInput
                   v-model.number="customDurationSeconds"
                   type="number"

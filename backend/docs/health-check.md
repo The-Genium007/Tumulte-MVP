@@ -97,7 +97,7 @@ if (!refreshSuccess) {
   invalidStreamers.push({
     id: streamer.id,
     displayName: streamer.twitchDisplayName,
-    error: 'Token expired or invalid (refresh failed)'
+    error: 'Token expired or invalid (refresh failed)',
   })
 }
 ```
@@ -317,14 +317,17 @@ logger.error({ invalidStreamers }, '❌ Tokens check: FAILED')
 logger.error({ error }, '❌ Twitch API check: FAILED')
 
 // Summary
-logger.info({
-  campaignId,
-  healthy: result.healthy,
-  twitchApi: result.services.twitchApi.available,
-  redis: result.services.redis.connected,
-  tokens: result.services.tokens.valid,
-  websocket: result.services.websocket.ready
-}, 'Health check completed')
+logger.info(
+  {
+    campaignId,
+    healthy: result.healthy,
+    twitchApi: result.services.twitchApi.available,
+    redis: result.services.redis.connected,
+    tokens: result.services.tokens.valid,
+    websocket: result.services.websocket.ready,
+  },
+  'Health check completed'
+)
 ```
 
 ## Error Handling
@@ -399,6 +402,7 @@ npm run test:functional -- tests/functional/health_check.spec.ts
 **Debugging Steps:**
 
 1. Check streamer's token expiry in database:
+
    ```sql
    SELECT id, twitch_display_name, token_expires_at, token_refresh_failed_at, is_active
    FROM streamers
@@ -406,6 +410,7 @@ npm run test:functional -- tests/functional/health_check.spec.ts
    ```
 
 2. Check for refresh failures:
+
    ```bash
    grep "TokenRefresh.*str_xxx" logs/app.log
    ```
@@ -421,6 +426,7 @@ npm run test:functional -- tests/functional/health_check.spec.ts
 **Checks:**
 
 1. Verify scheduler is running:
+
    ```bash
    node --loader ts-node-maintained/esm ace token:refresh --dry-run
    ```

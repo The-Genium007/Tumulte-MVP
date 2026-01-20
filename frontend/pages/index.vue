@@ -1,22 +1,22 @@
 <script setup lang="ts">
-import { useAuth } from "@/composables/useAuth";
+import { useAuth } from '@/composables/useAuth'
 
 definePageMeta({
   middleware: async () => {
-    const { fetchMe } = useAuth();
+    const { fetchMe } = useAuth()
 
     try {
       // Essayer de récupérer l'utilisateur connecté
-      await fetchMe();
+      await fetchMe()
 
       // Tous les utilisateurs authentifiés vont vers /streamer
-      return navigateTo("/streamer");
+      return navigateTo('/streamer')
     } catch {
       // Si non authentifié, rediriger vers login
-      return navigateTo("/login");
+      return navigateTo('/login')
     }
   },
-});
+})
 </script>
 
 <template>

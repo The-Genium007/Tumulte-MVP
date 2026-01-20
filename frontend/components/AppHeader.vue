@@ -4,11 +4,7 @@
       <div class="flex items-center justify-between">
         <!-- Logo et titre -->
         <div class="flex items-center gap-3 sm:gap-4">
-          <img
-            src="~/assets/images/logo.png"
-            alt="Tumulte"
-            class="size-10 sm:size-12"
-          />
+          <img src="~/assets/images/logo.png" alt="Tumulte" class="size-10 sm:size-12" />
           <h1 class="text-lg sm:text-2xl font-bold text-primary">Tumulte</h1>
         </div>
 

@@ -134,35 +134,35 @@
 </template>
 
 <script setup lang="ts">
-import NumberInput from "../shared/NumberInput.vue";
+import NumberInput from '../shared/NumberInput.vue'
 
 export interface TextStyleConfig {
-  fontFamily?: string;
-  fontSize?: number;
-  fontWeight?: number;
-  textTransform?: "none" | "uppercase" | "lowercase" | "capitalize";
-  letterSpacing?: number;
-  lineHeight?: number;
-  textAlign?: "left" | "center" | "right" | "justify";
-  fontStyle?: "normal" | "italic";
-  textDecoration?: "none" | "underline" | "line-through";
+  fontFamily?: string
+  fontSize?: number
+  fontWeight?: number
+  textTransform?: 'none' | 'uppercase' | 'lowercase' | 'capitalize'
+  letterSpacing?: number
+  lineHeight?: number
+  textAlign?: 'left' | 'center' | 'right' | 'justify'
+  fontStyle?: 'normal' | 'italic'
+  textDecoration?: 'none' | 'underline' | 'line-through'
 }
 
 const props = withDefaults(
   defineProps<{
-    modelValue: TextStyleConfig;
-    showFontFamily?: boolean;
-    showFontSize?: boolean;
-    showFontWeight?: boolean;
-    showTextTransform?: boolean;
-    showLetterSpacing?: boolean;
-    showLineHeight?: boolean;
-    showTextAlign?: boolean;
-    showTextDecoration?: boolean;
-    fontSizeMin?: number;
-    fontSizeMax?: number;
-    fontSizeStep?: number;
-    fontSizeUnit?: string;
+    modelValue: TextStyleConfig
+    showFontFamily?: boolean
+    showFontSize?: boolean
+    showFontWeight?: boolean
+    showTextTransform?: boolean
+    showLetterSpacing?: boolean
+    showLineHeight?: boolean
+    showTextAlign?: boolean
+    showTextDecoration?: boolean
+    fontSizeMin?: number
+    fontSizeMax?: number
+    fontSizeStep?: number
+    fontSizeUnit?: string
   }>(),
   {
     showFontFamily: true,
@@ -176,90 +176,87 @@ const props = withDefaults(
     fontSizeMin: 8,
     fontSizeMax: 72,
     fontSizeStep: 1,
-    fontSizeUnit: "px",
-  },
-);
+    fontSizeUnit: 'px',
+  }
+)
 
 const emit = defineEmits<{
-  "update:modelValue": [value: TextStyleConfig];
-}>();
+  'update:modelValue': [value: TextStyleConfig]
+}>()
 
 // Options pour les fonts - liste curatée de polices web-safe + Google Fonts populaires
 const fontFamilyOptions = [
   // Sans-serif modernes
-  { label: "Inter", value: "Inter, sans-serif" },
-  { label: "Roboto", value: "Roboto, sans-serif" },
-  { label: "Open Sans", value: "'Open Sans', sans-serif" },
-  { label: "Montserrat", value: "Montserrat, sans-serif" },
-  { label: "Poppins", value: "Poppins, sans-serif" },
-  { label: "Nunito", value: "Nunito, sans-serif" },
+  { label: 'Inter', value: 'Inter, sans-serif' },
+  { label: 'Roboto', value: 'Roboto, sans-serif' },
+  { label: 'Open Sans', value: "'Open Sans', sans-serif" },
+  { label: 'Montserrat', value: 'Montserrat, sans-serif' },
+  { label: 'Poppins', value: 'Poppins, sans-serif' },
+  { label: 'Nunito', value: 'Nunito, sans-serif' },
   // Sans-serif system
-  { label: "System UI", value: "system-ui, sans-serif" },
-  { label: "Arial", value: "Arial, sans-serif" },
+  { label: 'System UI', value: 'system-ui, sans-serif' },
+  { label: 'Arial', value: 'Arial, sans-serif' },
   // Serif
-  { label: "Playfair Display", value: "'Playfair Display', serif" },
-  { label: "Merriweather", value: "Merriweather, serif" },
-  { label: "Georgia", value: "Georgia, serif" },
+  { label: 'Playfair Display', value: "'Playfair Display', serif" },
+  { label: 'Merriweather', value: 'Merriweather, serif' },
+  { label: 'Georgia', value: 'Georgia, serif' },
   // Monospace
-  { label: "JetBrains Mono", value: "'JetBrains Mono', monospace" },
-  { label: "Fira Code", value: "'Fira Code', monospace" },
-  { label: "Monospace", value: "ui-monospace, monospace" },
+  { label: 'JetBrains Mono', value: "'JetBrains Mono', monospace" },
+  { label: 'Fira Code', value: "'Fira Code', monospace" },
+  { label: 'Monospace', value: 'ui-monospace, monospace' },
   // Display / Gaming
-  { label: "Bebas Neue", value: "'Bebas Neue', sans-serif" },
-  { label: "Oswald", value: "Oswald, sans-serif" },
-  { label: "Bangers", value: "Bangers, cursive" },
-  { label: "Press Start 2P", value: "'Press Start 2P', cursive" },
-];
+  { label: 'Bebas Neue', value: "'Bebas Neue', sans-serif" },
+  { label: 'Oswald', value: 'Oswald, sans-serif' },
+  { label: 'Bangers', value: 'Bangers, cursive' },
+  { label: 'Press Start 2P', value: "'Press Start 2P', cursive" },
+]
 
 const fontWeightOptions = [
-  { label: "Thin (100)", value: 100 },
-  { label: "Light (300)", value: 300 },
-  { label: "Regular (400)", value: 400 },
-  { label: "Medium (500)", value: 500 },
-  { label: "Semibold (600)", value: 600 },
-  { label: "Bold (700)", value: 700 },
-  { label: "Extrabold (800)", value: 800 },
-  { label: "Black (900)", value: 900 },
-];
+  { label: 'Thin (100)', value: 100 },
+  { label: 'Light (300)', value: 300 },
+  { label: 'Regular (400)', value: 400 },
+  { label: 'Medium (500)', value: 500 },
+  { label: 'Semibold (600)', value: 600 },
+  { label: 'Bold (700)', value: 700 },
+  { label: 'Extrabold (800)', value: 800 },
+  { label: 'Black (900)', value: 900 },
+]
 
 const textTransformOptions = [
-  { label: "Normal", value: "none" as const, icon: "i-lucide-minus" },
-  { label: "MAJUSCULES", value: "uppercase" as const, icon: "i-lucide-arrow-up" },
-  { label: "minuscules", value: "lowercase" as const, icon: "i-lucide-arrow-down" },
-  { label: "Capitalize", value: "capitalize" as const, icon: "i-lucide-type" },
-];
+  { label: 'Normal', value: 'none' as const, icon: 'i-lucide-minus' },
+  { label: 'MAJUSCULES', value: 'uppercase' as const, icon: 'i-lucide-arrow-up' },
+  { label: 'minuscules', value: 'lowercase' as const, icon: 'i-lucide-arrow-down' },
+  { label: 'Capitalize', value: 'capitalize' as const, icon: 'i-lucide-type' },
+]
 
 const textAlignOptions = [
-  { label: "Gauche", value: "left" as const, icon: "i-lucide-align-left" },
-  { label: "Centre", value: "center" as const, icon: "i-lucide-align-center" },
-  { label: "Droite", value: "right" as const, icon: "i-lucide-align-right" },
-  { label: "Justifié", value: "justify" as const, icon: "i-lucide-align-justify" },
-];
+  { label: 'Gauche', value: 'left' as const, icon: 'i-lucide-align-left' },
+  { label: 'Centre', value: 'center' as const, icon: 'i-lucide-align-center' },
+  { label: 'Droite', value: 'right' as const, icon: 'i-lucide-align-right' },
+  { label: 'Justifié', value: 'justify' as const, icon: 'i-lucide-align-justify' },
+]
 
 // UI customization for selects to make them more visible
 const selectUi = {
-  base: "bg-neutral-100 text-neutral-600",
-};
+  base: 'bg-neutral-100 text-neutral-600',
+}
 
-const updateField = <K extends keyof TextStyleConfig>(
-  field: K,
-  value: TextStyleConfig[K],
-) => {
-  emit("update:modelValue", {
+const updateField = <K extends keyof TextStyleConfig>(field: K, value: TextStyleConfig[K]) => {
+  emit('update:modelValue', {
     ...props.modelValue,
     [field]: value,
-  });
-};
+  })
+}
 
 const toggleFontStyle = () => {
-  const newStyle = props.modelValue.fontStyle === "italic" ? "normal" : "italic";
-  updateField("fontStyle", newStyle);
-};
+  const newStyle = props.modelValue.fontStyle === 'italic' ? 'normal' : 'italic'
+  updateField('fontStyle', newStyle)
+}
 
-const toggleTextDecoration = (decoration: "underline" | "line-through") => {
-  const newDecoration = props.modelValue.textDecoration === decoration ? "none" : decoration;
-  updateField("textDecoration", newDecoration);
-};
+const toggleTextDecoration = (decoration: 'underline' | 'line-through') => {
+  const newDecoration = props.modelValue.textDecoration === decoration ? 'none' : decoration
+  updateField('textDecoration', newDecoration)
+}
 </script>
 
 <style scoped>

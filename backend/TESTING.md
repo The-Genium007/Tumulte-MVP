@@ -157,6 +157,7 @@ npm run test:teardown
 **Triggers**: PR to `staging` or push on `staging`
 
 **Jobs**:
+
 1. ✅ Quality Checks (TypeCheck + Lint)
 2. ✅ Unit Tests (Backend + Frontend) - **Coverage 80%+**
 3. ✅ Build (Backend + Frontend)
@@ -169,6 +170,7 @@ npm run test:teardown
 **Triggers**: PR to `main` or push on `main`
 
 **Jobs**:
+
 1. ✅ Quality Checks (TypeCheck + Lint)
 2. ✅ Security Audit (npm audit)
 3. ✅ Unit Tests - **Coverage 85%+ REQUIRED**
@@ -242,12 +244,13 @@ cat coverage/lcov.info
 
 ### Coverage Goals
 
-| Environment | Backend | Frontend | Critical Code |
-|-------------|---------|----------|---------------|
-| **Staging**   | 80%+    | 80%+     | 90%+          |
-| **Production**| 85%+    | 85%+     | **100%**      |
+| Environment    | Backend | Frontend | Critical Code |
+| -------------- | ------- | -------- | ------------- |
+| **Staging**    | 80%+    | 80%+     | 90%+          |
+| **Production** | 85%+    | 85%+     | **100%**      |
 
 **Critical code (100% required)**:
+
 - Auth Services (OAuth, encryption)
 - Poll Services (lifecycle, aggregation)
 - Repositories (authorization)
@@ -269,8 +272,8 @@ const poll_instance = await createTestPoll()
 
 // ✅ Exception - DB columns and external API
 const user = {
-  created_at: new Date(),  // OK - DB column
-  twitch_user_id: '123',   // OK - Twitch API
+  created_at: new Date(), // OK - DB column
+  twitch_user_id: '123', // OK - Twitch API
 }
 ```
 
@@ -286,7 +289,9 @@ test.group('Service Name', (group) => {
 
   test('should do something', async ({ assert }) => {
     // Arrange
-    const mockData = { /* ... */ }
+    const mockData = {
+      /* ... */
+    }
 
     // Act
     const result = await service.doSomething(mockData)
@@ -335,8 +340,8 @@ test('async operation', async ({ assert }) => {
 
 // ❌ BAD - Promise not awaited
 test('async operation', ({ assert }) => {
-  asyncFunction().then(result => {
-    assert.isDefined(result)  // May not execute
+  asyncFunction().then((result) => {
+    assert.isDefined(result) // May not execute
   })
 })
 ```
@@ -348,10 +353,12 @@ test('async operation', ({ assert }) => {
 group.each.setup(() => testUtils.db().withGlobalTransaction())
 
 // ❌ BAD - Shared data between tests
-let sharedUser: User  // Risk of pollution
+let sharedUser: User // Risk of pollution
 
 test('test 1', async () => {
-  sharedUser = await User.create({ /* ... */ })
+  sharedUser = await User.create({
+    /* ... */
+  })
 })
 
 test('test 2', async () => {
@@ -367,8 +374,8 @@ assert.equal(response.status(), 201)
 assert.equal(response.body().name, 'Expected Name')
 
 // ❌ BAD - Permissive assertions
-assert.oneOf(response.status(), [200, 201, 204])  // Too broad
-assert.isDefined(response.body())  // Not precise enough
+assert.oneOf(response.status(), [200, 201, 204]) // Too broad
+assert.isDefined(response.body()) // Not precise enough
 ```
 
 ## 🐛 Debugging

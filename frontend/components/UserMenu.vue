@@ -14,7 +14,9 @@
             size="md"
           />
           <!-- Overlay coloré au hover -->
-          <div class="absolute inset-0 bg-primary-100 opacity-0 group-hover:opacity-60 transition-opacity rounded-full" />
+          <div
+            class="absolute inset-0 bg-primary-100 opacity-0 group-hover:opacity-60 transition-opacity rounded-full"
+          />
         </div>
 
         <!-- Badge de notification d'invitations -->
@@ -82,12 +84,7 @@
                 <UIcon name="i-lucide-folder-kanban" class="size-4" />
                 <span>Mes Campagnes</span>
               </div>
-              <UBadge
-                v-if="hasInvitations"
-                color="warning"
-                variant="solid"
-                size="xs"
-              >
+              <UBadge v-if="hasInvitations" color="warning" variant="solid" size="xs">
                 {{ invitationCount }}
               </UBadge>
             </NuxtLink>

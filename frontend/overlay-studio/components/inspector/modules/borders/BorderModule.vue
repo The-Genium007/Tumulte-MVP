@@ -55,7 +55,9 @@
         </div>
         <div class="input-with-unit">
           <NumberInput
-            :model-value="(modelValue[side.key as keyof BorderConfig] as number) || modelValue.width"
+            :model-value="
+              (modelValue[side.key as keyof BorderConfig] as number) || modelValue.width
+            "
             :min="0"
             :max="20"
             :step="1"
@@ -68,70 +70,67 @@
 
     <!-- Preview -->
     <div v-if="showPreview && modelValue.width > 0" class="border-preview">
-      <div
-        class="preview-box"
-        :style="previewStyle"
-      />
+      <div class="preview-box" :style="previewStyle" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
-import NumberInput from "../shared/NumberInput.vue";
-import ColorModule from "../appearance/ColorModule.vue";
+import { computed, ref } from 'vue'
+import NumberInput from '../shared/NumberInput.vue'
+import ColorModule from '../appearance/ColorModule.vue'
 
-type BorderStyle = "solid" | "dashed" | "dotted" | "double" | "none";
+type BorderStyle = 'solid' | 'dashed' | 'dotted' | 'double' | 'none'
 
 export interface BorderConfig {
-  width: number;
-  style: BorderStyle;
-  color: string;
-  topWidth?: number;
-  rightWidth?: number;
-  bottomWidth?: number;
-  leftWidth?: number;
+  width: number
+  style: BorderStyle
+  color: string
+  topWidth?: number
+  rightWidth?: number
+  bottomWidth?: number
+  leftWidth?: number
 }
 
 const props = withDefaults(
   defineProps<{
-    modelValue: BorderConfig;
-    showIndividualSides?: boolean;
-    showPreview?: boolean;
+    modelValue: BorderConfig
+    showIndividualSides?: boolean
+    showPreview?: boolean
   }>(),
   {
     showIndividualSides: false,
     showPreview: true,
-  },
-);
+  }
+)
 
 const emit = defineEmits<{
-  "update:modelValue": [value: BorderConfig];
-}>();
+  'update:modelValue': [value: BorderConfig]
+}>()
 
-const individualSidesEnabled = ref(false);
+const individualSidesEnabled = ref(false)
 
 const borderStyleOptions = [
-  { label: "Solid", value: "solid" },
-  { label: "Dashed", value: "dashed" },
-  { label: "Dotted", value: "dotted" },
-  { label: "Double", value: "double" },
-];
+  { label: 'Solid', value: 'solid' },
+  { label: 'Dashed', value: 'dashed' },
+  { label: 'Dotted', value: 'dotted' },
+  { label: 'Double', value: 'double' },
+]
 
 // UI customization for select to make it more visible
 const selectUi = {
-  base: "bg-neutral-100 text-neutral-600",
-};
+  base: 'bg-neutral-100 text-neutral-600',
+}
 
 const sides = [
-  { key: "topWidth", label: "Haut", icon: "i-lucide-arrow-up" },
-  { key: "rightWidth", label: "Droite", icon: "i-lucide-arrow-right" },
-  { key: "bottomWidth", label: "Bas", icon: "i-lucide-arrow-down" },
-  { key: "leftWidth", label: "Gauche", icon: "i-lucide-arrow-left" },
-];
+  { key: 'topWidth', label: 'Haut', icon: 'i-lucide-arrow-up' },
+  { key: 'rightWidth', label: 'Droite', icon: 'i-lucide-arrow-right' },
+  { key: 'bottomWidth', label: 'Bas', icon: 'i-lucide-arrow-down' },
+  { key: 'leftWidth', label: 'Gauche', icon: 'i-lucide-arrow-left' },
+]
 
 const previewStyle = computed(() => {
-  const { width, style, color, topWidth, rightWidth, bottomWidth, leftWidth } = props.modelValue;
+  const { width, style, color, topWidth, rightWidth, bottomWidth, leftWidth } = props.modelValue
 
   if (individualSidesEnabled.value) {
     return {
@@ -141,39 +140,36 @@ const previewStyle = computed(() => {
       borderLeftWidth: `${leftWidth ?? width}px`,
       borderStyle: style,
       borderColor: color,
-    };
+    }
   }
 
   return {
     borderWidth: `${width}px`,
     borderStyle: style,
     borderColor: color,
-  };
-});
+  }
+})
 
 const toggleIndividualSides = (enabled: boolean) => {
-  individualSidesEnabled.value = enabled;
+  individualSidesEnabled.value = enabled
   if (enabled) {
     // Initialiser les côtés individuels avec la valeur globale
-    emit("update:modelValue", {
+    emit('update:modelValue', {
       ...props.modelValue,
       topWidth: props.modelValue.width,
       rightWidth: props.modelValue.width,
       bottomWidth: props.modelValue.width,
       leftWidth: props.modelValue.width,
-    });
+    })
   }
-};
+}
 
-const updateField = <K extends keyof BorderConfig>(
-  field: K,
-  value: BorderConfig[K],
-) => {
-  emit("update:modelValue", {
+const updateField = <K extends keyof BorderConfig>(field: K, value: BorderConfig[K]) => {
+  emit('update:modelValue', {
     ...props.modelValue,
     [field]: value,
-  });
-};
+  })
+}
 </script>
 
 <style scoped>

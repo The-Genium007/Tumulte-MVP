@@ -105,10 +105,7 @@
 
       <!-- Preview -->
       <div v-if="showPreview" class="shadow-preview">
-        <div
-          class="preview-box"
-          :style="previewStyle"
-        />
+        <div class="preview-box" :style="previewStyle" />
       </div>
 
       <!-- Presets -->
@@ -128,96 +125,93 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
-import ColorModule from "../appearance/ColorModule.vue";
+import { computed } from 'vue'
+import ColorModule from '../appearance/ColorModule.vue'
 
 export interface BoxShadowConfig {
-  enabled: boolean;
-  offsetX: number;
-  offsetY: number;
-  blur: number;
-  spread: number;
-  color: string;
-  inset?: boolean;
+  enabled: boolean
+  offsetX: number
+  offsetY: number
+  blur: number
+  spread: number
+  color: string
+  inset?: boolean
 }
 
 interface ShadowPreset {
-  label: string;
-  values: Omit<BoxShadowConfig, "enabled">;
-  css: string;
+  label: string
+  values: Omit<BoxShadowConfig, 'enabled'>
+  css: string
 }
 
 const props = withDefaults(
   defineProps<{
-    modelValue: BoxShadowConfig;
-    showInset?: boolean;
-    showPreview?: boolean;
-    showPresets?: boolean;
+    modelValue: BoxShadowConfig
+    showInset?: boolean
+    showPreview?: boolean
+    showPresets?: boolean
   }>(),
   {
     showInset: false,
     showPreview: true,
     showPresets: true,
-  },
-);
+  }
+)
 
 const emit = defineEmits<{
-  "update:modelValue": [value: BoxShadowConfig];
-}>();
+  'update:modelValue': [value: BoxShadowConfig]
+}>()
 
 const presets: ShadowPreset[] = [
   {
-    label: "Subtile",
-    values: { offsetX: 0, offsetY: 1, blur: 3, spread: 0, color: "rgba(0,0,0,0.1)" },
-    css: "0 1px 3px rgba(0,0,0,0.1)",
+    label: 'Subtile',
+    values: { offsetX: 0, offsetY: 1, blur: 3, spread: 0, color: 'rgba(0,0,0,0.1)' },
+    css: '0 1px 3px rgba(0,0,0,0.1)',
   },
   {
-    label: "Légère",
-    values: { offsetX: 0, offsetY: 4, blur: 6, spread: -1, color: "rgba(0,0,0,0.1)" },
-    css: "0 4px 6px -1px rgba(0,0,0,0.1)",
+    label: 'Légère',
+    values: { offsetX: 0, offsetY: 4, blur: 6, spread: -1, color: 'rgba(0,0,0,0.1)' },
+    css: '0 4px 6px -1px rgba(0,0,0,0.1)',
   },
   {
-    label: "Moyenne",
-    values: { offsetX: 0, offsetY: 10, blur: 15, spread: -3, color: "rgba(0,0,0,0.1)" },
-    css: "0 10px 15px -3px rgba(0,0,0,0.1)",
+    label: 'Moyenne',
+    values: { offsetX: 0, offsetY: 10, blur: 15, spread: -3, color: 'rgba(0,0,0,0.1)' },
+    css: '0 10px 15px -3px rgba(0,0,0,0.1)',
   },
   {
-    label: "Forte",
-    values: { offsetX: 0, offsetY: 20, blur: 25, spread: -5, color: "rgba(0,0,0,0.15)" },
-    css: "0 20px 25px -5px rgba(0,0,0,0.15)",
+    label: 'Forte',
+    values: { offsetX: 0, offsetY: 20, blur: 25, spread: -5, color: 'rgba(0,0,0,0.15)' },
+    css: '0 20px 25px -5px rgba(0,0,0,0.15)',
   },
   {
-    label: "Élevée",
-    values: { offsetX: 0, offsetY: 25, blur: 50, spread: -12, color: "rgba(0,0,0,0.25)" },
-    css: "0 25px 50px -12px rgba(0,0,0,0.25)",
+    label: 'Élevée',
+    values: { offsetX: 0, offsetY: 25, blur: 50, spread: -12, color: 'rgba(0,0,0,0.25)' },
+    css: '0 25px 50px -12px rgba(0,0,0,0.25)',
   },
-];
+]
 
 const previewStyle = computed(() => {
-  const { offsetX, offsetY, blur, spread, color, inset } = props.modelValue;
-  const insetStr = inset ? "inset " : "";
+  const { offsetX, offsetY, blur, spread, color, inset } = props.modelValue
+  const insetStr = inset ? 'inset ' : ''
   return {
     boxShadow: `${insetStr}${offsetX}px ${offsetY}px ${blur}px ${spread}px ${color}`,
-  };
-});
+  }
+})
 
-const updateField = <K extends keyof BoxShadowConfig>(
-  field: K,
-  value: BoxShadowConfig[K],
-) => {
-  emit("update:modelValue", {
+const updateField = <K extends keyof BoxShadowConfig>(field: K, value: BoxShadowConfig[K]) => {
+  emit('update:modelValue', {
     ...props.modelValue,
     [field]: value,
-  });
-};
+  })
+}
 
 const applyPreset = (preset: ShadowPreset) => {
-  emit("update:modelValue", {
+  emit('update:modelValue', {
     ...props.modelValue,
     ...preset.values,
     enabled: true,
-  });
-};
+  })
+}
 </script>
 
 <style scoped>

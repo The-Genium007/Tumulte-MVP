@@ -8,14 +8,14 @@
       :scale="50"
       :occlude="false"
       :sprite="false"
-      :z-index-range="isSelected ? [50000, 49000] : [10000 + renderOrder * 1000, 10000 + renderOrder * 1000 + 499]"
+      :z-index-range="
+        isSelected ? [50000, 49000] : [10000 + renderOrder * 1000, 10000 + renderOrder * 1000 + 499]
+      "
       :wrapper-class="isSelected ? 'html-wrapper-selected' : 'html-wrapper-normal'"
     >
       <div
         class="dice-3d-zone"
         :style="{ position: 'relative', zIndex: isSelected ? 100000 : 'auto' }"
-        @pointerdown.stop="handleDiceZonePointerDown"
-        @click.stop
       >
         <div class="dice-3d-container">
           <ClientOnly>
@@ -48,7 +48,11 @@
       :scale="50"
       :occlude="false"
       :sprite="false"
-      :z-index-range="isSelected ? [50500, 49500] : [10000 + renderOrder * 1000 + 500, 10000 + renderOrder * 1000 + 999]"
+      :z-index-range="
+        isSelected
+          ? [50500, 49500]
+          : [10000 + renderOrder * 1000 + 500, 10000 + renderOrder * 1000 + 999]
+      "
       :wrapper-class="isSelected ? 'html-wrapper-selected' : 'html-wrapper-normal'"
     >
       <div
@@ -69,103 +73,101 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
-import { useDebounceFn } from "@vueuse/core";
-import { Html } from "@tresjs/cientos";
-import type { Object3D } from "three";
-import type { OverlayElement, DiceProperties } from "../../types";
-import type { DiceRollEvent } from "~/types";
-import DiceRollOverlay from "~/components/overlay/DiceRollOverlay.vue";
-import DiceBox from "~/components/DiceBox.client.vue";
+import { computed, ref, watch } from 'vue'
+import { useDebounceFn } from '@vueuse/core'
+import { Html } from '@tresjs/cientos'
+import type { Object3D } from 'three'
+import type { OverlayElement, DiceProperties } from '../../types'
+import type { DiceRollEvent } from '~/types'
+import DiceRollOverlay from '~/components/overlay/DiceRollOverlay.vue'
+import DiceBox from '~/components/DiceBox.client.vue'
 
 const props = defineProps<{
-  element: OverlayElement;
-  isSelected: boolean;
-  renderOrder: number;
-}>();
+  element: OverlayElement
+  isSelected: boolean
+  renderOrder: number
+}>()
 
 const emit = defineEmits<{
-  select: [id: string, meshRef: Object3D];
-  hudSelect: [id: string, meshRef: Object3D];
-}>();
+  select: [id: string, meshRef: Object3D]
+  moveStart: []
+  move: [deltaX: number, deltaY: number]
+  moveEnd: []
+}>()
 
-const diceZoneRef = ref<Object3D | null>(null);
-const hudGroupRef = ref<Object3D | null>(null);
-const diceBoxRef = ref<InstanceType<typeof DiceBox> | null>(null);
+const diceZoneRef = ref<Object3D | null>(null)
+const hudGroupRef = ref<Object3D | null>(null)
+const diceBoxRef = ref<InstanceType<typeof DiceBox> | null>(null)
 
 // Propriétés typées du Dice
-const diceProperties = computed(
-  () => props.element.properties as DiceProperties,
-);
+const diceProperties = computed(() => props.element.properties as DiceProperties)
 
 // Position du HUD depuis hudTransform
 const hudPosition = computed(() => {
-  const transform = diceProperties.value.hudTransform;
-  return transform?.position ?? { x: 0, y: -300 };
-});
+  const transform = diceProperties.value.hudTransform
+  return transform?.position ?? { x: 0, y: -300 }
+})
 
 // Scale du HUD depuis hudTransform
 const hudScale = computed(() => {
-  const transform = diceProperties.value.hudTransform;
-  return transform?.scale ?? 1;
-});
+  const transform = diceProperties.value.hudTransform
+  return transform?.scale ?? 1
+})
 
 // Configuration custom colorset pour le DiceBox
 const diceCustomColorset = computed(() => {
-  const { colors } = diceProperties.value.diceBox;
+  const { colors } = diceProperties.value.diceBox
   return {
     foreground: colors.foreground,
     background: colors.background,
     outline: colors.outline,
-  };
-});
+  }
+})
 
 // Texture du dé
-const diceTexture = computed(() => diceProperties.value.diceBox.texture);
+const diceTexture = computed(() => diceProperties.value.diceBox.texture)
 
 // Matériau du dé
-const diceMaterial = computed(() => diceProperties.value.diceBox.material);
+const diceMaterial = computed(() => diceProperties.value.diceBox.material)
 
 // Intensité lumineuse de la scène 3D
-const diceLightIntensity = computed(
-  () => diceProperties.value.diceBox.lightIntensity,
-);
+const diceLightIntensity = computed(() => diceProperties.value.diceBox.lightIntensity)
 
 // Quand le DiceBox est prêt, lancer un dé statique pour l'aperçu
 const onDiceBoxReady = async () => {
   if (diceBoxRef.value) {
-    const formula = diceProperties.value.mockData.rollFormula || "1d20";
-    await diceBoxRef.value.roll(formula);
+    const formula = diceProperties.value.mockData.rollFormula || '1d20'
+    await diceBoxRef.value.roll(formula)
   }
-};
+}
 
 // Fonction debounced pour relancer le dé après modification des propriétés visuelles
 const debouncedReroll = useDebounceFn(async () => {
   if (diceBoxRef.value) {
-    const formula = diceProperties.value.mockData.rollFormula || "1d20";
-    await diceBoxRef.value.roll(formula);
+    const formula = diceProperties.value.mockData.rollFormula || '1d20'
+    await diceBoxRef.value.roll(formula)
   }
-}, 500);
+}, 500)
 
 // Watcher sur les propriétés visuelles du dé (couleurs, texture, matériau)
 // Relance automatiquement le dé après 500ms d'inactivité pour voir les changements
 watch(
   () => diceProperties.value.diceBox,
   () => {
-    debouncedReroll();
+    debouncedReroll()
   },
-  { deep: true },
-);
+  { deep: true }
+)
 
 // Création d'un DiceRollEvent mocké basé sur les mockData
 const mockDiceRollEvent = computed<DiceRollEvent>(() => {
-  const mock = diceProperties.value.mockData;
-  const totalResult = mock.diceValues.reduce((sum, val) => sum + val, 0);
+  const mock = diceProperties.value.mockData
+  const totalResult = mock.diceValues.reduce((sum, val) => sum + val, 0)
 
   return {
-    id: "mock-preview",
-    characterId: "mock-char",
-    characterName: "Prévisualisation",
+    id: 'mock-preview',
+    characterId: 'mock-char',
+    characterName: 'Prévisualisation',
     characterAvatar: null,
     rollFormula: mock.rollFormula,
     result: totalResult,
@@ -173,7 +175,7 @@ const mockDiceRollEvent = computed<DiceRollEvent>(() => {
     isCritical: mock.isCritical,
     criticalType: mock.criticalType,
     isHidden: false,
-    rollType: "skill",
+    rollType: 'skill',
     rolledAt: new Date().toISOString(),
     isOwnCharacter: false,
     skill: null,
@@ -181,24 +183,57 @@ const mockDiceRollEvent = computed<DiceRollEvent>(() => {
     ability: null,
     abilityRaw: null,
     modifiers: null,
-  };
-});
-
-// Gestion du pointerdown sur la zone 3D - sélection de l'élément dice
-const handleDiceZonePointerDown = (event: PointerEvent) => {
-  event.stopPropagation();
-  if (hudGroupRef.value) {
-    emit("select", props.element.id, hudGroupRef.value);
   }
-};
+})
 
-// Gestion du pointerdown sur le HUD - sélection pour manipulation avec gizmo
+// État du drag pour le HUD
+const isDragging = ref(false)
+const dragStartX = ref(0)
+const dragStartY = ref(0)
+
+// Gestion du pointerdown sur le HUD - sélection + début du drag
 const handleHudPointerDown = (event: PointerEvent) => {
-  event.stopPropagation();
+  event.stopPropagation()
+
+  // Sélectionner l'élément
   if (hudGroupRef.value) {
-    emit("hudSelect", props.element.id, hudGroupRef.value);
+    emit('select', props.element.id, hudGroupRef.value)
   }
-};
+
+  // Démarrer le drag
+  isDragging.value = true
+  dragStartX.value = event.clientX
+  dragStartY.value = event.clientY
+
+  emit('moveStart')
+  window.addEventListener('pointermove', handlePointerMove)
+  window.addEventListener('pointerup', handlePointerUp)
+}
+
+// Gestion du déplacement
+const handlePointerMove = (event: PointerEvent) => {
+  if (!isDragging.value) return
+
+  const deltaX = event.clientX - dragStartX.value
+  const deltaY = event.clientY - dragStartY.value
+
+  // Émettre le delta en pixels écran (sera converti par le parent)
+  emit('move', deltaX, deltaY)
+
+  dragStartX.value = event.clientX
+  dragStartY.value = event.clientY
+}
+
+// Fin du drag
+const handlePointerUp = () => {
+  if (isDragging.value) {
+    isDragging.value = false
+    emit('moveEnd')
+  }
+
+  window.removeEventListener('pointermove', handlePointerMove)
+  window.removeEventListener('pointerup', handlePointerUp)
+}
 </script>
 
 <style scoped>

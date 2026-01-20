@@ -18,9 +18,9 @@
           <section>
             <h2 class="text-2xl font-semibold text-primary mb-3">C'est quoi Tumulte ?</h2>
             <p class="text-secondary">
-              Tumulte est un système de sondages Twitch synchronisés multi-streams,
-              conçu spécifiquement pour les sessions de jeux de rôle (RPG) diffusées
-              sur plusieurs chaînes simultanément.
+              Tumulte est un système de sondages Twitch synchronisés multi-streams, conçu
+              spécifiquement pour les sessions de jeux de rôle (RPG) diffusées sur plusieurs chaînes
+              simultanément.
             </p>
           </section>
 
@@ -61,8 +61,8 @@
                   Maîtres du Jeu
                 </h3>
                 <p class="text-sm text-secondary">
-                  Gérez vos campagnes, lancez des sondages synchronisés,
-                  et suivez l'engagement de votre audience multi-streams.
+                  Gérez vos campagnes, lancez des sondages synchronisés, et suivez l'engagement de
+                  votre audience multi-streams.
                 </p>
               </div>
               <div class="bg-primary-light p-4 rounded-lg border border-primary-light">
@@ -71,8 +71,8 @@
                   Streamers
                 </h3>
                 <p class="text-sm text-secondary">
-                  Rejoignez des campagnes, participez aux sessions,
-                  et engagez votre communauté dans l'aventure collective.
+                  Rejoignez des campagnes, participez aux sessions, et engagez votre communauté dans
+                  l'aventure collective.
                 </p>
               </div>
             </div>
@@ -88,9 +88,8 @@
               title="Compte Twitch Affilié ou Partenaire requis"
             >
               <template #description>
-                Tumulte utilise l'API Twitch Polls, qui nécessite un statut
-                Affilié ou Partenaire. Les comptes non-affiliés ne peuvent pas
-                utiliser les fonctionnalités de sondage.
+                Tumulte utilise l'API Twitch Polls, qui nécessite un statut Affilié ou Partenaire.
+                Les comptes non-affiliés ne peuvent pas utiliser les fonctionnalités de sondage.
               </template>
             </UAlert>
           </section>
@@ -102,6 +101,6 @@
 
 <script setup lang="ts">
 definePageMeta({
-  layout: "default" as const,
-});
+  layout: 'default' as const,
+})
 </script>

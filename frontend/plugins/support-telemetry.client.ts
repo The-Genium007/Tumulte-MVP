@@ -1,5 +1,5 @@
-import { setupSupportTelemetry } from "@/utils/supportTelemetry";
+import { setupSupportTelemetry } from '@/utils/supportTelemetry'
 
 export default defineNuxtPlugin(() => {
-  setupSupportTelemetry();
-});
+  setupSupportTelemetry()
+})

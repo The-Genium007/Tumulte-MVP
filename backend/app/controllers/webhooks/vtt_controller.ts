@@ -17,7 +17,7 @@ const diceRollPayloadSchema = z.object({
   criticalType: z.enum(['success', 'failure']).nullable().optional(),
   isHidden: z.boolean().default(false),
   rollType: z.string().nullable().optional(),
-  metadata: z.record(z.unknown()).optional(), // Données spécifiques VTT
+  metadata: z.record(z.string(), z.unknown()).optional(), // Données spécifiques VTT
 })
 
 export default class VttController {
@@ -65,7 +65,7 @@ export default class VttController {
       if (error instanceof z.ZodError) {
         return response.badRequest({
           error: 'Invalid payload',
-          details: error.errors,
+          details: error.issues,
         })
       }
 

@@ -1,59 +1,58 @@
-import { ref, computed, inject, type InjectionKey } from "vue";
-import type { OverlayElement } from "../types";
+import { ref, computed, inject, type InjectionKey } from 'vue'
+import type { OverlayElement } from '../types'
 
 // Clé d'injection pour provide/inject
-export const UNDO_REDO_KEY: InjectionKey<UndoRedoComposable> =
-  Symbol("undoRedo");
+export const UNDO_REDO_KEY: InjectionKey<UndoRedoComposable> = Symbol('undoRedo')
 
 /**
  * Injecte le composable undo/redo fourni par un parent
  * @throws Error si aucun provider n'est trouvé
  */
 export function useInjectedUndoRedo(): UndoRedoComposable {
-  const undoRedo = inject(UNDO_REDO_KEY);
+  const undoRedo = inject(UNDO_REDO_KEY)
   if (!undoRedo) {
     throw new Error(
-      "useInjectedUndoRedo must be used within a provider that calls useUndoRedo and provides it",
-    );
+      'useInjectedUndoRedo must be used within a provider that calls useUndoRedo and provides it'
+    )
   }
-  return undoRedo;
+  return undoRedo
 }
 
 /**
  * Snapshot de l'état des éléments
  */
 interface ElementsSnapshot {
-  elements: OverlayElement[];
-  selectedElementId: string | null;
+  elements: OverlayElement[]
+  selectedElementId: string | null
 }
 
 /**
  * Entrée dans l'historique
  */
 interface HistoryEntry {
-  id: string;
-  timestamp: number;
-  label: string;
-  snapshot: ElementsSnapshot;
+  id: string
+  timestamp: number
+  label: string
+  snapshot: ElementsSnapshot
 }
 
 /**
  * Interface du store Overlay Studio (partie nécessaire pour undo/redo)
  */
 interface OverlayStudioStore {
-  elements: OverlayElement[];
-  selectedElementId: string | null;
-  restoreSnapshot: (snapshot: ElementsSnapshot) => void;
+  elements: OverlayElement[]
+  selectedElementId: string | null
+  restoreSnapshot: (snapshot: ElementsSnapshot) => void
 }
 
 // Constantes
-const MAX_HISTORY_SIZE = 50;
+const MAX_HISTORY_SIZE = 50
 
 /**
  * Génère un ID unique pour les entrées d'historique
  */
 function generateId(): string {
-  return `hist_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  return `hist_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 }
 
 /**
@@ -63,13 +62,13 @@ function generateId(): string {
  */
 export function useUndoRedo(store: OverlayStudioStore) {
   // === État ===
-  const history = ref<HistoryEntry[]>([]);
-  const currentIndex = ref(-1);
+  const history = ref<HistoryEntry[]>([])
+  const currentIndex = ref(-1)
 
   // État du grouping (pour les drags)
-  const isGrouping = ref(false);
-  const groupLabel = ref("");
-  const groupStartSnapshot = ref<ElementsSnapshot | null>(null);
+  const isGrouping = ref(false)
+  const groupLabel = ref('')
+  const groupStartSnapshot = ref<ElementsSnapshot | null>(null)
 
   // === Fonctions utilitaires ===
 
@@ -80,18 +79,15 @@ export function useUndoRedo(store: OverlayStudioStore) {
     return {
       elements: JSON.parse(JSON.stringify(store.elements)),
       selectedElementId: store.selectedElementId,
-    };
+    }
   }
 
   /**
    * Compare deux snapshots pour détecter les différences
    */
-  function snapshotsAreDifferent(
-    a: ElementsSnapshot | null,
-    b: ElementsSnapshot,
-  ): boolean {
-    if (!a) return true;
-    return JSON.stringify(a.elements) !== JSON.stringify(b.elements);
+  function snapshotsAreDifferent(a: ElementsSnapshot | null, b: ElementsSnapshot): boolean {
+    if (!a) return true
+    return JSON.stringify(a.elements) !== JSON.stringify(b.elements)
   }
 
   // === Actions principales ===
@@ -102,13 +98,13 @@ export function useUndoRedo(store: OverlayStudioStore) {
    */
   function pushSnapshot(label: string): void {
     // Si on est en mode grouping, ne pas enregistrer directement
-    if (isGrouping.value) return;
+    if (isGrouping.value) return
 
-    const snapshot = createSnapshot();
+    const snapshot = createSnapshot()
 
     // Si on n'est pas à la fin de l'historique, supprimer le "futur"
     if (currentIndex.value < history.value.length - 1) {
-      history.value.splice(currentIndex.value + 1);
+      history.value.splice(currentIndex.value + 1)
     }
 
     // Ajouter la nouvelle entrée
@@ -117,13 +113,13 @@ export function useUndoRedo(store: OverlayStudioStore) {
       timestamp: Date.now(),
       label,
       snapshot,
-    });
+    })
 
     // Limiter la taille de l'historique
     if (history.value.length > MAX_HISTORY_SIZE) {
-      history.value.shift();
+      history.value.shift()
     } else {
-      currentIndex.value++;
+      currentIndex.value++
     }
   }
 
@@ -133,22 +129,22 @@ export function useUndoRedo(store: OverlayStudioStore) {
    * @param label - Description du groupe (ex: "Déplacer élément")
    */
   function startGroup(label: string): void {
-    if (isGrouping.value) return;
+    if (isGrouping.value) return
 
-    isGrouping.value = true;
-    groupLabel.value = label;
-    groupStartSnapshot.value = createSnapshot();
+    isGrouping.value = true
+    groupLabel.value = label
+    groupStartSnapshot.value = createSnapshot()
   }
 
   /**
    * Termine un groupe d'actions et enregistre le snapshot si l'état a changé
    */
   function endGroup(): void {
-    if (!isGrouping.value) return;
+    if (!isGrouping.value) return
 
-    isGrouping.value = false;
+    isGrouping.value = false
 
-    const currentSnapshot = createSnapshot();
+    const currentSnapshot = createSnapshot()
 
     // Vérifier si l'état a réellement changé
     if (snapshotsAreDifferent(groupStartSnapshot.value, currentSnapshot)) {
@@ -157,7 +153,7 @@ export function useUndoRedo(store: OverlayStudioStore) {
 
       // Si on n'est pas à la fin de l'historique, supprimer le "futur"
       if (currentIndex.value < history.value.length - 1) {
-        history.value.splice(currentIndex.value + 1);
+        history.value.splice(currentIndex.value + 1)
       }
 
       // D'abord, enregistrer l'état avant le drag si c'est le premier snapshot
@@ -165,10 +161,10 @@ export function useUndoRedo(store: OverlayStudioStore) {
         history.value.push({
           id: generateId(),
           timestamp: Date.now() - 1,
-          label: "État initial",
+          label: 'État initial',
           snapshot: groupStartSnapshot.value!,
-        });
-        currentIndex.value++;
+        })
+        currentIndex.value++
       }
 
       // Puis enregistrer l'état actuel (après le drag)
@@ -177,52 +173,56 @@ export function useUndoRedo(store: OverlayStudioStore) {
         timestamp: Date.now(),
         label: groupLabel.value,
         snapshot: currentSnapshot,
-      });
+      })
 
       // Limiter la taille de l'historique
       while (history.value.length > MAX_HISTORY_SIZE) {
-        history.value.shift();
-        if (currentIndex.value > 0) currentIndex.value--;
+        history.value.shift()
+        if (currentIndex.value > 0) currentIndex.value--
       }
 
-      currentIndex.value = history.value.length - 1;
+      currentIndex.value = history.value.length - 1
     }
 
-    groupStartSnapshot.value = null;
-    groupLabel.value = "";
+    groupStartSnapshot.value = null
+    groupLabel.value = ''
   }
 
   /**
    * Annule la dernière action (undo)
    */
   function undo(): void {
-    if (!canUndo.value) return;
+    if (!canUndo.value) return
 
-    currentIndex.value--;
-    const entry = history.value[currentIndex.value];
-    store.restoreSnapshot(entry.snapshot);
+    currentIndex.value--
+    const entry = history.value[currentIndex.value]
+    if (entry) {
+      store.restoreSnapshot(entry.snapshot)
+    }
   }
 
   /**
    * Rétablit l'action annulée (redo)
    */
   function redo(): void {
-    if (!canRedo.value) return;
+    if (!canRedo.value) return
 
-    currentIndex.value++;
-    const entry = history.value[currentIndex.value];
-    store.restoreSnapshot(entry.snapshot);
+    currentIndex.value++
+    const entry = history.value[currentIndex.value]
+    if (entry) {
+      store.restoreSnapshot(entry.snapshot)
+    }
   }
 
   /**
    * Vide l'historique
    */
   function clear(): void {
-    history.value = [];
-    currentIndex.value = -1;
-    isGrouping.value = false;
-    groupStartSnapshot.value = null;
-    groupLabel.value = "";
+    history.value = []
+    currentIndex.value = -1
+    isGrouping.value = false
+    groupStartSnapshot.value = null
+    groupLabel.value = ''
   }
 
   /**
@@ -234,34 +234,34 @@ export function useUndoRedo(store: OverlayStudioStore) {
       history.value.push({
         id: generateId(),
         timestamp: Date.now(),
-        label: "État initial",
+        label: 'État initial',
         snapshot: createSnapshot(),
-      });
-      currentIndex.value = 0;
+      })
+      currentIndex.value = 0
     }
   }
 
   // === Computed ===
 
-  const canUndo = computed(() => currentIndex.value > 0);
+  const canUndo = computed(() => currentIndex.value > 0)
 
-  const canRedo = computed(() => currentIndex.value < history.value.length - 1);
+  const canRedo = computed(() => currentIndex.value < history.value.length - 1)
 
   const undoLabel = computed(() => {
-    if (!canUndo.value) return "";
+    if (!canUndo.value) return ''
     // Le label de l'action à annuler est celui de l'entrée courante
-    const entry = history.value[currentIndex.value];
-    return entry ? `Annuler: ${entry.label}` : "";
-  });
+    const entry = history.value[currentIndex.value]
+    return entry ? `Annuler: ${entry.label}` : ''
+  })
 
   const redoLabel = computed(() => {
-    if (!canRedo.value) return "";
+    if (!canRedo.value) return ''
     // Le label de l'action à rétablir est celui de l'entrée suivante
-    const entry = history.value[currentIndex.value + 1];
-    return entry ? `Rétablir: ${entry.label}` : "";
-  });
+    const entry = history.value[currentIndex.value + 1]
+    return entry ? `Rétablir: ${entry.label}` : ''
+  })
 
-  const historyLength = computed(() => history.value.length);
+  const historyLength = computed(() => history.value.length)
 
   return {
     // État (lecture seule)
@@ -284,7 +284,7 @@ export function useUndoRedo(store: OverlayStudioStore) {
     undoLabel,
     redoLabel,
     historyLength,
-  };
+  }
 }
 
-export type UndoRedoComposable = ReturnType<typeof useUndoRedo>;
+export type UndoRedoComposable = ReturnType<typeof useUndoRedo>

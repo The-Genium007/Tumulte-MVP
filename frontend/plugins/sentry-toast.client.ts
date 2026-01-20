@@ -4,5 +4,5 @@
  */
 export default defineNuxtPlugin(() => {
   // Le composable s'auto-initialise et s'abonne aux événements Sentry
-  useSentryToast();
-});
+  useSentryToast()
+})

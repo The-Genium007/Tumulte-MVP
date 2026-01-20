@@ -37,85 +37,97 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, onUnmounted } from 'vue'
 
 const props = withDefaults(
   defineProps<{
-    modelValue: number;
-    min?: number;
-    max?: number;
-    step?: number;
+    modelValue: number
+    min?: number
+    max?: number
+    step?: number
   }>(),
   {
     min: 0,
     max: 100,
     step: 1,
-  },
-);
+  }
+)
 
 const emit = defineEmits<{
-  "update:modelValue": [value: number];
-}>();
+  'update:modelValue': [value: number]
+}>()
 
-const inputRef = ref<HTMLInputElement | null>(null);
-let incrementInterval: ReturnType<typeof setInterval> | null = null;
-let decrementInterval: ReturnType<typeof setInterval> | null = null;
+const inputRef = ref<HTMLInputElement | null>(null)
+let incrementInterval: ReturnType<typeof setInterval> | null = null
+let decrementInterval: ReturnType<typeof setInterval> | null = null
 
 const clamp = (value: number): number => {
-  return Math.min(Math.max(value, props.min), props.max);
-};
+  return Math.min(Math.max(value, props.min), props.max)
+}
 
 const roundToStep = (value: number): number => {
-  const decimals = (props.step.toString().split(".")[1] || "").length;
-  return Number(value.toFixed(decimals));
-};
+  const decimals = (props.step.toString().split('.')[1] || '').length
+  return Number(value.toFixed(decimals))
+}
 
 const handleInput = (e: Event) => {
-  const target = e.target as HTMLInputElement;
-  const value = parseFloat(target.value);
+  const target = e.target as HTMLInputElement
+  const value = parseFloat(target.value)
   if (!isNaN(value)) {
-    emit("update:modelValue", clamp(value));
+    emit('update:modelValue', clamp(value))
   }
-};
+}
 
 const handleBlur = () => {
   // Ensure value is clamped on blur
-  emit("update:modelValue", clamp(props.modelValue));
-};
+  emit('update:modelValue', clamp(props.modelValue))
+}
 
 const increment = () => {
-  const newValue = roundToStep(props.modelValue + props.step);
-  emit("update:modelValue", clamp(newValue));
-};
+  const newValue = roundToStep(props.modelValue + props.step)
+  emit('update:modelValue', clamp(newValue))
+}
 
 const decrement = () => {
-  const newValue = roundToStep(props.modelValue - props.step);
-  emit("update:modelValue", clamp(newValue));
-};
+  const newValue = roundToStep(props.modelValue - props.step)
+  emit('update:modelValue', clamp(newValue))
+}
 
 const startIncrement = () => {
-  increment();
-  incrementInterval = setInterval(increment, 100);
-};
+  increment()
+  incrementInterval = setInterval(increment, 100)
+}
 
 const stopIncrement = () => {
   if (incrementInterval) {
-    clearInterval(incrementInterval);
-    incrementInterval = null;
+    clearInterval(incrementInterval)
+    incrementInterval = null
   }
-};
+}
 
 const startDecrement = () => {
-  decrement();
-  decrementInterval = setInterval(decrement, 100);
-};
+  decrement()
+  decrementInterval = setInterval(decrement, 100)
+}
 
 const stopDecrement = () => {
   if (decrementInterval) {
-    clearInterval(decrementInterval);
-    decrementInterval = null;
+    clearInterval(decrementInterval)
+    decrementInterval = null
   }
-};
+}
+
+// Cleanup des intervalles au démontage pour éviter les memory leaks
+onUnmounted(() => {
+  if (incrementInterval) {
+    clearInterval(incrementInterval)
+    incrementInterval = null
+  }
+  if (decrementInterval) {
+    clearInterval(decrementInterval)
+    decrementInterval = null
+  }
+})
 </script>
 
 <style scoped>

@@ -4,16 +4,13 @@
       v-if="imageUrl"
       :src="imageUrl"
       :alt="displayName"
-      :class="[
-        'rounded-full ring-2 ring-brand-200',
-        sizeClasses
-      ]"
+      :class="['rounded-full ring-2 ring-brand-200', sizeClasses]"
     />
     <div
       v-else
       :class="[
         'rounded-full ring-2 ring-brand-200 bg-brand-medium flex items-center justify-center',
-        sizeClasses
+        sizeClasses,
       ]"
     >
       <UIcon name="i-lucide-user" :class="iconSizeClasses" class="text-purple-500" />
@@ -32,7 +29,7 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   imageUrl: null,
-  size: 'md'
+  size: 'md',
 })
 
 const sizeClasses = computed(() => {

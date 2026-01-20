@@ -1,15 +1,12 @@
 <template>
-  <Transition
-    name="dice-roll"
-    @after-leave="handleTransitionComplete"
-  >
+  <Transition name="dice-roll" @after-leave="handleTransitionComplete">
     <div
       v-if="visible && diceRoll"
       class="dice-roll-container"
       :class="[
         criticalClass,
         { 'own-character': diceRoll?.isOwnCharacter },
-        { 'has-custom-styles': !!hudConfig }
+        { 'has-custom-styles': !!hudConfig },
       ]"
       :style="[containerStyle, criticalGlowStyle]"
     >
@@ -19,7 +16,11 @@
         <div
           v-if="diceRoll?.isCritical"
           class="critical-badge"
-          :style="diceRoll.criticalType === 'success' ? criticalSuccessBadgeStyle : criticalFailureBadgeStyle"
+          :style="
+            diceRoll.criticalType === 'success'
+              ? criticalSuccessBadgeStyle
+              : criticalFailureBadgeStyle
+          "
         >
           <UIcon
             :name="diceRoll.criticalType === 'success' ? 'i-lucide-trophy' : 'i-lucide-skull'"
@@ -35,9 +36,13 @@
           <div class="roll-formula" :style="formulaStyle">{{ diceRoll?.rollFormula }}</div>
           <div
             class="roll-result"
-            :style="diceRoll?.isCritical
-              ? (diceRoll.criticalType === 'success' ? resultSuccessStyle : resultFailureStyle)
-              : resultStyle"
+            :style="
+              diceRoll?.isCritical
+                ? diceRoll.criticalType === 'success'
+                  ? resultSuccessStyle
+                  : resultFailureStyle
+                : resultStyle
+            "
           >
             {{ diceRoll?.result }}
           </div>
@@ -61,9 +66,13 @@
           class="skill-info"
           :style="skillInfoContainerStyle"
         >
-          <span v-if="diceRoll?.skillRaw" class="skill-name" :style="skillNameStyle">{{ diceRoll.skillRaw }}</span>
+          <span v-if="diceRoll?.skillRaw" class="skill-name" :style="skillNameStyle">{{
+            diceRoll.skillRaw
+          }}</span>
           <span v-if="diceRoll?.skillRaw && diceRoll?.abilityRaw" class="skill-separator">•</span>
-          <span v-if="diceRoll?.abilityRaw" class="ability-name" :style="abilityNameStyle">({{ diceRoll.abilityRaw }})</span>
+          <span v-if="diceRoll?.abilityRaw" class="ability-name" :style="abilityNameStyle"
+            >({{ diceRoll.abilityRaw }})</span
+          >
         </div>
 
         <!-- Modifiers (if available) -->
@@ -72,7 +81,10 @@
             v-for="(mod, index) in diceRoll.modifiers"
             :key="index"
             class="modifier"
-            :class="{ 'modifier-positive': mod.startsWith('+'), 'modifier-negative': mod.startsWith('-') }"
+            :class="{
+              'modifier-positive': mod.startsWith('+'),
+              'modifier-negative': mod.startsWith('-'),
+            }"
           >
             {{ mod }}
           </span>
@@ -88,32 +100,32 @@
 </template>
 
 <script setup lang="ts">
-import { computed, type CSSProperties } from "vue";
-import type { DiceRollEvent } from "@/types";
-import type { DiceHudConfig, DiceCriticalColors } from "~/overlay-studio/types";
+import { computed, type CSSProperties } from 'vue'
+import type { DiceRollEvent } from '@/types'
+import type { DiceHudConfig, DiceCriticalColors } from '~/overlay-studio/types'
 
 const props = defineProps<{
-  diceRoll: DiceRollEvent | null;
-  visible: boolean; // Visibilité contrôlée par le parent (queue unifiée)
+  diceRoll: DiceRollEvent | null
+  visible: boolean // Visibilité contrôlée par le parent (queue unifiée)
   // Props optionnelles pour la personnalisation depuis l'Overlay Studio
-  hudConfig?: DiceHudConfig;
-  criticalColors?: DiceCriticalColors;
-}>();
+  hudConfig?: DiceHudConfig
+  criticalColors?: DiceCriticalColors
+}>()
 
 const emit = defineEmits<{
-  hidden: [];
-}>();
+  hidden: []
+}>()
 
 const criticalClass = computed(() => {
-  if (!props.diceRoll?.isCritical) return "";
-  return props.diceRoll.criticalType === "success" ? "critical-success" : "critical-failure";
-});
+  if (!props.diceRoll?.isCritical) return ''
+  return props.diceRoll.criticalType === 'success' ? 'critical-success' : 'critical-failure'
+})
 
 // Styles dynamiques pour le conteneur principal
 const containerStyle = computed<CSSProperties>(() => {
-  if (!props.hudConfig) return {};
+  if (!props.hudConfig) return {}
 
-  const { container } = props.hudConfig;
+  const { container } = props.hudConfig
   const style: CSSProperties = {
     backgroundColor: container.backgroundColor,
     borderColor: container.borderColor,
@@ -125,95 +137,95 @@ const containerStyle = computed<CSSProperties>(() => {
     paddingLeft: `${container.padding.left}px`,
     minWidth: `${props.hudConfig.minWidth}px`,
     maxWidth: `${props.hudConfig.maxWidth}px`,
-  };
+  }
 
   if (container.backdropBlur > 0) {
-    style.backdropFilter = `blur(${container.backdropBlur}px)`;
+    style.backdropFilter = `blur(${container.backdropBlur}px)`
   }
 
   if (container.boxShadow.enabled) {
-    style.boxShadow = `${container.boxShadow.offsetX}px ${container.boxShadow.offsetY}px ${container.boxShadow.blur}px ${container.boxShadow.color}`;
+    style.boxShadow = `${container.boxShadow.offsetX}px ${container.boxShadow.offsetY}px ${container.boxShadow.blur}px ${container.boxShadow.color}`
   }
 
-  return style;
-});
+  return style
+})
 
 // Style pour le badge critique succès
 const criticalSuccessBadgeStyle = computed<CSSProperties>(() => {
-  if (!props.hudConfig) return {};
-  const badge = props.hudConfig.criticalBadge;
+  if (!props.hudConfig) return {}
+  const badge = props.hudConfig.criticalBadge
   return {
     backgroundColor: badge.successBackground,
     color: badge.successTextColor,
     borderColor: badge.successBorderColor,
-  };
-});
+  }
+})
 
 // Style pour le badge critique échec
 const criticalFailureBadgeStyle = computed<CSSProperties>(() => {
-  if (!props.hudConfig) return {};
-  const badge = props.hudConfig.criticalBadge;
+  if (!props.hudConfig) return {}
+  const badge = props.hudConfig.criticalBadge
   return {
     backgroundColor: badge.failureBackground,
     color: badge.failureTextColor,
     borderColor: badge.failureBorderColor,
-  };
-});
+  }
+})
 
 // Style pour la formule de lancer
 const formulaStyle = computed<CSSProperties>(() => {
-  if (!props.hudConfig) return {};
-  const { typography } = props.hudConfig.formula;
+  if (!props.hudConfig) return {}
+  const { typography } = props.hudConfig.formula
   const style: CSSProperties = {
     fontFamily: typography.fontFamily,
     fontSize: `${typography.fontSize}px`,
     fontWeight: typography.fontWeight,
     color: typography.color,
-  };
-  if (typography.textShadow?.enabled) {
-    style.textShadow = `${typography.textShadow.offsetX}px ${typography.textShadow.offsetY}px ${typography.textShadow.blur}px ${typography.textShadow.color}`;
   }
-  return style;
-});
+  if (typography.textShadow?.enabled) {
+    style.textShadow = `${typography.textShadow.offsetX}px ${typography.textShadow.offsetY}px ${typography.textShadow.blur}px ${typography.textShadow.color}`
+  }
+  return style
+})
 
 // Style pour le résultat
 const resultStyle = computed<CSSProperties>(() => {
-  if (!props.hudConfig) return {};
-  const { typography } = props.hudConfig.result;
+  if (!props.hudConfig) return {}
+  const { typography } = props.hudConfig.result
   const style: CSSProperties = {
     fontFamily: typography.fontFamily,
     fontSize: `${typography.fontSize}px`,
     fontWeight: typography.fontWeight,
     color: typography.color,
-  };
-  if (typography.textShadow?.enabled) {
-    style.textShadow = `${typography.textShadow.offsetX}px ${typography.textShadow.offsetY}px ${typography.textShadow.blur}px ${typography.textShadow.color}`;
   }
-  return style;
-});
+  if (typography.textShadow?.enabled) {
+    style.textShadow = `${typography.textShadow.offsetX}px ${typography.textShadow.offsetY}px ${typography.textShadow.blur}px ${typography.textShadow.color}`
+  }
+  return style
+})
 
 // Style pour le résultat en cas de succès critique
 const resultSuccessStyle = computed<CSSProperties>(() => {
-  if (!props.hudConfig) return {};
+  if (!props.hudConfig) return {}
   return {
     ...resultStyle.value,
     color: props.hudConfig.result.criticalSuccessColor,
-  };
-});
+  }
+})
 
 // Style pour le résultat en cas d'échec critique
 const resultFailureStyle = computed<CSSProperties>(() => {
-  if (!props.hudConfig) return {};
+  if (!props.hudConfig) return {}
   return {
     ...resultStyle.value,
     color: props.hudConfig.result.criticalFailureColor,
-  };
-});
+  }
+})
 
 // Style pour les chips de breakdown des dés
 const diceBreakdownStyle = computed<CSSProperties>(() => {
-  if (!props.hudConfig) return {};
-  const breakdown = props.hudConfig.diceBreakdown;
+  if (!props.hudConfig) return {}
+  const breakdown = props.hudConfig.diceBreakdown
   const style: CSSProperties = {
     backgroundColor: breakdown.backgroundColor,
     borderColor: breakdown.borderColor,
@@ -222,81 +234,82 @@ const diceBreakdownStyle = computed<CSSProperties>(() => {
     fontSize: `${breakdown.typography.fontSize}px`,
     fontWeight: breakdown.typography.fontWeight,
     color: breakdown.typography.color,
-  };
-  return style;
-});
+  }
+  return style
+})
 
 // Style pour les infos de compétence
 const skillInfoContainerStyle = computed<CSSProperties>(() => {
-  if (!props.hudConfig) return {};
-  const skillInfo = props.hudConfig.skillInfo;
+  if (!props.hudConfig) return {}
+  const skillInfo = props.hudConfig.skillInfo
   return {
     backgroundColor: skillInfo.backgroundColor,
     borderColor: skillInfo.borderColor,
     borderRadius: `${skillInfo.borderRadius}px`,
-  };
-});
+  }
+})
 
 const skillNameStyle = computed<CSSProperties>(() => {
-  if (!props.hudConfig) return {};
-  const { skillTypography } = props.hudConfig.skillInfo;
+  if (!props.hudConfig) return {}
+  const { skillTypography } = props.hudConfig.skillInfo
   const style: CSSProperties = {
     fontFamily: skillTypography.fontFamily,
     fontSize: `${skillTypography.fontSize}px`,
     fontWeight: skillTypography.fontWeight,
     color: skillTypography.color,
-  };
-  return style;
-});
+  }
+  return style
+})
 
 const abilityNameStyle = computed<CSSProperties>(() => {
-  if (!props.hudConfig) return {};
-  const { abilityTypography } = props.hudConfig.skillInfo;
+  if (!props.hudConfig) return {}
+  const { abilityTypography } = props.hudConfig.skillInfo
   const style: CSSProperties = {
     fontFamily: abilityTypography.fontFamily,
     fontSize: `${abilityTypography.fontSize}px`,
     fontWeight: abilityTypography.fontWeight,
     color: abilityTypography.color,
-  };
-  return style;
-});
+  }
+  return style
+})
 
 // Couleurs de glow pour les critiques (animations)
 const criticalSuccessGlow = computed(() => {
-  return props.criticalColors?.criticalSuccessGlow || "rgba(34, 197, 94, 0.5)";
-});
+  return props.criticalColors?.criticalSuccessGlow || 'rgba(34, 197, 94, 0.5)'
+})
 
 const criticalFailureGlow = computed(() => {
-  return props.criticalColors?.criticalFailureGlow || "rgba(239, 68, 68, 0.5)";
-});
+  return props.criticalColors?.criticalFailureGlow || 'rgba(239, 68, 68, 0.5)'
+})
 
 // Style de glow pour les critiques (appliqué via CSS custom properties)
 const criticalGlowStyle = computed<CSSProperties>(() => {
-  if (!props.diceRoll?.isCritical) return {};
+  if (!props.diceRoll?.isCritical) return {}
 
-  const glowColor = props.diceRoll.criticalType === "success"
-    ? criticalSuccessGlow.value
-    : criticalFailureGlow.value;
+  const glowColor =
+    props.diceRoll.criticalType === 'success'
+      ? criticalSuccessGlow.value
+      : criticalFailureGlow.value
 
   return {
-    "--critical-glow-color": glowColor,
-  } as CSSProperties;
-});
+    '--critical-glow-color': glowColor,
+  } as CSSProperties
+})
 
 const formatRollType = (rollType: string): string => {
   const types: Record<string, string> = {
-    attack: "Attaque",
-    skill: "Compétence",
-    save: "Sauvegarde",
-    damage: "Dégâts",
-    initiative: "Initiative",
-  };
-  return types[rollType] || rollType;
-};
+    attack: 'Attaque',
+    skill: 'Compétence',
+    save: 'Sauvegarde',
+    damage: 'Dégâts',
+    initiative: 'Initiative',
+  }
+  return types[rollType] || rollType
+}
 
 const handleTransitionComplete = () => {
-  emit("hidden");
-};
+  emit('hidden')
+}
 </script>
 
 <style scoped>
@@ -512,7 +525,8 @@ const handleTransitionComplete = () => {
 
 /* Animations */
 @keyframes pulse-critical {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 0 20px var(--critical-glow-color);
   }
   50% {
@@ -521,7 +535,8 @@ const handleTransitionComplete = () => {
 }
 
 @keyframes bounce {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0);
   }
   50% {

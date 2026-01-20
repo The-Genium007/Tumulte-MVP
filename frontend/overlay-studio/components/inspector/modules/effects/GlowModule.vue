@@ -63,7 +63,10 @@
       </div>
 
       <!-- Animation Speed -->
-      <div v-if="showAnimation && modelValue.animation && modelValue.animation !== 'none'" class="slider-field">
+      <div
+        v-if="showAnimation && modelValue.animation && modelValue.animation !== 'none'"
+        class="slider-field"
+      >
         <div class="slider-header">
           <label>Vitesse</label>
           <span class="slider-value">{{ (modelValue.animationSpeed || 1).toFixed(1) }}s</span>
@@ -83,7 +86,10 @@
         <div
           class="preview-box"
           :style="previewStyle"
-          :class="{ 'animate-pulse': modelValue.animation === 'pulse', 'animate-breathe': modelValue.animation === 'breathe' }"
+          :class="{
+            'animate-pulse': modelValue.animation === 'pulse',
+            'animate-breathe': modelValue.animation === 'breathe',
+          }"
         />
       </div>
     </template>
@@ -91,59 +97,59 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
-import ColorModule from "../appearance/ColorModule.vue";
+import { computed } from 'vue'
+import ColorModule from '../appearance/ColorModule.vue'
 
 export interface GlowConfig {
-  enabled: boolean;
-  color: string;
-  intensity: number;
-  spread: number;
-  animation?: string;
-  animationSpeed?: number;
+  enabled: boolean
+  color: string
+  intensity: number
+  spread: number
+  animation?: string
+  animationSpeed?: number
 }
 
 const props = withDefaults(
   defineProps<{
-    modelValue: GlowConfig;
-    showAnimation?: boolean;
-    showPreview?: boolean;
+    modelValue: GlowConfig
+    showAnimation?: boolean
+    showPreview?: boolean
   }>(),
   {
     showAnimation: true,
     showPreview: true,
-  },
-);
+  }
+)
 
 const emit = defineEmits<{
-  "update:modelValue": [value: GlowConfig];
-}>();
+  'update:modelValue': [value: GlowConfig]
+}>()
 
 const colorPresets = [
-  { label: "Bleu néon", value: "#00d4ff" },
-  { label: "Rose néon", value: "#ff00ff" },
-  { label: "Vert néon", value: "#00ff88" },
-  { label: "Jaune néon", value: "#ffff00" },
-  { label: "Orange néon", value: "#ff8800" },
-  { label: "Rouge néon", value: "#ff0044" },
-  { label: "Violet néon", value: "#aa00ff" },
-  { label: "Blanc", value: "#ffffff" },
-  { label: "Or", value: "#ffd700" },
-  { label: "Argent", value: "#c0c0c0" },
-];
+  { label: 'Bleu néon', value: '#00d4ff' },
+  { label: 'Rose néon', value: '#ff00ff' },
+  { label: 'Vert néon', value: '#00ff88' },
+  { label: 'Jaune néon', value: '#ffff00' },
+  { label: 'Orange néon', value: '#ff8800' },
+  { label: 'Rouge néon', value: '#ff0044' },
+  { label: 'Violet néon', value: '#aa00ff' },
+  { label: 'Blanc', value: '#ffffff' },
+  { label: 'Or', value: '#ffd700' },
+  { label: 'Argent', value: '#c0c0c0' },
+]
 
-const colorPresetValues = colorPresets.map((p) => p.value);
+const colorPresetValues = colorPresets.map((p) => p.value)
 
 const animationOptions = [
-  { label: "Aucune", value: "none" },
-  { label: "Pulsation", value: "pulse" },
-  { label: "Respiration", value: "breathe" },
-  { label: "Clignotement", value: "blink" },
-];
+  { label: 'Aucune', value: 'none' },
+  { label: 'Pulsation', value: 'pulse' },
+  { label: 'Respiration', value: 'breathe' },
+  { label: 'Clignotement', value: 'blink' },
+]
 
 const previewStyle = computed(() => {
-  const { color, intensity, spread } = props.modelValue;
-  const glowSize = spread * intensity;
+  const { color, intensity, spread } = props.modelValue
+  const glowSize = spread * intensity
   return {
     boxShadow: `
       0 0 ${glowSize * 0.5}px ${color},
@@ -152,18 +158,15 @@ const previewStyle = computed(() => {
     `,
     borderColor: color,
     animationDuration: `${props.modelValue.animationSpeed || 1}s`,
-  };
-});
+  }
+})
 
-const updateField = <K extends keyof GlowConfig>(
-  field: K,
-  value: GlowConfig[K],
-) => {
-  emit("update:modelValue", {
+const updateField = <K extends keyof GlowConfig>(field: K, value: GlowConfig[K]) => {
+  emit('update:modelValue', {
     ...props.modelValue,
     [field]: value,
-  });
-};
+  })
+}
 </script>
 
 <style scoped>
@@ -245,7 +248,8 @@ const updateField = <K extends keyof GlowConfig>(
 }
 
 @keyframes pulse-glow {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
     filter: brightness(1);
   }
@@ -256,7 +260,8 @@ const updateField = <K extends keyof GlowConfig>(
 }
 
 @keyframes breathe-glow {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1);
   }
   50% {

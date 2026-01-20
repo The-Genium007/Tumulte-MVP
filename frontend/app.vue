@@ -8,6 +8,6 @@
 </template>
 
 <script setup lang="ts">
-const { isLoading, init } = useLoadingScreen();
-init();
+const { isLoading, init } = useLoadingScreen()
+init()
 </script>

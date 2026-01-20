@@ -46,11 +46,13 @@ tests/
 ### Initial Setup
 
 1. **Install dependencies**:
+
    ```bash
    npm install
    ```
 
 2. **Start test services**:
+
    ```bash
    npm run test:setup
    ```
@@ -113,6 +115,7 @@ npm run test:clean
 ### Naming
 
 ✅ **GOOD - camelCase** for variables, functions, parameters:
+
 ```typescript
 const campaignService = new CampaignService()
 const testUser = await createTestUser()
@@ -120,35 +123,39 @@ const mockRepository = new MockCampaignRepository()
 ```
 
 ❌ **BAD - snake_case** forbidden:
+
 ```typescript
-const campaign_service = new CampaignService()  // ❌
-const test_user = await createTestUser()        // ❌
+const campaign_service = new CampaignService() // ❌
+const test_user = await createTestUser() // ❌
 ```
 
 ### snake_case Exceptions
 
 ✅ **Allowed** for DB columns and external API fields:
+
 ```typescript
 const campaign = await Campaign.create({
-  owner_id: user.id,           // ✅ DB column
-  created_at: new Date(),      // ✅ DB column
+  owner_id: user.id, // ✅ DB column
+  created_at: new Date(), // ✅ DB column
 })
 
 const twitchData = {
-  twitch_user_id: '12345',     // ✅ Twitch API
-  access_token: 'token123',    // ✅ OAuth
+  twitch_user_id: '12345', // ✅ Twitch API
+  access_token: 'token123', // ✅ OAuth
 }
 ```
 
 ### Imports
 
 ✅ **GOOD - Path mapping**:
+
 ```typescript
 import { CampaignService } from '#services/campaigns/campaign_service'
 import { createTestUser } from '#tests/helpers/test_utils'
 ```
 
 ❌ **BAD - Relative imports**:
+
 ```typescript
 import { CampaignService } from '../../../app/services/campaigns/campaign_service'
 ```
@@ -242,12 +249,7 @@ mockTwitch.registerUser('12345', {
 })
 
 // Create a poll
-const poll = await mockTwitch.createPoll(
-  '12345',
-  'Question?',
-  ['A', 'B'],
-  60
-)
+const poll = await mockTwitch.createPoll('12345', 'Question?', ['A', 'B'], 60)
 
 // Simulate an error
 mockTwitch.failNextRequest(mockUnauthorizedError())
@@ -258,6 +260,7 @@ mockTwitch.failNextRequest(mockUnauthorizedError())
 Tests use a **real PostgreSQL database** in Docker (tmpfs for performance).
 
 Automatic cleanup between each test:
+
 ```typescript
 test.group('My Tests', (group) => {
   group.each.setup(() => testUtils.db().truncate())
@@ -293,6 +296,7 @@ Must pass **without errors**.
 ## 📊 Current Coverage
 
 ### Functional tests created
+
 - ✅ **campaigns_crud.spec.ts** - 13 tests (complete CRUD)
 - ✅ **campaigns_members.spec.ts** - 6 tests (invitations, authorization)
 - ✅ **polls.spec.ts** - 6 tests (launch, cancel, results)
@@ -302,9 +306,11 @@ Must pass **without errors**.
 **Total**: **35+ functional tests** modernized with real authentication and strict assertions.
 
 ### Unit tests
+
 - ✅ **campaign_service_modernized.spec.ts** - 13 tests with MockRepository pattern
 
 ### Infrastructure
+
 - ✅ Docker Compose for PostgreSQL + Redis
 - ✅ .env.test configuration
 - ✅ Japa bootstrap
@@ -315,20 +321,24 @@ Must pass **without errors**.
 ## 🎯 Next Steps (according to the plan)
 
 ### Phase 1 continued
+
 - OAuth authentication tests (100% coverage)
 - Token encryption/refresh tests
 - RBAC middleware tests
 
 ### Phase 2
+
 - Polls services tests (lifecycle, polling, aggregation)
 - Twitch integration services tests
 - WebSocket real-time tests
 
 ### Phase 3
+
 - Complete E2E workflow tests
 - Frontend component tests (Vitest + Playwright)
 
 ### Phase 4
+
 - Performance tests (1000 votes/sec)
 - Edge case tests
 - Validator tests
@@ -392,6 +402,7 @@ test.group('CampaignService', (group) => {
 By default, logs are in `silent` mode (see `.env.test`).
 
 To enable logs:
+
 ```bash
 LOG_LEVEL=debug npm test
 ```

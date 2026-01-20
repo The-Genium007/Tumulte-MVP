@@ -1,74 +1,74 @@
-import { ref, readonly } from "vue";
-import type { PollTemplate } from "@/types";
-import { useSupportTrigger } from "@/composables/useSupportTrigger";
+import { ref, readonly } from 'vue'
+import type { PollTemplate } from '@/types'
+import { useSupportTrigger } from '@/composables/useSupportTrigger'
 
 export const usePollTemplates = () => {
-  const config = useRuntimeConfig();
-  const API_URL = config.public.apiBase;
-  const { triggerSupportForError } = useSupportTrigger();
+  const config = useRuntimeConfig()
+  const API_URL = config.public.apiBase
+  const { triggerSupportForError } = useSupportTrigger()
 
-  const templates = ref<PollTemplate[]>([]);
-  const loading = ref<boolean>(false);
+  const templates = ref<PollTemplate[]>([])
+  const loading = ref<boolean>(false)
 
   /**
    * Récupère tous les templates (optionnellement filtrés par campagne)
    */
   const fetchTemplates = async (campaignId?: string): Promise<void> => {
-    loading.value = true;
+    loading.value = true
     try {
       const url = campaignId
         ? `${API_URL}/mj/campaigns/${campaignId}/templates`
-        : `${API_URL}/mj/poll-templates`;
+        : `${API_URL}/mj/poll-templates`
 
       const response = await fetch(url, {
-        credentials: "include",
-      });
-      if (!response.ok) throw new Error("Failed to fetch templates");
-      const data = await response.json();
-      templates.value = data.data;
+        credentials: 'include',
+      })
+      if (!response.ok) throw new Error('Failed to fetch templates')
+      const data = await response.json()
+      templates.value = data.data
     } catch (error) {
-      console.error("Failed to fetch templates:", error);
-      triggerSupportForError("template_fetch", error);
-      throw error;
+      console.error('Failed to fetch templates:', error)
+      triggerSupportForError('template_fetch', error)
+      throw error
     } finally {
-      loading.value = false;
+      loading.value = false
     }
-  };
+  }
 
   /**
    * Crée un nouveau template (optionnellement lié à une campagne)
    */
   const createTemplate = async (
     template: {
-      label: string;
-      title: string;
-      options: string[];
+      label: string
+      title: string
+      options: string[]
       // eslint-disable-next-line @typescript-eslint/naming-convention
-      duration_seconds: number;
+      duration_seconds: number
     },
-    campaignId?: string,
+    campaignId?: string
   ): Promise<PollTemplate> => {
     try {
       const url = campaignId
         ? `${API_URL}/mj/campaigns/${campaignId}/templates`
-        : `${API_URL}/mj/poll-templates`;
+        : `${API_URL}/mj/poll-templates`
 
       const response = await fetch(url, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(template),
-      });
-      if (!response.ok) throw new Error("Failed to create template");
-      const data = await response.json();
-      templates.value.unshift(data.data);
-      return data.data;
+      })
+      if (!response.ok) throw new Error('Failed to create template')
+      const data = await response.json()
+      templates.value.unshift(data.data)
+      return data.data
     } catch (error) {
-      console.error("Failed to create template:", error);
-      triggerSupportForError("template_create", error);
-      throw error;
+      console.error('Failed to create template:', error)
+      triggerSupportForError('template_create', error)
+      throw error
     }
-  };
+  }
 
   /**
    * Met à jour un template existant
@@ -76,90 +76,84 @@ export const usePollTemplates = () => {
   const updateTemplate = async (
     id: string,
     updates: Partial<{
-      label: string;
-      title: string;
-      options: string[];
+      label: string
+      title: string
+      options: string[]
       // eslint-disable-next-line @typescript-eslint/naming-convention
-      duration_seconds: number;
+      duration_seconds: number
     }>,
-    campaignId?: string,
+    campaignId?: string
   ): Promise<PollTemplate> => {
     try {
       const url = campaignId
         ? `${API_URL}/mj/campaigns/${campaignId}/templates/${id}`
-        : `${API_URL}/mj/poll-templates/${id}`;
+        : `${API_URL}/mj/poll-templates/${id}`
 
       const response = await fetch(url, {
-        method: "PUT",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates),
-      });
-      if (!response.ok) throw new Error("Failed to update template");
-      const data = await response.json();
-      const index = templates.value.findIndex((t) => t.id === id);
+      })
+      if (!response.ok) throw new Error('Failed to update template')
+      const data = await response.json()
+      const index = templates.value.findIndex((t) => t.id === id)
       if (index !== -1) {
-        templates.value[index] = data.data;
+        templates.value[index] = data.data
       }
-      return data.data;
+      return data.data
     } catch (error) {
-      console.error("Failed to update template:", error);
-      triggerSupportForError("template_update", error);
-      throw error;
+      console.error('Failed to update template:', error)
+      triggerSupportForError('template_update', error)
+      throw error
     }
-  };
+  }
 
   /**
    * Supprime un template
    */
-  const deleteTemplate = async (
-    id: string,
-    campaignId?: string,
-  ): Promise<void> => {
+  const deleteTemplate = async (id: string, campaignId?: string): Promise<void> => {
     try {
       const url = campaignId
         ? `${API_URL}/mj/campaigns/${campaignId}/templates/${id}`
-        : `${API_URL}/mj/poll-templates/${id}`;
+        : `${API_URL}/mj/poll-templates/${id}`
 
       const response = await fetch(url, {
-        method: "DELETE",
-        credentials: "include",
-      });
-      if (!response.ok) throw new Error("Failed to delete template");
-      templates.value = templates.value.filter((t) => t.id !== id);
+        method: 'DELETE',
+        credentials: 'include',
+      })
+      if (!response.ok) throw new Error('Failed to delete template')
+      templates.value = templates.value.filter((t) => t.id !== id)
     } catch (error) {
-      console.error("Failed to delete template:", error);
-      triggerSupportForError("template_delete", error);
-      throw error;
+      console.error('Failed to delete template:', error)
+      triggerSupportForError('template_delete', error)
+      throw error
     }
-  };
+  }
 
   /**
    * Lance un sondage à partir d'un template (optionnellement lié à une campagne)
    */
-  const launchPoll = async (
-    templateId: string,
-    campaignId?: string,
-  ): Promise<void> => {
+  const launchPoll = async (templateId: string, campaignId?: string): Promise<void> => {
     try {
       const url = campaignId
         ? `${API_URL}/mj/campaigns/${campaignId}/polls/launch`
-        : `${API_URL}/mj/polls/launch`;
+        : `${API_URL}/mj/polls/launch`
 
       const response = await fetch(url, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
 
         body: JSON.stringify({ template_id: templateId }),
-      });
-      if (!response.ok) throw new Error("Failed to launch poll");
+      })
+      if (!response.ok) throw new Error('Failed to launch poll')
     } catch (error) {
-      console.error("Failed to launch poll:", error);
-      triggerSupportForError("poll_launch", error);
-      throw error;
+      console.error('Failed to launch poll:', error)
+      triggerSupportForError('poll_launch', error)
+      throw error
     }
-  };
+  }
 
   return {
     templates: readonly(templates),
@@ -169,5 +163,5 @@ export const usePollTemplates = () => {
     updateTemplate,
     deleteTemplate,
     launchPoll,
-  };
-};
+  }
+}

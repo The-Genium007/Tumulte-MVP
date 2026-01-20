@@ -1,50 +1,49 @@
 <script setup lang="ts">
-import type { Character } from "~/types";
+import type { Character } from '~/types'
 
 const props = defineProps<{
-  characters: Character[];
-  currentCharacterId?: string | null;
-  title?: string;
-  description?: string;
-  confirmLabel?: string;
-  loading?: boolean;
-}>();
+  characters: Character[]
+  currentCharacterId?: string | null
+  title?: string
+  description?: string
+  confirmLabel?: string
+  loading?: boolean
+}>()
 
-const model = defineModel<boolean>({ default: false });
+const model = defineModel<boolean>({ default: false })
 
 const emit = defineEmits<{
-  confirm: [characterId: string];
-  cancel: [];
-}>();
+  confirm: [characterId: string]
+  cancel: []
+}>()
 
-const selectedCharacterId = ref<string | null>(props.currentCharacterId || null);
+const selectedCharacterId = ref<string | null>(props.currentCharacterId || null)
 
 // Réinitialiser la sélection quand le modal s'ouvre
 watch(model, (isOpen) => {
   if (isOpen) {
-    selectedCharacterId.value = props.currentCharacterId || null;
+    selectedCharacterId.value = props.currentCharacterId || null
   }
-});
+})
 
 // Mettre à jour si currentCharacterId change
 watch(
   () => props.currentCharacterId,
   (newValue) => {
-    selectedCharacterId.value = newValue || null;
-  },
-);
+    selectedCharacterId.value = newValue || null
+  }
+)
 
 const handleConfirm = () => {
   if (selectedCharacterId.value) {
-    emit("confirm", selectedCharacterId.value);
+    emit('confirm', selectedCharacterId.value)
   }
-};
+}
 
 const handleCancel = () => {
-  emit("cancel");
-  model.value = false;
-};
-
+  emit('cancel')
+  model.value = false
+}
 </script>
 
 <template>
@@ -53,13 +52,13 @@ const handleCancel = () => {
       <UCard>
         <template #header>
           <h3 class="text-lg font-semibold text-primary">
-            {{ title || "Choisir un personnage" }}
+            {{ title || 'Choisir un personnage' }}
           </h3>
         </template>
 
         <div class="space-y-4">
           <p class="text-muted">
-            {{ description || "Sélectionnez le personnage que vous souhaitez jouer." }}
+            {{ description || 'Sélectionnez le personnage que vous souhaitez jouer.' }}
           </p>
 
           <!-- Liste des personnages -->
@@ -76,7 +75,9 @@ const handleCancel = () => {
               @click="selectedCharacterId = character.id"
             >
               <!-- Avatar -->
-              <div class="size-12 rounded-full bg-primary-100 flex items-center justify-center shrink-0">
+              <div
+                class="size-12 rounded-full bg-primary-100 flex items-center justify-center shrink-0"
+              >
                 <UIcon name="i-lucide-user" class="size-6 text-primary-500" />
               </div>
 

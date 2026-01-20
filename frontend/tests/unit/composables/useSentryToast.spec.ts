@@ -1,150 +1,150 @@
-import { describe, test, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest'
 
 // Mock useToast as a global (Nuxt auto-import)
-const mockToastAdd = vi.fn();
-vi.stubGlobal("useToast", () => ({
+const mockToastAdd = vi.fn()
+vi.stubGlobal('useToast', () => ({
   add: mockToastAdd,
-}));
+}))
 
 // Mock onSentryError
-let sentryErrorCallback: (() => void) | null = null;
-const mockUnsubscribe = vi.fn();
-vi.mock("~/sentry.client.config", () => ({
+let sentryErrorCallback: (() => void) | null = null
+const mockUnsubscribe = vi.fn()
+vi.mock('~/sentry.client.config', () => ({
   onSentryError: (callback: () => void) => {
-    sentryErrorCallback = callback;
-    return mockUnsubscribe;
+    sentryErrorCallback = callback
+    return mockUnsubscribe
   },
-}));
+}))
 
 // Mock onUnmounted as a global (Vue auto-import)
-const unmountCallbacks: (() => void)[] = [];
-vi.stubGlobal("onUnmounted", (callback: () => void) => {
-  unmountCallbacks.push(callback);
-});
+const unmountCallbacks: (() => void)[] = []
+vi.stubGlobal('onUnmounted', (callback: () => void) => {
+  unmountCallbacks.push(callback)
+})
 
-describe("useSentryToast Composable", () => {
+describe('useSentryToast Composable', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    vi.useFakeTimers();
-    sentryErrorCallback = null;
-    unmountCallbacks.length = 0;
-  });
+    vi.clearAllMocks()
+    vi.useFakeTimers()
+    sentryErrorCallback = null
+    unmountCallbacks.length = 0
+  })
 
   afterEach(() => {
-    vi.useRealTimers();
-  });
+    vi.useRealTimers()
+  })
 
-  test("should subscribe to Sentry errors on initialization", async () => {
-    const { useSentryToast } = await import("~/composables/useSentryToast");
-    useSentryToast();
+  test('should subscribe to Sentry errors on initialization', async () => {
+    const { useSentryToast } = await import('~/composables/useSentryToast')
+    useSentryToast()
 
-    expect(sentryErrorCallback).not.toBeNull();
-  });
+    expect(sentryErrorCallback).not.toBeNull()
+  })
 
-  test("should show toast when Sentry captures an error", async () => {
-    const { useSentryToast } = await import("~/composables/useSentryToast");
-    useSentryToast();
+  test('should show toast when Sentry captures an error', async () => {
+    const { useSentryToast } = await import('~/composables/useSentryToast')
+    useSentryToast()
 
     // Trigger Sentry error
-    sentryErrorCallback?.();
+    sentryErrorCallback?.()
 
     expect(mockToastAdd).toHaveBeenCalledWith({
-      id: "sentry-error-captured",
-      title: "Erreur détectée",
-      description: "Elle a été automatiquement transmise au support.",
-      icon: "i-lucide-bug",
-      color: "warning",
-    });
-  });
+      id: 'sentry-error-captured',
+      title: 'Erreur détectée',
+      description: 'Elle a été automatiquement transmise au support.',
+      icon: 'i-lucide-bug',
+      color: 'warning',
+    })
+  })
 
-  test("should debounce multiple errors within 5 seconds", async () => {
-    vi.resetModules();
+  test('should debounce multiple errors within 5 seconds', async () => {
+    vi.resetModules()
 
-    const { useSentryToast } = await import("~/composables/useSentryToast");
-    useSentryToast();
+    const { useSentryToast } = await import('~/composables/useSentryToast')
+    useSentryToast()
 
     // Trigger first error
-    sentryErrorCallback?.();
-    expect(mockToastAdd).toHaveBeenCalledTimes(1);
+    sentryErrorCallback?.()
+    expect(mockToastAdd).toHaveBeenCalledTimes(1)
 
     // Trigger second error immediately
-    sentryErrorCallback?.();
-    expect(mockToastAdd).toHaveBeenCalledTimes(1); // Still 1, debounced
+    sentryErrorCallback?.()
+    expect(mockToastAdd).toHaveBeenCalledTimes(1) // Still 1, debounced
 
     // Trigger third error after 2 seconds
-    vi.advanceTimersByTime(2000);
-    sentryErrorCallback?.();
-    expect(mockToastAdd).toHaveBeenCalledTimes(1); // Still 1, within debounce window
-  });
+    vi.advanceTimersByTime(2000)
+    sentryErrorCallback?.()
+    expect(mockToastAdd).toHaveBeenCalledTimes(1) // Still 1, within debounce window
+  })
 
-  test("should allow new toast after debounce period", async () => {
-    vi.resetModules();
+  test('should allow new toast after debounce period', async () => {
+    vi.resetModules()
 
-    const { useSentryToast } = await import("~/composables/useSentryToast");
-    useSentryToast();
+    const { useSentryToast } = await import('~/composables/useSentryToast')
+    useSentryToast()
 
     // Trigger first error
-    sentryErrorCallback?.();
-    expect(mockToastAdd).toHaveBeenCalledTimes(1);
+    sentryErrorCallback?.()
+    expect(mockToastAdd).toHaveBeenCalledTimes(1)
 
     // Advance past debounce period (5000ms)
-    vi.advanceTimersByTime(5001);
+    vi.advanceTimersByTime(5001)
 
     // Trigger second error
-    sentryErrorCallback?.();
-    expect(mockToastAdd).toHaveBeenCalledTimes(2);
-  });
+    sentryErrorCallback?.()
+    expect(mockToastAdd).toHaveBeenCalledTimes(2)
+  })
 
-  test("should expose showErrorCaptured function", async () => {
-    const { useSentryToast } = await import("~/composables/useSentryToast");
-    const { showErrorCaptured } = useSentryToast();
+  test('should expose showErrorCaptured function', async () => {
+    const { useSentryToast } = await import('~/composables/useSentryToast')
+    const { showErrorCaptured } = useSentryToast()
 
-    expect(typeof showErrorCaptured).toBe("function");
-  });
+    expect(typeof showErrorCaptured).toBe('function')
+  })
 
-  test("showErrorCaptured should manually trigger toast", async () => {
-    vi.resetModules();
+  test('showErrorCaptured should manually trigger toast', async () => {
+    vi.resetModules()
 
-    const { useSentryToast } = await import("~/composables/useSentryToast");
-    const { showErrorCaptured } = useSentryToast();
+    const { useSentryToast } = await import('~/composables/useSentryToast')
+    const { showErrorCaptured } = useSentryToast()
 
-    showErrorCaptured();
+    showErrorCaptured()
 
     expect(mockToastAdd).toHaveBeenCalledWith(
       expect.objectContaining({
-        id: "sentry-error-captured",
-        title: "Erreur détectée",
-      }),
-    );
-  });
+        id: 'sentry-error-captured',
+        title: 'Erreur détectée',
+      })
+    )
+  })
 
-  test("should unsubscribe from Sentry errors on unmount", async () => {
-    const { useSentryToast } = await import("~/composables/useSentryToast");
-    useSentryToast();
+  test('should unsubscribe from Sentry errors on unmount', async () => {
+    const { useSentryToast } = await import('~/composables/useSentryToast')
+    useSentryToast()
 
     // Simulate unmount
-    unmountCallbacks.forEach((cb) => cb());
+    unmountCallbacks.forEach((cb) => cb())
 
-    expect(mockUnsubscribe).toHaveBeenCalled();
-  });
+    expect(mockUnsubscribe).toHaveBeenCalled()
+  })
 
-  test("should respect debounce even when calling showErrorCaptured manually", async () => {
-    vi.resetModules();
+  test('should respect debounce even when calling showErrorCaptured manually', async () => {
+    vi.resetModules()
 
-    const { useSentryToast } = await import("~/composables/useSentryToast");
-    const { showErrorCaptured } = useSentryToast();
+    const { useSentryToast } = await import('~/composables/useSentryToast')
+    const { showErrorCaptured } = useSentryToast()
 
     // First call
-    showErrorCaptured();
-    expect(mockToastAdd).toHaveBeenCalledTimes(1);
+    showErrorCaptured()
+    expect(mockToastAdd).toHaveBeenCalledTimes(1)
 
     // Second call immediately
-    showErrorCaptured();
-    expect(mockToastAdd).toHaveBeenCalledTimes(1); // Debounced
+    showErrorCaptured()
+    expect(mockToastAdd).toHaveBeenCalledTimes(1) // Debounced
 
     // After debounce period
-    vi.advanceTimersByTime(5001);
-    showErrorCaptured();
-    expect(mockToastAdd).toHaveBeenCalledTimes(2);
-  });
-});
+    vi.advanceTimersByTime(5001)
+    showErrorCaptured()
+    expect(mockToastAdd).toHaveBeenCalledTimes(2)
+  })
+})

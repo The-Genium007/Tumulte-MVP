@@ -1,17 +1,17 @@
 <template>
-  <UModal v-model:open="store.isModalOpen" :prevent-close="isRetrying" class="w-full max-w-2xl mx-4">
+  <UModal
+    v-model:open="store.isModalOpen"
+    :prevent-close="isRetrying"
+    class="w-full max-w-2xl mx-4"
+  >
     <template #header>
       <div class="flex items-center gap-3">
         <div class="bg-warning-light p-2 rounded-lg">
           <UIcon name="i-lucide-users" class="size-6 text-warning-500" />
         </div>
         <div>
-          <h3 class="text-xl font-semibold text-primary">
-            En attente des streamers
-          </h3>
-          <p class="text-sm text-muted">
-            {{ store.readyCount }} / {{ store.totalCount }} prêts
-          </p>
+          <h3 class="text-xl font-semibold text-primary">En attente des streamers</h3>
+          <p class="text-sm text-muted">{{ store.readyCount }} / {{ store.totalCount }} prêts</p>
         </div>
       </div>
     </template>
@@ -19,12 +19,7 @@
     <template #body>
       <div class="space-y-4">
         <!-- Progress bar -->
-        <UProgress
-          :value="store.readyPercentage"
-          color="primary"
-          size="md"
-          :indicator="true"
-        />
+        <UProgress :value="store.readyPercentage" color="primary" size="md" :indicator="true" />
 
         <!-- Liste des streamers -->
         <div class="space-y-2 max-h-80 overflow-y-auto">
@@ -105,7 +100,7 @@
             @click="handleRetry"
           >
             <UIcon name="i-lucide-play" class="size-4 mr-1" />
-            {{ isRetrying ? "Lancement..." : "Réessayer" }}
+            {{ isRetrying ? 'Lancement...' : 'Réessayer' }}
           </UButton>
         </div>
       </div>
@@ -114,145 +109,145 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted, computed } from "vue";
-import { useStreamerReadinessStore } from "@/stores/streamerReadiness";
-import { useReadiness } from "@/composables/useReadiness";
-import { useWebSocket } from "@/composables/useWebSocket";
-import type { LiveStatusMap } from "@/types";
+import { ref, watch, onMounted, onUnmounted, computed } from 'vue'
+import { useStreamerReadinessStore } from '@/stores/streamerReadiness'
+import { useReadiness } from '@/composables/useReadiness'
+import { useWebSocket } from '@/composables/useWebSocket'
+import type { LiveStatusMap } from '@/types'
 
-const toast = useToast();
+const toast = useToast()
 
 const props = defineProps<{
-  liveStatuses?: LiveStatusMap;
-}>();
+  liveStatuses?: LiveStatusMap
+}>()
 
 const emit = defineEmits<{
-  launched: [];
-  cancelled: [];
-}>();
+  launched: []
+  cancelled: []
+}>()
 
-const store = useStreamerReadinessStore();
-const { notifyUnready, retryLaunch } = useReadiness();
-const { subscribeToCampaignReadiness } = useWebSocket();
+const store = useStreamerReadinessStore()
+const { notifyUnready, retryLaunch } = useReadiness()
+const { subscribeToCampaignReadiness } = useWebSocket()
 
-const isNotifying = ref(false);
-const isRetrying = ref(false);
-let unsubscribe: (() => Promise<void>) | null = null;
+const isNotifying = ref(false)
+const isRetrying = ref(false)
+let unsubscribe: (() => Promise<void>) | null = null
 
 // Livestatuses fallback
-const liveStatuses = computed(() => props.liveStatuses ?? {});
+const liveStatuses = computed(() => props.liveStatuses ?? {})
 
 // S'abonner aux changements de readiness via WebSocket
 const setupWebSocketSubscription = () => {
-  if (!store.pendingCampaignId) return;
+  if (!store.pendingCampaignId) return
 
   unsubscribe = subscribeToCampaignReadiness(store.pendingCampaignId, {
     onStreamerReady: (event) => {
-      console.log("[WaitingListModal] Streamer ready:", event);
-      store.updateStreamerStatus(event);
+      console.log('[WaitingListModal] Streamer ready:', event)
+      store.updateStreamerStatus(event)
     },
     onStreamerNotReady: (event) => {
-      console.log("[WaitingListModal] Streamer not ready:", event);
-      store.updateStreamerStatus(event);
+      console.log('[WaitingListModal] Streamer not ready:', event)
+      store.updateStreamerStatus(event)
     },
-  });
-};
+  })
+}
 
 // Auto-retry quand tous les streamers sont prêts
 watch(
   () => store.allReady,
   async (allReady) => {
     if (allReady && store.isModalOpen && !isRetrying.value) {
-      console.log("[WaitingListModal] All streamers ready, auto-retrying...");
+      console.log('[WaitingListModal] All streamers ready, auto-retrying...')
       // Petite attente pour montrer le message de succès
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      await handleRetry();
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+      await handleRetry()
     }
-  },
-);
+  }
+)
 
 // Setup WebSocket quand la modal s'ouvre
 watch(
   () => store.isModalOpen,
   (isOpen) => {
     if (isOpen) {
-      setupWebSocketSubscription();
+      setupWebSocketSubscription()
     } else {
-      cleanupSubscription();
+      cleanupSubscription()
     }
-  },
-);
+  }
+)
 
 const cleanupSubscription = async () => {
   if (unsubscribe) {
-    await unsubscribe();
-    unsubscribe = null;
+    await unsubscribe()
+    unsubscribe = null
   }
-};
+}
 
 const handleCancel = () => {
-  store.closeModal();
-  emit("cancelled");
-};
+  store.closeModal()
+  emit('cancelled')
+}
 
 const handleNotify = async () => {
-  if (!store.pendingCampaignId) return;
+  if (!store.pendingCampaignId) return
 
-  isNotifying.value = true;
+  isNotifying.value = true
   try {
-    const result = await notifyUnready(store.pendingCampaignId);
-    console.log("[WaitingListModal] Notified streamers:", result);
+    const result = await notifyUnready(store.pendingCampaignId)
+    console.log('[WaitingListModal] Notified streamers:', result)
 
     // Afficher un toast de confirmation
     if (result.notified > 0) {
       toast.add({
-        title: "Notifications envoyées",
+        title: 'Notifications envoyées',
         description: `${result.notified} streamer(s) notifié(s)`,
-        color: "success",
-      });
+        color: 'success',
+      })
     } else {
       toast.add({
-        title: "Aucune notification envoyée",
+        title: 'Aucune notification envoyée',
         description: "Les streamers n'ont pas activé les notifications push",
-        color: "warning",
-      });
+        color: 'warning',
+      })
     }
   } catch (error) {
-    console.error("[WaitingListModal] Failed to notify:", error);
+    console.error('[WaitingListModal] Failed to notify:', error)
     toast.add({
-      title: "Erreur",
+      title: 'Erreur',
       description: "Impossible d'envoyer les notifications",
-      color: "error",
-    });
+      color: 'error',
+    })
   } finally {
-    isNotifying.value = false;
+    isNotifying.value = false
   }
-};
+}
 
 const handleRetry = async () => {
-  isRetrying.value = true;
+  isRetrying.value = true
   try {
-    const result = await retryLaunch();
+    const result = await retryLaunch()
     if (result.success) {
-      console.log("[WaitingListModal] Session launched successfully");
-      store.closeModal();
-      emit("launched");
+      console.log('[WaitingListModal] Session launched successfully')
+      store.closeModal()
+      emit('launched')
     }
     // Si échec avec nouveaux readinessDetails, le store sera mis à jour automatiquement
   } catch (error) {
-    console.error("[WaitingListModal] Retry failed:", error);
+    console.error('[WaitingListModal] Retry failed:', error)
   } finally {
-    isRetrying.value = false;
+    isRetrying.value = false
   }
-};
+}
 
 onMounted(() => {
   if (store.isModalOpen) {
-    setupWebSocketSubscription();
+    setupWebSocketSubscription()
   }
-});
+})
 
 onUnmounted(() => {
-  cleanupSubscription();
-});
+  cleanupSubscription()
+})
 </script>

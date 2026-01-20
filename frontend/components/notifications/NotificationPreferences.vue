@@ -36,9 +36,7 @@
             <p class="font-medium text-primary">Notifications push</p>
             <p class="text-sm text-muted">
               {{
-                isCurrentBrowserSubscribed
-                  ? "Actif sur cet appareil"
-                  : "Non actif sur cet appareil"
+                isCurrentBrowserSubscribed ? 'Actif sur cet appareil' : 'Non actif sur cet appareil'
               }}
             </p>
           </div>
@@ -106,9 +104,7 @@
         </div>
 
         <!-- Bouton pour activer sur cet appareil -->
-        <div
-          v-if="isSupported && !isCurrentBrowserSubscribed && localPreferences.pushEnabled"
-        >
+        <div v-if="isSupported && !isCurrentBrowserSubscribed && localPreferences.pushEnabled">
           <UButton color="primary" :loading="loading" @click="handleSubscribe">
             <UIcon name="i-lucide-bell-plus" class="mr-2" />
             Activer sur cet appareil
@@ -133,13 +129,13 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, onMounted, watch } from "vue";
-import { usePushNotifications } from "@/composables/usePushNotifications";
-import type { NotificationPreferences, PushSubscription } from "@/types";
+import { reactive, ref, onMounted, watch } from 'vue'
+import { usePushNotifications } from '@/composables/usePushNotifications'
+import type { NotificationPreferences, PushSubscription } from '@/types'
 
-const config = useRuntimeConfig();
-const toast = useToast();
-const isDev = import.meta.env.DEV;
+const config = useRuntimeConfig()
+const toast = useToast()
+const isDev = import.meta.env.DEV
 
 const {
   subscriptions,
@@ -152,9 +148,9 @@ const {
   updatePreferences,
   subscribe,
   deleteSubscription,
-} = usePushNotifications();
+} = usePushNotifications()
 
-const testLoading = ref(false);
+const testLoading = ref(false)
 
 const localPreferences = reactive<NotificationPreferences>({
   pushEnabled: true,
@@ -164,132 +160,129 @@ const localPreferences = reactive<NotificationPreferences>({
   pollEnded: true,
   campaignMemberJoined: false,
   sessionReminder: false,
-});
+})
 
 const notificationTypes: Array<{
-  key: keyof NotificationPreferences;
-  label: string;
-  description: string;
+  key: keyof NotificationPreferences
+  label: string
+  description: string
 }> = [
   {
-    key: "campaignInvitations",
-    label: "Invitations aux campagnes",
-    description: "Quand un MJ vous invite à rejoindre une campagne",
+    key: 'campaignInvitations',
+    label: 'Invitations aux campagnes',
+    description: 'Quand un MJ vous invite à rejoindre une campagne',
   },
   {
-    key: "criticalAlerts",
-    label: "Alertes critiques",
-    description: "Token expiré, problèmes de connexion",
+    key: 'criticalAlerts',
+    label: 'Alertes critiques',
+    description: 'Token expiré, problèmes de connexion',
   },
   {
-    key: "pollStarted",
-    label: "Début de sondage",
-    description: "Quand un sondage commence sur vos campagnes",
+    key: 'pollStarted',
+    label: 'Début de sondage',
+    description: 'Quand un sondage commence sur vos campagnes',
   },
   {
-    key: "pollEnded",
-    label: "Fin de sondage",
-    description: "Quand un sondage se termine",
+    key: 'pollEnded',
+    label: 'Fin de sondage',
+    description: 'Quand un sondage se termine',
   },
-];
+]
 
 // Sync local state with store
 watch(
   preferences,
   (newPrefs) => {
     if (newPrefs) {
-      Object.assign(localPreferences, newPrefs);
+      Object.assign(localPreferences, newPrefs)
     }
   },
   { immediate: true }
-);
+)
 
 onMounted(async () => {
   // initialize() charge tout en parallèle : subscriptions, preferences, et browserEndpoint
-  await initialize();
-});
+  await initialize()
+})
 
 const handleGlobalToggle = async (value: boolean) => {
-  localPreferences.pushEnabled = value;
-  await updatePreferences({ pushEnabled: value });
+  localPreferences.pushEnabled = value
+  await updatePreferences({ pushEnabled: value })
 
   if (value && !isCurrentBrowserSubscribed.value) {
-    await subscribe();
+    await subscribe()
   }
-};
+}
 
-const handleUpdate = async (
-  key: keyof NotificationPreferences,
-  value: boolean
-) => {
-  localPreferences[key] = value;
-  await updatePreferences({ [key]: value });
-};
+const handleUpdate = async (key: keyof NotificationPreferences, value: boolean) => {
+  localPreferences[key] = value
+  await updatePreferences({ [key]: value })
+}
 
 const handleSubscribe = async () => {
-  await subscribe();
-};
+  await subscribe()
+}
 
 const handleDeleteDevice = async (id: string) => {
-  await deleteSubscription(id);
-};
+  await deleteSubscription(id)
+}
 
 const handleSendTestNotification = async () => {
-  testLoading.value = true;
+  testLoading.value = true
   try {
     const response = await fetch(`${config.public.apiBase}/notifications/test`, {
-      method: "POST",
-      credentials: "include",
-    });
+      method: 'POST',
+      credentials: 'include',
+    })
 
-    const data = await response.json();
+    const data = await response.json()
 
     if (data.success) {
       toast.add({
-        title: "Notification envoyée",
+        title: 'Notification envoyée',
         description: data.message,
-        color: "success",
-      });
+        color: 'success',
+      })
     } else {
       toast.add({
-        title: "Échec",
+        title: 'Échec',
         description: data.message,
-        color: "warning",
-      });
+        color: 'warning',
+      })
     }
   } catch {
     toast.add({
-      title: "Erreur",
+      title: 'Erreur',
       description: "Impossible d'envoyer la notification de test",
-      color: "error",
-    });
+      color: 'error',
+    })
   } finally {
-    testLoading.value = false;
+    testLoading.value = false
   }
-};
+}
 
 const getDeviceName = (sub: PushSubscription): string => {
-  if (sub.deviceName) return sub.deviceName;
+  if (sub.deviceName) return sub.deviceName
 
   // Essayer de déduire le type d'appareil depuis le userAgent
   if (sub.userAgent) {
-    if (sub.userAgent.includes("Mobile")) return "Appareil mobile";
-    if (sub.userAgent.includes("Firefox")) return "Firefox";
-    if (sub.userAgent.includes("Chrome")) return "Chrome";
-    if (sub.userAgent.includes("Safari")) return "Safari";
+    if (sub.userAgent.includes('Mobile')) return 'Appareil mobile'
+    if (sub.userAgent.includes('Firefox')) return 'Firefox'
+    if (sub.userAgent.includes('Chrome')) return 'Chrome'
+    if (sub.userAgent.includes('Safari')) return 'Safari'
   }
 
-  return "Appareil inconnu";
-};
+  return 'Appareil inconnu'
+}
 
 const formatDate = (date: string | null): string => {
-  if (!date) return "Jamais";
+  if (!date) return 'Jamais'
 
-  return new Date(date).toLocaleDateString("fr-FR", {
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
+  return new Date(date).toLocaleDateString('fr-FR', {
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
 </script>

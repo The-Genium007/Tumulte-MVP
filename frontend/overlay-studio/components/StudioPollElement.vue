@@ -15,14 +15,12 @@
       :scale="50"
       :occlude="false"
       :sprite="false"
-      :z-index-range="isSelected ? [50000, 49000] : [10000 + renderOrder * 1000, 10000 + renderOrder * 1000 + 999]"
+      :z-index-range="
+        isSelected ? [50000, 49000] : [10000 + renderOrder * 1000, 10000 + renderOrder * 1000 + 999]
+      "
       :wrapper-class="isSelected ? 'html-wrapper-selected' : 'html-wrapper-normal'"
     >
-      <div
-        class="poll-preview"
-        :style="containerStyle"
-        @pointerdown.stop="handlePointerDown"
-      >
+      <div class="poll-preview" :style="containerStyle" @pointerdown.stop="handlePointerDown">
         <!-- Question -->
         <div class="poll-question" :style="questionStyle">
           {{ mockData.question }}
@@ -69,103 +67,112 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
-import { Html } from "@tresjs/cientos";
-import type { Object3D } from "three";
-import type { OverlayElement, PollProperties } from "../types";
+import { computed, ref } from 'vue'
+import { Html } from '@tresjs/cientos'
+import type { Object3D } from 'three'
+import type { OverlayElement, PollProperties } from '../types'
 
 const props = defineProps<{
-  element: OverlayElement;
-  isSelected: boolean;
-  renderOrder: number;
-}>();
+  element: OverlayElement
+  isSelected: boolean
+  renderOrder: number
+}>()
 
 const emit = defineEmits<{
-  select: [id: string, meshRef: Object3D];
-  moveStart: [];
-  move: [deltaX: number, deltaY: number];
-  moveEnd: [];
-}>();
+  select: [id: string, meshRef: Object3D]
+  moveStart: []
+  move: [deltaX: number, deltaY: number]
+  moveEnd: []
+}>()
 
-const groupRef = ref<Object3D | null>(null);
+const groupRef = ref<Object3D | null>(null)
 
 // État du drag
-const isDragging = ref(false);
-const dragStartX = ref(0);
-const dragStartY = ref(0);
+const isDragging = ref(false)
+const dragStartX = ref(0)
+const dragStartY = ref(0)
 
 // Extraire les propriétés du poll
-const pollProps = computed(() => props.element.properties as PollProperties);
-const mockData = computed(() => pollProps.value.mockData);
+const pollProps = computed(() => props.element.properties as PollProperties)
+const mockData = computed(() => pollProps.value.mockData)
 
 // Calcul des rankings avec gestion des ex-aequo
 const rankings = computed(() => {
-  const percentages = mockData.value.percentages;
+  const percentages = mockData.value.percentages
   const sorted = [...percentages]
     .map((p, i) => ({ percentage: p, index: i }))
-    .sort((a, b) => b.percentage - a.percentage);
+    .sort((a, b) => b.percentage - a.percentage)
 
-  const ranks: number[] = new Array(percentages.length);
-  let currentRank = 1;
+  const ranks: number[] = new Array(percentages.length)
+  let currentRank = 1
 
   for (let i = 0; i < sorted.length; i++) {
-    if (i > 0 && sorted[i].percentage < sorted[i - 1].percentage) {
-      currentRank = i + 1;
+    const current = sorted[i]
+    const previous = sorted[i - 1]
+    if (current && i > 0 && previous && current.percentage < previous.percentage) {
+      currentRank = i + 1
     }
-    ranks[sorted[i].index] = currentRank;
+    if (current) {
+      ranks[current.index] = currentRank
+    }
   }
 
-  return ranks;
-});
+  return ranks
+})
 
 // Obtenir la couleur de médaille selon le rang
 const getMedalColor = (rank: number): string => {
-  const colors = pollProps.value.medalColors;
+  const colors = pollProps.value.medalColors
   switch (rank) {
     case 1:
-      return colors.gold;
+      return colors.gold
     case 2:
-      return colors.silver;
+      return colors.silver
     case 3:
-      return colors.bronze;
+      return colors.bronze
     default:
-      return colors.base;
+      return colors.base
   }
-};
+}
 
 // Helper to convert borderRadius to CSS string
-const getBorderRadiusStyle = (br: number | { topLeft: number; topRight: number; bottomRight: number; bottomLeft: number } | undefined): string => {
-  if (br === undefined) return "0px";
-  if (typeof br === "number") return `${br}px`;
-  return `${br.topLeft}px ${br.topRight}px ${br.bottomRight}px ${br.bottomLeft}px`;
-};
+const getBorderRadiusStyle = (
+  br:
+    | number
+    | { topLeft: number; topRight: number; bottomRight: number; bottomLeft: number }
+    | undefined
+): string => {
+  if (br === undefined) return '0px'
+  if (typeof br === 'number') return `${br}px`
+  return `${br.topLeft}px ${br.topRight}px ${br.bottomRight}px ${br.bottomLeft}px`
+}
 
 // Styles calculés
 // Container style applies questionBoxStyle to the entire card
 // Inclut un z-index très élevé quand l'élément est sélectionné pour garantir qu'il passe au-dessus
 const containerStyle = computed(() => {
-  const qbs = pollProps.value.questionBoxStyle;
+  const qbs = pollProps.value.questionBoxStyle
 
   return {
     width: `${pollProps.value.layout.maxWidth}px`,
     // Card background and border from questionBoxStyle
-    backgroundColor: qbs?.backgroundColor ?? "rgba(17, 17, 17, 0.9)",
-    borderColor: qbs?.borderColor ?? "transparent",
+    backgroundColor: qbs?.backgroundColor ?? 'rgba(17, 17, 17, 0.9)',
+    borderColor: qbs?.borderColor ?? 'transparent',
     borderWidth: `${qbs?.borderWidth ?? 0}px`,
-    borderStyle: (qbs?.borderWidth ?? 0) > 0 ? "solid" : "none",
+    borderStyle: (qbs?.borderWidth ?? 0) > 0 ? 'solid' : 'none',
     borderRadius: getBorderRadiusStyle(qbs?.borderRadius ?? 24),
     padding: qbs?.padding
       ? `${qbs.padding.top}px ${qbs.padding.right}px ${qbs.padding.bottom}px ${qbs.padding.left}px`
-      : "32px",
+      : '32px',
     // Z-index pour passer au-dessus des autres éléments quand sélectionné
-    position: "relative" as const,
-    zIndex: props.isSelected ? 100000 : "auto",
-  };
-});
+    position: 'relative' as const,
+    zIndex: props.isSelected ? 100000 : 'auto',
+  }
+})
 
 // Question style is now typography only
 const questionStyle = computed(() => {
-  const qs = pollProps.value.questionStyle;
+  const qs = pollProps.value.questionStyle
 
   return {
     fontFamily: qs.fontFamily,
@@ -174,141 +181,141 @@ const questionStyle = computed(() => {
     color: qs.color,
     textShadow: qs.textShadow?.enabled
       ? `${qs.textShadow.offsetX}px ${qs.textShadow.offsetY}px ${qs.textShadow.blur}px ${qs.textShadow.color}`
-      : "none",
-  };
-});
+      : 'none',
+  }
+})
 
 const optionTextStyle = computed(() => {
-  const ts = pollProps.value.optionTextStyle;
+  const ts = pollProps.value.optionTextStyle
   return {
     fontFamily: ts.fontFamily,
     fontSize: `${ts.fontSize}px`,
     fontWeight: ts.fontWeight,
     color: ts.color,
-  };
-});
+  }
+})
 
 const optionPercentageStyle = computed(() => {
-  const ps = pollProps.value.optionPercentageStyle;
+  const ps = pollProps.value.optionPercentageStyle
   return {
     fontFamily: ps.fontFamily,
     fontSize: `${ps.fontSize}px`,
     fontWeight: ps.fontWeight,
     color: ps.color,
-  };
-});
+  }
+})
 
 const getOptionStyle = (index: number) => {
-  const box = pollProps.value.optionBoxStyle;
-  const rank = rankings.value[index];
-  const medalColor = getMedalColor(rank);
+  const box = pollProps.value.optionBoxStyle
+  const rank = rankings.value[index] ?? 0
+  const medalColor = getMedalColor(rank)
 
   return {
     backgroundColor: box.backgroundColor,
     borderColor: medalColor,
     borderWidth: `${box.borderWidth}px`,
     borderRadius: getBorderRadiusStyle(box.borderRadius),
-    borderStyle: "solid",
+    borderStyle: 'solid',
     opacity: box.opacity,
     padding: `${box.padding.top}px ${box.padding.right}px ${box.padding.bottom}px ${box.padding.left}px`,
-  };
-};
+  }
+}
 
 const getBarStyle = (index: number) => {
-  const rank = rankings.value[index];
-  const medalColor = getMedalColor(rank);
-  const percentage = mockData.value.percentages[index];
+  const rank = rankings.value[index] ?? 0
+  const medalColor = getMedalColor(rank)
+  const percentage = mockData.value.percentages[index] ?? 0
 
   return {
     width: `${percentage}%`,
     backgroundColor: medalColor,
-  };
-};
+  }
+}
 
 const progressContainerStyle = computed(() => ({
-  flexDirection:
-    (pollProps.value.progressBar.position === "top" ? "column-reverse" : "column") as "column" | "column-reverse",
-}));
+  flexDirection: (pollProps.value.progressBar.position === 'top' ? 'column-reverse' : 'column') as
+    | 'column'
+    | 'column-reverse',
+}))
 
 const progressBarStyle = computed(() => {
-  const pb = pollProps.value.progressBar;
+  const pb = pollProps.value.progressBar
   return {
     height: `${pb.height}px`,
     backgroundColor: pb.backgroundColor,
     borderRadius: `${pb.borderRadius}px`,
-  };
-});
+  }
+})
 
 const progressFillStyle = computed(() => {
-  const pb = pollProps.value.progressBar;
-  const fillPercent =
-    (mockData.value.timeRemaining / mockData.value.totalDuration) * 100;
+  const pb = pollProps.value.progressBar
+  const fillPercent = (mockData.value.timeRemaining / mockData.value.totalDuration) * 100
 
   const background = pb.fillGradient?.enabled
     ? `linear-gradient(90deg, ${pb.fillGradient.startColor}, ${pb.fillGradient.endColor})`
-    : pb.fillColor;
+    : pb.fillColor
 
   return {
     width: `${fillPercent}%`,
     background,
     borderRadius: `${pb.borderRadius}px`,
-    height: "100%",
-  };
-});
+    height: '100%',
+  }
+})
 
 const timeTextStyle = computed(() => {
-  const ts = pollProps.value.progressBar.timeTextStyle;
+  const ts = pollProps.value.progressBar.timeTextStyle
   return {
     fontFamily: ts.fontFamily,
     fontSize: `${ts.fontSize}px`,
     fontWeight: ts.fontWeight,
     color: ts.color,
-  };
-});
+  }
+})
 
 // Gestion du pointerdown pour démarrer le drag
 const handlePointerDown = (event: PointerEvent) => {
-  event.stopPropagation();
+  event.stopPropagation()
 
   // Sélectionner l'élément
   if (groupRef.value) {
-    emit("select", props.element.id, groupRef.value);
+    emit('select', props.element.id, groupRef.value)
   }
 
   // Démarrer le drag
-  isDragging.value = true;
-  dragStartX.value = event.clientX;
-  dragStartY.value = event.clientY;
+  isDragging.value = true
+  dragStartX.value = event.clientX
+  dragStartY.value = event.clientY
 
-  emit("moveStart");
-  window.addEventListener("pointermove", handlePointerMove);
-  window.addEventListener("pointerup", handlePointerUp);
-};
+  emit('moveStart')
+  window.addEventListener('pointermove', handlePointerMove)
+  window.addEventListener('pointerup', handlePointerUp)
+}
 
 // Gestion du déplacement
 const handlePointerMove = (event: PointerEvent) => {
-  if (!isDragging.value) return;
+  if (!isDragging.value) return
 
-  const deltaX = event.clientX - dragStartX.value;
-  const deltaY = event.clientY - dragStartY.value;
+  const deltaX = event.clientX - dragStartX.value
+  const deltaY = event.clientY - dragStartY.value
 
   // Émettre le delta en pixels écran (sera converti par le parent)
-  emit("move", deltaX, deltaY);
+  emit('move', deltaX, deltaY)
 
-  dragStartX.value = event.clientX;
-  dragStartY.value = event.clientY;
-};
+  dragStartX.value = event.clientX
+  dragStartY.value = event.clientY
+}
 
 // Fin du drag
 const handlePointerUp = () => {
   if (isDragging.value) {
-    isDragging.value = false;
-    emit("moveEnd");
+    isDragging.value = false
+    emit('moveEnd')
   }
 
-  window.removeEventListener("pointermove", handlePointerMove);
-  window.removeEventListener("pointerup", handlePointerUp);
-};
+  window.removeEventListener('pointermove', handlePointerMove)
+  window.removeEventListener('pointerup', handlePointerUp)
+}
 </script>
 
 <style scoped>

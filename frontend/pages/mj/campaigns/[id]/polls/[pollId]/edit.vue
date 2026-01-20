@@ -1,180 +1,178 @@
 <script setup lang="ts">
-import { usePollsStore } from "~/stores/polls";
-import type { Poll } from "~/types";
+import { usePollsStore } from '~/stores/polls'
+import type { Poll } from '~/types'
 
 definePageMeta({
-  layout: "authenticated" as const,
-  middleware: ["auth"],
-});
+  layout: 'authenticated' as const,
+  middleware: ['auth'],
+})
 
-const config = useRuntimeConfig();
-const API_URL = config.public.apiBase;
+const config = useRuntimeConfig()
+const API_URL = config.public.apiBase
 
-const route = useRoute();
-const router = useRouter();
-const toast = useToast();
-const pollsStore = usePollsStore();
+const route = useRoute()
+const router = useRouter()
+const toast = useToast()
+const pollsStore = usePollsStore()
 
-const _campaignId = computed(() => route.params.id as string);
-const pollId = computed(() => route.params.pollId as string);
+const _campaignId = computed(() => route.params.id as string)
+const pollId = computed(() => route.params.pollId as string)
 
 // Loading state
-const loading = ref(true);
-const poll = ref<Poll | null>(null);
+const loading = ref(true)
+const poll = ref<Poll | null>(null)
 
 // Form state
 const form = ref({
-  question: "",
+  question: '',
   durationSeconds: 60,
-});
+})
 
-const options = ref<string[]>(["", ""]);
-const isSubmitting = ref(false);
-const useCustomDuration = ref(false);
-const customDurationSeconds = ref(60);
+const options = ref<string[]>(['', ''])
+const isSubmitting = ref(false)
+const useCustomDuration = ref(false)
+const customDurationSeconds = ref(60)
 
 // Validation
 const isFormValid = computed(() => {
-  const hasQuestion = form.value.question.trim().length > 0;
-  const validOptions = options.value.filter((opt) => opt.trim().length > 0);
-  const validDuration = form.value.durationSeconds >= 15 && form.value.durationSeconds <= 1800;
-  return hasQuestion && validOptions.length >= 2 && validDuration;
-});
+  const hasQuestion = form.value.question.trim().length > 0
+  const validOptions = options.value.filter((opt) => opt.trim().length > 0)
+  const validDuration = form.value.durationSeconds >= 15 && form.value.durationSeconds <= 1800
+  return hasQuestion && validOptions.length >= 2 && validDuration
+})
 
-const questionLength = computed(() => form.value.question.length);
+const questionLength = computed(() => form.value.question.length)
 
 // Duration presets
 const durationPresets = [
-  { label: "30s", value: 30 },
-  { label: "1min", value: 60 },
-  { label: "2min", value: 120 },
-  { label: "3min", value: 180 },
-  { label: "5min", value: 300 },
-];
+  { label: '30s', value: 30 },
+  { label: '1min', value: 60 },
+  { label: '2min', value: 120 },
+  { label: '3min', value: 180 },
+  { label: '5min', value: 300 },
+]
 
 /**
  * Check if duration matches a preset
  */
 const isPresetDuration = (duration: number): boolean => {
-  return durationPresets.some((p) => p.value === duration);
-};
+  return durationPresets.some((p) => p.value === duration)
+}
 
 const selectDuration = (value: number) => {
-  useCustomDuration.value = false;
-  form.value.durationSeconds = value;
-};
+  useCustomDuration.value = false
+  form.value.durationSeconds = value
+}
 
 const enableCustomDuration = () => {
-  useCustomDuration.value = true;
-  customDurationSeconds.value = form.value.durationSeconds;
-};
+  useCustomDuration.value = true
+  customDurationSeconds.value = form.value.durationSeconds
+}
 
 // Watch custom duration changes
 watch(customDurationSeconds, (val) => {
   if (useCustomDuration.value) {
-    form.value.durationSeconds = Math.max(15, Math.min(1800, val));
+    form.value.durationSeconds = Math.max(15, Math.min(1800, val))
   }
-});
+})
 
 // Options management
 const addOption = () => {
   if (options.value.length < 5) {
-    options.value.push("");
+    options.value.push('')
   }
-};
+}
 
 const removeOption = (index: number) => {
   if (options.value.length > 2) {
-    options.value.splice(index, 1);
+    options.value.splice(index, 1)
   }
-};
+}
 
 // Navigation
 const goBack = () => {
-  router.push("/mj");
-};
+  router.push('/mj')
+}
 
 // Fetch poll data
 const fetchPoll = async () => {
-  loading.value = true;
+  loading.value = true
   try {
     const response = await fetch(`${API_URL}/mj/polls/${pollId.value}`, {
-      credentials: "include",
-    });
+      credentials: 'include',
+    })
 
     if (!response.ok) {
-      throw new Error("Poll not found");
+      throw new Error('Poll not found')
     }
 
-    const data = await response.json();
-    poll.value = data.data;
+    const data = await response.json()
+    poll.value = data.data
 
     // Populate form
     form.value = {
       question: data.data.question,
       durationSeconds: data.data.durationSeconds,
-    };
-    options.value = [...data.data.options];
+    }
+    options.value = [...data.data.options]
 
     // Check if duration is a preset or custom
     if (!isPresetDuration(data.data.durationSeconds)) {
-      useCustomDuration.value = true;
-      customDurationSeconds.value = data.data.durationSeconds;
+      useCustomDuration.value = true
+      customDurationSeconds.value = data.data.durationSeconds
     }
   } catch (err) {
-    console.error("Failed to fetch poll:", err);
+    console.error('Failed to fetch poll:', err)
     toast.add({
-      title: "Erreur",
-      description: "Impossible de charger le sondage",
-      color: "error",
-    });
-    router.push("/mj");
+      title: 'Erreur',
+      description: 'Impossible de charger le sondage',
+      color: 'error',
+    })
+    router.push('/mj')
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+}
 
 // Submit
 const handleSubmit = async () => {
-  if (!isFormValid.value || isSubmitting.value) return;
+  if (!isFormValid.value || isSubmitting.value) return
 
-  isSubmitting.value = true;
+  isSubmitting.value = true
 
-  const validOptions = options.value
-    .filter((opt) => opt.trim().length > 0)
-    .map((opt) => opt.trim());
+  const validOptions = options.value.filter((opt) => opt.trim().length > 0).map((opt) => opt.trim())
 
   try {
     await pollsStore.updatePoll(pollId.value, {
       question: form.value.question.trim(),
       options: validOptions,
-      type: "UNIQUE",
+      type: 'UNIQUE',
       durationSeconds: form.value.durationSeconds,
-    });
+    })
 
     toast.add({
-      title: "Sondage modifié",
-      description: "Les modifications ont été enregistrées.",
-      color: "success",
-    });
+      title: 'Sondage modifié',
+      description: 'Les modifications ont été enregistrées.',
+      color: 'success',
+    })
 
-    router.push("/mj");
+    router.push('/mj')
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Erreur inconnue";
+    const message = err instanceof Error ? err.message : 'Erreur inconnue'
     toast.add({
-      title: "Erreur",
+      title: 'Erreur',
       description: message,
-      color: "error",
-    });
+      color: 'error',
+    })
   } finally {
-    isSubmitting.value = false;
+    isSubmitting.value = false
   }
-};
+}
 
 // Fetch on mount
 onMounted(() => {
-  fetchPoll();
-});
+  fetchPoll()
+})
 </script>
 
 <template>
@@ -184,14 +182,7 @@ onMounted(() => {
       <UCard class="mb-8">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-4">
-            <UButton
-              color="neutral"
-              variant="soft"
-              size="xl"
-              square
-              class="group"
-              @click="goBack"
-            >
+            <UButton color="neutral" variant="soft" size="xl" square class="group" @click="goBack">
               <template #leading>
                 <UIcon
                   name="i-lucide-arrow-left"
@@ -201,9 +192,7 @@ onMounted(() => {
             </UButton>
             <div>
               <h1 class="text-3xl font-bold text-primary">Modifier le sondage</h1>
-              <p class="text-muted">
-                Modifiez les paramètres de votre sondage
-              </p>
+              <p class="text-muted">Modifiez les paramètres de votre sondage</p>
             </div>
           </div>
         </div>
@@ -225,9 +214,7 @@ onMounted(() => {
         <form class="space-y-8" @submit.prevent="handleSubmit">
           <!-- Question -->
           <div class="space-y-3">
-            <label class="block text-sm font-medium text-secondary uppercase">
-              Question
-            </label>
+            <label class="block text-sm font-medium text-secondary uppercase"> Question </label>
             <UInput
               v-model="form.question"
               placeholder="Ex: Quelle direction prendre ?"
@@ -247,11 +234,7 @@ onMounted(() => {
               Réponses (2-5 max)
             </label>
             <div class="space-y-3">
-              <div
-                v-for="(_, idx) in options"
-                :key="idx"
-                class="flex items-center gap-3"
-              >
+              <div v-for="(_, idx) in options" :key="idx" class="flex items-center gap-3">
                 <span
                   class="flex items-center justify-center size-10 rounded-full bg-neutral-100 text-sm font-medium text-muted shrink-0"
                 >
@@ -293,9 +276,7 @@ onMounted(() => {
 
           <!-- Duration -->
           <div class="space-y-3">
-            <label class="block text-sm font-medium text-secondary uppercase">
-              Durée
-            </label>
+            <label class="block text-sm font-medium text-secondary uppercase"> Durée </label>
             <div class="flex flex-wrap items-center gap-3">
               <!-- Presets - 2 par ligne sur mobile, 5 sur desktop -->
               <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3 w-full sm:w-auto">
@@ -332,7 +313,10 @@ onMounted(() => {
               </div>
 
               <!-- Custom input -->
-              <div v-if="useCustomDuration" class="flex items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+              <div
+                v-if="useCustomDuration"
+                class="flex items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0"
+              >
                 <UInput
                   v-model.number="customDurationSeconds"
                   type="number"
@@ -348,9 +332,7 @@ onMounted(() => {
                 <span class="text-muted text-sm sm:text-base">secondes</span>
               </div>
             </div>
-            <p class="text-xs text-muted">
-              Entre 15 secondes et 30 minutes (1800 secondes)
-            </p>
+            <p class="text-xs text-muted">Entre 15 secondes et 30 minutes (1800 secondes)</p>
           </div>
 
           <!-- Actions -->

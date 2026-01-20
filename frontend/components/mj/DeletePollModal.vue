@@ -1,32 +1,32 @@
 <script setup lang="ts">
-import type { Poll } from "~/types";
+import type { Poll } from '~/types'
 
 const props = defineProps<{
-  poll: Poll | null;
-}>();
+  poll: Poll | null
+}>()
 
-const model = defineModel<boolean>({ default: false });
+const model = defineModel<boolean>({ default: false })
 
 const emit = defineEmits<{
-  confirm: [pollId: string];
-}>();
+  confirm: [pollId: string]
+}>()
 
-const deleting = ref(false);
+const deleting = ref(false)
 
 const handleConfirm = async () => {
-  if (!props.poll) return;
+  if (!props.poll) return
 
-  deleting.value = true;
+  deleting.value = true
   try {
-    emit("confirm", props.poll.id);
+    emit('confirm', props.poll.id)
   } finally {
-    deleting.value = false;
+    deleting.value = false
   }
-};
+}
 
 const handleCancel = () => {
-  model.value = false;
-};
+  model.value = false
+}
 </script>
 
 <template>
@@ -39,29 +39,20 @@ const handleCancel = () => {
               <UIcon name="i-lucide-trash-2" class="size-5 text-error-500" />
             </div>
             <div>
-              <h3 class="text-lg font-semibold text-primary">
-                Supprimer ce sondage ?
-              </h3>
+              <h3 class="text-lg font-semibold text-primary">Supprimer ce sondage ?</h3>
             </div>
           </div>
         </template>
 
         <div class="space-y-4">
-          <p class="text-muted">
-            Vous êtes sur le point de supprimer le sondage :
-          </p>
-          <div
-            v-if="poll"
-            class="p-3 bg-neutral-50 rounded-lg border border-neutral-200"
-          >
+          <p class="text-muted">Vous êtes sur le point de supprimer le sondage :</p>
+          <div v-if="poll" class="p-3 bg-neutral-50 rounded-lg border border-neutral-200">
             <p class="font-medium text-primary">{{ poll.question }}</p>
-            <p class="text-sm text-muted mt-1">
-              {{ poll.options.length }} options
-            </p>
+            <p class="text-sm text-muted mt-1">{{ poll.options.length }} options</p>
           </div>
           <p class="text-sm text-muted">
-            Cette action est irréversible. Le sondage et son historique seront
-            supprimés définitivement.
+            Cette action est irréversible. Le sondage et son historique seront supprimés
+            définitivement.
           </p>
         </div>
 

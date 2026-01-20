@@ -1,86 +1,86 @@
 <script setup lang="ts">
-import type { PollInstance } from "~/types/api";
-import { usePollsStore } from "~/stores/polls";
+import type { PollInstance } from '~/types/api'
+import { usePollsStore } from '~/stores/polls'
 
 const props = defineProps<{
-  campaignId: string;
-  maxHeight?: string;
-}>();
+  campaignId: string
+  maxHeight?: string
+}>()
 
 const emit = defineEmits<{
-  viewResults: [poll: PollInstance];
-}>();
+  viewResults: [poll: PollInstance]
+}>()
 
-const config = useRuntimeConfig();
-const API_URL = config.public.apiBase;
-const pollsStore = usePollsStore();
+const config = useRuntimeConfig()
+const API_URL = config.public.apiBase
+const pollsStore = usePollsStore()
 
-const loading = ref(false);
-const finishedPolls = ref<PollInstance[]>([]);
+const loading = ref(false)
+const finishedPolls = ref<PollInstance[]>([])
 
 /**
  * Récupère les sondages terminés de la campagne
  */
 const fetchFinishedPolls = async () => {
-  if (!props.campaignId) return;
+  if (!props.campaignId) return
 
-  loading.value = true;
+  loading.value = true
   try {
     const response = await fetch(
       `${API_URL}/mj/campaigns/${props.campaignId}/polls/instances?status=COMPLETED`,
-      { credentials: "include" }
-    );
+      { credentials: 'include' }
+    )
 
-    if (!response.ok) throw new Error("Failed to fetch polls");
+    if (!response.ok) throw new Error('Failed to fetch polls')
 
-    const data = await response.json();
+    const data = await response.json()
 
     // Filtrer uniquement les sondages terminés et trier par date de fin
     finishedPolls.value = (data.data || [])
-      .filter((poll: PollInstance) => poll.status === "ENDED" && poll.endedAt)
+      .filter((poll: PollInstance) => poll.status === 'ENDED' && poll.endedAt)
       .sort(
         (a: PollInstance, b: PollInstance) =>
           new Date(b.endedAt!).getTime() - new Date(a.endedAt!).getTime()
       )
-      .slice(0, 20); // Limiter à 20 derniers
+      .slice(0, 20) // Limiter à 20 derniers
   } catch (error) {
-    console.error("Failed to fetch finished polls:", error);
-    finishedPolls.value = [];
+    console.error('Failed to fetch finished polls:', error)
+    finishedPolls.value = []
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+}
 
 /**
  * Formate la date d'un sondage terminé
  */
 const formatPollDate = (dateStr: string | null): string => {
-  if (!dateStr) return "";
+  if (!dateStr) return ''
 
-  const date = new Date(dateStr);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
+  const date = new Date(dateStr)
+  const now = new Date()
+  const diffMs = now.getTime() - date.getTime()
+  const diffMins = Math.floor(diffMs / 60000)
+  const diffHours = Math.floor(diffMs / 3600000)
+  const diffDays = Math.floor(diffMs / 86400000)
 
   // Format relatif pour les récents
-  if (diffMins < 1) return "À l'instant";
-  if (diffMins < 60) return `Il y a ${diffMins} min`;
-  if (diffHours < 24) return `Il y a ${diffHours}h`;
-  if (diffDays < 7) return `Il y a ${diffDays}j`;
+  if (diffMins < 1) return "À l'instant"
+  if (diffMins < 60) return `Il y a ${diffMins} min`
+  if (diffHours < 24) return `Il y a ${diffHours}h`
+  if (diffDays < 7) return `Il y a ${diffDays}j`
 
   // Format date pour les plus anciens
-  return date.toLocaleDateString("fr-FR", {
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
+  return date.toLocaleDateString('fr-FR', {
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
 
 // Charger les sondages au changement de campagne
-watch(() => props.campaignId, fetchFinishedPolls, { immediate: true });
+watch(() => props.campaignId, fetchFinishedPolls, { immediate: true })
 
 // Rafraîchir quand un sondage se termine (signalé par pollsStore.lastPollEndedAt)
 watch(
@@ -89,18 +89,15 @@ watch(
     if (newValue) {
       // Petit délai pour laisser le backend enregistrer les résultats
       setTimeout(() => {
-        fetchFinishedPolls();
-      }, 500);
+        fetchFinishedPolls()
+      }, 500)
     }
-  },
-);
+  }
+)
 </script>
 
 <template>
-  <div
-    class="flex flex-col"
-    :style="{ maxHeight: maxHeight || 'none' }"
-  >
+  <div class="flex flex-col" :style="{ maxHeight: maxHeight || 'none' }">
     <!-- Header -->
     <div class="mb-4">
       <h3 class="text-lg font-semibold text-primary">Événements récents</h3>
@@ -121,9 +118,7 @@ watch(
     >
       <UIcon name="i-lucide-history" class="size-12 text-neutral-400 mb-4" />
       <p class="text-base font-normal text-neutral-400">Aucun sondage terminé</p>
-      <p class="text-sm text-neutral-400 mt-1">
-        Les résultats de vos sondages apparaîtront ici
-      </p>
+      <p class="text-sm text-neutral-400 mt-1">Les résultats de vos sondages apparaîtront ici</p>
     </div>
 
     <!-- Liste des sondages terminés -->

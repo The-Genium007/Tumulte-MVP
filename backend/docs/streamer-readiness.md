@@ -54,13 +54,13 @@ A streamer is considered **ready** when ALL of the following are true:
 
 ### Readiness Issues
 
-| Issue Type | Description | Resolution |
-|------------|-------------|------------|
-| `streamer_inactive` | Streamer account is deactivated | User must re-authenticate via Twitch OAuth |
-| `token_expired` | Twitch access token has expired | Auto-refresh will attempt, or user re-authenticates |
-| `token_refresh_failed` | Token refresh failed (marked for deactivation) | User must re-authenticate |
-| `authorization_missing` | Streamer has never authorized their channel | Streamer must click "Authorize" button |
-| `authorization_expired` | 12-hour authorization period has expired | Streamer must re-authorize |
+| Issue Type              | Description                                    | Resolution                                          |
+| ----------------------- | ---------------------------------------------- | --------------------------------------------------- |
+| `streamer_inactive`     | Streamer account is deactivated                | User must re-authenticate via Twitch OAuth          |
+| `token_expired`         | Twitch access token has expired                | Auto-refresh will attempt, or user re-authenticates |
+| `token_refresh_failed`  | Token refresh failed (marked for deactivation) | User must re-authenticate                           |
+| `authorization_missing` | Streamer has never authorized their channel    | Streamer must click "Authorize" button              |
+| `authorization_expired` | 12-hour authorization period has expired       | Streamer must re-authorize                          |
 
 ## User Flow
 
@@ -157,7 +157,7 @@ if (!healthCheck.healthy) {
   return response.status(503).json({
     error: 'System health check failed. Cannot launch session.',
     healthCheck,
-    readinessDetails
+    readinessDetails,
   })
 }
 ```
@@ -179,25 +179,15 @@ Frontend receives 503 response and displays modal:
       <UProgress :value="store.readyPercentage" />
 
       <!-- Unready streamers first -->
-      <StreamerReadinessItem
-        v-for="streamer in store.unreadyStreamers"
-        :streamer="streamer"
-      />
+      <StreamerReadinessItem v-for="streamer in store.unreadyStreamers" :streamer="streamer" />
 
       <!-- Ready streamers -->
-      <StreamerReadinessItem
-        v-for="streamer in store.readyStreamers"
-        :streamer="streamer"
-      />
+      <StreamerReadinessItem v-for="streamer in store.readyStreamers" :streamer="streamer" />
     </template>
 
     <template #footer>
-      <UButton @click="handleNotify">
-        Notifier ({{ store.unreadyStreamers.length }})
-      </UButton>
-      <UButton @click="handleRetry" :disabled="!store.allReady">
-        Réessayer
-      </UButton>
+      <UButton @click="handleNotify"> Notifier ({{ store.unreadyStreamers.length }}) </UButton>
+      <UButton @click="handleRetry" :disabled="!store.allReady"> Réessayer </UButton>
     </template>
   </UModal>
 </template>
@@ -267,7 +257,7 @@ watch(
   async (allReady) => {
     if (allReady && store.isModalOpen && !isRetrying.value) {
       // Show success message briefly
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      await new Promise((resolve) => setTimeout(resolve, 1000))
       await handleRetry()
     }
   }
@@ -606,8 +596,7 @@ const tokenValid =
 
 // Authorization is active if not missing or expired
 const authorizationActive =
-  !issues.includes('authorization_missing') &&
-  !issues.includes('authorization_expired')
+  !issues.includes('authorization_missing') && !issues.includes('authorization_expired')
 
 // Streamer is ready only if both are true
 const isReady = issues.length === 0
@@ -628,8 +617,8 @@ export const useStreamerReadinessStore = defineStore('streamerReadiness', () => 
   // Computed
   const allReady = computed(() => readiness.value?.allReady ?? false)
   const readyCount = computed(() => readiness.value?.readyCount ?? 0)
-  const unreadyStreamers = computed(() =>
-    readiness.value?.streamers.filter(s => !s.isReady) ?? []
+  const unreadyStreamers = computed(
+    () => readiness.value?.streamers.filter((s) => !s.isReady) ?? []
   )
 
   // Actions
@@ -641,20 +630,15 @@ export const useStreamerReadinessStore = defineStore('streamerReadiness', () => 
   }
 
   function updateStreamerStatus(event: ReadinessChangeEvent) {
-    const streamer = readiness.value?.streamers.find(
-      s => s.streamerId === event.streamerId
-    )
+    const streamer = readiness.value?.streamers.find((s) => s.streamerId === event.streamerId)
     if (streamer) {
       streamer.isReady = event.isReady
       if (event.isReady) {
         streamer.issues = []
       }
       // Recalculate counts
-      readiness.value.readyCount = readiness.value.streamers.filter(
-        s => s.isReady
-      ).length
-      readiness.value.allReady =
-        readiness.value.readyCount === readiness.value.totalCount
+      readiness.value.readyCount = readiness.value.streamers.filter((s) => s.isReady).length
+      readiness.value.allReady = readiness.value.readyCount === readiness.value.totalCount
     }
   }
 
@@ -665,7 +649,7 @@ export const useStreamerReadinessStore = defineStore('streamerReadiness', () => 
     readyCount,
     unreadyStreamers,
     openModal,
-    updateStreamerStatus
+    updateStreamerStatus,
   }
 })
 ```
@@ -683,18 +667,21 @@ const setupWebSocketSubscription = () => {
     },
     onStreamerNotReady: (event) => {
       store.updateStreamerStatus(event)
-    }
+    },
   })
 }
 
 // Auto-cleanup when modal closes
-watch(() => store.isModalOpen, (isOpen) => {
-  if (isOpen) {
-    setupWebSocketSubscription()
-  } else {
-    cleanupSubscription()
+watch(
+  () => store.isModalOpen,
+  (isOpen) => {
+    if (isOpen) {
+      setupWebSocketSubscription()
+    } else {
+      cleanupSubscription()
+    }
   }
-})
+)
 ```
 
 ## Token Refresh Integration
@@ -779,7 +766,7 @@ const issueLabel = (issue: ReadinessIssue): string => {
     token_refresh_failed: 'Refresh échoué',
     authorization_missing: 'Non autorisé',
     authorization_expired: 'Autorisation expirée',
-    streamer_inactive: 'Compte inactif'
+    streamer_inactive: 'Compte inactif',
   }
   return labels[issue]
 }
@@ -896,7 +883,10 @@ npm run test:functional -- tests/functional/readiness.spec.ts
    ```
 2. Verify watcher is active:
    ```javascript
-   watch(() => store.allReady, (val) => console.log('All ready changed:', val))
+   watch(
+     () => store.allReady,
+     (val) => console.log('All ready changed:', val)
+   )
    ```
 3. Check for errors in retry handler
 

@@ -1,34 +1,32 @@
 <script setup lang="ts">
-import type { CampaignMembership, LiveStatusMap } from "~/types";
+import type { CampaignMembership, LiveStatusMap } from '~/types'
 
 const props = defineProps<{
-  members: CampaignMembership[];
-  liveStatus: LiveStatusMap;
-  loading?: boolean;
-  campaignId?: string | null;
-  maxHeight?: string;
-}>();
+  members: CampaignMembership[]
+  liveStatus: LiveStatusMap
+  loading?: boolean
+  campaignId?: string | null
+  maxHeight?: string
+}>()
 
 // Filtrer uniquement les membres actifs
-const activeMembers = computed(() =>
-  props.members.filter((member) => member.status === "ACTIVE")
-);
+const activeMembers = computed(() => props.members.filter((member) => member.status === 'ACTIVE'))
 
 /**
  * Formate le temps d'autorisation restant
  */
 const formatAuthTime = (seconds: number | null): string => {
-  if (!seconds) return "Non autorisé";
+  if (!seconds) return 'Non autorisé'
 
   // Si > 1 an, considéré comme permanent
-  if (seconds > 31536000) return "Permanent";
+  if (seconds > 31536000) return 'Permanent'
 
-  const hours = Math.floor(seconds / 3600);
-  const mins = Math.floor((seconds % 3600) / 60);
-  const secs = seconds % 60;
+  const hours = Math.floor(seconds / 3600)
+  const mins = Math.floor((seconds % 3600) / 60)
+  const secs = seconds % 60
 
-  return `${hours}h${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
-};
+  return `${hours}h${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+}
 </script>
 
 <template>
@@ -55,10 +53,7 @@ const formatAuthTime = (seconds: number | null): string => {
     </div>
 
     <!-- Loading -->
-    <div
-      v-if="loading"
-      class="flex flex-col items-center justify-center py-12"
-    >
+    <div v-if="loading" class="flex flex-col items-center justify-center py-12">
       <UIcon
         name="i-game-icons-dice-twenty-faces-twenty"
         class="size-8 text-primary animate-spin-slow mb-3"
@@ -67,7 +62,10 @@ const formatAuthTime = (seconds: number | null): string => {
     </div>
 
     <!-- Empty state -->
-    <div v-else-if="activeMembers.length === 0" class="flex flex-col items-center justify-center text-center py-12">
+    <div
+      v-else-if="activeMembers.length === 0"
+      class="flex flex-col items-center justify-center text-center py-12"
+    >
       <UIcon name="i-lucide-user-plus" class="size-12 text-neutral-400 mb-4" />
       <p class="text-base font-normal text-neutral-400">Aucun joueur dans cette campagne</p>
     </div>
@@ -121,13 +119,7 @@ const formatAuthTime = (seconds: number | null): string => {
             variant="soft"
             size="xs"
           />
-          <UBadge
-            v-else
-            label="Non affilié"
-            color="info"
-            variant="soft"
-            size="xs"
-          />
+          <UBadge v-else label="Non affilié" color="info" variant="soft" size="xs" />
 
           <!-- Badge autorisation -->
           <UBadge v-if="member.isOwner" color="success" variant="soft" size="xs">
@@ -136,17 +128,10 @@ const formatAuthTime = (seconds: number | null): string => {
               <span>Permanent</span>
             </div>
           </UBadge>
-          <UBadge
-            v-else-if="member.isPollAuthorized"
-            color="success"
-            variant="soft"
-            size="xs"
-          >
+          <UBadge v-else-if="member.isPollAuthorized" color="success" variant="soft" size="xs">
             <div class="flex items-center gap-1">
               <UIcon name="i-lucide-shield-check" class="size-3" />
-              <span>{{
-                formatAuthTime(member.authorizationRemainingSeconds)
-              }}</span>
+              <span>{{ formatAuthTime(member.authorizationRemainingSeconds) }}</span>
             </div>
           </UBadge>
           <UBadge v-else label="Non autorisé" color="warning" variant="soft" size="xs" />

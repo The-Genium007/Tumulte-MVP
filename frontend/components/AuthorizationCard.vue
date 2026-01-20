@@ -1,26 +1,28 @@
 <template>
   <div class="space-y-4">
     <!-- Info text above -->
-    <UAlert
-      color="primary"
-      variant="soft"
-      icon="i-lucide-info"
-      class="mb-4"
-    >
+    <UAlert color="primary" variant="soft" icon="i-lucide-info" class="mb-4">
       <template #description>
-        Autorisez Tumulte à lancer des sondages sur votre chaîne pour cette campagne pendant 12 heures.
+        Autorisez Tumulte à lancer des sondages sur votre chaîne pour cette campagne pendant 12
+        heures.
       </template>
     </UAlert>
 
     <!-- Non-Authorized State -->
-    <div v-if="!isAuthorized" class="flex flex-col md:flex-row rounded-lg overflow-hidden" :class="cardClass">
+    <div
+      v-if="!isAuthorized"
+      class="flex flex-col md:flex-row rounded-lg overflow-hidden"
+      :class="cardClass"
+    >
       <!-- Zone principale -->
       <div class="flex-1 flex items-center p-4">
         <div class="flex items-center gap-3">
           <UIcon name="i-lucide-shield-off" class="size-8 text-warning-600 shrink-0" />
           <div>
             <h3 class="text-lg font-semibold text-primary">Non autorisé</h3>
-            <p class="text-sm text-muted">Les sondages ne peuvent pas être lancés sur votre chaîne</p>
+            <p class="text-sm text-muted">
+              Les sondages ne peuvent pas être lancés sur votre chaîne
+            </p>
           </div>
         </div>
       </div>
@@ -49,11 +51,12 @@
         </div>
 
         <!-- Countdown Timer or Permanent Badge -->
-        <div v-if="isOwner" class="bg-brand-100 px-4 sm:px-6 py-3 rounded-lg text-center sm:text-left">
+        <div
+          v-if="isOwner"
+          class="bg-brand-100 px-4 sm:px-6 py-3 rounded-lg text-center sm:text-left"
+        >
           <p class="text-xs text-muted mb-1">Autorisation</p>
-          <p class="text-xl sm:text-2xl font-bold text-brand-500">
-            Permanent
-          </p>
+          <p class="text-xl sm:text-2xl font-bold text-brand-500">Permanent</p>
         </div>
         <div v-else class="bg-info-100 px-4 sm:px-6 py-3 rounded-lg text-center sm:text-left">
           <p class="text-xs text-muted mb-1">Temps restant</p>
@@ -91,7 +94,8 @@
             Êtes-vous sûr de vouloir révoquer l'autorisation de sondages pour cette campagne ?
           </p>
           <p class="text-sm text-muted mt-2">
-            Le MJ ne pourra plus lancer de sondages sur votre chaîne jusqu'à ce que vous réautorisiez.
+            Le MJ ne pourra plus lancer de sondages sur votre chaîne jusqu'à ce que vous
+            réautorisiez.
           </p>
 
           <template #footer>
@@ -185,19 +189,25 @@ onUnmounted(() => {
 })
 
 // Watch for prop changes
-watch(() => props.remainingSeconds, (newVal) => {
-  if (newVal !== null) {
-    displaySeconds.value = newVal
-    if (props.isAuthorized && !countdownInterval) {
-      startCountdown()
+watch(
+  () => props.remainingSeconds,
+  (newVal) => {
+    if (newVal !== null) {
+      displaySeconds.value = newVal
+      if (props.isAuthorized && !countdownInterval) {
+        startCountdown()
+      }
     }
   }
-})
+)
 
-watch(() => props.isAuthorized, (newVal) => {
-  if (!newVal && countdownInterval) {
-    clearInterval(countdownInterval)
-    countdownInterval = null
+watch(
+  () => props.isAuthorized,
+  (newVal) => {
+    if (!newVal && countdownInterval) {
+      clearInterval(countdownInterval)
+      countdownInterval = null
+    }
   }
-})
+)
 </script>

@@ -1,11 +1,12 @@
-import globals from "globals";
-import pluginJs from "@eslint/js";
-import tseslint from "typescript-eslint";
-import pluginVue from "eslint-plugin-vue";
+import globals from 'globals'
+import pluginJs from '@eslint/js'
+import tseslint from 'typescript-eslint'
+import pluginVue from 'eslint-plugin-vue'
+import eslintPluginPrettier from 'eslint-plugin-prettier/recommended'
 
 export default [
   {
-    files: ["**/*.{js,mjs,cjs,ts,vue}"]
+    files: ['**/*.{js,mjs,cjs,ts,vue}'],
   },
   {
     languageOptions: {
@@ -74,161 +75,194 @@ export default [
         useDevice: 'readonly',
         usePwaInstall: 'readonly',
         useLoadingScreen: 'readonly',
-      }
-    }
+      },
+    },
   },
   pluginJs.configs.recommended,
   ...tseslint.configs.recommended,
-  ...pluginVue.configs["flat/essential"],
+  ...pluginVue.configs['flat/essential'],
   {
-    files: ["**/*.vue"],
+    files: ['**/*.vue'],
     languageOptions: {
       parserOptions: {
-        parser: tseslint.parser
-      }
-    }
+        parser: tseslint.parser,
+      },
+    },
   },
   {
     rules: {
       // Enforce camelCase naming convention
-      "camelcase": ["error", {
-        "properties": "always",
-        "ignoreDestructuring": false,
-        "ignoreImports": false,
-        "ignoreGlobals": false,
-        "allow": [
-          // OAuth/Authentication tokens
-          "access_token",
-          "refresh_token",
-          "token_type",
-          "expires_in",
+      camelcase: [
+        'error',
+        {
+          properties: 'always',
+          ignoreDestructuring: false,
+          ignoreImports: false,
+          ignoreGlobals: false,
+          allow: [
+            // OAuth/Authentication tokens
+            'access_token',
+            'refresh_token',
+            'token_type',
+            'expires_in',
 
-          // OAuth URL parameters (Twitch API)
-          "client_id",
-          "client_secret",
-          "grant_type",
-          "redirect_uri",
-          "response_type",
-          "force_verify",
+            // OAuth URL parameters (Twitch API)
+            'client_id',
+            'client_secret',
+            'grant_type',
+            'redirect_uri',
+            'response_type',
+            'force_verify',
 
-          // Twitch API fields (external API)
-          "twitch_user_id",
-          "twitch_login",
-          "twitch_display_name",
-          "profile_image_url",
-          "broadcaster_type",
+            // Twitch API fields (external API)
+            'twitch_user_id',
+            'twitch_login',
+            'twitch_display_name',
+            'profile_image_url',
+            'broadcaster_type',
 
-          // Status and boolean fields
-          "is_active",
-          "is_authorized",
-          "is_poll_authorized",
+            // Status and boolean fields
+            'is_active',
+            'is_authorized',
+            'is_poll_authorized',
 
-          // Entity IDs
-          "campaign_id",
-          "user_id",
-          "streamer_id",
-          "membership_id",
-          "poll_id",
-          "session_id",
-          "template_id",
-          "instance_id",
+            // Entity IDs
+            'campaign_id',
+            'user_id',
+            'streamer_id',
+            'membership_id',
+            'poll_id',
+            'session_id',
+            'template_id',
+            'instance_id',
 
-          // Timestamps and dates
-          "invited_at",
-          "accepted_at",
-          "started_at",
-          "ended_at",
-          "expires_at",
-          "granted_at",
-          "created_at",
-          "updated_at",
-          "deleted_at",
+            // Timestamps and dates
+            'invited_at',
+            'accepted_at',
+            'started_at',
+            'ended_at',
+            'expires_at',
+            'granted_at',
+            'created_at',
+            'updated_at',
+            'deleted_at',
 
-          // Duration and time-related fields
-          "remaining_seconds",
-          "default_duration_seconds",
+            // Duration and time-related fields
+            'remaining_seconds',
+            'default_duration_seconds',
 
-          // Counters and aggregates
-          "polls_count"
-        ]
-      }],
+            // Counters and aggregates
+            'polls_count',
+          ],
+        },
+      ],
 
       // TypeScript naming conventions
-      "@typescript-eslint/naming-convention": [
-        "error",
+      '@typescript-eslint/naming-convention': [
+        'error',
         {
-          "selector": "default",
-          "format": ["camelCase"],
-          "leadingUnderscore": "allow",
-          "trailingUnderscore": "allow"
+          selector: 'default',
+          format: ['camelCase'],
+          leadingUnderscore: 'allow',
+          trailingUnderscore: 'allow',
         },
         {
-          "selector": "variable",
-          "format": ["camelCase", "UPPER_CASE"],
-          "leadingUnderscore": "allow",
-          "trailingUnderscore": "allow"
+          selector: 'variable',
+          format: ['camelCase', 'UPPER_CASE'],
+          leadingUnderscore: 'allow',
+          trailingUnderscore: 'allow',
         },
         {
-          "selector": "import",
-          "format": ["camelCase", "PascalCase"],
-          "leadingUnderscore": "allow"
+          selector: 'import',
+          format: ['camelCase', 'PascalCase'],
+          leadingUnderscore: 'allow',
         },
         {
-          "selector": "typeLike",
-          "format": ["PascalCase"]
+          selector: 'typeLike',
+          format: ['PascalCase'],
         },
         {
-          "selector": "enumMember",
-          "format": ["UPPER_CASE"]
+          selector: 'enumMember',
+          format: ['UPPER_CASE'],
         },
         {
-          "selector": "property",
-          "format": ["camelCase"],
-          "leadingUnderscore": "allow",
-          "filter": {
+          selector: 'property',
+          format: ['camelCase'],
+          leadingUnderscore: 'allow',
+          filter: {
             // Allow snake_case for API response fields, OAuth parameters, and database column names
-            "regex": "^(access_token|refresh_token|token_type|expires_in|client_id|client_secret|grant_type|redirect_uri|response_type|force_verify|twitch_user_id|twitch_login|twitch_display_name|profile_image_url|broadcaster_type|is_active|is_authorized|is_poll_authorized|campaign_id|user_id|streamer_id|membership_id|poll_id|session_id|template_id|instance_id|invited_at|accepted_at|started_at|ended_at|expires_at|granted_at|created_at|updated_at|deleted_at|remaining_seconds|default_duration_seconds|polls_count)$",
-            "match": false
-          }
+            regex:
+              '^(access_token|refresh_token|token_type|expires_in|client_id|client_secret|grant_type|redirect_uri|response_type|force_verify|twitch_user_id|twitch_login|twitch_display_name|profile_image_url|broadcaster_type|is_active|is_authorized|is_poll_authorized|campaign_id|user_id|streamer_id|membership_id|poll_id|session_id|template_id|instance_id|invited_at|accepted_at|started_at|ended_at|expires_at|granted_at|created_at|updated_at|deleted_at|remaining_seconds|default_duration_seconds|polls_count)$',
+            match: false,
+          },
         },
         {
-          "selector": "objectLiteralProperty",
-          "format": null
+          selector: 'objectLiteralProperty',
+          format: null,
         },
         {
           // Allow Vue emit convention "update:*"
-          "selector": "typeProperty",
-          "format": null,
-          "filter": {
-            "regex": "^update:",
-            "match": true
-          }
-        }
+          selector: 'typeProperty',
+          format: null,
+          filter: {
+            regex: '^update:',
+            match: true,
+          },
+        },
       ],
 
       // Allow single-word component names for UI components and pages
-      "vue/multi-word-component-names": ["error", {
-        "ignores": ["Button", "Card", "Modal", "default", "authenticated", "index", "home", "about", "login", "create", "edit", "callback", "campaigns", "[id]", "[pollId]", "[sessionId]", "studio", "import", "character", "settings"]
-      }],
+      'vue/multi-word-component-names': [
+        'error',
+        {
+          ignores: [
+            'Button',
+            'Card',
+            'Modal',
+            'default',
+            'authenticated',
+            'index',
+            'home',
+            'about',
+            'login',
+            'create',
+            'edit',
+            'callback',
+            'campaigns',
+            '[id]',
+            '[pollId]',
+            '[sessionId]',
+            'studio',
+            'import',
+            'character',
+            'settings',
+          ],
+        },
+      ],
 
       // Allow unused vars with underscore prefix
-      "@typescript-eslint/no-unused-vars": ["error", {
-        "argsIgnorePattern": "^_",
-        "varsIgnorePattern": "^_"
-      }]
-    }
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+        },
+      ],
+    },
   },
   {
     ignores: [
-      "dist/**",
-      "node_modules/**",
-      ".nuxt/**",
-      ".output/**",
-      "coverage/**",
-      "nuxt.config.ts",
-      "tailwind.config.ts",
+      'dist/**',
+      'node_modules/**',
+      '.nuxt/**',
+      '.output/**',
+      'coverage/**',
+      'nuxt.config.ts',
+      'tailwind.config.ts',
       // DiceBox - code externe copié tel quel (voir ~/Downloads/dice-box-threejs-main)
-      "lib/dicebox/**"
-    ]
-  }
-];
+      'lib/dicebox/**',
+    ],
+  },
+  // Prettier must be last to override formatting rules
+  eslintPluginPrettier,
+]

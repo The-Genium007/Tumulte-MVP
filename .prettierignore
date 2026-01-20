@@ -1,0 +1,48 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build outputs
+dist/
+build/
+.output/
+.nuxt/
+
+# Coverage
+coverage/
+
+# Logs
+*.log
+
+# IDE
+.idea/
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Lock files
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# Generated files
+*.min.js
+*.min.css
+
+# External libraries (copied as-is)
+frontend/lib/dicebox/
+**/lib/dicebox/
+
+# Test results
+test-results/
+**/test-results/
+playwright-report/
+**/playwright-report/
+
+# Config files (auto-generated or specific formatting)
+nuxt.config.ts
+**/nuxt.config.ts
+tailwind.config.ts
+**/tailwind.config.ts

@@ -54,11 +54,11 @@ The automatic refresh system ensures that Twitch tokens remain valid throughout 
 
 ## Database Columns (`streamers` table)
 
-| Column | Type | Description |
-|--------|------|-------------|
-| `token_expires_at` | timestamp | Access token expiration (~4h after refresh) |
-| `last_token_refresh_at` | timestamp | Last successful refresh |
-| `token_refresh_failed_at` | timestamp | Last failure (for retry policy) |
+| Column                    | Type      | Description                                 |
+| ------------------------- | --------- | ------------------------------------------- |
+| `token_expires_at`        | timestamp | Access token expiration (~4h after refresh) |
+| `last_token_refresh_at`   | timestamp | Last successful refresh                     |
+| `token_refresh_failed_at` | timestamp | Last failure (for retry policy)             |
 
 ## Retry Policy
 
@@ -87,6 +87,7 @@ The automatic refresh system ensures that Twitch tokens remain valid throughout 
 **Objective**: Verify that the token is refreshed when a streamer grants authorization.
 
 1. Check initial token state:
+
    ```bash
    PGPASSWORD=postgres psql -h localhost -U postgres -d twitch_polls -c \
      "SELECT twitch_display_name, token_expires_at, last_token_refresh_at
@@ -103,6 +104,7 @@ The automatic refresh system ensures that Twitch tokens remain valid throughout 
    ```
 
 **Expected result**:
+
 - `token_expires_at` = ~4h in the future
 - `last_token_refresh_at` = current timestamp
 
@@ -111,12 +113,14 @@ The automatic refresh system ensures that Twitch tokens remain valid throughout 
 **Objective**: Verify that the ace command refreshes tokens correctly.
 
 1. Execute the command:
+
    ```bash
    cd backend
    node --loader ts-node-maintained/esm bin/console.ts token:refresh
    ```
 
 2. Observe the logs:
+
    ```
    🔄 Token Refresh Command
    ========================
@@ -139,6 +143,7 @@ The automatic refresh system ensures that Twitch tokens remain valid throughout 
    ```
 
 **Expected result**:
+
 - All streamers with active authorization are listed
 - Tokens expiring soon are refreshed
 - Still valid tokens (>1h) are skipped
@@ -161,6 +166,7 @@ node --loader ts-node-maintained/esm bin/console.ts token:refresh --dry-run
 **Objective**: Verify the retry policy (15 min then deactivation).
 
 1. Manually invalidate a token in DB:
+
    ```bash
    PGPASSWORD=postgres psql -h localhost -U postgres -d twitch_polls -c \
      "UPDATE streamers SET access_token_encrypted = 'invalid'
@@ -168,6 +174,7 @@ node --loader ts-node-maintained/esm bin/console.ts token:refresh --dry-run
    ```
 
 2. First scheduler trigger:
+
    ```bash
    node --loader ts-node-maintained/esm bin/console.ts token:refresh --force
    ```
@@ -178,6 +185,7 @@ node --loader ts-node-maintained/esm bin/console.ts token:refresh --dry-run
    - `is_active` remains `true` (not deactivated yet)
 
 3. Check state:
+
    ```bash
    PGPASSWORD=postgres psql -h localhost -U postgres -d twitch_polls -c \
      "SELECT twitch_display_name, is_active, token_refresh_failed_at
@@ -185,6 +193,7 @@ node --loader ts-node-maintained/esm bin/console.ts token:refresh --dry-run
    ```
 
 4. Second trigger (after waiting or modifying delay in dev):
+
    ```bash
    node --loader ts-node-maintained/esm bin/console.ts token:refresh --force
    ```
@@ -199,6 +208,7 @@ node --loader ts-node-maintained/esm bin/console.ts token:refresh --dry-run
 **Objective**: Verify that health check attempts automatic refresh.
 
 1. Simulate a token near expiration:
+
    ```bash
    PGPASSWORD=postgres psql -h localhost -U postgres -d twitch_polls -c \
      "UPDATE streamers SET token_expires_at = NOW() + INTERVAL '30 minutes'
@@ -214,6 +224,7 @@ node --loader ts-node-maintained/esm bin/console.ts token:refresh --dry-run
    ```
 
 **Expected result**:
+
 - Health check detects expiring token
 - Automatic refresh attempted and succeeds
 - Session can be launched normally
@@ -245,6 +256,7 @@ The scheduler runs automatically every 3h30 in web environment (production).
 - **Execution times**: 00:00, 03:30, 07:00, 10:30, 14:00, 17:30, 21:00
 
 The scheduler is configured in:
+
 - `app/services/scheduler/token_refresh_scheduler.ts` - Scheduler logic
 - `start/scheduler.ts` - Boot startup (web environment only)
 - `adonisrc.ts` - Preload configuration
@@ -258,6 +270,7 @@ npm run test:unit -- --files="tests/unit/services/token_refresh_service.spec.ts"
 ```
 
 Covers:
+
 - `isTokenExpiringSoon` and `isTokenExpired` getters
 - Tracking column persistence
 - `findStreamersWithActiveAuthorization`
@@ -272,6 +285,7 @@ npm run test:functional -- --files="tests/functional/token_refresh.spec.ts"
 ```
 
 Covers:
+
 - Integration with authorization grant
 - Token tracking
 - Service integration
@@ -282,12 +296,14 @@ Covers:
 ### Refresh fails consistently
 
 1. Verify the refresh token is valid:
+
    ```bash
    # The refresh token may have been revoked by the user on Twitch
    # Solution: ask the streamer to reconnect
    ```
 
 2. Verify Twitch credentials:
+
    ```bash
    # Verify TWITCH_CLIENT_ID and TWITCH_CLIENT_SECRET are correct in .env
    ```
@@ -316,6 +332,7 @@ Covers:
 ### Streamer deactivated by mistake
 
 To reactivate a streamer:
+
 ```bash
 PGPASSWORD=postgres psql -h localhost -U postgres -d twitch_polls -c \
   "UPDATE streamers SET is_active = true, token_refresh_failed_at = NULL

@@ -1,35 +1,31 @@
-import type { PollInstance } from "@/types/index";
-import { useSupportTrigger } from "@/composables/useSupportTrigger";
+import type { PollInstance } from '@/types/index'
+import { useSupportTrigger } from '@/composables/useSupportTrigger'
 
 export function usePollInstance() {
-  const config = useRuntimeConfig();
-  const API_URL = config.public.apiBase;
-  const { triggerSupportForError } = useSupportTrigger();
+  const config = useRuntimeConfig()
+  const API_URL = config.public.apiBase
+  const { triggerSupportForError } = useSupportTrigger()
 
   /**
    * Fetch details of a specific poll instance
    */
-  const fetchPollInstance = async (
-    pollInstanceId: string,
-  ): Promise<PollInstance> => {
+  const fetchPollInstance = async (pollInstanceId: string): Promise<PollInstance> => {
     try {
       const response = await fetch(`${API_URL}/mj/polls/${pollInstanceId}`, {
-        credentials: "include",
-      });
+        credentials: 'include',
+      })
 
       if (!response.ok) {
-        throw new Error(
-          `Failed to fetch poll instance: ${response.statusText}`,
-        );
+        throw new Error(`Failed to fetch poll instance: ${response.statusText}`)
       }
 
-      const data = await response.json();
-      return data.data as PollInstance;
+      const data = await response.json()
+      return data.data as PollInstance
     } catch (error) {
-      triggerSupportForError("poll_fetch_results", error);
-      throw error;
+      triggerSupportForError('poll_fetch_results', error)
+      throw error
     }
-  };
+  }
 
   /**
    * Fetch the active session for the current MJ user
@@ -37,25 +33,23 @@ export function usePollInstance() {
   const fetchActiveSession = async () => {
     try {
       const response = await fetch(`${API_URL}/mj/active-session`, {
-        credentials: "include",
-      });
+        credentials: 'include',
+      })
 
       if (!response.ok) {
-        throw new Error(
-          `Failed to fetch active session: ${response.statusText}`,
-        );
+        throw new Error(`Failed to fetch active session: ${response.statusText}`)
       }
 
-      const data = await response.json();
-      return data.data;
+      const data = await response.json()
+      return data.data
     } catch (error) {
-      triggerSupportForError("session_fetch", error);
-      throw error;
+      triggerSupportForError('session_fetch', error)
+      throw error
     }
-  };
+  }
 
   return {
     fetchPollInstance,
     fetchActiveSession,
-  };
+  }
 }

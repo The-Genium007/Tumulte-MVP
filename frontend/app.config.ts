@@ -17,116 +17,116 @@ export default defineAppConfig({
   ui: {
     colors: {
       // Main colors - change these to remap the entire UI
-      primary: "brand", // Uses --color-brand-* from main.css
-      secondary: "secondary", // Uses --color-secondary-* from main.css (#0f0b04)
+      primary: 'brand', // Uses --color-brand-* from main.css
+      secondary: 'secondary', // Uses --color-secondary-* from main.css (#0f0b04)
 
       // Semantic colors for states
-      success: "success",
-      info: "info",
-      warning: "warning",
-      error: "error",
+      success: 'success',
+      info: 'info',
+      warning: 'warning',
+      error: 'error',
 
       // Neutral color for text, borders, backgrounds
-      neutral: "neutral",
+      neutral: 'neutral',
     },
     card: {
       slots: {
-        root: "ring-0 rounded-[2rem] divide-y-0",
-        header: "border-none p-6",
-        body: "border-none p-6",
-        footer: "border-none p-6",
+        root: 'ring-0 rounded-[2rem] divide-y-0',
+        header: 'border-none p-6',
+        body: 'border-none p-6',
+        footer: 'border-none p-6',
       },
     },
     alert: {
       slots: {
-        root: "border-0 p-6",
+        root: 'border-0 p-6',
       },
       variants: {
         variant: {
-          solid: "ring-0",
-          soft: "ring-0",
-          subtle: "ring-0",
-          outline: "",
+          solid: 'ring-0',
+          soft: 'ring-0',
+          subtle: 'ring-0',
+          outline: '',
         },
       },
     },
     badge: {
       slots: {
-        base: "p-2",
+        base: 'p-2',
       },
       variants: {
         variant: {
-          solid: "ring-0",
-          soft: "ring-0",
-          subtle: "ring-0",
-          outline: "",
+          solid: 'ring-0',
+          soft: 'ring-0',
+          subtle: 'ring-0',
+          outline: '',
         },
       },
     },
     button: {
       slots: {
-        base: "p-4",
+        base: 'p-4',
       },
       variants: {
         variant: {
-          solid: "ring-0",
-          soft: "ring-0",
-          subtle: "ring-0",
-          ghost: "ring-0",
-          link: "ring-0",
-          outline: "",
+          solid: 'ring-0',
+          soft: 'ring-0',
+          subtle: 'ring-0',
+          ghost: 'ring-0',
+          link: 'ring-0',
+          outline: '',
         },
       },
     },
     input: {
       slots: {
-        root: "ring-0 border-0 rounded-lg overflow-hidden w-full",
-        base: "px-3.5 py-2.5 bg-primary-100 text-primary-500 placeholder:text-primary-400 rounded-lg",
+        root: 'ring-0 border-0 rounded-lg overflow-hidden w-full',
+        base: 'px-3.5 py-2.5 bg-primary-100 text-primary-500 placeholder:text-primary-400 rounded-lg',
       },
     },
     select: {
       slots: {
-        base: "ring-0 border-0 px-3.5 py-2.5 bg-primary-100 text-primary-500 rounded-lg",
+        base: 'ring-0 border-0 px-3.5 py-2.5 bg-primary-100 text-primary-500 rounded-lg',
       },
     },
     textarea: {
       slots: {
-        root: "ring-0 border-0 rounded-lg overflow-hidden w-full",
-        base: "px-3.5 py-2.5 bg-primary-100 text-primary-500 placeholder:text-primary-400 rounded-lg",
+        root: 'ring-0 border-0 rounded-lg overflow-hidden w-full',
+        base: 'px-3.5 py-2.5 bg-primary-100 text-primary-500 placeholder:text-primary-400 rounded-lg',
       },
     },
     checkbox: {
       slots: {
-        root: "ring-0",
-        base: "ring-0 border-0 bg-primary-100 data-[state=checked]:bg-primary-500",
+        root: 'ring-0',
+        base: 'ring-0 border-0 bg-primary-100 data-[state=checked]:bg-primary-500',
       },
     },
     radioGroup: {
       slots: {
-        root: "ring-0",
-        base: "ring-0 border-0 bg-primary-100 data-[state=checked]:bg-primary-500",
+        root: 'ring-0',
+        base: 'ring-0 border-0 bg-primary-100 data-[state=checked]:bg-primary-500',
       },
     },
     switch: {
       slots: {
-        root: "ring-0 border-0 bg-primary-100 data-[state=checked]:bg-primary-500 rounded-full overflow-hidden",
-        thumb: "bg-white ring-0 shadow-sm rounded-full",
+        root: 'ring-0 border-0 bg-primary-100 data-[state=checked]:bg-primary-500 rounded-full overflow-hidden',
+        thumb: 'bg-white ring-0 shadow-sm rounded-full',
       },
     },
     selectMenu: {
       slots: {
-        base: "ring-0 border-0 bg-primary-100 text-primary-400 rounded-lg",
-        content: "ring-0 border-0 bg-white rounded-lg shadow-lg",
-        item: "hover:bg-primary-50",
+        base: 'ring-0 border-0 bg-primary-100 text-primary-400 rounded-lg',
+        content: 'ring-0 border-0 bg-white rounded-lg shadow-lg',
+        item: 'hover:bg-primary-50',
       },
     },
     modal: {
       slots: {
-        content: "ring-0 rounded-[2rem] divide-y-0",
-        header: "border-none p-6",
-        body: "border-none p-6",
-        footer: "border-none p-6",
+        content: 'ring-0 rounded-[2rem] divide-y-0',
+        header: 'border-none p-6',
+        body: 'border-none p-6',
+        footer: 'border-none p-6',
       },
     },
   },
-});
+})

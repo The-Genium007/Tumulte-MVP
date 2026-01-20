@@ -70,9 +70,9 @@ export default class PollsController {
     if (!validationResult.success) {
       return response.badRequest({
         error: 'Validation failed',
-        details: validationResult.error.errors.map((err) => ({
-          field: err.path.join('.'),
-          message: err.message,
+        details: validationResult.error.issues.map((issue) => ({
+          field: issue.path.join('.'),
+          message: issue.message,
         })),
       })
     }
@@ -149,9 +149,9 @@ export default class PollsController {
     if (!validationResult.success) {
       return response.badRequest({
         error: 'Validation failed',
-        details: validationResult.error.errors.map((err) => ({
-          field: err.path.join('.'),
-          message: err.message,
+        details: validationResult.error.issues.map((issue) => ({
+          field: issue.path.join('.'),
+          message: issue.message,
         })),
       })
     }
@@ -366,10 +366,10 @@ export default class PollsController {
     if (!validationResult.success) {
       return response.badRequest({
         error: 'Validation failed',
-        details: validationResult.error.errors.map((err) => ({
-          field: err.path.join('.'),
-          message: err.message,
-          code: err.code,
+        details: validationResult.error.issues.map((issue) => ({
+          field: issue.path.join('.'),
+          message: issue.message,
+          code: issue.code,
         })),
       })
     }

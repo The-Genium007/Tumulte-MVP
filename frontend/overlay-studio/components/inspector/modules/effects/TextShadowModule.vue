@@ -76,58 +76,55 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
-import ColorModule from "../appearance/ColorModule.vue";
+import { computed } from 'vue'
+import ColorModule from '../appearance/ColorModule.vue'
 
 export interface TextShadowConfig {
-  enabled: boolean;
-  color: string;
-  blur: number;
-  offsetX: number;
-  offsetY: number;
+  enabled: boolean
+  color: string
+  blur: number
+  offsetX: number
+  offsetY: number
 }
 
 const props = withDefaults(
   defineProps<{
-    modelValue: TextShadowConfig;
-    showPreview?: boolean;
+    modelValue: TextShadowConfig
+    showPreview?: boolean
   }>(),
   {
     showPreview: true,
-  },
-);
+  }
+)
 
 const emit = defineEmits<{
-  "update:modelValue": [value: TextShadowConfig];
-}>();
+  'update:modelValue': [value: TextShadowConfig]
+}>()
 
 const colorPresets = [
-  "rgba(0,0,0,0.5)",
-  "rgba(0,0,0,0.8)",
-  "#000000",
-  "rgba(255,255,255,0.5)",
-  "#ffffff",
-  "#8b5cf6",
-  "#3b82f6",
-  "#22c55e",
-];
+  'rgba(0,0,0,0.5)',
+  'rgba(0,0,0,0.8)',
+  '#000000',
+  'rgba(255,255,255,0.5)',
+  '#ffffff',
+  '#8b5cf6',
+  '#3b82f6',
+  '#22c55e',
+]
 
 const previewStyle = computed(() => {
-  const { color, blur, offsetX, offsetY } = props.modelValue;
+  const { color, blur, offsetX, offsetY } = props.modelValue
   return {
     textShadow: `${offsetX}px ${offsetY}px ${blur}px ${color}`,
-  };
-});
+  }
+})
 
-const updateField = <K extends keyof TextShadowConfig>(
-  field: K,
-  value: TextShadowConfig[K],
-) => {
-  emit("update:modelValue", {
+const updateField = <K extends keyof TextShadowConfig>(field: K, value: TextShadowConfig[K]) => {
+  emit('update:modelValue', {
     ...props.modelValue,
     [field]: value,
-  });
-};
+  })
+}
 </script>
 
 <style scoped>

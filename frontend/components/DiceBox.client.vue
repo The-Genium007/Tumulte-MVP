@@ -16,25 +16,28 @@ export interface DiceCustomColorset {
   material?: string
 }
 
-const props = withDefaults(defineProps<{
-  notation?: string
-  colorset?: string
-  customColorset?: DiceCustomColorset | null
-  texture?: string
-  material?: string
-  sounds?: boolean
-  volume?: number
-  lightIntensity?: number
-}>(), {
-  notation: '',
-  colorset: 'white',
-  customColorset: null,
-  texture: '',
-  material: 'glass',
-  sounds: true,
-  volume: 50,
-  lightIntensity: 1.0,
-})
+const props = withDefaults(
+  defineProps<{
+    notation?: string
+    colorset?: string
+    customColorset?: DiceCustomColorset | null
+    texture?: string
+    material?: string
+    sounds?: boolean
+    volume?: number
+    lightIntensity?: number
+  }>(),
+  {
+    notation: '',
+    colorset: 'white',
+    customColorset: null,
+    texture: '',
+    material: 'glass',
+    sounds: true,
+    volume: 50,
+    lightIntensity: 1.0,
+  }
+)
 
 const emit = defineEmits<{
   rollComplete: [results: unknown]
@@ -55,14 +58,16 @@ onMounted(async () => {
   // Build custom colorset config if provided
   // Note: DiceBox API uses snake_case for config options
   /* eslint-disable camelcase */
-  const customColorsetConfig = props.customColorset ? {
-    name: `custom-${Date.now()}`,
-    foreground: props.customColorset.foreground,
-    background: props.customColorset.background,
-    outline: props.customColorset.outline,
-    texture: props.customColorset.texture || props.texture || 'none',
-    material: props.customColorset.material || props.material || 'glass',
-  } : null
+  const customColorsetConfig = props.customColorset
+    ? {
+        name: `custom-${Date.now()}`,
+        foreground: props.customColorset.foreground,
+        background: props.customColorset.background,
+        outline: props.customColorset.outline,
+        texture: props.customColorset.texture || props.texture || 'none',
+        material: props.customColorset.material || props.material || 'glass',
+      }
+    : null
 
   // Initialize DiceBox with CSS selector
   diceBox = new DiceBox(`#${containerId}`, {
@@ -93,40 +98,50 @@ onUnmounted(() => {
 })
 
 // Watch for notation changes to auto-roll
-watch(() => props.notation, async (newNotation) => {
-  if (newNotation && diceBox) {
-    await roll(newNotation)
+watch(
+  () => props.notation,
+  async (newNotation) => {
+    if (newNotation && diceBox) {
+      await roll(newNotation)
+    }
   }
-})
+)
 
 // Watch for customColorset changes to update dice appearance
-watch(() => props.customColorset, async (newColorset) => {
-  if (diceBox && newColorset) {
-    /* eslint-disable camelcase */
-    await diceBox.updateConfig({
-      theme_customColorset: {
-        name: `custom-${Date.now()}`,
-        foreground: newColorset.foreground,
-        background: newColorset.background,
-        outline: newColorset.outline,
-        texture: newColorset.texture || props.texture || 'none',
-        material: newColorset.material || props.material || 'glass',
-      },
-    })
-    /* eslint-enable camelcase */
-  }
-}, { deep: true })
+watch(
+  () => props.customColorset,
+  async (newColorset) => {
+    if (diceBox && newColorset) {
+      /* eslint-disable camelcase */
+      await diceBox.updateConfig({
+        theme_customColorset: {
+          name: `custom-${Date.now()}`,
+          foreground: newColorset.foreground,
+          background: newColorset.background,
+          outline: newColorset.outline,
+          texture: newColorset.texture || props.texture || 'none',
+          material: newColorset.material || props.material || 'glass',
+        },
+      })
+      /* eslint-enable camelcase */
+    }
+  },
+  { deep: true }
+)
 
 // Watch for lightIntensity changes to update scene lighting
-watch(() => props.lightIntensity, async (newIntensity) => {
-  if (diceBox && newIntensity !== undefined) {
-    /* eslint-disable camelcase */
-    await diceBox.updateConfig({
-      light_intensity: newIntensity,
-    })
-    /* eslint-enable camelcase */
+watch(
+  () => props.lightIntensity,
+  async (newIntensity) => {
+    if (diceBox && newIntensity !== undefined) {
+      /* eslint-disable camelcase */
+      await diceBox.updateConfig({
+        light_intensity: newIntensity,
+      })
+      /* eslint-enable camelcase */
+    }
   }
-})
+)
 
 // Exposed methods
 const roll = async (notation: string): Promise<unknown> => {

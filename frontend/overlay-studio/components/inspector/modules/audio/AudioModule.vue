@@ -26,11 +26,7 @@
 
     <!-- Volume Control - Only when enabled -->
     <div v-if="modelValue.enabled" class="volume-control">
-      <button
-        class="volume-button"
-        title="Muet"
-        @click="updateField('volume', 0)"
-      >
+      <button class="volume-button" title="Muet" @click="updateField('volume', 0)">
         <UIcon name="i-lucide-volume-x" class="size-4" />
       </button>
       <div class="volume-slider-wrapper">
@@ -44,11 +40,7 @@
           @input="(e) => updateField('volume', parseFloat((e.target as HTMLInputElement).value))"
         />
       </div>
-      <button
-        class="volume-button"
-        title="Volume max"
-        @click="updateField('volume', 1)"
-      >
+      <button class="volume-button" title="Volume max" @click="updateField('volume', 1)">
         <UIcon name="i-lucide-volume-2" class="size-4" />
       </button>
       <span class="volume-value">{{ Math.round(modelValue.volume * 100) }}%</span>
@@ -69,89 +61,86 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onUnmounted } from "vue";
+import { ref, onUnmounted } from 'vue'
 
 export interface AudioConfig {
-  enabled: boolean;
-  soundFile?: string;
-  volume: number;
+  enabled: boolean
+  soundFile?: string
+  volume: number
 }
 
 const props = withDefaults(
   defineProps<{
-    modelValue: AudioConfig;
-    label?: string;
-    soundOptions?: { label: string; value: string }[];
-    showPreview?: boolean;
-    previewUrl?: string;
+    modelValue: AudioConfig
+    label?: string
+    soundOptions?: { label: string; value: string }[]
+    showPreview?: boolean
+    previewUrl?: string
   }>(),
   {
-    label: "Son",
+    label: 'Son',
     soundOptions: () => [],
     showPreview: true,
-    previewUrl: "",
-  },
-);
+    previewUrl: '',
+  }
+)
 
 const emit = defineEmits<{
-  "update:modelValue": [value: AudioConfig];
-}>();
+  'update:modelValue': [value: AudioConfig]
+}>()
 
-const isPlaying = ref(false);
-let audioElement: HTMLAudioElement | null = null;
+const isPlaying = ref(false)
+let audioElement: HTMLAudioElement | null = null
 
-const updateField = <K extends keyof AudioConfig>(
-  field: K,
-  value: AudioConfig[K],
-) => {
-  emit("update:modelValue", {
+const updateField = <K extends keyof AudioConfig>(field: K, value: AudioConfig[K]) => {
+  emit('update:modelValue', {
     ...props.modelValue,
     [field]: value,
-  });
-};
+  })
+}
 
 const togglePreview = () => {
   if (isPlaying.value) {
-    stopPreview();
+    stopPreview()
   } else {
-    playPreview();
+    playPreview()
   }
-};
+}
 
 const playPreview = () => {
-  const soundUrl = props.previewUrl || props.modelValue.soundFile;
-  if (!soundUrl) return;
+  const soundUrl = props.previewUrl || props.modelValue.soundFile
+  if (!soundUrl) return
 
-  stopPreview();
+  stopPreview()
 
-  audioElement = new Audio(soundUrl);
-  audioElement.volume = props.modelValue.volume;
+  audioElement = new Audio(soundUrl)
+  audioElement.volume = props.modelValue.volume
 
   audioElement.onended = () => {
-    isPlaying.value = false;
-  };
+    isPlaying.value = false
+  }
 
   audioElement.onerror = () => {
-    isPlaying.value = false;
-    console.warn("Erreur de lecture audio");
-  };
+    isPlaying.value = false
+    console.warn('Erreur de lecture audio')
+  }
 
-  audioElement.play();
-  isPlaying.value = true;
-};
+  audioElement.play()
+  isPlaying.value = true
+}
 
 const stopPreview = () => {
   if (audioElement) {
-    audioElement.pause();
-    audioElement.currentTime = 0;
-    audioElement = null;
+    audioElement.pause()
+    audioElement.currentTime = 0
+    audioElement = null
   }
-  isPlaying.value = false;
-};
+  isPlaying.value = false
+}
 
 onUnmounted(() => {
-  stopPreview();
-});
+  stopPreview()
+})
 </script>
 
 <style scoped>

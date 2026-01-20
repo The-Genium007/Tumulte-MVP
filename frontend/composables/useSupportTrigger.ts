@@ -7,21 +7,18 @@
  */
 export const useSupportTrigger = () => {
   // Fonctions vides pour compatibilité avec le code existant
-  const canAutoOpen = (): boolean => false;
+  const canAutoOpen = (): boolean => false
 
-  const triggerSupportForError = (
-    _errorType?: string,
-    _error?: unknown,
-  ): boolean => {
+  const triggerSupportForError = (_errorType?: string, _error?: unknown): boolean => {
     // Ne fait plus rien - Sentry gère les erreurs automatiques
-    return false;
-  };
+    return false
+  }
 
-  const getRemainingCooldown = (): number => 0;
+  const getRemainingCooldown = (): number => 0
 
   const resetRateLimit = (): void => {
     // No-op
-  };
+  }
 
   return {
     canAutoOpen,
@@ -29,5 +26,5 @@ export const useSupportTrigger = () => {
     getRemainingCooldown,
     resetRateLimit,
     RATE_LIMIT_MS: 0,
-  };
-};
+  }
+}
