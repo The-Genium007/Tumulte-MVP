@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # Stage 1: Dependencies installation
-FROM node:20-alpine AS deps
+FROM node:25-alpine AS deps
 
 WORKDIR /app
 
@@ -15,7 +15,7 @@ COPY package*.json ./
 RUN npm ci && npm cache clean --force
 
 # Stage 2: Production runtime with TypeScript support
-FROM node:20-alpine AS production
+FROM node:25-alpine AS production
 
 # Install runtime dependencies: dumb-init, curl for health checks, postgresql-client for migrations
 RUN apk add --no-cache dumb-init curl postgresql-client netcat-openbsd

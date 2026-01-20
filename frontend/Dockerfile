@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # Stage 1: Builder - Install dependencies and build Nuxt application
-FROM node:22-alpine AS builder
+FROM node:25-alpine AS builder
 
 WORKDIR /app
 
@@ -29,7 +29,7 @@ ENV NODE_ENV=production
 RUN npm run build
 
 # Stage 2: Production runtime
-FROM node:22-alpine AS production
+FROM node:25-alpine AS production
 
 # Install dumb-init for proper signal handling and curl for health checks
 RUN apk add --no-cache dumb-init curl
