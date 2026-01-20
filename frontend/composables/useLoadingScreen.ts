@@ -3,38 +3,38 @@
  * Gère le chargement initial (hydration) et les navigations entre pages
  */
 
-const isLoading = ref(true);
+const isLoading = ref(true)
 
 export function useLoadingScreen() {
-  const nuxtApp = useNuxtApp();
+  const nuxtApp = useNuxtApp()
 
   const show = () => {
-    isLoading.value = true;
-  };
+    isLoading.value = true
+  }
 
   const hide = () => {
-    isLoading.value = false;
-  };
+    isLoading.value = false
+  }
 
   // Initialisation : écoute les hooks Nuxt
   const init = () => {
     // Chargement initial terminé
-    nuxtApp.hook("app:mounted", () => {
+    nuxtApp.hook('app:mounted', () => {
       // Petit délai pour laisser le rendu se stabiliser
-      setTimeout(hide, 300);
-    });
+      setTimeout(hide, 300)
+    })
 
     // Navigation entre pages
-    nuxtApp.hook("page:start", show);
-    nuxtApp.hook("page:finish", () => {
-      setTimeout(hide, 200);
-    });
-  };
+    nuxtApp.hook('page:start', show)
+    nuxtApp.hook('page:finish', () => {
+      setTimeout(hide, 200)
+    })
+  }
 
   return {
     isLoading: readonly(isLoading),
     show,
     hide,
     init,
-  };
+  }
 }

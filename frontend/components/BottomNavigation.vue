@@ -45,23 +45,23 @@ const navigationItems: NavigationItem[] = [
   {
     to: '/streamer',
     icon: 'i-lucide-home',
-    label: 'Accueil'
+    label: 'Accueil',
   },
   {
     to: '/streamer/campaigns',
     icon: 'i-lucide-mail',
-    label: 'Invitations'
+    label: 'Invitations',
   },
   {
     to: '/mj',
     icon: 'i-lucide-crown',
-    label: 'MJ'
+    label: 'MJ',
   },
   {
     to: '/settings',
     icon: 'i-lucide-settings',
-    label: 'Réglages'
-  }
+    label: 'Réglages',
+  },
 ]
 
 /**

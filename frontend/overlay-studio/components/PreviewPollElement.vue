@@ -42,48 +42,39 @@
         <div class="progress-bar" :style="progressBarStyle">
           <div class="progress-fill" :style="progressFillStyle" />
         </div>
-        <span
-          v-if="config.progressBar.showTimeText"
-          class="progress-time"
-          :style="timeTextStyle"
-        >
+        <span v-if="config.progressBar.showTimeText" class="progress-time" :style="timeTextStyle">
           {{ mockData.timeRemaining }}s
         </span>
       </div>
     </div>
 
     <!-- Debug info -->
-    <div v-if="showDebug" class="debug-info">
-      State: {{ state }}
-    </div>
+    <div v-if="showDebug" class="debug-info">State: {{ state }}</div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, toRef } from "vue";
-import type { PollProperties, OverlayElement, PollMockData } from "../types";
-import {
-  useAnimationController,
-  type AnimationState,
-} from "../composables/useAnimationController";
+import { computed, toRef } from 'vue'
+import type { PollProperties, OverlayElement, PollMockData } from '../types'
+import { useAnimationController, type AnimationState } from '../composables/useAnimationController'
 
 const props = defineProps<{
-  element: OverlayElement;
-  externalState?: AnimationState;
-  showDebug?: boolean;
-}>();
+  element: OverlayElement
+  externalState?: AnimationState
+  showDebug?: boolean
+}>()
 
 // Configuration du poll
-const config = computed(() => props.element.properties as PollProperties);
+const config = computed(() => props.element.properties as PollProperties)
 
 // Mock data depuis la config
-const mockData = computed<PollMockData>(() => config.value.mockData);
+const mockData = computed<PollMockData>(() => config.value.mockData)
 
 // Animation controller
-const controller = useAnimationController(toRef(() => config.value));
+const controller = useAnimationController(toRef(() => config.value))
 
 // État: utiliser l'état externe si fourni, sinon l'état interne du controller
-const state = computed(() => props.externalState ?? controller.state.value);
+const state = computed(() => props.externalState ?? controller.state.value)
 
 // Exposer les méthodes du controller
 defineExpose({
@@ -96,97 +87,102 @@ defineExpose({
   playFullSequence: controller.playFullSequence,
   state: controller.state,
   audioEnabled: controller.audioEnabled,
-});
+})
 
 // Calcul des rankings avec gestion des ex-aequo
 const rankings = computed(() => {
-  const percs = mockData.value.percentages;
-  if (percs.length === 0) return {};
+  const percs = mockData.value.percentages
+  if (percs.length === 0) return {}
 
   const sorted = percs
     .map((p, i) => ({ percentage: p, index: i }))
-    .sort((a, b) => b.percentage - a.percentage);
+    .sort((a, b) => b.percentage - a.percentage)
 
-  const ranks: Record<number, number> = {};
-  let currentRank = 1;
+  const ranks: Record<number, number> = {}
+  let currentRank = 1
 
   for (let i = 0; i < sorted.length; i++) {
-    const current = sorted[i];
-    const previous = sorted[i - 1];
+    const current = sorted[i]
+    const previous = sorted[i - 1]
     if (current && i > 0 && previous && current.percentage < previous.percentage) {
-      currentRank = i + 1;
+      currentRank = i + 1
     }
     if (current) {
-      ranks[current.index] = currentRank;
+      ranks[current.index] = currentRank
     }
   }
 
-  return ranks;
-});
+  return ranks
+})
 
 // Vérifier si une option est gagnante (rang 1)
 const isWinner = (index: number): boolean => {
-  return rankings.value[index] === 1;
-};
+  return rankings.value[index] === 1
+}
 
 // Obtenir la couleur de médaille selon le rang
 const getMedalColor = (rank: number): string => {
-  const colors = config.value.medalColors;
+  const colors = config.value.medalColors
   switch (rank) {
     case 1:
-      return colors.gold;
+      return colors.gold
     case 2:
-      return colors.silver;
+      return colors.silver
     case 3:
-      return colors.bronze;
+      return colors.bronze
     default:
-      return colors.base;
+      return colors.base
   }
-};
+}
 
 // Styles calculés
 const containerStyle = computed(() => {
-  const el = props.element;
+  const el = props.element
   // Position en pourcentage du canvas 1920x1080
-  const left = ((el.position.x + 960) / 1920) * 100;
-  const top = ((540 - el.position.y) / 1080) * 100;
-  const rotation = -(el.rotation.z * 180) / Math.PI;
+  const left = ((el.position.x + 960) / 1920) * 100
+  const top = ((540 - el.position.y) / 1080) * 100
+  const rotation = -(el.rotation.z * 180) / Math.PI
 
   return {
     left: `${left}%`,
     top: `${top}%`,
     transform: `translate(-50%, -50%) rotate(${rotation}deg) scale(${el.scale.x}, ${el.scale.y})`,
-  };
-});
+  }
+})
 
 // Helper to convert borderRadius to CSS string
-const getBorderRadiusStyle = (br: number | { topLeft: number; topRight: number; bottomRight: number; bottomLeft: number } | undefined): string => {
-  if (br === undefined) return "0px";
-  if (typeof br === "number") return `${br}px`;
-  return `${br.topLeft}px ${br.topRight}px ${br.bottomRight}px ${br.bottomLeft}px`;
-};
+const getBorderRadiusStyle = (
+  br:
+    | number
+    | { topLeft: number; topRight: number; bottomRight: number; bottomLeft: number }
+    | undefined
+): string => {
+  if (br === undefined) return '0px'
+  if (typeof br === 'number') return `${br}px`
+  return `${br.topLeft}px ${br.topRight}px ${br.bottomRight}px ${br.bottomLeft}px`
+}
 
 // Content style applies questionBoxStyle to the entire card
 const contentStyle = computed(() => {
-  const qbs = config.value.questionBoxStyle;
+  const qbs = config.value.questionBoxStyle
 
   return {
     width: `${config.value.layout.maxWidth}px`,
     // Card background and border from questionBoxStyle
-    backgroundColor: qbs?.backgroundColor ?? "rgba(17, 17, 17, 0.9)",
-    borderColor: qbs?.borderColor ?? "transparent",
+    backgroundColor: qbs?.backgroundColor ?? 'rgba(17, 17, 17, 0.9)',
+    borderColor: qbs?.borderColor ?? 'transparent',
     borderWidth: `${qbs?.borderWidth ?? 0}px`,
-    borderStyle: (qbs?.borderWidth ?? 0) > 0 ? "solid" : "none",
+    borderStyle: (qbs?.borderWidth ?? 0) > 0 ? 'solid' : 'none',
     borderRadius: getBorderRadiusStyle(qbs?.borderRadius ?? 24),
     padding: qbs?.padding
       ? `${qbs.padding.top}px ${qbs.padding.right}px ${qbs.padding.bottom}px ${qbs.padding.left}px`
-      : "32px",
-  };
-});
+      : '32px',
+  }
+})
 
 // Question style is now typography only
 const questionStyle = computed(() => {
-  const qs = config.value.questionStyle;
+  const qs = config.value.questionStyle
 
   return {
     fontFamily: qs.fontFamily,
@@ -195,131 +191,129 @@ const questionStyle = computed(() => {
     color: qs.color,
     textShadow: qs.textShadow?.enabled
       ? `${qs.textShadow.offsetX}px ${qs.textShadow.offsetY}px ${qs.textShadow.blur}px ${qs.textShadow.color}`
-      : "none",
-  };
-});
+      : 'none',
+  }
+})
 
 const optionTextStyle = computed(() => {
-  const ts = config.value.optionTextStyle;
+  const ts = config.value.optionTextStyle
   return {
     fontFamily: ts.fontFamily,
     fontSize: `${ts.fontSize}px`,
     fontWeight: ts.fontWeight,
     color: ts.color,
-  };
-});
+  }
+})
 
 const optionPercentageStyle = computed(() => {
-  const ps = config.value.optionPercentageStyle;
+  const ps = config.value.optionPercentageStyle
   return {
     fontFamily: ps.fontFamily,
     fontSize: `${ps.fontSize}px`,
     fontWeight: ps.fontWeight,
     color: ps.color,
-  };
-});
+  }
+})
 
 const getOptionStyle = (index: number) => {
-  const box = config.value.optionBoxStyle;
-  const rank = rankings.value[index] || 4;
-  const medalColor = getMedalColor(rank);
+  const box = config.value.optionBoxStyle
+  const rank = rankings.value[index] || 4
+  const medalColor = getMedalColor(rank)
 
   const baseStyle = {
     backgroundColor: box.backgroundColor,
     borderColor: medalColor,
     borderWidth: `${box.borderWidth}px`,
     borderRadius: getBorderRadiusStyle(box.borderRadius),
-    borderStyle: "solid",
+    borderStyle: 'solid',
     opacity: box.opacity,
     padding: `${box.padding.top}px ${box.padding.right}px ${box.padding.bottom}px ${box.padding.left}px`,
-  };
+  }
 
   // Animation de résultat
-  if (state.value === "result") {
-    const resultAnim = config.value.animations.result;
+  if (state.value === 'result') {
+    const resultAnim = config.value.animations.result
     if (isWinner(index)) {
       return {
         ...baseStyle,
         transform: `scale(${resultAnim.winnerEnlarge.scale})`,
         transition: `transform ${resultAnim.winnerEnlarge.duration}s ease-out`,
-      };
+      }
     } else {
       return {
         ...baseStyle,
         opacity: resultAnim.loserFadeOut.opacity,
         transition: `opacity ${resultAnim.loserFadeOut.duration}s ease-out`,
-      };
+      }
     }
   }
 
-  return baseStyle;
-};
+  return baseStyle
+}
 
 const getBarStyle = (index: number) => {
-  const rank = rankings.value[index] || 4;
-  const medalColor = getMedalColor(rank);
-  const percentage = mockData.value.percentages[index] || 0;
+  const rank = rankings.value[index] || 4
+  const medalColor = getMedalColor(rank)
+  const percentage = mockData.value.percentages[index] || 0
 
   return {
     width: `${percentage}%`,
     backgroundColor: medalColor,
-  };
-};
+  }
+}
 
 const progressContainerStyle = computed(() => ({
   flexDirection:
-    config.value.progressBar.position === "top"
-      ? ("column-reverse" as const)
-      : ("column" as const),
-}));
+    config.value.progressBar.position === 'top' ? ('column-reverse' as const) : ('column' as const),
+}))
 
 const progressBarStyle = computed(() => {
-  const pb = config.value.progressBar;
+  const pb = config.value.progressBar
   return {
     height: `${pb.height}px`,
     backgroundColor: pb.backgroundColor,
     borderRadius: `${pb.borderRadius}px`,
-  };
-});
+  }
+})
 
 const progressFillStyle = computed(() => {
-  const pb = config.value.progressBar;
-  const totalDuration = mockData.value.totalDuration || 60;
-  const fillPercent = (mockData.value.timeRemaining / totalDuration) * 100;
+  const pb = config.value.progressBar
+  const totalDuration = mockData.value.totalDuration || 60
+  const fillPercent = (mockData.value.timeRemaining / totalDuration) * 100
 
   const background = pb.fillGradient?.enabled
     ? `linear-gradient(90deg, ${pb.fillGradient.startColor}, ${pb.fillGradient.endColor})`
-    : pb.fillColor;
+    : pb.fillColor
 
   return {
     width: `${fillPercent}%`,
     background,
     borderRadius: `${pb.borderRadius}px`,
-    height: "100%",
-  };
-});
+    height: '100%',
+  }
+})
 
 const timeTextStyle = computed(() => {
-  const ts = config.value.progressBar.timeTextStyle;
+  const ts = config.value.progressBar.timeTextStyle
   return {
     fontFamily: ts.fontFamily,
     fontSize: `${ts.fontSize}px`,
     fontWeight: ts.fontWeight,
     color: ts.color,
-  };
-});
+  }
+})
 
 // Classe d'animation selon l'état et la direction
 const animationClass = computed(() => {
-  if (state.value === "entering") {
-    const dir = config.value.animations.entry.slideDirection;
-    return `entering-from-${dir}`;
+  if (state.value === 'entering') {
+    const dir = config.value.animations.entry.slideDirection
+    return `entering-from-${dir}`
   }
-  if (state.value === "exiting") {
-    return "exiting-fade";
+  if (state.value === 'exiting') {
+    return 'exiting-fade'
   }
-  return "";
-});
+  return ''
+})
 </script>
 
 <style scoped>

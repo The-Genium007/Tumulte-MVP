@@ -1,31 +1,31 @@
-import { ref, onUnmounted, type Ref } from "vue";
+import { ref, onUnmounted, type Ref } from 'vue'
 
 interface UseResilientWebSocketOptions {
   /** Channel WebSocket auquel s'abonner */
-  channel: string;
+  channel: string
   /** Callback appelé à chaque message reçu */
-  onMessage: (data: unknown) => void;
+  onMessage: (data: unknown) => void
   /** Callback appelé quand l'état de connexion change */
-  onConnectionChange?: (connected: boolean) => void;
+  onConnectionChange?: (connected: boolean) => void
   /** Fonction de fallback HTTP appelée périodiquement quand WebSocket est déconnecté */
-  fallbackFetch?: () => Promise<unknown>;
+  fallbackFetch?: () => Promise<unknown>
   /** Intervalle du fallback HTTP en ms (défaut: 3000ms) */
-  fallbackIntervalMs?: number;
+  fallbackIntervalMs?: number
   /** Délai maximum de backoff en ms (défaut: 30000ms) */
-  maxBackoffMs?: number;
+  maxBackoffMs?: number
 }
 
 interface UseResilientWebSocketReturn {
   /** État de connexion WebSocket */
-  isConnected: Ref<boolean>;
+  isConnected: Ref<boolean>
   /** Nombre de tentatives de reconnexion */
-  reconnectAttempts: Ref<number>;
+  reconnectAttempts: Ref<number>
   /** Indique si le fallback HTTP est actif */
-  isFallbackActive: Ref<boolean>;
+  isFallbackActive: Ref<boolean>
   /** Démarre la connexion */
-  connect: () => void;
+  connect: () => void
   /** Arrête la connexion et le fallback */
-  disconnect: () => void;
+  disconnect: () => void
 }
 
 /**
@@ -43,7 +43,7 @@ interface UseResilientWebSocketReturn {
  * - Désactivé automatiquement quand WebSocket se reconnecte
  */
 export function useResilientWebSocket(
-  options: UseResilientWebSocketOptions,
+  options: UseResilientWebSocketOptions
 ): UseResilientWebSocketReturn {
   const {
     channel,
@@ -52,51 +52,48 @@ export function useResilientWebSocket(
     fallbackFetch,
     fallbackIntervalMs = 3000,
     maxBackoffMs = 30000,
-  } = options;
+  } = options
 
   // State
-  const isConnected = ref(false);
-  const reconnectAttempts = ref(0);
-  const isFallbackActive = ref(false);
+  const isConnected = ref(false)
+  const reconnectAttempts = ref(0)
+  const isFallbackActive = ref(false)
 
   // Internal refs
-  let wsSubscription: (() => void) | null = null;
-  let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
-  let fallbackInterval: ReturnType<typeof setInterval> | null = null;
-  let isManuallyDisconnected = false;
+  let wsSubscription: (() => void) | null = null
+  let reconnectTimeout: ReturnType<typeof setTimeout> | null = null
+  let fallbackInterval: ReturnType<typeof setInterval> | null = null
+  let isManuallyDisconnected = false
 
   /**
    * Calcule le délai de backoff avec jitter
    */
   function getBackoffDelay(): number {
-    const baseDelay = Math.min(
-      1000 * Math.pow(2, reconnectAttempts.value),
-      maxBackoffMs,
-    );
+    const baseDelay = Math.min(1000 * Math.pow(2, reconnectAttempts.value), maxBackoffMs)
     // Ajouter jitter de ±500ms
-    const jitter = Math.random() * 1000 - 500;
-    return Math.max(100, baseDelay + jitter);
+    const jitter = Math.random() * 1000 - 500
+    return Math.max(100, baseDelay + jitter)
   }
 
   /**
    * Démarre le fallback HTTP
    */
   function startFallback(): void {
-    if (!fallbackFetch || fallbackInterval) return;
+    if (!fallbackFetch || fallbackInterval) return
 
-    isFallbackActive.value = true;
-    console.log("[ResilientWS] Starting HTTP fallback polling");
+    isFallbackActive.value = true
+    console.log('[ResilientWS] Starting HTTP fallback polling')
 
     // Premier fetch immédiat
     fallbackFetch()
       .then((data) => {
         if (data !== undefined && data !== null) {
-          onMessage(data);
+          onMessage(data)
         }
       })
       .catch((error) => {
-        console.warn("[ResilientWS] Fallback fetch failed:", error);
-      });
+        console.warn('[ResilientWS] Fallback fetch failed:', error)
+      })
 
     // Puis polling régulier
     fallbackInterval = setInterval(() => {
@@ -104,14 +101,14 @@ export function useResilientWebSocket(
         fallbackFetch()
           .then((data) => {
             if (data !== undefined && data !== null) {
-              onMessage(data);
+              onMessage(data)
             }
           })
           .catch((error) => {
-            console.warn("[ResilientWS] Fallback fetch failed:", error);
-          });
+            console.warn('[ResilientWS] Fallback fetch failed:', error)
+          })
       }
-    }, fallbackIntervalMs);
+    }, fallbackIntervalMs)
   }
 
   /**
@@ -119,44 +116,44 @@ export function useResilientWebSocket(
    */
   function stopFallback(): void {
     if (fallbackInterval) {
-      clearInterval(fallbackInterval);
-      fallbackInterval = null;
+      clearInterval(fallbackInterval)
+      fallbackInterval = null
     }
-    isFallbackActive.value = false;
-    console.log("[ResilientWS] Stopped HTTP fallback polling");
+    isFallbackActive.value = false
+    console.log('[ResilientWS] Stopped HTTP fallback polling')
   }
 
   /**
    * Gère la connexion réussie
    */
   function handleConnected(): void {
-    console.log("[ResilientWS] Connected to channel:", channel);
-    isConnected.value = true;
-    reconnectAttempts.value = 0;
-    onConnectionChange?.(true);
+    console.log('[ResilientWS] Connected to channel:', channel)
+    isConnected.value = true
+    reconnectAttempts.value = 0
+    onConnectionChange?.(true)
 
     // Arrêter le fallback HTTP si actif
-    stopFallback();
+    stopFallback()
   }
 
   /**
    * Gère la déconnexion
    */
   function handleDisconnected(): void {
-    console.log("[ResilientWS] Disconnected from channel:", channel);
-    isConnected.value = false;
-    onConnectionChange?.(false);
+    console.log('[ResilientWS] Disconnected from channel:', channel)
+    isConnected.value = false
+    onConnectionChange?.(false)
 
     // Ne pas reconnecter si déconnexion manuelle
-    if (isManuallyDisconnected) return;
+    if (isManuallyDisconnected) return
 
     // Démarrer le fallback HTTP
     if (fallbackFetch) {
-      startFallback();
+      startFallback()
     }
 
     // Programmer la reconnexion
-    scheduleReconnect();
+    scheduleReconnect()
   }
 
   /**
@@ -164,21 +161,21 @@ export function useResilientWebSocket(
    */
   function scheduleReconnect(): void {
     if (reconnectTimeout) {
-      clearTimeout(reconnectTimeout);
+      clearTimeout(reconnectTimeout)
     }
 
-    const delay = getBackoffDelay();
-    reconnectAttempts.value++;
+    const delay = getBackoffDelay()
+    reconnectAttempts.value++
 
     console.log(
-      `[ResilientWS] Scheduling reconnect attempt ${reconnectAttempts.value} in ${Math.round(delay)}ms`,
-    );
+      `[ResilientWS] Scheduling reconnect attempt ${reconnectAttempts.value} in ${Math.round(delay)}ms`
+    )
 
     reconnectTimeout = setTimeout(() => {
       if (!isManuallyDisconnected) {
-        attemptConnect();
+        attemptConnect()
       }
-    }, delay);
+    }, delay)
   }
 
   /**
@@ -195,20 +192,20 @@ export function useResilientWebSocket(
 
       // Se désabonner de l'ancienne connexion si elle existe
       if (wsSubscription) {
-        wsSubscription();
-        wsSubscription = null;
+        wsSubscription()
+        wsSubscription = null
       }
 
       // Marquer comme connecté après un court délai
       // Le composant parent doit gérer la subscription réelle
       setTimeout(() => {
         if (!isManuallyDisconnected && !isConnected.value) {
-          handleConnected();
+          handleConnected()
         }
-      }, 500);
+      }, 500)
     } catch (error) {
-      console.error("[ResilientWS] Connection attempt failed:", error);
-      handleDisconnected();
+      console.error('[ResilientWS] Connection attempt failed:', error)
+      handleDisconnected()
     }
   }
 
@@ -216,41 +213,41 @@ export function useResilientWebSocket(
    * Démarre la connexion WebSocket
    */
   function connect(): void {
-    isManuallyDisconnected = false;
-    reconnectAttempts.value = 0;
-    attemptConnect();
+    isManuallyDisconnected = false
+    reconnectAttempts.value = 0
+    attemptConnect()
   }
 
   /**
    * Arrête la connexion WebSocket et le fallback
    */
   function disconnect(): void {
-    isManuallyDisconnected = true;
+    isManuallyDisconnected = true
 
     // Arrêter les timeouts de reconnexion
     if (reconnectTimeout) {
-      clearTimeout(reconnectTimeout);
-      reconnectTimeout = null;
+      clearTimeout(reconnectTimeout)
+      reconnectTimeout = null
     }
 
     // Arrêter le fallback
-    stopFallback();
+    stopFallback()
 
     // Se désabonner du WebSocket
     if (wsSubscription) {
-      wsSubscription();
-      wsSubscription = null;
+      wsSubscription()
+      wsSubscription = null
     }
 
-    isConnected.value = false;
-    reconnectAttempts.value = 0;
-    onConnectionChange?.(false);
+    isConnected.value = false
+    reconnectAttempts.value = 0
+    onConnectionChange?.(false)
   }
 
   // Cleanup on unmount
   onUnmounted(() => {
-    disconnect();
-  });
+    disconnect()
+  })
 
   return {
     isConnected,
@@ -258,5 +255,5 @@ export function useResilientWebSocket(
     isFallbackActive,
     connect,
     disconnect,
-  };
+  }
 }

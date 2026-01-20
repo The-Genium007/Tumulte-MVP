@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import type { Campaign } from "~/types";
+import type { Campaign } from '~/types'
 
 defineProps<{
-  campaigns: readonly Campaign[];
-}>();
+  campaigns: readonly Campaign[]
+}>()
 
-const modelValue = defineModel<string | null>({ required: true });
+const modelValue = defineModel<string | null>({ required: true })
 </script>
 
 <template>
@@ -22,10 +22,6 @@ const modelValue = defineModel<string | null>({ required: true });
       </div>
     </template>
 
-    <MjCampaignDropdown
-      v-model="modelValue"
-      :campaigns="campaigns"
-      height="75px"
-    />
+    <MjCampaignDropdown v-model="modelValue" :campaigns="campaigns" height="75px" />
   </UCard>
 </template>

@@ -40,102 +40,102 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from "vue";
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 
 const props = defineProps<{
-  isPollAuthorized: boolean;
-  remainingSeconds: number | null;
-  isOwner?: boolean;
-}>();
+  isPollAuthorized: boolean
+  remainingSeconds: number | null
+  isOwner?: boolean
+}>()
 
 const emit = defineEmits<{
-  expired: [];
-}>();
+  expired: []
+}>()
 
 // Local countdown state
-const displaySeconds = ref(props.remainingSeconds || 0);
-let countdownInterval: ReturnType<typeof setInterval> | null = null;
+const displaySeconds = ref(props.remainingSeconds || 0)
+let countdownInterval: ReturnType<typeof setInterval> | null = null
 
 // Dynamic class based on urgency (solid variant)
 const urgencyClass = computed(() => {
   if (displaySeconds.value <= 300) {
     // Less than 5 minutes - red/urgent
-    return "bg-error-500 text-white";
+    return 'bg-error-500 text-white'
   } else if (displaySeconds.value <= 1800) {
     // Less than 30 minutes - amber/warning
-    return "bg-warning-500 text-white";
+    return 'bg-warning-500 text-white'
   } else {
     // More than 30 minutes - green/safe
-    return "bg-success-500 text-white";
+    return 'bg-success-500 text-white'
   }
-});
+})
 
 const formatTime = (seconds: number): string => {
   if (seconds >= 3600) {
-    const hours = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    return `${hours}h${String(mins).padStart(2, "0")}`;
+    const hours = Math.floor(seconds / 3600)
+    const mins = Math.floor((seconds % 3600) / 60)
+    return `${hours}h${String(mins).padStart(2, '0')}`
   }
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
-};
+  const mins = Math.floor(seconds / 60)
+  const secs = seconds % 60
+  return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+}
 
 const startCountdown = () => {
-  if (countdownInterval) clearInterval(countdownInterval);
+  if (countdownInterval) clearInterval(countdownInterval)
 
   countdownInterval = setInterval(() => {
     if (displaySeconds.value > 0) {
-      displaySeconds.value--;
+      displaySeconds.value--
     } else {
-      if (countdownInterval) clearInterval(countdownInterval);
-      countdownInterval = null;
-      emit("expired");
+      if (countdownInterval) clearInterval(countdownInterval)
+      countdownInterval = null
+      emit('expired')
     }
-  }, 1000);
-};
+  }, 1000)
+}
 
 const stopCountdown = () => {
   if (countdownInterval) {
-    clearInterval(countdownInterval);
-    countdownInterval = null;
+    clearInterval(countdownInterval)
+    countdownInterval = null
   }
-};
+}
 
 // Lifecycle hooks
 onMounted(() => {
   if (props.isPollAuthorized && props.remainingSeconds && props.remainingSeconds > 0) {
-    displaySeconds.value = props.remainingSeconds;
-    startCountdown();
+    displaySeconds.value = props.remainingSeconds
+    startCountdown()
   }
-});
+})
 
 onUnmounted(() => {
-  stopCountdown();
-});
+  stopCountdown()
+})
 
 // Watch for prop changes
 watch(
   () => props.remainingSeconds,
   (newVal) => {
     if (newVal !== null && newVal > 0) {
-      displaySeconds.value = newVal;
+      displaySeconds.value = newVal
       if (props.isPollAuthorized && !countdownInterval) {
-        startCountdown();
+        startCountdown()
       }
     }
   }
-);
+)
 
 watch(
   () => props.isPollAuthorized,
   (newVal) => {
     if (!newVal) {
-      stopCountdown();
+      stopCountdown()
     } else if (props.remainingSeconds && props.remainingSeconds > 0) {
-      displaySeconds.value = props.remainingSeconds;
-      startCountdown();
+      displaySeconds.value = props.remainingSeconds
+      startCountdown()
     }
   }
-);
+)
 </script>

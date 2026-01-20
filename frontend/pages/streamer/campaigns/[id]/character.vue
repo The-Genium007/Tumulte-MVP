@@ -24,19 +24,14 @@
           </div>
           <div>
             <h1 class="text-3xl font-bold text-primary">Mon personnage</h1>
-            <p class="text-muted mt-1">
-              Choisissez votre personnage pour cette campagne
-            </p>
+            <p class="text-muted mt-1">Choisissez votre personnage pour cette campagne</p>
           </div>
         </div>
       </UCard>
 
       <!-- Loading State -->
       <div v-if="loading" class="flex justify-center py-12">
-        <UIcon
-          name="i-lucide-loader-circle"
-          class="size-8 animate-spin text-primary"
-        />
+        <UIcon name="i-lucide-loader-circle" class="size-8 animate-spin text-primary" />
       </div>
 
       <template v-else>
@@ -44,9 +39,7 @@
         <UCard v-if="currentAssignment">
           <template #header>
             <div class="flex items-center justify-between">
-              <h2 class="text-xl font-semibold text-primary">
-                Personnage actuel
-              </h2>
+              <h2 class="text-xl font-semibold text-primary">Personnage actuel</h2>
               <UButton
                 color="error"
                 variant="soft"
@@ -60,20 +53,14 @@
 
           <div class="flex items-center gap-4">
             <!-- Avatar -->
-            <div
-              class="flex items-center justify-center size-20 rounded-full bg-primary-100"
-            >
+            <div class="flex items-center justify-center size-20 rounded-full bg-primary-100">
               <img
                 v-if="currentAssignment.character?.avatarUrl"
                 :src="currentAssignment.character.avatarUrl"
                 :alt="currentAssignment.character.name"
                 class="size-20 rounded-full object-cover"
               />
-              <UIcon
-                v-else
-                name="i-lucide-user"
-                class="size-10 text-primary-500"
-              />
+              <UIcon v-else name="i-lucide-user" class="size-10 text-primary-500" />
             </div>
 
             <!-- Character Info -->
@@ -107,14 +94,12 @@
           </template>
 
           <!-- Empty State -->
-          <div v-if="characters.length === 0" class="flex flex-col items-center justify-center text-center py-12">
-            <UIcon
-              name="i-lucide-users"
-              class="size-12 text-neutral-400 mb-4"
-            />
-            <p class="text-base font-normal text-neutral-400">
-              Aucun personnage disponible
-            </p>
+          <div
+            v-if="characters.length === 0"
+            class="flex flex-col items-center justify-center text-center py-12"
+          >
+            <UIcon name="i-lucide-users" class="size-12 text-neutral-400 mb-4" />
+            <p class="text-base font-normal text-neutral-400">Aucun personnage disponible</p>
             <p class="text-sm text-neutral-400 mt-1">
               Le MJ n'a pas encore créé de personnages pour cette campagne
             </p>
@@ -134,10 +119,7 @@
               @click="handleAssign(character.id)"
             >
               <!-- Assigned Badge -->
-              <div
-                v-if="isAssigned(character.id)"
-                class="absolute top-2 right-2"
-              >
+              <div v-if="isAssigned(character.id)" class="absolute top-2 right-2">
                 <UBadge color="success" size="xs">Actuel</UBadge>
               </div>
 
@@ -152,11 +134,7 @@
                     :alt="character.name"
                     class="size-16 rounded-full object-cover"
                   />
-                  <UIcon
-                    v-else
-                    name="i-lucide-user"
-                    class="size-8 text-primary-500"
-                  />
+                  <UIcon v-else name="i-lucide-user" class="size-8 text-primary-500" />
                 </div>
 
                 <!-- Character Info -->
@@ -186,27 +164,13 @@
         </UCard>
 
         <!-- Info Alert -->
-        <UAlert
-          color="primary"
-          variant="soft"
-          title="Comment ça marche ?"
-          icon="i-lucide-info"
-        >
+        <UAlert color="primary" variant="soft" title="Comment ça marche ?" icon="i-lucide-info">
           <template #description>
             <ul class="list-disc list-inside space-y-1 text-sm">
-              <li>
-                Sélectionnez le personnage que vous incarnez dans cette
-                campagne
-              </li>
-              <li>
-                Les lancés de dés de ce personnage seront affichés sur votre
-                overlay
-              </li>
+              <li>Sélectionnez le personnage que vous incarnez dans cette campagne</li>
+              <li>Les lancés de dés de ce personnage seront affichés sur votre overlay</li>
               <li>Vous pouvez changer de personnage à tout moment</li>
-              <li>
-                Les lancés critiques sont affichés sur tous les streams de la
-                campagne
-              </li>
+              <li>Les lancés critiques sont affichés sur tous les streams de la campagne</li>
             </ul>
           </template>
         </UAlert>
@@ -216,18 +180,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from "vue";
-import { useRouter, useRoute } from "vue-router";
-import { useCharacters } from "@/composables/useCharacters";
-import { useToast } from "#ui/composables/useToast";
+import { ref, onMounted, computed } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { useCharacters } from '@/composables/useCharacters'
+import { useToast } from '#ui/composables/useToast'
 
 definePageMeta({
-  layout: "authenticated" as const,
-  middleware: ["auth"],
-});
+  layout: 'authenticated' as const,
+  middleware: ['auth'],
+})
 
-const _router = useRouter();
-const route = useRoute();
+const _router = useRouter()
+const route = useRoute()
 const {
   characters,
   currentAssignment,
@@ -235,77 +199,76 @@ const {
   fetchCampaignCharacters,
   assignCharacter,
   unassignCharacter,
-} = useCharacters();
-const toast = useToast();
+} = useCharacters()
+const toast = useToast()
 
-const assigning = ref<string | null>(null);
-const unassigning = ref(false);
+const assigning = ref<string | null>(null)
+const unassigning = ref(false)
 
-const campaignId = computed(() => route.params.id as string);
+const campaignId = computed(() => route.params.id as string)
 
 const isAssigned = (characterId: string): boolean => {
-  return currentAssignment.value?.characterId === characterId;
-};
+  return currentAssignment.value?.characterId === characterId
+}
 
 onMounted(async () => {
   try {
-    await fetchCampaignCharacters(campaignId.value);
+    await fetchCampaignCharacters(campaignId.value)
   } catch (error) {
-    console.error("Failed to fetch characters:", error);
+    console.error('Failed to fetch characters:', error)
     toast.add({
-      title: "Erreur",
-      description: "Impossible de charger les personnages",
-      color: "error",
-    });
-    _router.push("/streamer/campaigns");
+      title: 'Erreur',
+      description: 'Impossible de charger les personnages',
+      color: 'error',
+    })
+    _router.push('/streamer/campaigns')
   }
-});
+})
 
 const handleAssign = async (characterId: string) => {
   if (isAssigned(characterId)) {
-    return;
+    return
   }
 
-  assigning.value = characterId;
+  assigning.value = characterId
   try {
-    await assignCharacter(campaignId.value, characterId);
+    await assignCharacter(campaignId.value, characterId)
     toast.add({
-      title: "Personnage assigné",
-      description: "Votre personnage a été sélectionné avec succès",
-      color: "success",
-    });
+      title: 'Personnage assigné',
+      description: 'Votre personnage a été sélectionné avec succès',
+      color: 'success',
+    })
   } catch (error: unknown) {
-    console.error("Failed to assign character:", error);
-    const errorMessage =
-      error instanceof Error ? error.message : "Erreur inconnue";
+    console.error('Failed to assign character:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue'
     toast.add({
-      title: "Erreur",
+      title: 'Erreur',
       description: errorMessage,
-      color: "error",
-    });
+      color: 'error',
+    })
   } finally {
-    assigning.value = null;
+    assigning.value = null
   }
-};
+}
 
 const handleUnassign = async () => {
-  unassigning.value = true;
+  unassigning.value = true
   try {
-    await unassignCharacter(campaignId.value);
+    await unassignCharacter(campaignId.value)
     toast.add({
-      title: "Assignation retirée",
+      title: 'Assignation retirée',
       description: "Vous n'êtes plus assigné à un personnage",
-      color: "success",
-    });
+      color: 'success',
+    })
   } catch (error) {
-    console.error("Failed to unassign character:", error);
+    console.error('Failed to unassign character:', error)
     toast.add({
-      title: "Erreur",
+      title: 'Erreur',
       description: "Impossible de retirer l'assignation",
-      color: "error",
-    });
+      color: 'error',
+    })
   } finally {
-    unassigning.value = false;
+    unassigning.value = false
   }
-};
+}
 </script>

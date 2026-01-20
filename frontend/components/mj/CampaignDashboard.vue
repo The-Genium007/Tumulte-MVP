@@ -1,25 +1,25 @@
 <script setup lang="ts">
-import type { PollInstance } from "~/types/api";
-import type { Campaign, CampaignMembership, LiveStatusMap } from "~/types";
+import type { PollInstance } from '~/types/api'
+import type { Campaign, CampaignMembership, LiveStatusMap } from '~/types'
 
 defineProps<{
-  campaign: Campaign;
-  members: CampaignMembership[];
-  liveStatus: LiveStatusMap;
-  membersLoading?: boolean;
-}>();
+  campaign: Campaign
+  members: CampaignMembership[]
+  liveStatus: LiveStatusMap
+  membersLoading?: boolean
+}>()
 
 // État de la modale des résultats
-const showResultsModal = ref(false);
-const selectedPoll = ref<PollInstance | null>(null);
+const showResultsModal = ref(false)
+const selectedPoll = ref<PollInstance | null>(null)
 
 /**
  * Ouvre la modale des résultats pour un sondage
  */
 const openResultsModal = (poll: PollInstance) => {
-  selectedPoll.value = poll;
-  showResultsModal.value = true;
-};
+  selectedPoll.value = poll
+  showResultsModal.value = true
+}
 </script>
 
 <template>

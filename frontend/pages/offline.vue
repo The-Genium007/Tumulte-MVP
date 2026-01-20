@@ -15,8 +15,8 @@
       <div class="space-y-3">
         <h1 class="text-3xl font-bold text-primary">Vous êtes hors-ligne</h1>
         <p class="text-muted">
-          Impossible de charger cette page sans connexion internet.
-          Vos données précédemment consultées restent disponibles.
+          Impossible de charger cette page sans connexion internet. Vos données précédemment
+          consultées restent disponibles.
         </p>
       </div>
 
@@ -46,12 +46,7 @@
 
       <!-- Actions -->
       <div class="flex flex-col gap-3">
-        <UButton
-          size="lg"
-          color="primary"
-          icon="i-lucide-refresh-cw"
-          @click="handleRetry"
-        >
+        <UButton size="lg" color="primary" icon="i-lucide-refresh-cw" @click="handleRetry">
           Réessayer
         </UButton>
 
@@ -76,47 +71,47 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
-import { offlineStorage } from "@/utils/offline-storage";
+import { ref, computed, onMounted } from 'vue'
+import { offlineStorage } from '@/utils/offline-storage'
 
 definePageMeta({
-  layout: "default" as const,
-});
+  layout: 'default' as const,
+})
 
-const router = useRouter();
+const router = useRouter()
 
-const hasUser = ref(false);
-const hasCampaigns = ref(false);
-const lastSync = ref<number | null>(null);
+const hasUser = ref(false)
+const hasCampaigns = ref(false)
+const lastSync = ref<number | null>(null)
 
-const hasOfflineData = computed(() => hasUser.value || hasCampaigns.value);
+const hasOfflineData = computed(() => hasUser.value || hasCampaigns.value)
 
 const lastSyncText = computed(() => {
-  if (!lastSync.value) return null;
+  if (!lastSync.value) return null
 
-  const diff = Date.now() - lastSync.value;
-  const minutes = Math.floor(diff / 60000);
-  const hours = Math.floor(diff / 3600000);
-  const days = Math.floor(diff / 86400000);
+  const diff = Date.now() - lastSync.value
+  const minutes = Math.floor(diff / 60000)
+  const hours = Math.floor(diff / 3600000)
+  const days = Math.floor(diff / 86400000)
 
-  if (days > 0) return `il y a ${days} jour${days > 1 ? "s" : ""}`;
-  if (hours > 0) return `il y a ${hours} heure${hours > 1 ? "s" : ""}`;
-  if (minutes > 0) return `il y a ${minutes} minute${minutes > 1 ? "s" : ""}`;
-  return "à l'instant";
-});
+  if (days > 0) return `il y a ${days} jour${days > 1 ? 's' : ''}`
+  if (hours > 0) return `il y a ${hours} heure${hours > 1 ? 's' : ''}`
+  if (minutes > 0) return `il y a ${minutes} minute${minutes > 1 ? 's' : ''}`
+  return "à l'instant"
+})
 
 onMounted(async () => {
   // Check what's available offline
-  hasUser.value = await offlineStorage.has("user", "current");
-  hasCampaigns.value = await offlineStorage.has("campaigns", "list");
-  lastSync.value = await offlineStorage.getLastSync();
-});
+  hasUser.value = await offlineStorage.has('user', 'current')
+  hasCampaigns.value = await offlineStorage.has('campaigns', 'list')
+  lastSync.value = await offlineStorage.getLastSync()
+})
 
 const handleRetry = () => {
-  window.location.reload();
-};
+  window.location.reload()
+}
 
 const goToCampaigns = () => {
-  router.push("/mj/campaigns");
-};
+  router.push('/mj/campaigns')
+}
 </script>

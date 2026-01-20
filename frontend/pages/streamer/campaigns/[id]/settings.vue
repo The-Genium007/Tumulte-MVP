@@ -1,140 +1,134 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from "vue";
-import CharacterSelectionModal from "@/components/streamer/CharacterSelectionModal.vue";
-import { useCampaignCharacters } from "@/composables/useCampaignCharacters";
-import type { CampaignSettings } from "@/types";
+import { ref, onMounted, computed } from 'vue'
+import CharacterSelectionModal from '@/components/streamer/CharacterSelectionModal.vue'
+import { useCampaignCharacters } from '@/composables/useCampaignCharacters'
+import type { CampaignSettings } from '@/types'
 
 definePageMeta({
-  layout: "authenticated" as const,
-  middleware: ["auth"],
-});
+  layout: 'authenticated' as const,
+  middleware: ['auth'],
+})
 
-const router = useRouter();
-const route = useRoute();
-const toast = useToast();
+const router = useRouter()
+const route = useRoute()
+const toast = useToast()
 
-const {
-  characters,
-  fetchCharacters,
-  getCampaignSettings,
-  updateCharacter,
-  updateOverlay,
-} = useCampaignCharacters();
+const { characters, fetchCharacters, getCampaignSettings, updateCharacter, updateOverlay } =
+  useCampaignCharacters()
 
-const campaignId = computed(() => route.params.id as string);
+const campaignId = computed(() => route.params.id as string)
 
-const settings = ref<CampaignSettings | null>(null);
-const loading = ref(true);
-const showCharacterModal = ref(false);
-const updateLoading = ref(false);
-const overlayLoading = ref(false);
-const selectedOverlayId = ref<string | null>(null);
+const settings = ref<CampaignSettings | null>(null)
+const loading = ref(true)
+const showCharacterModal = ref(false)
+const updateLoading = ref(false)
+const overlayLoading = ref(false)
+const selectedOverlayId = ref<string | null>(null)
 
 onMounted(async () => {
-  await loadSettings();
-});
+  await loadSettings()
+})
 
 const loadSettings = async () => {
-  loading.value = true;
+  loading.value = true
   try {
-    settings.value = await getCampaignSettings(campaignId.value);
+    settings.value = await getCampaignSettings(campaignId.value)
     // Initialiser la sélection d'overlay
-    selectedOverlayId.value = settings.value.overlay?.current.id ?? null;
+    selectedOverlayId.value = settings.value.overlay?.current.id ?? null
   } catch {
     toast.add({
-      title: "Erreur",
-      description: "Impossible de charger les paramètres",
-      color: "error",
-    });
+      title: 'Erreur',
+      description: 'Impossible de charger les paramètres',
+      color: 'error',
+    })
     // Rediriger vers la liste des campagnes en cas d'erreur
-    router.push("/streamer/campaigns");
+    router.push('/streamer/campaigns')
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+}
 
 const handleChangeCharacter = async () => {
-  if (!settings.value?.canChangeCharacter) return;
+  if (!settings.value?.canChangeCharacter) return
 
   try {
-    await fetchCharacters(campaignId.value);
-    showCharacterModal.value = true;
+    await fetchCharacters(campaignId.value)
+    showCharacterModal.value = true
   } catch {
     toast.add({
-      title: "Erreur",
-      description: "Impossible de charger les personnages",
-      color: "error",
-    });
+      title: 'Erreur',
+      description: 'Impossible de charger les personnages',
+      color: 'error',
+    })
   }
-};
+}
 
 const handleConfirmChange = async (characterId: string) => {
-  updateLoading.value = true;
+  updateLoading.value = true
   try {
-    await updateCharacter(campaignId.value, characterId);
+    await updateCharacter(campaignId.value, characterId)
 
     toast.add({
-      title: "Personnage modifié",
-      description: "Votre personnage a été mis à jour avec succès",
-      color: "success",
-    });
+      title: 'Personnage modifié',
+      description: 'Votre personnage a été mis à jour avec succès',
+      color: 'success',
+    })
 
-    showCharacterModal.value = false;
-    await loadSettings();
+    showCharacterModal.value = false
+    await loadSettings()
   } catch (error) {
     toast.add({
-      title: "Erreur",
-      description: error instanceof Error ? error.message : "Impossible de modifier le personnage",
-      color: "error",
-    });
+      title: 'Erreur',
+      description: error instanceof Error ? error.message : 'Impossible de modifier le personnage',
+      color: 'error',
+    })
   } finally {
-    updateLoading.value = false;
+    updateLoading.value = false
   }
-};
+}
 
 // Options pour le dropdown d'overlay
 const overlayOptions = computed(() => {
-  if (!settings.value?.overlay?.available) return [];
+  if (!settings.value?.overlay?.available) return []
   return settings.value.overlay.available.map((overlay) => ({
-    label: overlay.name + (overlay.isDefault ? " (Défaut)" : overlay.isActive ? " (Actif)" : ""),
+    label: overlay.name + (overlay.isDefault ? ' (Défaut)' : overlay.isActive ? ' (Actif)' : ''),
     value: overlay.id,
-  }));
-});
+  }))
+})
 
 // URL de prévisualisation de l'overlay
 const previewUrl = computed(() => {
   if (selectedOverlayId.value === null) {
-    return `/streamer/overlay-preview?config=default`;
+    return `/streamer/overlay-preview?config=default`
   }
-  return `/streamer/overlay-preview?config=${selectedOverlayId.value}`;
-});
+  return `/streamer/overlay-preview?config=${selectedOverlayId.value}`
+})
 
 // Gérer le changement d'overlay
 const handleOverlayChange = async (overlayId: string | null) => {
-  overlayLoading.value = true;
+  overlayLoading.value = true
   try {
-    await updateOverlay(campaignId.value, overlayId);
+    await updateOverlay(campaignId.value, overlayId)
 
     toast.add({
-      title: "Overlay modifié",
+      title: 'Overlay modifié',
       description: "L'overlay de cette campagne a été mis à jour",
-      color: "success",
-    });
+      color: 'success',
+    })
 
-    await loadSettings();
+    await loadSettings()
   } catch (error) {
     toast.add({
-      title: "Erreur",
+      title: 'Erreur',
       description: error instanceof Error ? error.message : "Impossible de modifier l'overlay",
-      color: "error",
-    });
+      color: 'error',
+    })
     // Restaurer la valeur précédente en cas d'erreur
-    selectedOverlayId.value = settings.value?.overlay?.current.id ?? null;
+    selectedOverlayId.value = settings.value?.overlay?.current.id ?? null
   } finally {
-    overlayLoading.value = false;
+    overlayLoading.value = false
   }
-};
-
+}
 </script>
 
 <template>
@@ -159,9 +153,7 @@ const handleOverlayChange = async (overlayId: string | null) => {
             </template>
           </UButton>
           <div>
-            <h1 class="text-xl sm:text-3xl font-bold text-primary">
-              Paramètres de campagne
-            </h1>
+            <h1 class="text-xl sm:text-3xl font-bold text-primary">Paramètres de campagne</h1>
             <p v-if="settings?.campaign" class="text-muted mt-1">
               {{ settings.campaign.name }}
             </p>
@@ -191,7 +183,9 @@ const handleOverlayChange = async (overlayId: string | null) => {
           <div v-if="settings.assignedCharacter" class="space-y-6">
             <div class="flex items-center gap-4 p-4 rounded-lg bg-primary-50">
               <!-- Avatar -->
-              <div class="size-16 rounded-full bg-primary-100 flex items-center justify-center shrink-0">
+              <div
+                class="size-16 rounded-full bg-primary-100 flex items-center justify-center shrink-0"
+              >
                 <UIcon name="i-lucide-user" class="size-8 text-primary-500" />
               </div>
 
@@ -230,9 +224,7 @@ const handleOverlayChange = async (overlayId: string | null) => {
           <!-- Aucun personnage assigné -->
           <div v-else class="flex flex-col items-center justify-center py-12 text-center">
             <UIcon name="i-lucide-user-x" class="size-12 text-neutral-400 mb-4" />
-            <p class="text-base font-normal text-neutral-400">
-              Aucun personnage assigné
-            </p>
+            <p class="text-base font-normal text-neutral-400">Aucun personnage assigné</p>
             <p class="text-sm text-neutral-400 mt-1 max-w-md mx-auto mb-6">
               Vous devez choisir un personnage pour participer aux sondages de cette campagne.
             </p>
@@ -251,15 +243,14 @@ const handleOverlayChange = async (overlayId: string | null) => {
           <template #header>
             <div class="flex items-center gap-3">
               <h2 class="text-xl font-semibold text-primary">Overlay OBS</h2>
-              <UBadge color="warning" variant="soft" size="sm">
-                Bêta
-              </UBadge>
+              <UBadge color="warning" variant="soft" size="sm"> Bêta </UBadge>
             </div>
           </template>
 
           <div class="space-y-4">
             <p class="text-sm text-muted">
-              Sélectionnez l'overlay à utiliser pour cette campagne. Vous pouvez créer des overlays personnalisés dans l'Overlay Studio.
+              Sélectionnez l'overlay à utiliser pour cette campagne. Vous pouvez créer des overlays
+              personnalisés dans l'Overlay Studio.
             </p>
 
             <div class="flex flex-col sm:flex-row gap-3">
@@ -291,16 +282,12 @@ const handleOverlayChange = async (overlayId: string | null) => {
 
             <!-- Lien vers Overlay Studio -->
             <div class="pt-4 border-t border-default">
-              <UAlert
-                color="primary"
-                variant="soft"
-                icon="i-lucide-palette"
-              >
+              <UAlert color="primary" variant="soft" icon="i-lucide-palette">
                 <template #description>
-                  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                    <p class="text-sm">
-                      Créez des overlays personnalisés avec l'Overlay Studio
-                    </p>
+                  <div
+                    class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
+                  >
+                    <p class="text-sm">Créez des overlays personnalisés avec l'Overlay Studio</p>
                     <UButton
                       color="primary"
                       variant="solid"

@@ -1,0 +1,28 @@
+# External libraries (copied as-is)
+lib/dicebox/
+
+# Build outputs
+dist/
+.output/
+.nuxt/
+
+# Coverage
+coverage/
+
+# Test artifacts
+test-results/
+playwright-report/
+
+# Dependencies
+node_modules/
+
+# Lock files
+package-lock.json
+
+# Config files (specific formatting)
+nuxt.config.ts
+tailwind.config.ts
+
+# Generated files
+*.min.js
+*.min.css

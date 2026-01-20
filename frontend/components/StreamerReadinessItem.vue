@@ -55,32 +55,29 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
-import type { StreamerReadiness, LiveStatus } from "@/types";
+import { computed } from 'vue'
+import type { StreamerReadiness, LiveStatus } from '@/types'
 
 const props = defineProps<{
-  streamer: StreamerReadiness;
-  liveStatus?: LiveStatus;
-}>();
+  streamer: StreamerReadiness
+  liveStatus?: LiveStatus
+}>()
 
 const issueText = computed(() => {
-  const issues = props.streamer.issues;
+  const issues = props.streamer.issues
 
-  if (
-    issues.includes("token_expired") ||
-    issues.includes("token_refresh_failed")
-  ) {
-    return "Token Twitch expire - reconnexion necessaire";
+  if (issues.includes('token_expired') || issues.includes('token_refresh_failed')) {
+    return 'Token Twitch expire - reconnexion necessaire'
   }
-  if (issues.includes("authorization_expired")) {
-    return "Autorisation expiree";
+  if (issues.includes('authorization_expired')) {
+    return 'Autorisation expiree'
   }
-  if (issues.includes("authorization_missing")) {
-    return "Autorisation requise";
+  if (issues.includes('authorization_missing')) {
+    return 'Autorisation requise'
   }
-  if (issues.includes("streamer_inactive")) {
-    return "Compte inactif";
+  if (issues.includes('streamer_inactive')) {
+    return 'Compte inactif'
   }
-  return "Non disponible";
-});
+  return 'Non disponible'
+})
 </script>

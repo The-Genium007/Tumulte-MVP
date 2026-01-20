@@ -39,10 +39,7 @@
         class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
       >
         <!-- Backdrop -->
-        <div
-          class="absolute inset-0 bg-black/50"
-          @click="closeSupport"
-        />
+        <div class="absolute inset-0 bg-black/50" @click="closeSupport" />
 
         <!-- Card -->
         <UCard
@@ -62,7 +59,8 @@
               :items="tabs"
               class="w-full"
               :ui="{
-                trigger: 'data-[state=inactive]:bg-primary-100 data-[state=inactive]:text-primary-500',
+                trigger:
+                  'data-[state=inactive]:bg-primary-100 data-[state=inactive]:text-primary-500',
               }"
             />
 
@@ -193,113 +191,106 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
-import { useRouter } from "vue-router";
-import { useAuthStore } from "@/stores/auth";
-import { useSupportReporter } from "@/composables/useSupportReporter";
-import { useSupportWidget } from "@/composables/useSupportWidget";
-import { getSupportSnapshot } from "@/utils/supportTelemetry";
+import { computed, onMounted, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+import { useSupportReporter } from '@/composables/useSupportReporter'
+import { useSupportWidget } from '@/composables/useSupportWidget'
+import { getSupportSnapshot } from '@/utils/supportTelemetry'
 
-const authStore = useAuthStore();
-const { sendBugReport, sendSuggestion } = useSupportReporter();
-const { isSupportWidgetOpen: open, closeSupport } = useSupportWidget();
-const router = useRouter();
+const authStore = useAuthStore()
+const { sendBugReport, sendSuggestion } = useSupportReporter()
+const { isSupportWidgetOpen: open, closeSupport } = useSupportWidget()
+const router = useRouter()
 
 // Tabs
 const tabs = [
-  { label: "Bug", value: "bug", icon: "i-lucide-bug" },
-  { label: "Suggestion", value: "suggestion", icon: "i-lucide-lightbulb" },
-];
-const activeTab = ref<"bug" | "suggestion">("bug");
+  { label: 'Bug', value: 'bug', icon: 'i-lucide-bug' },
+  { label: 'Suggestion', value: 'suggestion', icon: 'i-lucide-lightbulb' },
+]
+const activeTab = ref<'bug' | 'suggestion'>('bug')
 
 // Bug form
-const bugTitle = ref("");
-const bugDescription = ref("");
-const includeDiagnostics = ref(true);
+const bugTitle = ref('')
+const bugDescription = ref('')
+const includeDiagnostics = ref(true)
 
 // Suggestion form
-const suggestionTitle = ref("");
-const suggestionDescription = ref("");
+const suggestionTitle = ref('')
+const suggestionDescription = ref('')
 
 // State
-const isSending = ref(false);
-const feedback = ref<{ type: "success" | "error" | ""; message: string }>({
-  type: "",
-  message: "",
-});
+const isSending = ref(false)
+const feedback = ref<{ type: 'success' | 'error' | ''; message: string }>({
+  type: '',
+  message: '',
+})
 
-const sessionId = computed(() => getSupportSnapshot().sessionId || "n/a");
+const sessionId = computed(() => getSupportSnapshot().sessionId || 'n/a')
 
 const canSend = computed(() => {
-  if (isSending.value) return false;
+  if (isSending.value) return false
 
-  if (activeTab.value === "bug") {
-    return (
-      bugTitle.value.trim().length >= 5 &&
-      bugDescription.value.trim().length >= 10
-    );
+  if (activeTab.value === 'bug') {
+    return bugTitle.value.trim().length >= 5 && bugDescription.value.trim().length >= 10
   } else {
     return (
-      suggestionTitle.value.trim().length >= 5 &&
-      suggestionDescription.value.trim().length >= 10
-    );
+      suggestionTitle.value.trim().length >= 5 && suggestionDescription.value.trim().length >= 10
+    )
   }
-});
+})
 
 onMounted(async () => {
   if (!authStore.user) {
     try {
-      await authStore.fetchMe();
+      await authStore.fetchMe()
     } catch {
       // ignore, l'appel renverra 401 si non connecté
     }
   }
-});
+})
 
 watch(
   () => router.currentRoute.value.fullPath,
   () => {
-    closeSupport();
-  },
-);
+    closeSupport()
+  }
+)
 
 const handleSend = async () => {
-  if (!canSend.value) return;
+  if (!canSend.value) return
 
-  isSending.value = true;
-  feedback.value = { type: "", message: "" };
+  isSending.value = true
+  feedback.value = { type: '', message: '' }
 
   try {
-    if (activeTab.value === "bug") {
+    if (activeTab.value === 'bug') {
       const result = await sendBugReport(bugTitle.value, bugDescription.value, {
         includeDiagnostics: includeDiagnostics.value,
-      });
+      })
       const message = result.githubIssueUrl
-        ? "Bug signalé et issue GitHub créée !"
-        : "Bug signalé sur Discord.";
-      feedback.value = { type: "success", message };
-      bugTitle.value = "";
-      bugDescription.value = "";
+        ? 'Bug signalé et issue GitHub créée !'
+        : 'Bug signalé sur Discord.'
+      feedback.value = { type: 'success', message }
+      bugTitle.value = ''
+      bugDescription.value = ''
     } else {
-      const result = await sendSuggestion(
-        suggestionTitle.value,
-        suggestionDescription.value
-      );
+      const result = await sendSuggestion(suggestionTitle.value, suggestionDescription.value)
       const message = result.githubDiscussionUrl
-        ? "Suggestion envoyée et discussion GitHub créée !"
-        : "Suggestion envoyée sur Discord.";
-      feedback.value = { type: "success", message };
-      suggestionTitle.value = "";
-      suggestionDescription.value = "";
+        ? 'Suggestion envoyée et discussion GitHub créée !'
+        : 'Suggestion envoyée sur Discord.'
+      feedback.value = { type: 'success', message }
+      suggestionTitle.value = ''
+      suggestionDescription.value = ''
     }
-    closeSupport();
+    closeSupport()
   } catch (error: unknown) {
     feedback.value = {
-      type: "error",
-      message: (error as Error)?.message || "Envoi impossible pour le moment.",
-    };
+      type: 'error',
+      message: (error as Error)?.message || 'Envoi impossible pour le moment.',
+    }
   } finally {
-    isSending.value = false;
+    isSending.value = false
   }
-};
+}
 </script>

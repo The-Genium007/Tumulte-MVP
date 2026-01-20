@@ -1,23 +1,21 @@
-import { describe, test, expect, beforeEach } from "vitest";
-import { setActivePinia, createPinia } from "pinia";
-import { useStreamerReadinessStore } from "~/stores/streamerReadiness";
-import type { CampaignReadiness, ReadinessChangeEvent } from "@/types";
+import { describe, test, expect, beforeEach } from 'vitest'
+import { setActivePinia, createPinia } from 'pinia'
+import { useStreamerReadinessStore } from '~/stores/streamerReadiness'
+import type { CampaignReadiness, ReadinessChangeEvent } from '@/types'
 
 // Helper to create mock readiness data
-function createMockReadiness(
-  overrides: Partial<CampaignReadiness> = {},
-): CampaignReadiness {
+function createMockReadiness(overrides: Partial<CampaignReadiness> = {}): CampaignReadiness {
   return {
-    campaignId: "campaign-1",
+    campaignId: 'campaign-1',
     allReady: false,
     readyCount: 1,
     totalCount: 3,
     streamers: [
       {
-        streamerId: "streamer-1",
-        streamerName: "Streamer One",
-        streamerAvatar: "https://example.com/avatar1.png",
-        twitchUserId: "twitch-1",
+        streamerId: 'streamer-1',
+        streamerName: 'Streamer One',
+        streamerAvatar: 'https://example.com/avatar1.png',
+        twitchUserId: 'twitch-1',
         isReady: true,
         issues: [],
         tokenValid: true,
@@ -25,323 +23,319 @@ function createMockReadiness(
         authorizationExpiresAt: null,
       },
       {
-        streamerId: "streamer-2",
-        streamerName: "Streamer Two",
-        streamerAvatar: "https://example.com/avatar2.png",
-        twitchUserId: "twitch-2",
+        streamerId: 'streamer-2',
+        streamerName: 'Streamer Two',
+        streamerAvatar: 'https://example.com/avatar2.png',
+        twitchUserId: 'twitch-2',
         isReady: false,
-        issues: ["authorization_missing"],
+        issues: ['authorization_missing'],
         tokenValid: true,
         authorizationActive: false,
         authorizationExpiresAt: null,
       },
       {
-        streamerId: "streamer-3",
-        streamerName: "Streamer Three",
-        streamerAvatar: "https://example.com/avatar3.png",
-        twitchUserId: "twitch-3",
+        streamerId: 'streamer-3',
+        streamerName: 'Streamer Three',
+        streamerAvatar: 'https://example.com/avatar3.png',
+        twitchUserId: 'twitch-3',
         isReady: false,
-        issues: ["streamer_inactive"],
+        issues: ['streamer_inactive'],
         tokenValid: true,
         authorizationActive: false,
         authorizationExpiresAt: null,
       },
     ],
     ...overrides,
-  };
+  }
 }
 
-describe("Streamer Readiness Store", () => {
+describe('Streamer Readiness Store', () => {
   beforeEach(() => {
-    setActivePinia(createPinia());
-  });
+    setActivePinia(createPinia())
+  })
 
-  describe("Initial State", () => {
-    test("should initialize with null readiness", () => {
-      const store = useStreamerReadinessStore();
+  describe('Initial State', () => {
+    test('should initialize with null readiness', () => {
+      const store = useStreamerReadinessStore()
 
-      expect(store.readiness).toBeNull();
-      expect(store.isLoading).toBe(false);
-      expect(store.isModalOpen).toBe(false);
-      expect(store.pendingSessionId).toBeNull();
-      expect(store.pendingCampaignId).toBeNull();
-    });
-  });
+      expect(store.readiness).toBeNull()
+      expect(store.isLoading).toBe(false)
+      expect(store.isModalOpen).toBe(false)
+      expect(store.pendingSessionId).toBeNull()
+      expect(store.pendingCampaignId).toBeNull()
+    })
+  })
 
-  describe("Getters", () => {
-    test("allReady should return false when readiness is null", () => {
-      const store = useStreamerReadinessStore();
+  describe('Getters', () => {
+    test('allReady should return false when readiness is null', () => {
+      const store = useStreamerReadinessStore()
 
-      expect(store.allReady).toBe(false);
-    });
+      expect(store.allReady).toBe(false)
+    })
 
-    test("allReady should return readiness.allReady value", () => {
-      const store = useStreamerReadinessStore();
-      store.setReadiness(createMockReadiness({ allReady: true }));
+    test('allReady should return readiness.allReady value', () => {
+      const store = useStreamerReadinessStore()
+      store.setReadiness(createMockReadiness({ allReady: true }))
 
-      expect(store.allReady).toBe(true);
-    });
+      expect(store.allReady).toBe(true)
+    })
 
-    test("readyCount should return 0 when readiness is null", () => {
-      const store = useStreamerReadinessStore();
+    test('readyCount should return 0 when readiness is null', () => {
+      const store = useStreamerReadinessStore()
 
-      expect(store.readyCount).toBe(0);
-    });
+      expect(store.readyCount).toBe(0)
+    })
 
-    test("readyCount should return correct count", () => {
-      const store = useStreamerReadinessStore();
-      store.setReadiness(createMockReadiness({ readyCount: 2 }));
+    test('readyCount should return correct count', () => {
+      const store = useStreamerReadinessStore()
+      store.setReadiness(createMockReadiness({ readyCount: 2 }))
 
-      expect(store.readyCount).toBe(2);
-    });
+      expect(store.readyCount).toBe(2)
+    })
 
-    test("totalCount should return 0 when readiness is null", () => {
-      const store = useStreamerReadinessStore();
+    test('totalCount should return 0 when readiness is null', () => {
+      const store = useStreamerReadinessStore()
 
-      expect(store.totalCount).toBe(0);
-    });
+      expect(store.totalCount).toBe(0)
+    })
 
-    test("totalCount should return correct count", () => {
-      const store = useStreamerReadinessStore();
-      store.setReadiness(createMockReadiness({ totalCount: 5 }));
+    test('totalCount should return correct count', () => {
+      const store = useStreamerReadinessStore()
+      store.setReadiness(createMockReadiness({ totalCount: 5 }))
 
-      expect(store.totalCount).toBe(5);
-    });
+      expect(store.totalCount).toBe(5)
+    })
 
-    test("unreadyStreamers should return empty array when readiness is null", () => {
-      const store = useStreamerReadinessStore();
+    test('unreadyStreamers should return empty array when readiness is null', () => {
+      const store = useStreamerReadinessStore()
 
-      expect(store.unreadyStreamers).toEqual([]);
-    });
+      expect(store.unreadyStreamers).toEqual([])
+    })
 
-    test("unreadyStreamers should filter out ready streamers", () => {
-      const store = useStreamerReadinessStore();
-      store.setReadiness(createMockReadiness());
+    test('unreadyStreamers should filter out ready streamers', () => {
+      const store = useStreamerReadinessStore()
+      store.setReadiness(createMockReadiness())
 
-      expect(store.unreadyStreamers).toHaveLength(2);
-      expect(store.unreadyStreamers[0]!.streamerId).toBe("streamer-2");
-      expect(store.unreadyStreamers[1]!.streamerId).toBe("streamer-3");
-    });
+      expect(store.unreadyStreamers).toHaveLength(2)
+      expect(store.unreadyStreamers[0]!.streamerId).toBe('streamer-2')
+      expect(store.unreadyStreamers[1]!.streamerId).toBe('streamer-3')
+    })
 
-    test("readyStreamers should return empty array when readiness is null", () => {
-      const store = useStreamerReadinessStore();
+    test('readyStreamers should return empty array when readiness is null', () => {
+      const store = useStreamerReadinessStore()
 
-      expect(store.readyStreamers).toEqual([]);
-    });
+      expect(store.readyStreamers).toEqual([])
+    })
 
-    test("readyStreamers should filter out unready streamers", () => {
-      const store = useStreamerReadinessStore();
-      store.setReadiness(createMockReadiness());
+    test('readyStreamers should filter out unready streamers', () => {
+      const store = useStreamerReadinessStore()
+      store.setReadiness(createMockReadiness())
 
-      expect(store.readyStreamers).toHaveLength(1);
-      expect(store.readyStreamers[0]!.streamerId).toBe("streamer-1");
-    });
+      expect(store.readyStreamers).toHaveLength(1)
+      expect(store.readyStreamers[0]!.streamerId).toBe('streamer-1')
+    })
 
-    test("readyPercentage should return 0 when totalCount is 0", () => {
-      const store = useStreamerReadinessStore();
+    test('readyPercentage should return 0 when totalCount is 0', () => {
+      const store = useStreamerReadinessStore()
 
-      expect(store.readyPercentage).toBe(0);
-    });
+      expect(store.readyPercentage).toBe(0)
+    })
 
-    test("readyPercentage should calculate correct percentage", () => {
-      const store = useStreamerReadinessStore();
-      store.setReadiness(createMockReadiness({ readyCount: 2, totalCount: 4 }));
+    test('readyPercentage should calculate correct percentage', () => {
+      const store = useStreamerReadinessStore()
+      store.setReadiness(createMockReadiness({ readyCount: 2, totalCount: 4 }))
 
-      expect(store.readyPercentage).toBe(50);
-    });
+      expect(store.readyPercentage).toBe(50)
+    })
 
-    test("readyPercentage should round to nearest integer", () => {
-      const store = useStreamerReadinessStore();
-      store.setReadiness(createMockReadiness({ readyCount: 1, totalCount: 3 }));
+    test('readyPercentage should round to nearest integer', () => {
+      const store = useStreamerReadinessStore()
+      store.setReadiness(createMockReadiness({ readyCount: 1, totalCount: 3 }))
 
-      expect(store.readyPercentage).toBe(33); // 33.33... rounded
-    });
-  });
+      expect(store.readyPercentage).toBe(33) // 33.33... rounded
+    })
+  })
 
-  describe("Actions", () => {
-    describe("setReadiness", () => {
-      test("should set readiness data", () => {
-        const store = useStreamerReadinessStore();
-        const mockData = createMockReadiness();
+  describe('Actions', () => {
+    describe('setReadiness', () => {
+      test('should set readiness data', () => {
+        const store = useStreamerReadinessStore()
+        const mockData = createMockReadiness()
 
-        store.setReadiness(mockData);
+        store.setReadiness(mockData)
 
-        expect(store.readiness).toEqual(mockData);
-      });
-    });
+        expect(store.readiness).toEqual(mockData)
+      })
+    })
 
-    describe("updateStreamerStatus", () => {
-      test("should do nothing when readiness is null", () => {
-        const store = useStreamerReadinessStore();
+    describe('updateStreamerStatus', () => {
+      test('should do nothing when readiness is null', () => {
+        const store = useStreamerReadinessStore()
         const event: ReadinessChangeEvent = {
-          streamerId: "streamer-1",
-          streamerName: "Streamer One",
+          streamerId: 'streamer-1',
+          streamerName: 'Streamer One',
           isReady: true,
           timestamp: new Date().toISOString(),
-        };
+        }
 
         // Should not throw
-        store.updateStreamerStatus(event);
+        store.updateStreamerStatus(event)
 
-        expect(store.readiness).toBeNull();
-      });
+        expect(store.readiness).toBeNull()
+      })
 
-      test("should update streamer isReady status", () => {
-        const store = useStreamerReadinessStore();
-        store.setReadiness(createMockReadiness());
-
-        const event: ReadinessChangeEvent = {
-          streamerId: "streamer-2",
-          streamerName: "Streamer Two",
-          isReady: true,
-          timestamp: new Date().toISOString(),
-        };
-
-        store.updateStreamerStatus(event);
-
-        const streamer = store.readiness?.streamers.find(
-          (s) => s.streamerId === "streamer-2",
-        );
-        expect(streamer?.isReady).toBe(true);
-      });
-
-      test("should clear issues when streamer becomes ready", () => {
-        const store = useStreamerReadinessStore();
-        store.setReadiness(createMockReadiness());
+      test('should update streamer isReady status', () => {
+        const store = useStreamerReadinessStore()
+        store.setReadiness(createMockReadiness())
 
         const event: ReadinessChangeEvent = {
-          streamerId: "streamer-2",
-          streamerName: "Streamer Two",
+          streamerId: 'streamer-2',
+          streamerName: 'Streamer Two',
           isReady: true,
           timestamp: new Date().toISOString(),
-        };
+        }
 
-        store.updateStreamerStatus(event);
+        store.updateStreamerStatus(event)
 
-        const streamer = store.readiness?.streamers.find(
-          (s) => s.streamerId === "streamer-2",
-        );
-        expect(streamer?.issues).toEqual([]);
-      });
+        const streamer = store.readiness?.streamers.find((s) => s.streamerId === 'streamer-2')
+        expect(streamer?.isReady).toBe(true)
+      })
 
-      test("should recalculate readyCount after status update", () => {
-        const store = useStreamerReadinessStore();
-        store.setReadiness(createMockReadiness());
+      test('should clear issues when streamer becomes ready', () => {
+        const store = useStreamerReadinessStore()
+        store.setReadiness(createMockReadiness())
 
-        expect(store.readiness?.readyCount).toBe(1);
+        const event: ReadinessChangeEvent = {
+          streamerId: 'streamer-2',
+          streamerName: 'Streamer Two',
+          isReady: true,
+          timestamp: new Date().toISOString(),
+        }
+
+        store.updateStreamerStatus(event)
+
+        const streamer = store.readiness?.streamers.find((s) => s.streamerId === 'streamer-2')
+        expect(streamer?.issues).toEqual([])
+      })
+
+      test('should recalculate readyCount after status update', () => {
+        const store = useStreamerReadinessStore()
+        store.setReadiness(createMockReadiness())
+
+        expect(store.readiness?.readyCount).toBe(1)
 
         store.updateStreamerStatus({
-          streamerId: "streamer-2",
-          streamerName: "Streamer Two",
+          streamerId: 'streamer-2',
+          streamerName: 'Streamer Two',
           isReady: true,
           timestamp: new Date().toISOString(),
-        });
+        })
 
-        expect(store.readiness?.readyCount).toBe(2);
-      });
+        expect(store.readiness?.readyCount).toBe(2)
+      })
 
-      test("should update allReady when all streamers become ready", () => {
-        const store = useStreamerReadinessStore();
-        store.setReadiness(createMockReadiness());
+      test('should update allReady when all streamers become ready', () => {
+        const store = useStreamerReadinessStore()
+        store.setReadiness(createMockReadiness())
 
-        expect(store.readiness?.allReady).toBe(false);
+        expect(store.readiness?.allReady).toBe(false)
 
         store.updateStreamerStatus({
-          streamerId: "streamer-2",
-          streamerName: "Streamer Two",
+          streamerId: 'streamer-2',
+          streamerName: 'Streamer Two',
           isReady: true,
           timestamp: new Date().toISOString(),
-        });
+        })
         store.updateStreamerStatus({
-          streamerId: "streamer-3",
-          streamerName: "Streamer Three",
+          streamerId: 'streamer-3',
+          streamerName: 'Streamer Three',
           isReady: true,
           timestamp: new Date().toISOString(),
-        });
+        })
 
-        expect(store.readiness?.allReady).toBe(true);
-      });
+        expect(store.readiness?.allReady).toBe(true)
+      })
 
-      test("should not update if streamer not found", () => {
-        const store = useStreamerReadinessStore();
-        store.setReadiness(createMockReadiness());
+      test('should not update if streamer not found', () => {
+        const store = useStreamerReadinessStore()
+        store.setReadiness(createMockReadiness())
 
         store.updateStreamerStatus({
-          streamerId: "unknown-streamer",
-          streamerName: "Unknown",
+          streamerId: 'unknown-streamer',
+          streamerName: 'Unknown',
           isReady: true,
           timestamp: new Date().toISOString(),
-        });
+        })
 
         // Should remain unchanged
-        expect(store.readiness?.readyCount).toBe(1);
-      });
-    });
+        expect(store.readiness?.readyCount).toBe(1)
+      })
+    })
 
-    describe("openModal", () => {
-      test("should open modal with correct data", () => {
-        const store = useStreamerReadinessStore();
-        const mockData = createMockReadiness();
+    describe('openModal', () => {
+      test('should open modal with correct data', () => {
+        const store = useStreamerReadinessStore()
+        const mockData = createMockReadiness()
 
-        store.openModal("campaign-123", "session-456", mockData);
+        store.openModal('campaign-123', 'session-456', mockData)
 
-        expect(store.pendingCampaignId).toBe("campaign-123");
-        expect(store.pendingSessionId).toBe("session-456");
-        expect(store.readiness).toEqual(mockData);
-        expect(store.isModalOpen).toBe(true);
-      });
-    });
+        expect(store.pendingCampaignId).toBe('campaign-123')
+        expect(store.pendingSessionId).toBe('session-456')
+        expect(store.readiness).toEqual(mockData)
+        expect(store.isModalOpen).toBe(true)
+      })
+    })
 
-    describe("closeModal", () => {
-      test("should close modal and reset state", () => {
-        const store = useStreamerReadinessStore();
-        store.openModal("campaign-123", "session-456", createMockReadiness());
+    describe('closeModal', () => {
+      test('should close modal and reset state', () => {
+        const store = useStreamerReadinessStore()
+        store.openModal('campaign-123', 'session-456', createMockReadiness())
 
-        store.closeModal();
+        store.closeModal()
 
-        expect(store.isModalOpen).toBe(false);
-        expect(store.pendingSessionId).toBeNull();
-        expect(store.pendingCampaignId).toBeNull();
-        expect(store.readiness).toBeNull();
-      });
-    });
+        expect(store.isModalOpen).toBe(false)
+        expect(store.pendingSessionId).toBeNull()
+        expect(store.pendingCampaignId).toBeNull()
+        expect(store.readiness).toBeNull()
+      })
+    })
 
-    describe("setLoading", () => {
-      test("should set loading to true", () => {
-        const store = useStreamerReadinessStore();
+    describe('setLoading', () => {
+      test('should set loading to true', () => {
+        const store = useStreamerReadinessStore()
 
-        store.setLoading(true);
+        store.setLoading(true)
 
-        expect(store.isLoading).toBe(true);
-      });
+        expect(store.isLoading).toBe(true)
+      })
 
-      test("should set loading to false", () => {
-        const store = useStreamerReadinessStore();
-        store.setLoading(true);
+      test('should set loading to false', () => {
+        const store = useStreamerReadinessStore()
+        store.setLoading(true)
 
-        store.setLoading(false);
+        store.setLoading(false)
 
-        expect(store.isLoading).toBe(false);
-      });
-    });
+        expect(store.isLoading).toBe(false)
+      })
+    })
 
-    describe("reset", () => {
-      test("should reset all state to initial values", () => {
-        const store = useStreamerReadinessStore();
+    describe('reset', () => {
+      test('should reset all state to initial values', () => {
+        const store = useStreamerReadinessStore()
 
         // Set some state
-        store.openModal("campaign-123", "session-456", createMockReadiness());
-        store.setLoading(true);
+        store.openModal('campaign-123', 'session-456', createMockReadiness())
+        store.setLoading(true)
 
         // Reset
-        store.reset();
+        store.reset()
 
-        expect(store.readiness).toBeNull();
-        expect(store.isLoading).toBe(false);
-        expect(store.isModalOpen).toBe(false);
-        expect(store.pendingSessionId).toBeNull();
-        expect(store.pendingCampaignId).toBeNull();
-      });
-    });
-  });
-});
+        expect(store.readiness).toBeNull()
+        expect(store.isLoading).toBe(false)
+        expect(store.isModalOpen).toBe(false)
+        expect(store.pendingSessionId).toBeNull()
+        expect(store.pendingCampaignId).toBeNull()
+      })
+    })
+  })
+})

@@ -147,34 +147,34 @@
 </template>
 
 <script setup lang="ts">
-import { reactive } from "vue";
-import NumberInput from "../shared/NumberInput.vue";
+import { reactive } from 'vue'
+import NumberInput from '../shared/NumberInput.vue'
 
 export interface AnimationConfig {
   entry: {
-    type: string;
-    duration: number;
-    delay?: number;
-    easing?: string;
-  };
+    type: string
+    duration: number
+    delay?: number
+    easing?: string
+  }
   exit: {
-    type: string;
-    duration: number;
-    delay?: number;
-    easing?: string;
-  };
+    type: string
+    duration: number
+    delay?: number
+    easing?: string
+  }
 }
 
 const props = withDefaults(
   defineProps<{
-    modelValue: AnimationConfig;
-    showEntry?: boolean;
-    showExit?: boolean;
-    showDelay?: boolean;
-    showEasing?: boolean;
-    showPreviewButton?: boolean;
-    customEntryOptions?: { label: string; value: string }[];
-    customExitOptions?: { label: string; value: string }[];
+    modelValue: AnimationConfig
+    showEntry?: boolean
+    showExit?: boolean
+    showDelay?: boolean
+    showEasing?: boolean
+    showPreviewButton?: boolean
+    customEntryOptions?: { label: string; value: string }[]
+    customExitOptions?: { label: string; value: string }[]
   }>(),
   {
     showEntry: true,
@@ -184,81 +184,81 @@ const props = withDefaults(
     showPreviewButton: false,
     customEntryOptions: undefined,
     customExitOptions: undefined,
-  },
-);
+  }
+)
 
 const emit = defineEmits<{
-  "update:modelValue": [value: AnimationConfig];
-  preview: [];
-}>();
+  'update:modelValue': [value: AnimationConfig]
+  preview: []
+}>()
 
 // Options par défaut pour les animations d'entrée
 const defaultEntryOptions = [
-  { label: "Aucune", value: "none" },
-  { label: "Fondu", value: "fade" },
-  { label: "Glissement haut", value: "slide-up" },
-  { label: "Glissement bas", value: "slide-down" },
-  { label: "Glissement gauche", value: "slide-left" },
-  { label: "Glissement droite", value: "slide-right" },
-  { label: "Zoom", value: "zoom" },
-  { label: "Bounce", value: "bounce" },
-  { label: "Flip", value: "flip" },
-  { label: "Rotation", value: "rotate" },
-];
+  { label: 'Aucune', value: 'none' },
+  { label: 'Fondu', value: 'fade' },
+  { label: 'Glissement haut', value: 'slide-up' },
+  { label: 'Glissement bas', value: 'slide-down' },
+  { label: 'Glissement gauche', value: 'slide-left' },
+  { label: 'Glissement droite', value: 'slide-right' },
+  { label: 'Zoom', value: 'zoom' },
+  { label: 'Bounce', value: 'bounce' },
+  { label: 'Flip', value: 'flip' },
+  { label: 'Rotation', value: 'rotate' },
+]
 
 // Options par défaut pour les animations de sortie
 const defaultExitOptions = [
-  { label: "Aucune", value: "none" },
-  { label: "Fondu", value: "fade" },
-  { label: "Glissement haut", value: "slide-up" },
-  { label: "Glissement bas", value: "slide-down" },
-  { label: "Glissement gauche", value: "slide-left" },
-  { label: "Glissement droite", value: "slide-right" },
-  { label: "Zoom out", value: "zoom-out" },
-  { label: "Shrink", value: "shrink" },
-];
+  { label: 'Aucune', value: 'none' },
+  { label: 'Fondu', value: 'fade' },
+  { label: 'Glissement haut', value: 'slide-up' },
+  { label: 'Glissement bas', value: 'slide-down' },
+  { label: 'Glissement gauche', value: 'slide-left' },
+  { label: 'Glissement droite', value: 'slide-right' },
+  { label: 'Zoom out', value: 'zoom-out' },
+  { label: 'Shrink', value: 'shrink' },
+]
 
 const easingOptions = [
-  { label: "Linear", value: "linear" },
-  { label: "Ease", value: "ease" },
-  { label: "Ease In", value: "ease-in" },
-  { label: "Ease Out", value: "ease-out" },
-  { label: "Ease In Out", value: "ease-in-out" },
-  { label: "Bounce", value: "cubic-bezier(0.68, -0.55, 0.265, 1.55)" },
-  { label: "Elastic", value: "cubic-bezier(0.68, -0.6, 0.32, 1.6)" },
-];
+  { label: 'Linear', value: 'linear' },
+  { label: 'Ease', value: 'ease' },
+  { label: 'Ease In', value: 'ease-in' },
+  { label: 'Ease Out', value: 'ease-out' },
+  { label: 'Ease In Out', value: 'ease-in-out' },
+  { label: 'Bounce', value: 'cubic-bezier(0.68, -0.55, 0.265, 1.55)' },
+  { label: 'Elastic', value: 'cubic-bezier(0.68, -0.6, 0.32, 1.6)' },
+]
 
-const entryAnimationOptions = props.customEntryOptions || defaultEntryOptions;
-const exitAnimationOptions = props.customExitOptions || defaultExitOptions;
+const entryAnimationOptions = props.customEntryOptions || defaultEntryOptions
+const exitAnimationOptions = props.customExitOptions || defaultExitOptions
 
 // Expanded state for collapsible sections
 const expandedSections = reactive({
   entry: true,
   exit: false,
-});
+})
 
 const toggleSection = (section: keyof typeof expandedSections) => {
-  expandedSections[section] = !expandedSections[section];
-};
+  expandedSections[section] = !expandedSections[section]
+}
 
 // UI customization for selects
 const selectUi = {
-  base: "bg-neutral-100 text-neutral-600",
-};
+  base: 'bg-neutral-100 text-neutral-600',
+}
 
 const updateEntry = (key: string, value: string | number) => {
-  emit("update:modelValue", {
+  emit('update:modelValue', {
     ...props.modelValue,
     entry: { ...props.modelValue.entry, [key]: value },
-  });
-};
+  })
+}
 
 const updateExit = (key: string, value: string | number) => {
-  emit("update:modelValue", {
+  emit('update:modelValue', {
     ...props.modelValue,
     exit: { ...props.modelValue.exit, [key]: value },
-  });
-};
+  })
+}
 </script>
 
 <style scoped>

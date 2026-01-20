@@ -1,10 +1,7 @@
 <template>
   <div
     class="flex rounded-lg overflow-hidden transition-colors"
-    :class="[
-      variantClasses,
-      { 'cursor-pointer': clickable }
-    ]"
+    :class="[variantClasses, { 'cursor-pointer': clickable }]"
     @click="handleClick"
     @mouseenter="isHovered = true"
     @mouseleave="isHovered = false"
@@ -13,10 +10,7 @@
     <div class="flex-1 flex items-center gap-4 p-4">
       <slot name="icon">
         <div v-if="icon" class="shrink-0">
-          <div
-            class="size-10 rounded-lg flex items-center justify-center"
-            :class="iconBgClass"
-          >
+          <div class="size-10 rounded-lg flex items-center justify-center" :class="iconBgClass">
             <UIcon :name="icon" class="size-5" :class="iconClass" />
           </div>
         </div>
@@ -54,11 +48,7 @@
               name="i-game-icons-dice-twenty-faces-twenty"
               class="size-5 animate-spin-slow"
             />
-            <UIcon
-              v-else-if="action.icon"
-              :name="action.icon"
-              class="size-5"
-            />
+            <UIcon v-else-if="action.icon" :name="action.icon" class="size-5" />
             <span v-if="action.label && !action.iconOnly">{{ action.label }}</span>
           </button>
         </template>
@@ -74,10 +64,7 @@
       leave-from-class="opacity-100 translate-x-0"
       leave-to-class="opacity-0 translate-x-2"
     >
-      <div
-        v-if="$slots.hoverActions && isHovered"
-        class="flex shrink-0"
-      >
+      <div v-if="$slots.hoverActions && isHovered" class="flex shrink-0">
         <slot name="hoverActions" />
       </div>
     </Transition>
@@ -85,28 +72,28 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed } from 'vue'
 
 export interface ActionRowAction {
-  label?: string;
-  icon?: string;
-  color?: 'primary' | 'secondary' | 'neutral' | 'success' | 'warning' | 'error' | 'info';
-  variant?: 'solid' | 'soft' | 'ghost';
-  disabled?: boolean;
-  loading?: boolean;
-  iconOnly?: boolean;
-  onClick?: () => void;
+  label?: string
+  icon?: string
+  color?: 'primary' | 'secondary' | 'neutral' | 'success' | 'warning' | 'error' | 'info'
+  variant?: 'solid' | 'soft' | 'ghost'
+  disabled?: boolean
+  loading?: boolean
+  iconOnly?: boolean
+  onClick?: () => void
 }
 
 export interface Props {
-  title?: string;
-  subtitle?: string;
-  icon?: string;
-  iconColor?: 'primary' | 'secondary' | 'neutral' | 'success' | 'warning' | 'error' | 'info';
-  variant?: 'default' | 'selected' | 'muted';
-  clickable?: boolean;
-  actions?: ActionRowAction[];
-  showActionsOnHover?: boolean;
+  title?: string
+  subtitle?: string
+  icon?: string
+  iconColor?: 'primary' | 'secondary' | 'neutral' | 'success' | 'warning' | 'error' | 'info'
+  variant?: 'default' | 'selected' | 'muted'
+  clickable?: boolean
+  actions?: ActionRowAction[]
+  showActionsOnHover?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -118,24 +105,24 @@ const props = withDefaults(defineProps<Props>(), {
   clickable: false,
   actions: () => [],
   showActionsOnHover: false,
-});
+})
 
 const emit = defineEmits<{
-  click: [];
-}>();
+  click: []
+}>()
 
-const isHovered = ref(false);
+const isHovered = ref(false)
 
 const variantClasses = computed(() => {
   switch (props.variant) {
     case 'selected':
-      return 'bg-brand-100 border border-brand-200';
+      return 'bg-brand-100 border border-brand-200'
     case 'muted':
-      return 'bg-neutral-50 hover:bg-neutral-100';
+      return 'bg-neutral-50 hover:bg-neutral-100'
     default:
-      return 'bg-neutral-100 hover:bg-neutral-200';
+      return 'bg-neutral-100 hover:bg-neutral-200'
   }
-});
+})
 
 const iconBgClass = computed(() => {
   const colorMap: Record<string, string> = {
@@ -146,9 +133,9 @@ const iconBgClass = computed(() => {
     warning: 'bg-warning-light',
     error: 'bg-error-light',
     info: 'bg-info-light',
-  };
-  return colorMap[props.iconColor] || colorMap.primary;
-});
+  }
+  return colorMap[props.iconColor] || colorMap.primary
+})
 
 const iconClass = computed(() => {
   const colorMap: Record<string, string> = {
@@ -159,14 +146,14 @@ const iconClass = computed(() => {
     warning: 'text-warning-500',
     error: 'text-error-500',
     info: 'text-info-500',
-  };
-  return colorMap[props.iconColor] || colorMap.primary;
-});
+  }
+  return colorMap[props.iconColor] || colorMap.primary
+})
 
 const getActionClasses = (action: ActionRowAction): string => {
-  const baseClasses = 'min-w-[80px]';
-  const color = action.color || 'neutral';
-  const variant = action.variant || 'soft';
+  const baseClasses = 'min-w-[80px]'
+  const color = action.color || 'neutral'
+  const variant = action.variant || 'soft'
 
   const colorVariantMap: Record<string, Record<string, string>> = {
     primary: {
@@ -204,18 +191,16 @@ const getActionClasses = (action: ActionRowAction): string => {
       soft: 'bg-info-100 text-info-700 hover:bg-info-200 border-info-200',
       ghost: 'text-info-600 hover:bg-info-100 border-transparent',
     },
-  };
+  }
 
-  const disabledClasses = action.disabled || action.loading
-    ? 'opacity-50 cursor-not-allowed'
-    : '';
+  const disabledClasses = action.disabled || action.loading ? 'opacity-50 cursor-not-allowed' : ''
 
-  return `${baseClasses} ${colorVariantMap[color]?.[variant] || colorVariantMap.neutral?.soft || ''} ${disabledClasses}`;
-};
+  return `${baseClasses} ${colorVariantMap[color]?.[variant] || colorVariantMap.neutral?.soft || ''} ${disabledClasses}`
+}
 
 const handleClick = () => {
   if (props.clickable) {
-    emit('click');
+    emit('click')
   }
-};
+}
 </script>

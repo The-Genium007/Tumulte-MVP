@@ -1,111 +1,111 @@
 <script setup lang="ts">
-import type { PollInstance, PollResults } from "~/types/api";
+import type { PollInstance, PollResults } from '~/types/api'
 
 const props = defineProps<{
-  poll: PollInstance | null;
-}>();
+  poll: PollInstance | null
+}>()
 
-const isOpen = defineModel<boolean>({ required: true });
+const isOpen = defineModel<boolean>({ required: true })
 
-const config = useRuntimeConfig();
-const API_URL = config.public.apiBase;
+const config = useRuntimeConfig()
+const API_URL = config.public.apiBase
 
-const loading = ref(false);
-const results = ref<PollResults | null>(null);
-const error = ref<string | null>(null);
+const loading = ref(false)
+const results = ref<PollResults | null>(null)
+const error = ref<string | null>(null)
 
 /**
  * Charge les résultats détaillés du sondage
  */
 const fetchResults = async () => {
-  if (!props.poll?.id) return;
+  if (!props.poll?.id) return
 
-  loading.value = true;
-  error.value = null;
+  loading.value = true
+  error.value = null
 
   try {
     const response = await fetch(`${API_URL}/mj/polls/${props.poll.id}/results`, {
-      credentials: "include",
-    });
+      credentials: 'include',
+    })
 
-    if (!response.ok) throw new Error("Failed to fetch results");
+    if (!response.ok) throw new Error('Failed to fetch results')
 
-    const data = await response.json();
-    results.value = data.data;
+    const data = await response.json()
+    results.value = data.data
   } catch (err) {
-    console.error("Failed to fetch poll results:", err);
-    error.value = "Impossible de charger les résultats";
+    console.error('Failed to fetch poll results:', err)
+    error.value = 'Impossible de charger les résultats'
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+}
 
 /**
  * Calcule le pourcentage de votes pour une option
  */
 const getPercentage = (optionName: string): number => {
-  if (!results.value?.percentages) return 0;
-  return results.value.percentages[optionName] || 0;
-};
+  if (!results.value?.percentages) return 0
+  return results.value.percentages[optionName] || 0
+}
 
 /**
  * Récupère le nombre de votes pour une option
  */
 const getVotes = (optionName: string): number => {
-  if (!results.value?.votesByOption) return 0;
-  return results.value.votesByOption[optionName] || 0;
-};
+  if (!results.value?.votesByOption) return 0
+  return results.value.votesByOption[optionName] || 0
+}
 
 /**
  * Détermine l'option gagnante
  */
 const winningOption = computed(() => {
-  if (!results.value?.votesByOption) return null;
+  if (!results.value?.votesByOption) return null
 
-  const votes = results.value.votesByOption;
-  let maxVotes = 0;
-  let winner: string | null = null;
+  const votes = results.value.votesByOption
+  let maxVotes = 0
+  let winner: string | null = null
 
   for (const [option, count] of Object.entries(votes)) {
     if (count > maxVotes) {
-      maxVotes = count;
-      winner = option;
+      maxVotes = count
+      winner = option
     }
   }
 
-  return winner;
-});
+  return winner
+})
 
 /**
  * Vérifie si une option est la gagnante
  */
 const isWinner = (optionName: string): boolean => {
-  return optionName === winningOption.value;
-};
+  return optionName === winningOption.value
+}
 
 /**
  * Formate une date
  */
 const formatDate = (dateStr: string | null): string => {
-  if (!dateStr) return "-";
-  return new Date(dateStr).toLocaleDateString("fr-FR", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
+  if (!dateStr) return '-'
+  return new Date(dateStr).toLocaleDateString('fr-FR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
 
 // Charger les résultats quand la modale s'ouvre
 watch(isOpen, (open) => {
   if (open && props.poll) {
-    fetchResults();
+    fetchResults()
   } else {
-    results.value = null;
-    error.value = null;
+    results.value = null
+    error.value = null
   }
-});
+})
 </script>
 
 <template>
@@ -118,9 +118,7 @@ watch(isOpen, (open) => {
           <UIcon name="i-lucide-bar-chart-2" class="size-5 text-success-600" />
         </div>
         <div class="min-w-0">
-          <h3 class="text-lg font-semibold text-primary truncate">
-            Résultats du sondage
-          </h3>
+          <h3 class="text-lg font-semibold text-primary truncate">Résultats du sondage</h3>
           <p class="text-sm text-muted truncate">{{ poll?.title }}</p>
         </div>
       </div>
@@ -173,9 +171,7 @@ watch(isOpen, (open) => {
             :key="option"
             class="p-4 rounded-lg transition-colors"
             :class="
-              isWinner(option)
-                ? 'bg-success-light border border-success-200'
-                : 'bg-neutral-50'
+              isWinner(option) ? 'bg-success-light border border-success-200' : 'bg-neutral-50'
             "
           >
             <div class="flex justify-between items-center mb-2">
@@ -225,9 +221,7 @@ watch(isOpen, (open) => {
               :key="channel.streamerId"
               class="flex items-center justify-between text-sm p-2 bg-neutral-50 rounded"
             >
-              <span class="font-medium text-primary">{{
-                channel.streamerName
-              }}</span>
+              <span class="font-medium text-primary">{{ channel.streamerName }}</span>
               <span class="text-muted">{{ channel.totalVotes }} vote(s)</span>
             </div>
           </div>

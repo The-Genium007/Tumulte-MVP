@@ -11,13 +11,13 @@ Suite de tests complète pour le frontend Nuxt 3 de Tumulte, incluant tests unit
 - **Coverage global** : 37.86% (objectif: 80%+)
 - **Tests critiques** : 100% coverage sur auth, useAuth, usePollInstance, sessionPolls
 
-| Type de Test | Fichiers | Tests | Status |
-|--------------|----------|-------|--------|
-| Unit (Stores) | 4 | 44 | ✅ Passing |
-| Unit (Composables) | 10 | 60 | ✅ Passing |
-| Unit (API) | 1 | 14 | ✅ Passing |
-| Component | 4 | 57 | ✅ Passing |
-| E2E (Playwright) | 5 | 63 | ✅ Configured |
+| Type de Test       | Fichiers | Tests | Status        |
+| ------------------ | -------- | ----- | ------------- |
+| Unit (Stores)      | 4        | 44    | ✅ Passing    |
+| Unit (Composables) | 10       | 60    | ✅ Passing    |
+| Unit (API)         | 1        | 14    | ✅ Passing    |
+| Component          | 4        | 57    | ✅ Passing    |
+| E2E (Playwright)   | 5        | 63    | ✅ Configured |
 
 ## 🚀 Lancer les tests
 
@@ -104,32 +104,32 @@ tests/
 
 ### Code Critique (100% requis) ✅
 
-| Module | Coverage | Status |
-|--------|----------|--------|
-| stores/auth.ts | 100% | ✅ |
-| composables/useAuth.ts | 100% | ✅ |
-| composables/usePollInstance.ts | 100% | ✅ |
-| stores/sessionPolls.ts | 100% | ✅ |
-| composables/usePollTemplates.ts | 100% | ✅ |
+| Module                          | Coverage | Status |
+| ------------------------------- | -------- | ------ |
+| stores/auth.ts                  | 100%     | ✅     |
+| composables/useAuth.ts          | 100%     | ✅     |
+| composables/usePollInstance.ts  | 100%     | ✅     |
+| stores/sessionPolls.ts          | 100%     | ✅     |
+| composables/usePollTemplates.ts | 100%     | ✅     |
 
 ### Code Important (80%+ objectif)
 
-| Module | Coverage | Status |
-|--------|----------|--------|
-| api/http-client.ts | 92.77% | ✅ |
-| composables/useWebSocket.ts | 81.47% | ✅ |
-| stores/pollControl.ts | 74.73% | ⚠️ |
-| stores/campaigns.ts | 61.96% | ⚠️ |
-| composables/useCampaigns.ts | 48.97% | ❌ |
+| Module                      | Coverage | Status |
+| --------------------------- | -------- | ------ |
+| api/http-client.ts          | 92.77%   | ✅     |
+| composables/useWebSocket.ts | 81.47%   | ✅     |
+| stores/pollControl.ts       | 74.73%   | ⚠️     |
+| stores/campaigns.ts         | 61.96%   | ⚠️     |
+| composables/useCampaigns.ts | 48.97%   | ❌     |
 
 ### Composants testés
 
-| Composant | Coverage | Tests |
-|-----------|----------|-------|
-| PollControlCard.vue | 100% | 20 |
-| AuthorizationCard.vue | 90.9% | 18 |
-| UserMenu.vue | 96.35% | 12 |
-| AppBreadcrumbs.vue | 100% | 7 |
+| Composant             | Coverage | Tests |
+| --------------------- | -------- | ----- |
+| PollControlCard.vue   | 100%     | 20    |
+| AuthorizationCard.vue | 90.9%    | 18    |
+| UserMenu.vue          | 96.35%   | 12    |
+| AppBreadcrumbs.vue    | 100%     | 7     |
 
 ## 🛠️ Technologies
 

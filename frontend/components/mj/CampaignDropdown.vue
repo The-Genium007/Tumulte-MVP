@@ -1,80 +1,78 @@
 <script setup lang="ts">
-import type { Campaign } from "~/types";
+import type { Campaign } from '~/types'
 
 const props = defineProps<{
-  campaigns: readonly Campaign[];
-  height?: string;
-}>();
+  campaigns: readonly Campaign[]
+  height?: string
+}>()
 
-const modelValue = defineModel<string | null>({ required: true });
+const modelValue = defineModel<string | null>({ required: true })
 
-const isOpen = ref(false);
-const dropdownRef = ref<HTMLElement | null>(null);
-const triggerRef = ref<HTMLElement | null>(null);
+const isOpen = ref(false)
+const dropdownRef = ref<HTMLElement | null>(null)
+const triggerRef = ref<HTMLElement | null>(null)
 
 // Position du dropdown (calculée pour le Teleport)
 const dropdownStyle = ref<{ top: string; left: string; width: string }>({
-  top: "0px",
-  left: "0px",
-  width: "0px",
-});
+  top: '0px',
+  left: '0px',
+  width: '0px',
+})
 
-const selectedCampaign = computed(() =>
-  props.campaigns.find((c) => c.id === modelValue.value)
-);
+const selectedCampaign = computed(() => props.campaigns.find((c) => c.id === modelValue.value))
 
 const updateDropdownPosition = () => {
-  if (!triggerRef.value) return;
-  const rect = triggerRef.value.getBoundingClientRect();
+  if (!triggerRef.value) return
+  const rect = triggerRef.value.getBoundingClientRect()
   // getBoundingClientRect() retourne des coordonnées viewport, parfait pour position: fixed
   dropdownStyle.value = {
     top: `${rect.bottom}px`,
     left: `${rect.left}px`,
     width: `${rect.width}px`,
-  };
-};
+  }
+}
 
 const toggleDropdown = () => {
   if (!isOpen.value) {
-    updateDropdownPosition();
+    updateDropdownPosition()
   }
-  isOpen.value = !isOpen.value;
-};
+  isOpen.value = !isOpen.value
+}
 
 const selectCampaign = (campaignId: string) => {
-  modelValue.value = campaignId;
-  isOpen.value = false;
-};
+  modelValue.value = campaignId
+  isOpen.value = false
+}
 
 // Fermer le dropdown au clic extérieur
 const handleClickOutside = (event: MouseEvent) => {
-  const target = event.target as Node;
-  const isInsideTrigger = triggerRef.value?.contains(target);
-  const isInsideDropdown = dropdownRef.value?.contains(target);
+  const target = event.target as Node
+  const isInsideTrigger = triggerRef.value?.contains(target)
+  const isInsideDropdown = dropdownRef.value?.contains(target)
 
   if (!isInsideTrigger && !isInsideDropdown) {
-    isOpen.value = false;
+    isOpen.value = false
   }
-};
+}
 
 // Mettre à jour la position lors du scroll/resize
 const handleScrollOrResize = () => {
   if (isOpen.value) {
-    updateDropdownPosition();
+    updateDropdownPosition()
   }
-};
+}
 
 onMounted(() => {
-  document.addEventListener("click", handleClickOutside);
-  window.addEventListener("scroll", handleScrollOrResize, true);
-  window.addEventListener("resize", handleScrollOrResize);
-});
+  document.addEventListener('click', handleClickOutside)
+  window.addEventListener('scroll', handleScrollOrResize, true)
+  window.addEventListener('resize', handleScrollOrResize)
+})
 
 onUnmounted(() => {
-  document.removeEventListener("click", handleClickOutside);
-  window.removeEventListener("scroll", handleScrollOrResize, true);
-  window.removeEventListener("resize", handleScrollOrResize);
-});
+  document.removeEventListener('click', handleClickOutside)
+  window.removeEventListener('scroll', handleScrollOrResize, true)
+  window.removeEventListener('resize', handleScrollOrResize)
+})
 </script>
 
 <template>
@@ -136,10 +134,7 @@ onUnmounted(() => {
         }"
       >
         <!-- État vide -->
-        <div
-          v-if="campaigns.length === 0"
-          class="p-4 text-center text-muted text-sm"
-        >
+        <div v-if="campaigns.length === 0" class="p-4 text-center text-muted text-sm">
           Aucune campagne créée
         </div>
 
@@ -156,17 +151,13 @@ onUnmounted(() => {
         >
           <div
             class="w-2 h-2 rounded-full shrink-0"
-            :class="
-              campaign.id === modelValue ? 'bg-brand-500' : 'bg-neutral-300'
-            "
+            :class="campaign.id === modelValue ? 'bg-brand-500' : 'bg-neutral-300'"
           />
           <div class="flex-1 min-w-0">
             <h4 class="font-medium text-primary truncate">
               {{ campaign.name }}
             </h4>
-            <p class="text-xs text-muted">
-              {{ campaign.activeMemberCount }} joueur(s) actif(s)
-            </p>
+            <p class="text-xs text-muted">{{ campaign.activeMemberCount }} joueur(s) actif(s)</p>
           </div>
           <UIcon
             v-if="campaign.id === modelValue"

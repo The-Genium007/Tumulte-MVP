@@ -4,10 +4,7 @@
     <div class="color-input-wrapper">
       <!-- Color swatch button -->
       <UPopover v-model:open="pickerOpen" :ui="{ content: 'p-0' }">
-        <button
-          class="color-swatch-button"
-          type="button"
-        >
+        <button class="color-swatch-button" type="button">
           <span class="color-swatch-fill" :style="swatchStyle" />
           <span class="sr-only">Ouvrir le sélecteur de couleur</span>
         </button>
@@ -24,10 +21,7 @@
             >
               <div class="saturation-white" />
               <div class="saturation-black" />
-              <div
-                class="saturation-cursor"
-                :style="saturationCursorStyle"
-              />
+              <div class="saturation-cursor" :style="saturationCursorStyle" />
             </div>
 
             <!-- Hue slider -->
@@ -39,10 +33,7 @@
                 @mousedown="startHueDrag"
                 @touchstart.prevent="startHueDrag"
               >
-                <div
-                  class="hue-cursor"
-                  :style="hueCursorStyle"
-                />
+                <div class="hue-cursor" :style="hueCursorStyle" />
               </div>
             </div>
 
@@ -57,10 +48,7 @@
               >
                 <div class="alpha-checkerboard" />
                 <div class="alpha-gradient" :style="alphaGradientStyle" />
-                <div
-                  class="alpha-cursor"
-                  :style="alphaCursorStyle"
-                />
+                <div class="alpha-cursor" :style="alphaCursorStyle" />
               </div>
               <span class="alpha-value">{{ Math.round(currentAlpha * 100) }}%</span>
             </div>
@@ -107,427 +95,403 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted, watch } from "vue";
+import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
 
 const props = withDefaults(
   defineProps<{
-    modelValue: string;
-    label?: string;
-    showAlpha?: boolean;
-    presets?: string[];
+    modelValue: string
+    label?: string
+    showAlpha?: boolean
+    presets?: string[]
   }>(),
   {
-    label: "",
+    label: '',
     showAlpha: true,
     presets: () => [],
-  },
-);
+  }
+)
 
 const emit = defineEmits<{
-  "update:modelValue": [value: string];
-}>();
+  'update:modelValue': [value: string]
+}>()
 
-const pickerOpen = ref(false);
-const saturationRef = ref<HTMLElement | null>(null);
-const hueRef = ref<HTMLElement | null>(null);
-const alphaRef = ref<HTMLElement | null>(null);
+const pickerOpen = ref(false)
+const saturationRef = ref<HTMLElement | null>(null)
+const hueRef = ref<HTMLElement | null>(null)
+const alphaRef = ref<HTMLElement | null>(null)
 
 // Internal HSV state
-const internalHue = ref(0);
-const internalSaturation = ref(100);
-const internalValue = ref(100);
-const internalAlpha = ref(1);
+const internalHue = ref(0)
+const internalSaturation = ref(100)
+const internalValue = ref(100)
+const internalAlpha = ref(1)
 
 // Drag state
-const isDraggingSaturation = ref(false);
-const isDraggingHue = ref(false);
-const isDraggingAlpha = ref(false);
+const isDraggingSaturation = ref(false)
+const isDraggingHue = ref(false)
+const isDraggingAlpha = ref(false)
 
 const inputUi = {
-  root: "ring-0 border-0 rounded-lg overflow-hidden",
-  base: "px-2 py-1.5 bg-neutral-100 text-neutral-700 placeholder:text-neutral-400 rounded-lg text-xs font-mono",
-};
+  root: 'ring-0 border-0 rounded-lg overflow-hidden',
+  base: 'px-2 py-1.5 bg-neutral-100 text-neutral-700 placeholder:text-neutral-400 rounded-lg text-xs font-mono',
+}
 
 // === Color conversion utilities ===
 
 const hexToRgb = (hex: string): { r: number; g: number; b: number } | null => {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
   return result
     ? {
-        r: parseInt(result[1] || "0", 16),
-        g: parseInt(result[2] || "0", 16),
-        b: parseInt(result[3] || "0", 16),
+        r: parseInt(result[1] || '0', 16),
+        g: parseInt(result[2] || '0', 16),
+        b: parseInt(result[3] || '0', 16),
       }
-    : null;
-};
+    : null
+}
 
 const rgbToHex = (r: number, g: number, b: number): string => {
-  return `#${[r, g, b].map((x) => x.toString(16).padStart(2, "0")).join("")}`;
-};
+  return `#${[r, g, b].map((x) => x.toString(16).padStart(2, '0')).join('')}`
+}
 
-const rgbToHsv = (
-  r: number,
-  g: number,
-  b: number,
-): { h: number; s: number; v: number } => {
-  r /= 255;
-  g /= 255;
-  b /= 255;
-  const max = Math.max(r, g, b);
-  const min = Math.min(r, g, b);
-  const d = max - min;
-  let h = 0;
-  const s = max === 0 ? 0 : d / max;
-  const v = max;
+const rgbToHsv = (r: number, g: number, b: number): { h: number; s: number; v: number } => {
+  r /= 255
+  g /= 255
+  b /= 255
+  const max = Math.max(r, g, b)
+  const min = Math.min(r, g, b)
+  const d = max - min
+  let h = 0
+  const s = max === 0 ? 0 : d / max
+  const v = max
 
   if (max !== min) {
     switch (max) {
       case r:
-        h = (g - b) / d + (g < b ? 6 : 0);
-        break;
+        h = (g - b) / d + (g < b ? 6 : 0)
+        break
       case g:
-        h = (b - r) / d + 2;
-        break;
+        h = (b - r) / d + 2
+        break
       case b:
-        h = (r - g) / d + 4;
-        break;
+        h = (r - g) / d + 4
+        break
     }
-    h /= 6;
+    h /= 6
   }
 
-  return { h: h * 360, s: s * 100, v: v * 100 };
-};
+  return { h: h * 360, s: s * 100, v: v * 100 }
+}
 
-const hsvToRgb = (
-  h: number,
-  s: number,
-  v: number,
-): { r: number; g: number; b: number } => {
-  h /= 360;
-  s /= 100;
-  v /= 100;
+const hsvToRgb = (h: number, s: number, v: number): { r: number; g: number; b: number } => {
+  h /= 360
+  s /= 100
+  v /= 100
   let r = 0,
     g = 0,
-    b = 0;
-  const i = Math.floor(h * 6);
-  const f = h * 6 - i;
-  const p = v * (1 - s);
-  const q = v * (1 - f * s);
-  const t = v * (1 - (1 - f) * s);
+    b = 0
+  const i = Math.floor(h * 6)
+  const f = h * 6 - i
+  const p = v * (1 - s)
+  const q = v * (1 - f * s)
+  const t = v * (1 - (1 - f) * s)
 
   switch (i % 6) {
     case 0:
-      r = v;
-      g = t;
-      b = p;
-      break;
+      r = v
+      g = t
+      b = p
+      break
     case 1:
-      r = q;
-      g = v;
-      b = p;
-      break;
+      r = q
+      g = v
+      b = p
+      break
     case 2:
-      r = p;
-      g = v;
-      b = t;
-      break;
+      r = p
+      g = v
+      b = t
+      break
     case 3:
-      r = p;
-      g = q;
-      b = v;
-      break;
+      r = p
+      g = q
+      b = v
+      break
     case 4:
-      r = t;
-      g = p;
-      b = v;
-      break;
+      r = t
+      g = p
+      b = v
+      break
     case 5:
-      r = v;
-      g = p;
-      b = q;
-      break;
+      r = v
+      g = p
+      b = q
+      break
   }
 
   return {
     r: Math.round(r * 255),
     g: Math.round(g * 255),
     b: Math.round(b * 255),
-  };
-};
+  }
+}
 
 // Parse color from modelValue
 const parseColor = (color: string): { r: number; g: number; b: number; a: number } => {
-  if (!color) return { r: 0, g: 0, b: 0, a: 1 };
+  if (!color) return { r: 0, g: 0, b: 0, a: 1 }
 
   // Format rgba(r, g, b, a)
-  const rgbaMatch = color.match(
-    /rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/,
-  );
+  const rgbaMatch = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/)
   if (rgbaMatch) {
     return {
-      r: parseInt(rgbaMatch[1] || "0"),
-      g: parseInt(rgbaMatch[2] || "0"),
-      b: parseInt(rgbaMatch[3] || "0"),
+      r: parseInt(rgbaMatch[1] || '0'),
+      g: parseInt(rgbaMatch[2] || '0'),
+      b: parseInt(rgbaMatch[3] || '0'),
       a: rgbaMatch[4] ? parseFloat(rgbaMatch[4]) : 1,
-    };
+    }
   }
 
   // Format #RRGGBBAA
   if (color.match(/^#[0-9a-fA-F]{8}$/)) {
-    const rgb = hexToRgb(color.slice(0, 7));
-    const a = parseInt(color.slice(7, 9), 16) / 255;
-    return rgb ? { ...rgb, a } : { r: 0, g: 0, b: 0, a: 1 };
+    const rgb = hexToRgb(color.slice(0, 7))
+    const a = parseInt(color.slice(7, 9), 16) / 255
+    return rgb ? { ...rgb, a } : { r: 0, g: 0, b: 0, a: 1 }
   }
 
   // Format #RRGGBB
   if (color.match(/^#[0-9a-fA-F]{6}$/)) {
-    const rgb = hexToRgb(color);
-    return rgb ? { ...rgb, a: 1 } : { r: 0, g: 0, b: 0, a: 1 };
+    const rgb = hexToRgb(color)
+    return rgb ? { ...rgb, a: 1 } : { r: 0, g: 0, b: 0, a: 1 }
   }
 
   // Format #RGB
   if (color.match(/^#[0-9a-fA-F]{3}$/)) {
-    const r = parseInt((color[1] || "0") + (color[1] || "0"), 16);
-    const g = parseInt((color[2] || "0") + (color[2] || "0"), 16);
-    const b = parseInt((color[3] || "0") + (color[3] || "0"), 16);
-    return { r, g, b, a: 1 };
+    const r = parseInt((color[1] || '0') + (color[1] || '0'), 16)
+    const g = parseInt((color[2] || '0') + (color[2] || '0'), 16)
+    const b = parseInt((color[3] || '0') + (color[3] || '0'), 16)
+    return { r, g, b, a: 1 }
   }
 
-  return { r: 0, g: 0, b: 0, a: 1 };
-};
+  return { r: 0, g: 0, b: 0, a: 1 }
+}
 
 // Update internal state from modelValue
 const syncFromModelValue = () => {
-  const { r, g, b, a } = parseColor(props.modelValue);
-  const hsv = rgbToHsv(r, g, b);
-  internalHue.value = hsv.h;
-  internalSaturation.value = hsv.s;
-  internalValue.value = hsv.v;
-  internalAlpha.value = a;
-};
+  const { r, g, b, a } = parseColor(props.modelValue)
+  const hsv = rgbToHsv(r, g, b)
+  internalHue.value = hsv.h
+  internalSaturation.value = hsv.s
+  internalValue.value = hsv.v
+  internalAlpha.value = a
+}
 
 // Emit color change
 const emitColor = () => {
-  const { r, g, b } = hsvToRgb(
-    internalHue.value,
-    internalSaturation.value,
-    internalValue.value,
-  );
-  const a = internalAlpha.value;
+  const { r, g, b } = hsvToRgb(internalHue.value, internalSaturation.value, internalValue.value)
+  const a = internalAlpha.value
 
   if (a >= 1) {
-    emit("update:modelValue", rgbToHex(r, g, b));
+    emit('update:modelValue', rgbToHex(r, g, b))
   } else {
-    emit("update:modelValue", `rgba(${r}, ${g}, ${b}, ${a.toFixed(2)})`);
+    emit('update:modelValue', `rgba(${r}, ${g}, ${b}, ${a.toFixed(2)})`)
   }
-};
+}
 
 // Computed values
-const currentAlpha = computed(() => internalAlpha.value);
+const currentAlpha = computed(() => internalAlpha.value)
 
 const displayValue = computed(() => {
-  const { r, g, b } = hsvToRgb(
-    internalHue.value,
-    internalSaturation.value,
-    internalValue.value,
-  );
-  const a = internalAlpha.value;
+  const { r, g, b } = hsvToRgb(internalHue.value, internalSaturation.value, internalValue.value)
+  const a = internalAlpha.value
   if (a >= 1) {
-    return rgbToHex(r, g, b);
+    return rgbToHex(r, g, b)
   }
-  return `rgba(${r}, ${g}, ${b}, ${a.toFixed(2)})`;
-});
+  return `rgba(${r}, ${g}, ${b}, ${a.toFixed(2)})`
+})
 
 const swatchStyle = computed(() => {
-  const { r, g, b } = hsvToRgb(
-    internalHue.value,
-    internalSaturation.value,
-    internalValue.value,
-  );
+  const { r, g, b } = hsvToRgb(internalHue.value, internalSaturation.value, internalValue.value)
   return {
     backgroundColor: `rgba(${r}, ${g}, ${b}, ${internalAlpha.value})`,
-  };
-});
+  }
+})
 
 const saturationBackgroundStyle = computed(() => {
-  const { r, g, b } = hsvToRgb(internalHue.value, 100, 100);
+  const { r, g, b } = hsvToRgb(internalHue.value, 100, 100)
   return {
     backgroundColor: `rgb(${r}, ${g}, ${b})`,
-  };
-});
+  }
+})
 
 const saturationCursorStyle = computed(() => ({
   left: `${internalSaturation.value}%`,
   top: `${100 - internalValue.value}%`,
-}));
+}))
 
 const hueCursorStyle = computed(() => ({
   left: `${(internalHue.value / 360) * 100}%`,
-}));
+}))
 
 const alphaGradientStyle = computed(() => {
-  const { r, g, b } = hsvToRgb(
-    internalHue.value,
-    internalSaturation.value,
-    internalValue.value,
-  );
+  const { r, g, b } = hsvToRgb(internalHue.value, internalSaturation.value, internalValue.value)
   return {
     background: `linear-gradient(to right, transparent, rgb(${r}, ${g}, ${b}))`,
-  };
-});
+  }
+})
 
 const alphaCursorStyle = computed(() => ({
   left: `${internalAlpha.value * 100}%`,
-}));
+}))
 
 // === Drag handlers ===
 
 const startSaturationDrag = (e: MouseEvent | TouchEvent) => {
-  isDraggingSaturation.value = true;
-  updateSaturation(e);
-};
+  isDraggingSaturation.value = true
+  updateSaturation(e)
+}
 
 const startHueDrag = (e: MouseEvent | TouchEvent) => {
-  isDraggingHue.value = true;
-  updateHue(e);
-};
+  isDraggingHue.value = true
+  updateHue(e)
+}
 
 const startAlphaDrag = (e: MouseEvent | TouchEvent) => {
-  isDraggingAlpha.value = true;
-  updateAlpha(e);
-};
+  isDraggingAlpha.value = true
+  updateAlpha(e)
+}
 
 const updateSaturation = (e: MouseEvent | TouchEvent) => {
-  if (!saturationRef.value) return;
-  const rect = saturationRef.value.getBoundingClientRect();
-  const clientX = "touches" in e ? e.touches[0]?.clientX ?? 0 : e.clientX;
-  const clientY = "touches" in e ? e.touches[0]?.clientY ?? 0 : e.clientY;
+  if (!saturationRef.value) return
+  const rect = saturationRef.value.getBoundingClientRect()
+  const clientX = 'touches' in e ? (e.touches[0]?.clientX ?? 0) : e.clientX
+  const clientY = 'touches' in e ? (e.touches[0]?.clientY ?? 0) : e.clientY
 
-  const x = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-  const y = Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
+  const x = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
+  const y = Math.max(0, Math.min(1, (clientY - rect.top) / rect.height))
 
-  internalSaturation.value = x * 100;
-  internalValue.value = (1 - y) * 100;
-  emitColor();
-};
+  internalSaturation.value = x * 100
+  internalValue.value = (1 - y) * 100
+  emitColor()
+}
 
 const updateHue = (e: MouseEvent | TouchEvent) => {
-  if (!hueRef.value) return;
-  const rect = hueRef.value.getBoundingClientRect();
-  const clientX = "touches" in e ? e.touches[0]?.clientX ?? 0 : e.clientX;
+  if (!hueRef.value) return
+  const rect = hueRef.value.getBoundingClientRect()
+  const clientX = 'touches' in e ? (e.touches[0]?.clientX ?? 0) : e.clientX
 
-  const x = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-  internalHue.value = x * 360;
-  emitColor();
-};
+  const x = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
+  internalHue.value = x * 360
+  emitColor()
+}
 
 const updateAlpha = (e: MouseEvent | TouchEvent) => {
-  if (!alphaRef.value) return;
-  const rect = alphaRef.value.getBoundingClientRect();
-  const clientX = "touches" in e ? e.touches[0]?.clientX ?? 0 : e.clientX;
+  if (!alphaRef.value) return
+  const rect = alphaRef.value.getBoundingClientRect()
+  const clientX = 'touches' in e ? (e.touches[0]?.clientX ?? 0) : e.clientX
 
-  const x = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-  internalAlpha.value = x;
-  emitColor();
-};
+  const x = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
+  internalAlpha.value = x
+  emitColor()
+}
 
 const handleMouseMove = (e: MouseEvent) => {
-  if (isDraggingSaturation.value) updateSaturation(e);
-  if (isDraggingHue.value) updateHue(e);
-  if (isDraggingAlpha.value) updateAlpha(e);
-};
+  if (isDraggingSaturation.value) updateSaturation(e)
+  if (isDraggingHue.value) updateHue(e)
+  if (isDraggingAlpha.value) updateAlpha(e)
+}
 
 const handleTouchMove = (e: TouchEvent) => {
-  if (isDraggingSaturation.value) updateSaturation(e);
-  if (isDraggingHue.value) updateHue(e);
-  if (isDraggingAlpha.value) updateAlpha(e);
-};
+  if (isDraggingSaturation.value) updateSaturation(e)
+  if (isDraggingHue.value) updateHue(e)
+  if (isDraggingAlpha.value) updateAlpha(e)
+}
 
 const handleMouseUp = () => {
-  isDraggingSaturation.value = false;
-  isDraggingHue.value = false;
-  isDraggingAlpha.value = false;
-};
+  isDraggingSaturation.value = false
+  isDraggingHue.value = false
+  isDraggingAlpha.value = false
+}
 
 // Text input handlers
 const handleTextInput = (e: Event) => {
-  const target = e.target as HTMLInputElement;
-  const value = target.value.trim();
+  const target = e.target as HTMLInputElement
+  const value = target.value.trim()
   if (value) {
-    const parsed = parseColor(value);
-    if (parsed.r !== 0 || parsed.g !== 0 || parsed.b !== 0 || value === "#000000" || value === "rgba(0, 0, 0, 1)") {
-      const hsv = rgbToHsv(parsed.r, parsed.g, parsed.b);
-      internalHue.value = hsv.h;
-      internalSaturation.value = hsv.s;
-      internalValue.value = hsv.v;
-      internalAlpha.value = parsed.a;
-      emitColor();
+    const parsed = parseColor(value)
+    if (
+      parsed.r !== 0 ||
+      parsed.g !== 0 ||
+      parsed.b !== 0 ||
+      value === '#000000' ||
+      value === 'rgba(0, 0, 0, 1)'
+    ) {
+      const hsv = rgbToHsv(parsed.r, parsed.g, parsed.b)
+      internalHue.value = hsv.h
+      internalSaturation.value = hsv.s
+      internalValue.value = hsv.v
+      internalAlpha.value = parsed.a
+      emitColor()
     }
   }
-};
+}
 
 const handleTextBlur = () => {
   // Re-sync display on blur
-};
+}
 
 const handleMainTextInput = (value: string | number) => {
-  const strValue = String(value).trim();
+  const strValue = String(value).trim()
   if (strValue) {
-    const parsed = parseColor(strValue);
-    const hsv = rgbToHsv(parsed.r, parsed.g, parsed.b);
-    internalHue.value = hsv.h;
-    internalSaturation.value = hsv.s;
-    internalValue.value = hsv.v;
-    internalAlpha.value = parsed.a;
-    emitColor();
+    const parsed = parseColor(strValue)
+    const hsv = rgbToHsv(parsed.r, parsed.g, parsed.b)
+    internalHue.value = hsv.h
+    internalSaturation.value = hsv.s
+    internalValue.value = hsv.v
+    internalAlpha.value = parsed.a
+    emitColor()
   }
-};
+}
 
 const isPresetActive = (preset: string) => {
-  const presetParsed = parseColor(preset);
-  const { r, g, b } = hsvToRgb(
-    internalHue.value,
-    internalSaturation.value,
-    internalValue.value,
-  );
-  return presetParsed.r === r && presetParsed.g === g && presetParsed.b === b;
-};
+  const presetParsed = parseColor(preset)
+  const { r, g, b } = hsvToRgb(internalHue.value, internalSaturation.value, internalValue.value)
+  return presetParsed.r === r && presetParsed.g === g && presetParsed.b === b
+}
 
 const applyPreset = (preset: string) => {
-  const parsed = parseColor(preset);
-  const hsv = rgbToHsv(parsed.r, parsed.g, parsed.b);
-  internalHue.value = hsv.h;
-  internalSaturation.value = hsv.s;
-  internalValue.value = hsv.v;
+  const parsed = parseColor(preset)
+  const hsv = rgbToHsv(parsed.r, parsed.g, parsed.b)
+  internalHue.value = hsv.h
+  internalSaturation.value = hsv.s
+  internalValue.value = hsv.v
   // Keep current alpha when applying preset
-  emitColor();
-};
+  emitColor()
+}
 
 // Lifecycle
 onMounted(() => {
-  syncFromModelValue();
-  document.addEventListener("mousemove", handleMouseMove);
-  document.addEventListener("mouseup", handleMouseUp);
-  document.addEventListener("touchmove", handleTouchMove);
-  document.addEventListener("touchend", handleMouseUp);
-});
+  syncFromModelValue()
+  document.addEventListener('mousemove', handleMouseMove)
+  document.addEventListener('mouseup', handleMouseUp)
+  document.addEventListener('touchmove', handleTouchMove)
+  document.addEventListener('touchend', handleMouseUp)
+})
 
 onUnmounted(() => {
-  document.removeEventListener("mousemove", handleMouseMove);
-  document.removeEventListener("mouseup", handleMouseUp);
-  document.removeEventListener("touchmove", handleTouchMove);
-  document.removeEventListener("touchend", handleMouseUp);
-});
+  document.removeEventListener('mousemove', handleMouseMove)
+  document.removeEventListener('mouseup', handleMouseUp)
+  document.removeEventListener('touchmove', handleTouchMove)
+  document.removeEventListener('touchend', handleMouseUp)
+})
 
 // Watch for external changes
 watch(
   () => props.modelValue,
   () => {
     if (!isDraggingSaturation.value && !isDraggingHue.value && !isDraggingAlpha.value) {
-      syncFromModelValue();
+      syncFromModelValue()
     }
-  },
-);
+  }
+)
 </script>
 
 <style scoped>
@@ -559,12 +523,11 @@ watch(
   flex-shrink: 0;
   position: relative;
   overflow: hidden;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
   /* Checkerboard background for transparency */
-  background-image: repeating-conic-gradient(
-    var(--color-neutral-200) 0% 25%,
-    white 0% 50%
-  );
+  background-image: repeating-conic-gradient(var(--color-neutral-200) 0% 25%, white 0% 50%);
   background-size: 8px 8px;
 }
 
@@ -627,7 +590,9 @@ watch(
   height: 14px;
   border: 2px solid white;
   border-radius: 50%;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.3),
+    0 2px 4px rgba(0, 0, 0, 0.2);
   transform: translate(-50%, -50%);
   pointer-events: none;
 }
@@ -676,7 +641,9 @@ watch(
   background: white;
   border: 2px solid white;
   border-radius: 50%;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2), 0 2px 4px rgba(0, 0, 0, 0.15);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.2),
+    0 2px 4px rgba(0, 0, 0, 0.15);
   transform: translate(-50%, -50%);
   pointer-events: none;
 }
@@ -694,10 +661,7 @@ watch(
 .alpha-checkerboard {
   position: absolute;
   inset: 0;
-  background: repeating-conic-gradient(
-    var(--color-neutral-200) 0% 25%,
-    white 0% 50%
-  ) 50% / 8px 8px;
+  background: repeating-conic-gradient(var(--color-neutral-200) 0% 25%, white 0% 50%) 50% / 8px 8px;
   border-radius: 6px;
 }
 
@@ -715,7 +679,9 @@ watch(
   background: white;
   border: 2px solid white;
   border-radius: 50%;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2), 0 2px 4px rgba(0, 0, 0, 0.15);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.2),
+    0 2px 4px rgba(0, 0, 0, 0.15);
   transform: translate(-50%, -50%);
   pointer-events: none;
 }

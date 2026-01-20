@@ -1,114 +1,114 @@
-import { describe, test, expect, beforeEach, vi } from "vitest";
-import { setActivePinia, createPinia } from "pinia";
-import { useAuth } from "~/composables/useAuth";
-import { useAuthStore } from "~/stores/auth";
-import { createMockUser } from "../../helpers/mockFactory";
+import { describe, test, expect, beforeEach, vi } from 'vitest'
+import { setActivePinia, createPinia } from 'pinia'
+import { useAuth } from '~/composables/useAuth'
+import { useAuthStore } from '~/stores/auth'
+import { createMockUser } from '../../helpers/mockFactory'
 
 // Mock vue-router
-vi.mock("vue-router", () => ({
+vi.mock('vue-router', () => ({
   useRouter: vi.fn(() => ({
     push: vi.fn(),
   })),
-}));
+}))
 
 // Mock fetch globally
-global.fetch = vi.fn();
+global.fetch = vi.fn()
 
-describe("useAuth Composable", () => {
+describe('useAuth Composable', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.clearAllMocks()
 
     // Mock useRuntimeConfig
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked((globalThis as any).useRuntimeConfig).mockReturnValue({
       public: {
-        apiBase: "http://localhost:3333/api/v2",
+        apiBase: 'http://localhost:3333/api/v2',
       },
-    } as ReturnType<typeof useRuntimeConfig>);
+    } as ReturnType<typeof useRuntimeConfig>)
 
-    setActivePinia(createPinia());
-  });
+    setActivePinia(createPinia())
+  })
 
-  test("should expose auth store state", () => {
-    const auth = useAuth();
+  test('should expose auth store state', () => {
+    const auth = useAuth()
 
-    expect(auth.user).toBeDefined();
-    expect(auth.loading).toBeDefined();
-    expect(auth.isAuthenticated).toBeDefined();
-  });
+    expect(auth.user).toBeDefined()
+    expect(auth.loading).toBeDefined()
+    expect(auth.isAuthenticated).toBeDefined()
+  })
 
-  test("should expose auth store methods", () => {
-    const auth = useAuth();
+  test('should expose auth store methods', () => {
+    const auth = useAuth()
 
-    expect(typeof auth.fetchMe).toBe("function");
-    expect(typeof auth.loginWithTwitch).toBe("function");
-    expect(typeof auth.logout).toBe("function");
-  });
+    expect(typeof auth.fetchMe).toBe('function')
+    expect(typeof auth.loginWithTwitch).toBe('function')
+    expect(typeof auth.logout).toBe('function')
+  })
 
-  test("user should be reactive with store", () => {
-    const auth = useAuth();
-    const store = useAuthStore();
+  test('user should be reactive with store', () => {
+    const auth = useAuth()
+    const store = useAuthStore()
 
-    expect(auth.user.value).toBeNull();
-
-    // Update store
-    store.user = createMockUser();
-
-    // Composable should reflect the change
-    expect(auth.user.value).toEqual(createMockUser());
-  });
-
-  test("isAuthenticated should be reactive with store", () => {
-    const auth = useAuth();
-    const store = useAuthStore();
-
-    expect(auth.isAuthenticated.value).toBe(false);
+    expect(auth.user.value).toBeNull()
 
     // Update store
-    store.user = createMockUser();
+    store.user = createMockUser()
 
     // Composable should reflect the change
-    expect(auth.isAuthenticated.value).toBe(true);
-  });
+    expect(auth.user.value).toEqual(createMockUser())
+  })
 
-  test("loading should be reactive with store", () => {
-    const auth = useAuth();
-    const store = useAuthStore();
+  test('isAuthenticated should be reactive with store', () => {
+    const auth = useAuth()
+    const store = useAuthStore()
 
-    expect(auth.loading.value).toBe(false);
+    expect(auth.isAuthenticated.value).toBe(false)
 
-    store.loading = true;
+    // Update store
+    store.user = createMockUser()
 
-    expect(auth.loading.value).toBe(true);
-  });
+    // Composable should reflect the change
+    expect(auth.isAuthenticated.value).toBe(true)
+  })
 
-  test("fetchMe should call store method", async () => {
-    const mockUser = createMockUser();
+  test('loading should be reactive with store', () => {
+    const auth = useAuth()
+    const store = useAuthStore()
+
+    expect(auth.loading.value).toBe(false)
+
+    store.loading = true
+
+    expect(auth.loading.value).toBe(true)
+  })
+
+  test('fetchMe should call store method', async () => {
+    const mockUser = createMockUser()
     vi.mocked(fetch).mockResolvedValueOnce({
       ok: true,
       json: async () => mockUser,
-    } as Response);
+    } as Response)
 
-    const auth = useAuth();
-    await auth.fetchMe();
+    const auth = useAuth()
+    await auth.fetchMe()
 
-    expect(fetch).toHaveBeenCalledWith("http://localhost:3333/api/v2/auth/me", {
-      credentials: "include",
-    });
-    expect(auth.user.value).toEqual(mockUser);
-  });
+    expect(fetch).toHaveBeenCalledWith('http://localhost:3333/api/v2/auth/me', {
+      credentials: 'include',
+    })
+    expect(auth.user.value).toEqual(mockUser)
+  })
 
-  test("logout should call store method", async () => {
+  test('logout should call store method', async () => {
     vi.mocked(fetch).mockResolvedValueOnce({
       ok: true,
-    } as Response);
+    } as Response)
 
-    const auth = useAuth();
-    const store = useAuthStore();
-    store.user = createMockUser();
+    const auth = useAuth()
+    const store = useAuthStore()
+    store.user = createMockUser()
 
-    await auth.logout();
+    await auth.logout()
 
-    expect(auth.user.value).toBeNull();
-  });
-});
+    expect(auth.user.value).toBeNull()
+  })
+})

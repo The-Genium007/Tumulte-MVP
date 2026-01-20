@@ -56,10 +56,7 @@
         />
       </div>
       <div class="preview-center">
-        <div
-          class="preview-box"
-          :style="previewStyle"
-        />
+        <div class="preview-box" :style="previewStyle" />
       </div>
       <div class="corner-field bottom-left">
         <NumberInput
@@ -98,113 +95,113 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
-import NumberInput from "../shared/NumberInput.vue";
+import { computed, ref } from 'vue'
+import NumberInput from '../shared/NumberInput.vue'
 
 export interface BorderRadiusConfig {
-  topLeft: number;
-  topRight: number;
-  bottomRight: number;
-  bottomLeft: number;
+  topLeft: number
+  topRight: number
+  bottomRight: number
+  bottomLeft: number
 }
 
 interface RadiusPreset {
-  label: string;
-  values: BorderRadiusConfig;
-  style: Record<string, string>;
+  label: string
+  values: BorderRadiusConfig
+  style: Record<string, string>
 }
 
 const props = withDefaults(
   defineProps<{
-    modelValue: BorderRadiusConfig;
-    maxRadius?: number;
-    showPresets?: boolean;
+    modelValue: BorderRadiusConfig
+    maxRadius?: number
+    showPresets?: boolean
   }>(),
   {
     maxRadius: 50,
     showPresets: true,
-  },
-);
+  }
+)
 
 const emit = defineEmits<{
-  "update:modelValue": [value: BorderRadiusConfig];
-}>();
+  'update:modelValue': [value: BorderRadiusConfig]
+}>()
 
-const individualCornersEnabled = ref(false);
+const individualCornersEnabled = ref(false)
 
 const presets: RadiusPreset[] = [
   {
-    label: "Carré",
+    label: 'Carré',
     values: { topLeft: 0, topRight: 0, bottomRight: 0, bottomLeft: 0 },
-    style: { borderRadius: "0" },
+    style: { borderRadius: '0' },
   },
   {
-    label: "Léger",
+    label: 'Léger',
     values: { topLeft: 4, topRight: 4, bottomRight: 4, bottomLeft: 4 },
-    style: { borderRadius: "4px" },
+    style: { borderRadius: '4px' },
   },
   {
-    label: "Moyen",
+    label: 'Moyen',
     values: { topLeft: 8, topRight: 8, bottomRight: 8, bottomLeft: 8 },
-    style: { borderRadius: "8px" },
+    style: { borderRadius: '8px' },
   },
   {
-    label: "Arrondi",
+    label: 'Arrondi',
     values: { topLeft: 16, topRight: 16, bottomRight: 16, bottomLeft: 16 },
-    style: { borderRadius: "16px" },
+    style: { borderRadius: '16px' },
   },
   {
-    label: "Pill",
+    label: 'Pill',
     values: { topLeft: 50, topRight: 50, bottomRight: 50, bottomLeft: 50 },
-    style: { borderRadius: "50px" },
+    style: { borderRadius: '50px' },
   },
-];
+]
 
 const uniformRadius = computed(() => {
-  const { topLeft, topRight, bottomRight, bottomLeft } = props.modelValue;
+  const { topLeft, topRight, bottomRight, bottomLeft } = props.modelValue
   // Retourne la valeur si tous les coins sont égaux, sinon la moyenne
   if (topLeft === topRight && topRight === bottomRight && bottomRight === bottomLeft) {
-    return topLeft;
+    return topLeft
   }
-  return Math.round((topLeft + topRight + bottomRight + bottomLeft) / 4);
-});
+  return Math.round((topLeft + topRight + bottomRight + bottomLeft) / 4)
+})
 
 const previewStyle = computed(() => ({
   borderTopLeftRadius: `${props.modelValue.topLeft}px`,
   borderTopRightRadius: `${props.modelValue.topRight}px`,
   borderBottomRightRadius: `${props.modelValue.bottomRight}px`,
   borderBottomLeftRadius: `${props.modelValue.bottomLeft}px`,
-}));
+}))
 
 const updateUniformRadius = (value: number) => {
-  emit("update:modelValue", {
+  emit('update:modelValue', {
     topLeft: value,
     topRight: value,
     bottomRight: value,
     bottomLeft: value,
-  });
-};
+  })
+}
 
 const updateCorner = (corner: keyof BorderRadiusConfig, value: number) => {
-  emit("update:modelValue", {
+  emit('update:modelValue', {
     ...props.modelValue,
     [corner]: Math.max(0, Math.min(value, props.maxRadius)),
-  });
-};
+  })
+}
 
 const isPresetActive = (preset: RadiusPreset) => {
-  const { topLeft, topRight, bottomRight, bottomLeft } = props.modelValue;
+  const { topLeft, topRight, bottomRight, bottomLeft } = props.modelValue
   return (
     topLeft === preset.values.topLeft &&
     topRight === preset.values.topRight &&
     bottomRight === preset.values.bottomRight &&
     bottomLeft === preset.values.bottomLeft
-  );
-};
+  )
+}
 
 const applyPreset = (preset: RadiusPreset) => {
-  emit("update:modelValue", { ...preset.values });
-};
+  emit('update:modelValue', { ...preset.values })
+}
 </script>
 
 <style scoped>

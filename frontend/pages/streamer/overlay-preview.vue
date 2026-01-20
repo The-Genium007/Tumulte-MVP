@@ -5,16 +5,12 @@
       <!-- Desktop header: single row -->
       <div class="preview-header-desktop">
         <div class="flex items-center gap-4">
-          <UButton
-            color="neutral"
-            variant="soft"
-            size="xl"
-            square
-            class="group"
-            to="/streamer"
-          >
+          <UButton color="neutral" variant="soft" size="xl" square class="group" to="/streamer">
             <template #leading>
-              <UIcon name="i-lucide-arrow-left" class="size-12 transition-transform duration-200 group-hover:-translate-x-1" />
+              <UIcon
+                name="i-lucide-arrow-left"
+                class="size-12 transition-transform duration-200 group-hover:-translate-x-1"
+              />
             </template>
           </UButton>
           <div class="preview-title-section">
@@ -30,11 +26,7 @@
           </div>
         </div>
         <div v-if="isDev" class="preview-actions">
-          <UButton
-            color="primary"
-            icon="i-lucide-pencil"
-            to="/streamer/studio"
-          >
+          <UButton color="primary" icon="i-lucide-pencil" to="/streamer/studio">
             Ouvrir le Studio
           </UButton>
         </div>
@@ -43,16 +35,12 @@
       <!-- Mobile header: stacked layout -->
       <div class="preview-header-mobile">
         <div class="mobile-top-row">
-          <UButton
-            color="neutral"
-            variant="soft"
-            size="lg"
-            square
-            class="group"
-            to="/streamer"
-          >
+          <UButton color="neutral" variant="soft" size="lg" square class="group" to="/streamer">
             <template #leading>
-              <UIcon name="i-lucide-arrow-left" class="size-8 transition-transform duration-200 group-hover:-translate-x-1" />
+              <UIcon
+                name="i-lucide-arrow-left"
+                class="size-8 transition-transform duration-200 group-hover:-translate-x-1"
+              />
             </template>
           </UButton>
           <h2 class="preview-title">Prévisualisation</h2>
@@ -83,11 +71,7 @@
     <div class="preview-content">
       <!-- Canvas de prévisualisation avec damier -->
       <div ref="canvasWrapper" class="preview-canvas-wrapper">
-        <div
-          ref="canvasContainer"
-          class="preview-canvas"
-          :style="canvasStyle"
-        >
+        <div ref="canvasContainer" class="preview-canvas" :style="canvasStyle">
           <!-- Fond en damier pour montrer la transparence -->
           <div class="checkerboard-bg" />
 
@@ -127,9 +111,7 @@
           <div v-if="!hasConfig && !loading" class="no-config-message">
             <UIcon name="i-heroicons-exclamation-triangle" class="warning-icon" />
             <p>Aucune configuration d'overlay trouvée.</p>
-            <UButton color="primary" to="/streamer/studio">
-              Créer une configuration
-            </UButton>
+            <UButton color="primary" to="/streamer/studio"> Créer une configuration </UButton>
           </div>
         </div>
       </div>
@@ -157,94 +139,94 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch, nextTick } from "vue";
-import PreviewPollElement from "@/overlay-studio/components/PreviewPollElement.vue";
-import PreviewControls from "@/overlay-studio/components/PreviewControls.vue";
-import { useOverlayStudioStore } from "@/overlay-studio/stores/overlayStudio";
-import { useOverlayStudioApi } from "@/overlay-studio/composables/useOverlayStudioApi";
-import type { PollProperties, DiceRollEvent, OverlayElement } from "@/overlay-studio/types";
-import type { AnimationState } from "@/overlay-studio/composables/useAnimationController";
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import PreviewPollElement from '@/overlay-studio/components/PreviewPollElement.vue'
+import PreviewControls from '@/overlay-studio/components/PreviewControls.vue'
+import { useOverlayStudioStore } from '@/overlay-studio/stores/overlayStudio'
+import { useOverlayStudioApi } from '@/overlay-studio/composables/useOverlayStudioApi'
+import type { PollProperties, DiceRollEvent, OverlayElement } from '@/overlay-studio/types'
+import type { AnimationState } from '@/overlay-studio/composables/useAnimationController'
 
 definePageMeta({
-  layout: "authenticated",
-});
+  layout: 'authenticated',
+})
 
-const store = useOverlayStudioStore();
-const api = useOverlayStudioApi();
+const store = useOverlayStudioStore()
+const api = useOverlayStudioApi()
 
 // Mode développement uniquement (import.meta.dev est une constante Vite/Nuxt)
-const isDev = import.meta.dev;
+const isDev = import.meta.dev
 
 // Dimensions du canvas overlay (référence 1920x1080)
-const CANVAS_WIDTH = 1920;
-const CANVAS_HEIGHT = 1080;
+const CANVAS_WIDTH = 1920
+const CANVAS_HEIGHT = 1080
 
 // État local
-const loading = ref(true);
-const selectedConfigId = ref<string | undefined>(undefined);
-const selectedElementId = ref<string | null>(null);
+const loading = ref(true)
+const selectedConfigId = ref<string | undefined>(undefined)
+const selectedElementId = ref<string | null>(null)
 
 // Options pour le sélecteur de configuration
 const configOptions = computed(() => [
-  { label: "Tumulte Default", value: "default" },
+  { label: 'Tumulte Default', value: 'default' },
   ...api.configs.value.map((c) => ({
-    label: c.name + (c.isActive ? " (Active)" : ""),
+    label: c.name + (c.isActive ? ' (Active)' : ''),
     value: c.id,
   })),
-]);
+])
 
 // Charger une configuration sélectionnée
 const loadSelectedConfig = async (configId: string | undefined) => {
-  if (!configId) return;
+  if (!configId) return
 
   try {
-    loading.value = true;
+    loading.value = true
 
     // Charger la configuration système par défaut
-    if (configId === "default") {
-      store.loadConfig(getSystemDefaultConfig());
+    if (configId === 'default') {
+      store.loadConfig(getSystemDefaultConfig())
     } else {
-      const fullConfig = await api.fetchConfig(configId);
-      store.loadConfig(fullConfig.config);
+      const fullConfig = await api.fetchConfig(configId)
+      store.loadConfig(fullConfig.config)
     }
 
     // Réinitialiser les états des éléments
     for (const element of store.elements) {
-      elementStates.value[element.id] = "hidden";
+      elementStates.value[element.id] = 'hidden'
     }
   } catch (error) {
-    console.error("Failed to load config:", error);
+    console.error('Failed to load config:', error)
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
-const canvasWrapper = ref<HTMLElement | null>(null);
-const canvasContainer = ref<HTMLElement | null>(null);
+}
+const canvasWrapper = ref<HTMLElement | null>(null)
+const canvasContainer = ref<HTMLElement | null>(null)
 
 // Échelle calculée pour adapter le canvas à l'espace disponible
-const canvasScale = ref(1);
+const canvasScale = ref(1)
 
 // État des animations par élément
-const elementStates = ref<Record<string, AnimationState>>({});
+const elementStates = ref<Record<string, AnimationState>>({})
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const elementRefs = ref<Record<string, any>>({});
+const elementRefs = ref<Record<string, any>>({})
 
 // DiceBox refs par élément ID
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const diceBoxRefs = ref<Record<string, any>>({});
-const currentDiceNotation = ref("");
-const diceBoxReady = ref(false);
+const diceBoxRefs = ref<Record<string, any>>({})
+const currentDiceNotation = ref('')
+const diceBoxReady = ref(false)
 
 // Éléments de la configuration
-const elements = computed(() => store.elements);
-const visibleElements = computed(() => elements.value.filter((el) => el.visible));
-const hasConfig = computed(() => elements.value.length > 0);
+const elements = computed(() => store.elements)
+const visibleElements = computed(() => elements.value.filter((el) => el.visible))
+const hasConfig = computed(() => elements.value.length > 0)
 
 // État actuel de l'élément sélectionné
 const currentState = computed<AnimationState>(() => {
-  if (!selectedElementId.value) return "hidden";
-  return elementStates.value[selectedElementId.value] || "hidden";
-});
+  if (!selectedElementId.value) return 'hidden'
+  return elementStates.value[selectedElementId.value] || 'hidden'
+})
 
 // Style du canvas (dimensions fixes 1920x1080 + échelle)
 const canvasStyle = computed(() => {
@@ -252,49 +234,49 @@ const canvasStyle = computed(() => {
     width: `${CANVAS_WIDTH}px`,
     height: `${CANVAS_HEIGHT}px`,
     transform: `scale(${canvasScale.value})`,
-    transformOrigin: "top left",
-  };
-});
+    transformOrigin: 'top left',
+  }
+})
 
 // Style du container de dés basé sur la position de l'élément
 // Note: DiceBox occupe tout l'espace disponible, la position définit le coin supérieur gauche
 const getDiceContainerStyle = (element: OverlayElement) => {
   // Taille par défaut pour le DiceBox (1920x1080 = format overlay standard)
-  const baseWidth = 1920;
-  const baseHeight = 1080;
+  const baseWidth = 1920
+  const baseHeight = 1080
   return {
     position: 'absolute' as const,
     left: `${element.position.x}px`,
     top: `${element.position.y}px`,
     width: `${baseWidth * element.scale.x}px`,
     height: `${baseHeight * element.scale.y}px`,
-  };
-};
+  }
+}
 
 /**
  * Calcule l'échelle du canvas en fonction de l'espace disponible.
  * Le wrapper utilise aspect-ratio: 16/9, donc on calcule uniquement sur la largeur.
  */
 const calculateCanvasScale = () => {
-  if (!canvasWrapper.value) return;
+  if (!canvasWrapper.value) return
 
-  const wrapperRect = canvasWrapper.value.getBoundingClientRect();
-  const scaleX = wrapperRect.width / CANVAS_WIDTH;
-  canvasScale.value = Math.min(scaleX, 1);
-};
+  const wrapperRect = canvasWrapper.value.getBoundingClientRect()
+  const scaleX = wrapperRect.width / CANVAS_WIDTH
+  canvasScale.value = Math.min(scaleX, 1)
+}
 
 // Observer le redimensionnement
-let resizeObserver: ResizeObserver | null = null;
+let resizeObserver: ResizeObserver | null = null
 
 // Configuration système par défaut (miroir de OverlayConfig.getDefaultConfigWithPoll() du backend)
 const getSystemDefaultConfig = () => ({
-  version: "1.0",
+  version: '1.0',
   canvas: { width: 1920, height: 1080 },
   elements: [
     {
-      id: "default_poll",
-      type: "poll" as const,
-      name: "Sondage par défaut",
+      id: 'default_poll',
+      type: 'poll' as const,
+      name: 'Sondage par défaut',
       position: { x: 664, y: 0, z: 0 },
       rotation: { x: 0, y: 0, z: 0 },
       scale: { x: 0.5, y: 0.5, z: 1 },
@@ -303,121 +285,148 @@ const getSystemDefaultConfig = () => ({
       zIndex: 0,
       properties: {
         questionStyle: {
-          fontFamily: "Inter",
+          fontFamily: 'Inter',
           fontSize: 48,
           fontWeight: 700,
-          color: "#ffffff",
-          textShadow: { enabled: true, color: "rgba(0, 0, 0, 0.5)", blur: 4, offsetX: 0, offsetY: 2 },
+          color: '#ffffff',
+          textShadow: {
+            enabled: true,
+            color: 'rgba(0, 0, 0, 0.5)',
+            blur: 4,
+            offsetX: 0,
+            offsetY: 2,
+          },
         },
         questionBoxStyle: {
-          backgroundColor: "transparent",
-          borderColor: "transparent",
+          backgroundColor: 'transparent',
+          borderColor: 'transparent',
           borderWidth: 0,
           borderRadius: 0,
           opacity: 1,
           padding: { top: 0, right: 0, bottom: 16, left: 0 },
         },
         optionBoxStyle: {
-          backgroundColor: "rgba(17, 17, 17, 0.9)",
-          borderColor: "#9333ea",
+          backgroundColor: 'rgba(17, 17, 17, 0.9)',
+          borderColor: '#9333ea',
           borderWidth: 2,
           borderRadius: 12,
           opacity: 1,
           padding: { top: 16, right: 24, bottom: 16, left: 24 },
         },
-        optionTextStyle: { fontFamily: "Inter", fontSize: 24, fontWeight: 600, color: "#ffffff" },
-        optionPercentageStyle: { fontFamily: "Inter", fontSize: 28, fontWeight: 800, color: "#e0d0ff" },
+        optionTextStyle: { fontFamily: 'Inter', fontSize: 24, fontWeight: 600, color: '#ffffff' },
+        optionPercentageStyle: {
+          fontFamily: 'Inter',
+          fontSize: 28,
+          fontWeight: 800,
+          color: '#e0d0ff',
+        },
         optionSpacing: 16,
-        medalColors: { gold: "#FFD700", silver: "#C0C0C0", bronze: "#CD7F32", base: "#9333ea" },
+        medalColors: { gold: '#FFD700', silver: '#C0C0C0', bronze: '#CD7F32', base: '#9333ea' },
         progressBar: {
           height: 8,
-          backgroundColor: "rgba(147, 51, 234, 0.2)",
-          fillColor: "#9333ea",
-          fillGradient: { enabled: true, startColor: "#9333ea", endColor: "#ec4899" },
+          backgroundColor: 'rgba(147, 51, 234, 0.2)',
+          fillColor: '#9333ea',
+          fillGradient: { enabled: true, startColor: '#9333ea', endColor: '#ec4899' },
           borderRadius: 4,
-          position: "bottom" as const,
+          position: 'bottom' as const,
           showTimeText: true,
-          timeTextStyle: { fontFamily: "Inter", fontSize: 20, fontWeight: 700, color: "#ffffff" },
+          timeTextStyle: { fontFamily: 'Inter', fontSize: 20, fontWeight: 700, color: '#ffffff' },
         },
         animations: {
-          entry: { animation: { duration: 0.5, easing: "ease-out" as const, delay: 0 }, slideDirection: "up" as const, sound: { enabled: true, volume: 0.8 }, soundLeadTime: 1.5 },
+          entry: {
+            animation: { duration: 0.5, easing: 'ease-out' as const, delay: 0 },
+            slideDirection: 'up' as const,
+            sound: { enabled: true, volume: 0.8 },
+            soundLeadTime: 1.5,
+          },
           loop: { music: { enabled: true, volume: 0.3 } },
-          exit: { animation: { duration: 0.5, easing: "ease-in" as const, delay: 0 } },
-          result: { winnerEnlarge: { scale: 1.1, duration: 0.3 }, loserFadeOut: { opacity: 0.3, duration: 0.5 }, sound: { enabled: true, volume: 0.8 }, displayDuration: 5 },
+          exit: { animation: { duration: 0.5, easing: 'ease-in' as const, delay: 0 } },
+          result: {
+            winnerEnlarge: { scale: 1.1, duration: 0.3 },
+            loserFadeOut: { opacity: 0.3, duration: 0.5 },
+            sound: { enabled: true, volume: 0.8 },
+            displayDuration: 5,
+          },
         },
         layout: { maxWidth: 480, minOptionsToShow: 2, maxOptionsToShow: 5 },
-        mockData: { question: "Quelle action pour le héros ?", options: ["Attaquer", "Fuir", "Négocier", "Explorer"], percentages: [35, 28, 22, 15], timeRemaining: 45, totalDuration: 60 },
+        mockData: {
+          question: 'Quelle action pour le héros ?',
+          options: ['Attaquer', 'Fuir', 'Négocier', 'Explorer'],
+          percentages: [35, 28, 22, 15],
+          timeRemaining: 45,
+          totalDuration: 60,
+        },
       },
     },
   ],
-});
+})
 
 // Charger la configuration au montage
 onMounted(async () => {
-  const route = useRoute();
-  const configParam = route.query.config as string | undefined;
+  const route = useRoute()
+  const configParam = route.query.config as string | undefined
 
   try {
     // Charger la liste des configs
-    const configs = await api.fetchConfigs();
+    const configs = await api.fetchConfigs()
 
     // Si ?config=default, charger la configuration système par défaut
-    if (configParam === "default") {
-      selectedConfigId.value = "default";
-      store.loadConfig(getSystemDefaultConfig());
+    if (configParam === 'default') {
+      selectedConfigId.value = 'default'
+      store.loadConfig(getSystemDefaultConfig())
     }
     // Si ?config=<uuid>, charger cette configuration spécifique
-    else if (configParam && configParam !== "default") {
-      const targetConfig = configs.find((c) => c.id === configParam);
+    else if (configParam && configParam !== 'default') {
+      const targetConfig = configs.find((c) => c.id === configParam)
       if (targetConfig) {
-        selectedConfigId.value = targetConfig.id;
-        const fullConfig = await api.fetchConfig(targetConfig.id);
-        store.loadConfig(fullConfig.config);
+        selectedConfigId.value = targetConfig.id
+        const fullConfig = await api.fetchConfig(targetConfig.id)
+        store.loadConfig(fullConfig.config)
       }
     }
     // Sinon, trouver la config active par défaut
     else {
-      const activeConfig = configs.find((c) => c.isActive);
+      const activeConfig = configs.find((c) => c.isActive)
 
       if (activeConfig) {
-        selectedConfigId.value = activeConfig.id;
+        selectedConfigId.value = activeConfig.id
 
         if (store.elements.length === 0) {
-          const fullConfig = await api.fetchConfig(activeConfig.id);
-          store.loadConfig(fullConfig.config);
+          const fullConfig = await api.fetchConfig(activeConfig.id)
+          store.loadConfig(fullConfig.config)
         }
       }
     }
 
     // Initialiser les états des éléments
     for (const element of elements.value) {
-      elementStates.value[element.id] = "hidden";
+      elementStates.value[element.id] = 'hidden'
     }
   } catch (error) {
-    console.error("Failed to load overlay config:", error);
+    console.error('Failed to load overlay config:', error)
   } finally {
-    loading.value = false;
+    loading.value = false
   }
 
   // Calculer l'échelle initiale et observer les changements de taille
-  await nextTick();
-  calculateCanvasScale();
+  await nextTick()
+  calculateCanvasScale()
 
   if (canvasWrapper.value) {
     resizeObserver = new ResizeObserver(() => {
-      calculateCanvasScale();
-    });
-    resizeObserver.observe(canvasWrapper.value);
+      calculateCanvasScale()
+    })
+    resizeObserver.observe(canvasWrapper.value)
   }
-});
+})
 
 // Nettoyage
 onUnmounted(() => {
   if (resizeObserver) {
-    resizeObserver.disconnect();
-    resizeObserver = null;
+    resizeObserver.disconnect()
+    resizeObserver = null
   }
-});
+})
 
 // Surveiller les changements d'éléments pour mettre à jour les états
 watch(
@@ -425,227 +434,227 @@ watch(
   (newElements) => {
     for (const element of newElements) {
       if (!(element.id in elementStates.value)) {
-        elementStates.value[element.id] = "hidden";
+        elementStates.value[element.id] = 'hidden'
       }
     }
   },
-  { deep: true },
-);
+  { deep: true }
+)
 
 // Stocker les refs des éléments
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const setElementRef = (id: string, el: any) => {
   if (el) {
-    elementRefs.value[id] = el;
+    elementRefs.value[id] = el
   }
-};
+}
 
 // Toggle la sélection d'un élément (sélectionne ou désélectionne)
 const toggleElement = (id: string) => {
-  selectedElementId.value = selectedElementId.value === id ? null : id;
-};
+  selectedElementId.value = selectedElementId.value === id ? null : id
+}
 
 // Toggle visibilité
 const toggleVisibility = (id: string) => {
-  const element = elements.value.find((el) => el.id === id);
+  const element = elements.value.find((el) => el.id === id)
   if (element) {
-    store.updateElement(id, { visible: !element.visible });
+    store.updateElement(id, { visible: !element.visible })
   }
-};
+}
 
 // Obtenir le composant de l'élément sélectionné
 const getSelectedComponent = () => {
-  if (!selectedElementId.value) return null;
-  return elementRefs.value[selectedElementId.value];
-};
+  if (!selectedElementId.value) return null
+  return elementRefs.value[selectedElementId.value]
+}
 
 // Obtenir les mockData de l'élément sélectionné pour les envoyer à OBS
 const getSelectedMockData = () => {
-  if (!selectedElementId.value) return undefined;
-  const element = elements.value.find((el) => el.id === selectedElementId.value);
-  if (!element) return undefined;
+  if (!selectedElementId.value) return undefined
+  const element = elements.value.find((el) => el.id === selectedElementId.value)
+  if (!element) return undefined
 
-  const props = element.properties as PollProperties;
+  const props = element.properties as PollProperties
   return {
     question: props.mockData.question,
     options: props.mockData.options,
     percentages: props.mockData.percentages,
     timeRemaining: props.mockData.timeRemaining,
     totalDuration: props.mockData.totalDuration,
-  };
-};
+  }
+}
 
 // Handlers d'animation - exécutent localement ET envoient au backend pour sync OBS
 const handlePlayEntry = async () => {
-  const component = getSelectedComponent();
-  if (!component || !selectedElementId.value) return;
+  const component = getSelectedComponent()
+  if (!component || !selectedElementId.value) return
 
   // Sync avec l'overlay OBS (avec mockData)
-  api.sendPreviewCommand(selectedElementId.value, "playEntry", {
+  api.sendPreviewCommand(selectedElementId.value, 'playEntry', {
     mockData: getSelectedMockData(),
-  });
+  })
 
-  elementStates.value[selectedElementId.value] = "entering";
-  await component.playEntry();
-  elementStates.value[selectedElementId.value] = "active";
-};
+  elementStates.value[selectedElementId.value] = 'entering'
+  await component.playEntry()
+  elementStates.value[selectedElementId.value] = 'active'
+}
 
 const handlePlayLoop = () => {
-  const component = getSelectedComponent();
-  if (!component || !selectedElementId.value) return;
+  const component = getSelectedComponent()
+  if (!component || !selectedElementId.value) return
 
   // Sync avec l'overlay OBS
-  api.sendPreviewCommand(selectedElementId.value, "playLoop");
+  api.sendPreviewCommand(selectedElementId.value, 'playLoop')
 
-  component.playLoop();
-};
+  component.playLoop()
+}
 
 const handleStopLoop = () => {
-  const component = getSelectedComponent();
-  if (!component || !selectedElementId.value) return;
+  const component = getSelectedComponent()
+  if (!component || !selectedElementId.value) return
 
   // Sync avec l'overlay OBS
-  api.sendPreviewCommand(selectedElementId.value, "stopLoop");
+  api.sendPreviewCommand(selectedElementId.value, 'stopLoop')
 
-  component.stopLoop();
-};
+  component.stopLoop()
+}
 
 const handlePlayResult = async () => {
-  const component = getSelectedComponent();
-  if (!component || !selectedElementId.value) return;
+  const component = getSelectedComponent()
+  if (!component || !selectedElementId.value) return
 
   // Sync avec l'overlay OBS (avec mockData pour les pourcentages finaux)
-  api.sendPreviewCommand(selectedElementId.value, "playResult", {
+  api.sendPreviewCommand(selectedElementId.value, 'playResult', {
     mockData: getSelectedMockData(),
-  });
+  })
 
-  elementStates.value[selectedElementId.value] = "result";
-  await component.playResult();
-};
+  elementStates.value[selectedElementId.value] = 'result'
+  await component.playResult()
+}
 
 const handlePlayExit = async () => {
-  const component = getSelectedComponent();
-  if (!component || !selectedElementId.value) return;
+  const component = getSelectedComponent()
+  if (!component || !selectedElementId.value) return
 
   // Sync avec l'overlay OBS
-  api.sendPreviewCommand(selectedElementId.value, "playExit");
+  api.sendPreviewCommand(selectedElementId.value, 'playExit')
 
-  elementStates.value[selectedElementId.value] = "exiting";
-  await component.playExit();
-  elementStates.value[selectedElementId.value] = "hidden";
-};
+  elementStates.value[selectedElementId.value] = 'exiting'
+  await component.playExit()
+  elementStates.value[selectedElementId.value] = 'hidden'
+}
 
 const handlePlayFullSequence = async () => {
-  const component = getSelectedComponent();
-  if (!component || !selectedElementId.value) return;
+  const component = getSelectedComponent()
+  if (!component || !selectedElementId.value) return
 
-  const element = elements.value.find((el) => el.id === selectedElementId.value);
-  if (!element) return;
+  const element = elements.value.find((el) => el.id === selectedElementId.value)
+  if (!element) return
 
-  const props = element.properties as PollProperties;
-  const duration = props.mockData.timeRemaining || 10;
+  const props = element.properties as PollProperties
+  const duration = props.mockData.timeRemaining || 10
 
   // Sync avec l'overlay OBS (avec mockData)
-  api.sendPreviewCommand(selectedElementId.value, "playFullSequence", {
+  api.sendPreviewCommand(selectedElementId.value, 'playFullSequence', {
     duration,
     mockData: getSelectedMockData(),
-  });
+  })
 
   // Mettre à jour les états au fur et à mesure
-  elementStates.value[selectedElementId.value] = "entering";
+  elementStates.value[selectedElementId.value] = 'entering'
 
   // L'animation gère les transitions en interne
-  await component.playFullSequence(duration);
+  await component.playFullSequence(duration)
 
-  elementStates.value[selectedElementId.value] = "hidden";
-};
+  elementStates.value[selectedElementId.value] = 'hidden'
+}
 
 const handleReset = () => {
-  const component = getSelectedComponent();
-  if (!component || !selectedElementId.value) return;
+  const component = getSelectedComponent()
+  if (!component || !selectedElementId.value) return
 
   // Sync avec l'overlay OBS
-  api.sendPreviewCommand(selectedElementId.value, "reset");
+  api.sendPreviewCommand(selectedElementId.value, 'reset')
 
-  component.reset();
-  elementStates.value[selectedElementId.value] = "hidden";
+  component.reset()
+  elementStates.value[selectedElementId.value] = 'hidden'
 
   // Reset dice notation
-  currentDiceNotation.value = "";
-};
+  currentDiceNotation.value = ''
+}
 
 // DiceBox handlers
 const setDiceBoxRef = (id: string, el: unknown) => {
   if (el) {
-    diceBoxRefs.value[id] = el;
+    diceBoxRefs.value[id] = el
   }
-};
+}
 
 const handleDiceBoxReady = (elementId: string) => {
-  console.log("[Preview] DiceBox ready for element:", elementId);
-  diceBoxReady.value = true;
-};
+  console.log('[Preview] DiceBox ready for element:', elementId)
+  diceBoxReady.value = true
+}
 
 const handleDiceRollComplete = (results: unknown) => {
-  console.log("[Preview] Dice roll complete:", results);
+  console.log('[Preview] Dice roll complete:', results)
   if (selectedElementId.value) {
-    elementStates.value[selectedElementId.value] = "result";
+    elementStates.value[selectedElementId.value] = 'result'
   }
-};
+}
 
 // Handler pour le lancer de dés manuel (depuis PreviewControls)
 const handleRollDice = async (data: DiceRollEvent) => {
-  console.log("[Preview] Manual dice roll triggered:", data);
+  console.log('[Preview] Manual dice roll triggered:', data)
 
   if (!selectedElementId.value) {
-    console.warn("[Preview] No element selected for dice roll");
-    return;
+    console.warn('[Preview] No element selected for dice roll')
+    return
   }
 
   // Vérifier que l'élément sélectionné est bien un élément dice
-  const selectedElement = elements.value.find((el) => el.id === selectedElementId.value);
-  if (!selectedElement || selectedElement.type !== "dice") {
-    console.warn("[Preview] Selected element is not a dice element");
-    return;
+  const selectedElement = elements.value.find((el) => el.id === selectedElementId.value)
+  if (!selectedElement || selectedElement.type !== 'dice') {
+    console.warn('[Preview] Selected element is not a dice element')
+    return
   }
 
   // Vérifier que le DiceBox est prêt
-  const diceBox = diceBoxRefs.value[selectedElementId.value];
+  const diceBox = diceBoxRefs.value[selectedElementId.value]
   if (!diceBox) {
-    console.warn("[Preview] DiceBox not found for element:", selectedElementId.value);
-    return;
+    console.warn('[Preview] DiceBox not found for element:', selectedElementId.value)
+    return
   }
 
   // Mettre à jour l'état
-  elementStates.value[selectedElementId.value] = "active";
+  elementStates.value[selectedElementId.value] = 'active'
 
   // Construire la notation avec les résultats forcés si disponibles
   // Format DiceBox: "2d20@5,15" pour forcer les résultats à 5 et 15
-  let notation = data.rollFormula;
+  let notation = data.rollFormula
   if (data.diceResults && data.diceResults.length > 0) {
-    notation += "@" + data.diceResults.join(",");
+    notation += '@' + data.diceResults.join(',')
   }
 
-  console.log("[Preview] Rolling dice with notation:", notation);
+  console.log('[Preview] Rolling dice with notation:', notation)
 
   // Clear les dés précédents avant de lancer
   if (diceBox.clear) {
-    diceBox.clear();
+    diceBox.clear()
   }
 
   // Appeler directement la méthode roll du composant au lieu d'utiliser la prop notation
   // Cela évite les problèmes de watch qui ne se déclenche pas si la valeur est identique
   if (diceBox.roll) {
     try {
-      await diceBox.roll(notation);
+      await diceBox.roll(notation)
     } catch (error) {
-      console.error("[Preview] Error rolling dice:", error);
+      console.error('[Preview] Error rolling dice:', error)
     }
   } else {
     // Fallback: utiliser la prop notation
-    currentDiceNotation.value = notation;
+    currentDiceNotation.value = notation
   }
-};
+}
 </script>
 
 <style scoped>

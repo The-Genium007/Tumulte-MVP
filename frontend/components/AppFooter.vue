@@ -12,7 +12,8 @@
           target="_blank"
           rel="noopener noreferrer"
           class="text-primary-500 hover:underline"
-        >Lucas GIZA</a>
+          >Lucas GIZA</a
+        >
       </p>
     </div>
   </footer>

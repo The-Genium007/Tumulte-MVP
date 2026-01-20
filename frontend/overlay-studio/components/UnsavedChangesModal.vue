@@ -10,24 +10,14 @@
         </template>
 
         <p class="modal-message">
-          Vous avez des modifications non sauvegardées. Voulez-vous vraiment quitter sans sauvegarder ?
+          Vous avez des modifications non sauvegardées. Voulez-vous vraiment quitter sans
+          sauvegarder ?
         </p>
 
         <template #footer>
           <div class="modal-actions">
-            <UButton
-              color="neutral"
-              variant="outline"
-              @click="handleCancel"
-            >
-              Annuler
-            </UButton>
-            <UButton
-              color="error"
-              @click="handleConfirm"
-            >
-              Quitter sans sauvegarder
-            </UButton>
+            <UButton color="neutral" variant="outline" @click="handleCancel"> Annuler </UButton>
+            <UButton color="error" @click="handleConfirm"> Quitter sans sauvegarder </UButton>
           </div>
         </template>
       </UCard>
@@ -36,30 +26,30 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed } from 'vue'
 
 const props = defineProps<{
-  open: boolean;
-}>();
+  open: boolean
+}>()
 
 const emit = defineEmits<{
-  "update:open": [value: boolean];
-  confirm: [];
-  cancel: [];
-}>();
+  'update:open': [value: boolean]
+  confirm: []
+  cancel: []
+}>()
 
 const isOpen = computed({
   get: () => props.open,
-  set: (value) => emit("update:open", value),
-});
+  set: (value) => emit('update:open', value),
+})
 
 const handleConfirm = () => {
-  emit("confirm");
-};
+  emit('confirm')
+}
 
 const handleCancel = () => {
-  emit("cancel");
-};
+  emit('cancel')
+}
 </script>
 
 <style scoped>

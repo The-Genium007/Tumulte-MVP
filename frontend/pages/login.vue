@@ -1,7 +1,5 @@
 <template>
-  <div
-    class="min-h-screen flex items-center justify-center bg-page px-4"
-  >
+  <div class="min-h-screen flex items-center justify-center bg-page px-4">
     <UCard class="w-full max-w-md">
       <template #header>
         <div class="text-center space-y-3">
@@ -9,9 +7,7 @@
             <img src="~/assets/images/logo.png" alt="Tumulte" class="size-24" />
           </div>
           <h1 class="text-3xl font-bold text-primary">Tumulte</h1>
-          <p class="text-sm text-muted">
-            Système de Table-Top Twitch synchronisés
-          </p>
+          <p class="text-sm text-muted">Système de Table-Top Twitch synchronisés</p>
         </div>
       </template>
 
@@ -46,33 +42,33 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
-import { useRoute } from "vue-router";
-import { useAuth } from "@/composables/useAuth";
+import { ref, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import { useAuth } from '@/composables/useAuth'
 
 definePageMeta({
-  layout: "default" as const,
-});
+  layout: 'default' as const,
+})
 
-const route = useRoute();
-const { loginWithTwitch } = useAuth();
+const route = useRoute()
+const { loginWithTwitch } = useAuth()
 
-const _error = ref<string | null>(null);
+const _error = ref<string | null>(null)
 
 // Vérifier si une erreur est présente dans l'URL
 onMounted(() => {
-  const errorParam = route.query.error as string;
-  if (errorParam === "invalid_state") {
-    _error.value = "Erreur de validation CSRF. Veuillez réessayer.";
-  } else if (errorParam === "oauth_failed") {
-    _error.value = "Échec de l'authentification OAuth. Veuillez réessayer.";
-  } else if (errorParam === "session_failed") {
-    _error.value = "Erreur de session. Veuillez vous reconnecter.";
+  const errorParam = route.query.error as string
+  if (errorParam === 'invalid_state') {
+    _error.value = 'Erreur de validation CSRF. Veuillez réessayer.'
+  } else if (errorParam === 'oauth_failed') {
+    _error.value = "Échec de l'authentification OAuth. Veuillez réessayer."
+  } else if (errorParam === 'session_failed') {
+    _error.value = 'Erreur de session. Veuillez vous reconnecter.'
   }
-});
+})
 
 const handleLogin = () => {
-  _error.value = null;
-  loginWithTwitch();
-};
+  _error.value = null
+  loginWithTwitch()
+}
 </script>

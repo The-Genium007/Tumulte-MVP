@@ -16,7 +16,11 @@
           <button class="sub-section-header" @click="toggleQuestionSubSection('container')">
             <span>Conteneur</span>
             <UIcon
-              :name="expandedQuestionSubSections.container ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+              :name="
+                expandedQuestionSubSections.container
+                  ? 'i-lucide-chevron-up'
+                  : 'i-lucide-chevron-down'
+              "
               class="size-3"
             />
           </button>
@@ -46,7 +50,9 @@
           <button class="sub-section-header" @click="toggleQuestionSubSection('text')">
             <span>Texte</span>
             <UIcon
-              :name="expandedQuestionSubSections.text ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+              :name="
+                expandedQuestionSubSections.text ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'
+              "
               class="size-3"
             />
           </button>
@@ -93,7 +99,9 @@
           <button class="sub-section-header" @click="toggleSubSection('container')">
             <span>Conteneur</span>
             <UIcon
-              :name="expandedSubSections.container ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+              :name="
+                expandedSubSections.container ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'
+              "
               class="size-3"
             />
           </button>
@@ -123,7 +131,9 @@
           <button class="sub-section-header" @click="toggleSubSection('optionText')">
             <span>Texte des options</span>
             <UIcon
-              :name="expandedSubSections.optionText ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+              :name="
+                expandedSubSections.optionText ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'
+              "
               class="size-3"
             />
           </button>
@@ -156,7 +166,9 @@
           <button class="sub-section-header" @click="toggleSubSection('percentage')">
             <span>Pourcentages</span>
             <UIcon
-              :name="expandedSubSections.percentage ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+              :name="
+                expandedSubSections.percentage ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'
+              "
               class="size-3"
             />
           </button>
@@ -336,7 +348,9 @@
           <UCheckbox
             :model-value="props.progressBar.showTimeText"
             label="Afficher le temps restant"
-            @update:model-value="(v: boolean | 'indeterminate') => updateProgressBar('showTimeText', v === true)"
+            @update:model-value="
+              (v: boolean | 'indeterminate') => updateProgressBar('showTimeText', v === true)
+            "
           />
         </div>
 
@@ -408,7 +422,9 @@
                 :min="10"
                 :max="100"
                 :step="5"
-                @update:model-value="(v) => updateResultAnimation('loserFadeOut', 'opacity', v / 100)"
+                @update:model-value="
+                  (v) => updateResultAnimation('loserFadeOut', 'opacity', v / 100)
+                "
               />
               <span class="unit">%</span>
             </div>
@@ -421,7 +437,12 @@
                 :min="1"
                 :max="10"
                 :step="0.5"
-                @update:model-value="(v) => emit('updateAnimations', { result: { ...props.animations.result, displayDuration: v } })"
+                @update:model-value="
+                  (v) =>
+                    emit('updateAnimations', {
+                      result: { ...props.animations.result, displayDuration: v },
+                    })
+                "
               />
               <span class="unit">s</span>
             </div>
@@ -513,7 +534,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, computed } from "vue";
+import { computed } from 'vue'
 import {
   ColorModule,
   TextModule,
@@ -531,7 +552,12 @@ import {
   type AudioConfig,
   type PaddingConfig,
   type TextShadowConfig,
-} from "./modules";
+} from './modules'
+import {
+  useCollapsibleSections,
+  normalizeBorderRadius,
+  isUniformBorderRadius,
+} from '~/overlay-studio/composables'
 import type {
   TypographySettings,
   BoxStyleSettings,
@@ -539,43 +565,45 @@ import type {
   ProgressBarConfig,
   PollAnimationsConfig,
   PollMockData,
-} from "~/overlay-studio/types";
+} from '~/overlay-studio/types'
 
 const props = defineProps<{
-  questionStyle: TypographySettings;
-  questionBoxStyle: BoxStyleSettings;
-  optionBoxStyle: BoxStyleSettings;
-  optionTextStyle: TypographySettings;
-  optionPercentageStyle: TypographySettings;
-  optionSpacing: number;
-  medalColors: MedalColors;
-  progressBar: ProgressBarConfig;
-  animations: PollAnimationsConfig;
+  questionStyle: TypographySettings
+  questionBoxStyle: BoxStyleSettings
+  optionBoxStyle: BoxStyleSettings
+  optionTextStyle: TypographySettings
+  optionPercentageStyle: TypographySettings
+  optionSpacing: number
+  medalColors: MedalColors
+  progressBar: ProgressBarConfig
+  animations: PollAnimationsConfig
   layout: {
-    maxWidth: number;
-    minOptionsToShow: number;
-    maxOptionsToShow: number;
-  };
-  mockData: PollMockData;
-}>();
+    maxWidth: number
+    minOptionsToShow: number
+    maxOptionsToShow: number
+  }
+  mockData: PollMockData
+}>()
 
 const emit = defineEmits<{
-  updateQuestionStyle: [style: Partial<TypographySettings>];
-  updateQuestionBoxStyle: [style: Partial<BoxStyleSettings>];
-  updateOptionBoxStyle: [style: Partial<BoxStyleSettings>];
-  updateOptionTextStyle: [style: Partial<TypographySettings>];
-  updatePercentageStyle: [style: Partial<TypographySettings>];
-  updateOptionSpacing: [spacing: number];
-  updateMedalColors: [colors: Partial<MedalColors>];
-  updateProgressBar: [config: Partial<ProgressBarConfig>];
-  updateAnimations: [animations: Partial<PollAnimationsConfig>];
-  updateLayout: [layout: Partial<{ maxWidth: number; minOptionsToShow: number; maxOptionsToShow: number }>];
-  updateMockData: [data: Partial<PollMockData>];
-  playPreview: [];
-}>();
+  updateQuestionStyle: [style: Partial<TypographySettings>]
+  updateQuestionBoxStyle: [style: Partial<BoxStyleSettings>]
+  updateOptionBoxStyle: [style: Partial<BoxStyleSettings>]
+  updateOptionTextStyle: [style: Partial<TypographySettings>]
+  updatePercentageStyle: [style: Partial<TypographySettings>]
+  updateOptionSpacing: [spacing: number]
+  updateMedalColors: [colors: Partial<MedalColors>]
+  updateProgressBar: [config: Partial<ProgressBarConfig>]
+  updateAnimations: [animations: Partial<PollAnimationsConfig>]
+  updateLayout: [
+    layout: Partial<{ maxWidth: number; minOptionsToShow: number; maxOptionsToShow: number }>,
+  ]
+  updateMockData: [data: Partial<PollMockData>]
+  playPreview: []
+}>()
 
-// Sections collapsed/expanded state
-const expandedSections = reactive({
+// Sections collapsed/expanded state - using composable
+const { sections: expandedSections, toggle: toggleSection } = useCollapsibleSections({
   question: true,
   options: false,
   medals: false,
@@ -583,123 +611,96 @@ const expandedSections = reactive({
   animations: false,
   audio: false,
   preview: true,
-});
+})
 
-// Sub-sections collapsed/expanded state (for Question)
-const expandedQuestionSubSections = reactive({
-  container: true,
-  text: false,
-});
+// Sub-sections for Question
+const { sections: expandedQuestionSubSections, toggle: toggleQuestionSubSection } =
+  useCollapsibleSections({
+    container: true,
+    text: false,
+  })
 
-// Sub-sections collapsed/expanded state (for Options de réponse)
-const expandedSubSections = reactive({
+// Sub-sections for Options de réponse
+const { sections: expandedSubSections, toggle: toggleSubSection } = useCollapsibleSections({
   container: true,
   optionText: false,
   percentage: false,
   spacing: false,
-});
-
-const toggleSection = (section: keyof typeof expandedSections) => {
-  expandedSections[section] = !expandedSections[section];
-};
-
-const toggleQuestionSubSection = (subSection: keyof typeof expandedQuestionSubSections) => {
-  expandedQuestionSubSections[subSection] = !expandedQuestionSubSections[subSection];
-};
-
-const toggleSubSection = (subSection: keyof typeof expandedSubSections) => {
-  expandedSubSections[subSection] = !expandedSubSections[subSection];
-};
+})
 
 // Options
 const positionOptions = [
-  { label: "Haut", value: "top" },
-  { label: "Bas", value: "bottom" },
-];
+  { label: 'Haut', value: 'top' },
+  { label: 'Bas', value: 'bottom' },
+]
 
 // UI customization for selects
 const selectUi = {
-  base: "bg-neutral-100 text-neutral-600",
-};
+  base: 'bg-neutral-100 text-neutral-600',
+}
 
 // UI customization for text inputs
 const inputUi = {
-  base: "bg-neutral-100 text-neutral-600 placeholder:text-neutral-400",
-};
+  base: 'bg-neutral-100 text-neutral-600 placeholder:text-neutral-400',
+}
 
 // Conversions pour TextModule
 const questionTextStyle = computed<TextStyleConfig>(() => ({
   fontFamily: props.questionStyle.fontFamily,
   fontSize: props.questionStyle.fontSize,
   fontWeight: props.questionStyle.fontWeight,
-}));
+}))
 
 const optionTextStyle = computed<TextStyleConfig>(() => ({
   fontFamily: props.optionTextStyle.fontFamily,
   fontSize: props.optionTextStyle.fontSize,
   fontWeight: props.optionTextStyle.fontWeight,
-}));
+}))
 
 const percentageTextStyle = computed<TextStyleConfig>(() => ({
   fontSize: props.optionPercentageStyle.fontSize,
   fontWeight: props.optionPercentageStyle.fontWeight,
-}));
+}))
 
 const timeTextStyle = computed<TextStyleConfig>(() => ({
   fontFamily: props.progressBar.timeTextStyle.fontFamily,
   fontSize: props.progressBar.timeTextStyle.fontSize,
   fontWeight: props.progressBar.timeTextStyle.fontWeight,
-}));
+}))
 
 // Conversions pour BorderModule
 const borderModuleValue = computed<BorderConfig>(() => ({
   width: props.optionBoxStyle.borderWidth,
-  style: "solid",
+  style: 'solid',
   color: props.optionBoxStyle.borderColor,
-}));
+}))
 
-const borderRadiusValue = computed<BorderRadiusConfig>(() => {
-  const br = props.optionBoxStyle.borderRadius;
-  if (typeof br === "number") {
-    return { topLeft: br, topRight: br, bottomRight: br, bottomLeft: br };
-  }
-  return {
-    topLeft: br?.topLeft ?? 0,
-    topRight: br?.topRight ?? 0,
-    bottomRight: br?.bottomRight ?? 0,
-    bottomLeft: br?.bottomLeft ?? 0,
-  };
-});
+const borderRadiusValue = computed<BorderRadiusConfig>(() =>
+  normalizeBorderRadius(props.optionBoxStyle.borderRadius)
+)
 
 // Conversions pour BorderModule (Question)
 // Default values for backwards compatibility with existing elements
 const defaultQuestionBoxStyle = {
-  backgroundColor: "transparent",
-  borderColor: "transparent",
+  backgroundColor: 'transparent',
+  borderColor: 'transparent',
   borderWidth: 0,
   borderRadius: 0,
   opacity: 1,
   padding: { top: 0, right: 0, bottom: 16, left: 0 },
-};
+}
 
 const questionBorderModuleValue = computed<BorderConfig>(() => ({
   width: props.questionBoxStyle?.borderWidth ?? defaultQuestionBoxStyle.borderWidth,
-  style: "solid",
+  style: 'solid',
   color: props.questionBoxStyle?.borderColor ?? defaultQuestionBoxStyle.borderColor,
-}));
+}))
 
-const questionBorderRadiusValue = computed<BorderRadiusConfig>(() => {
-  const br = props.questionBoxStyle?.borderRadius ?? defaultQuestionBoxStyle.borderRadius;
-  if (typeof br === "number") {
-    return { topLeft: br, topRight: br, bottomRight: br, bottomLeft: br };
-  }
-  return {
-    topLeft: br?.topLeft ?? 0,
-    topRight: br?.topRight ?? 0,
-    bottomRight: br?.bottomRight ?? 0,
-    bottomLeft: br?.bottomLeft ?? 0,
-  };
-});
+const questionBorderRadiusValue = computed<BorderRadiusConfig>(() =>
+  normalizeBorderRadius(
+    props.questionBoxStyle?.borderRadius ?? defaultQuestionBoxStyle.borderRadius
+  )
+)
 
 // Conversions pour PaddingModule
 const questionPaddingValue = computed<PaddingConfig>(() => ({
@@ -707,23 +708,23 @@ const questionPaddingValue = computed<PaddingConfig>(() => ({
   right: props.questionBoxStyle?.padding?.right ?? defaultQuestionBoxStyle.padding.right,
   bottom: props.questionBoxStyle?.padding?.bottom ?? defaultQuestionBoxStyle.padding.bottom,
   left: props.questionBoxStyle?.padding?.left ?? defaultQuestionBoxStyle.padding.left,
-}));
+}))
 
 const optionPaddingValue = computed<PaddingConfig>(() => ({
   top: props.optionBoxStyle.padding?.top ?? 12,
   right: props.optionBoxStyle.padding?.right ?? 16,
   bottom: props.optionBoxStyle.padding?.bottom ?? 12,
   left: props.optionBoxStyle.padding?.left ?? 16,
-}));
+}))
 
 // Conversions pour TextShadowModule
 const defaultTextShadow = {
   enabled: false,
-  color: "rgba(0,0,0,0.5)",
+  color: 'rgba(0,0,0,0.5)',
   blur: 4,
   offsetX: 0,
   offsetY: 2,
-};
+}
 
 const questionTextShadowValue = computed<TextShadowConfig>(() => ({
   enabled: props.questionStyle.textShadow?.enabled ?? defaultTextShadow.enabled,
@@ -731,7 +732,7 @@ const questionTextShadowValue = computed<TextShadowConfig>(() => ({
   blur: props.questionStyle.textShadow?.blur ?? defaultTextShadow.blur,
   offsetX: props.questionStyle.textShadow?.offsetX ?? defaultTextShadow.offsetX,
   offsetY: props.questionStyle.textShadow?.offsetY ?? defaultTextShadow.offsetY,
-}));
+}))
 
 const optionTextShadowValue = computed<TextShadowConfig>(() => ({
   enabled: props.optionTextStyle.textShadow?.enabled ?? false,
@@ -739,7 +740,7 @@ const optionTextShadowValue = computed<TextShadowConfig>(() => ({
   blur: props.optionTextStyle.textShadow?.blur ?? defaultTextShadow.blur,
   offsetX: props.optionTextStyle.textShadow?.offsetX ?? defaultTextShadow.offsetX,
   offsetY: props.optionTextStyle.textShadow?.offsetY ?? defaultTextShadow.offsetY,
-}));
+}))
 
 // Conversion pour AnimationModule
 const animationModuleValue = computed<AnimationConfig>(() => ({
@@ -750,140 +751,116 @@ const animationModuleValue = computed<AnimationConfig>(() => ({
     easing: props.animations.entry.animation.easing,
   },
   exit: {
-    type: "fade",
+    type: 'fade',
     duration: props.animations.exit.animation.duration,
     delay: props.animations.exit.animation.delay,
     easing: props.animations.exit.animation.easing,
   },
-}));
+}))
 
 // Conversions pour AudioModule
 const entryAudioConfig = computed<AudioConfig>(() => ({
   enabled: props.animations.entry.sound.enabled,
   volume: props.animations.entry.sound.volume,
-}));
+}))
 
 const loopAudioConfig = computed<AudioConfig>(() => ({
   enabled: props.animations.loop.music.enabled,
   volume: props.animations.loop.music.volume,
-}));
+}))
 
 const resultAudioConfig = computed<AudioConfig>(() => ({
   enabled: props.animations.result.sound.enabled,
   volume: props.animations.result.sound.volume,
-}));
+}))
 
 // Handlers
 const handleQuestionStyleUpdate = (value: TextStyleConfig) => {
-  emit("updateQuestionStyle", {
+  emit('updateQuestionStyle', {
     fontFamily: value.fontFamily,
     fontSize: value.fontSize,
     fontWeight: value.fontWeight,
-  });
-};
+  })
+}
 
 const updateQuestionStyle = (key: keyof TypographySettings, value: string | number) => {
-  emit("updateQuestionStyle", { [key]: value });
-};
+  emit('updateQuestionStyle', { [key]: value })
+}
 
 const handleOptionTextStyleUpdate = (value: TextStyleConfig) => {
-  emit("updateOptionTextStyle", {
+  emit('updateOptionTextStyle', {
     fontFamily: value.fontFamily,
     fontSize: value.fontSize,
     fontWeight: value.fontWeight,
-  });
-};
+  })
+}
 
 const updateOptionTextStyle = (key: keyof TypographySettings, value: string | number) => {
-  emit("updateOptionTextStyle", { [key]: value });
-};
+  emit('updateOptionTextStyle', { [key]: value })
+}
 
 const handlePercentageStyleUpdate = (value: TextStyleConfig) => {
-  emit("updatePercentageStyle", {
+  emit('updatePercentageStyle', {
     fontSize: value.fontSize,
     fontWeight: value.fontWeight,
-  });
-};
+  })
+}
 
 const updatePercentageStyle = (key: keyof TypographySettings, value: string | number) => {
-  emit("updatePercentageStyle", { [key]: value });
-};
+  emit('updatePercentageStyle', { [key]: value })
+}
 
 const updateOptionBoxStyle = (key: keyof BoxStyleSettings, value: string | number) => {
-  emit("updateOptionBoxStyle", { [key]: value });
-};
+  emit('updateOptionBoxStyle', { [key]: value })
+}
 
 const handleBorderUpdate = (value: BorderConfig) => {
-  emit("updateOptionBoxStyle", {
+  emit('updateOptionBoxStyle', {
     borderWidth: value.width,
     borderColor: value.color,
-  });
-};
+  })
+}
 
 const handleBorderRadiusUpdate = (value: BorderRadiusConfig) => {
-  // Check if all corners are equal for uniform radius
-  const allEqual = value.topLeft === value.topRight &&
-    value.topRight === value.bottomRight &&
-    value.bottomRight === value.bottomLeft;
-
-  if (allEqual) {
-    emit("updateOptionBoxStyle", { borderRadius: value.topLeft });
+  if (isUniformBorderRadius(value)) {
+    emit('updateOptionBoxStyle', { borderRadius: value.topLeft })
   } else {
-    emit("updateOptionBoxStyle", {
-      borderRadius: {
-        topLeft: value.topLeft,
-        topRight: value.topRight,
-        bottomRight: value.bottomRight,
-        bottomLeft: value.bottomLeft,
-      },
-    });
+    emit('updateOptionBoxStyle', { borderRadius: value })
   }
-};
+}
 
 // Update functions for Question Box Style
 const updateQuestionBoxStyle = (key: keyof BoxStyleSettings, value: string | number) => {
-  emit("updateQuestionBoxStyle", { [key]: value });
-};
+  emit('updateQuestionBoxStyle', { [key]: value })
+}
 
 const handleQuestionBorderUpdate = (value: BorderConfig) => {
-  emit("updateQuestionBoxStyle", {
+  emit('updateQuestionBoxStyle', {
     borderWidth: value.width,
     borderColor: value.color,
-  });
-};
+  })
+}
 
 const handleQuestionBorderRadiusUpdate = (value: BorderRadiusConfig) => {
-  // Check if all corners are equal for uniform radius
-  const allEqual = value.topLeft === value.topRight &&
-    value.topRight === value.bottomRight &&
-    value.bottomRight === value.bottomLeft;
-
-  if (allEqual) {
-    emit("updateQuestionBoxStyle", { borderRadius: value.topLeft });
+  if (isUniformBorderRadius(value)) {
+    emit('updateQuestionBoxStyle', { borderRadius: value.topLeft })
   } else {
-    emit("updateQuestionBoxStyle", {
-      borderRadius: {
-        topLeft: value.topLeft,
-        topRight: value.topRight,
-        bottomRight: value.bottomRight,
-        bottomLeft: value.bottomLeft,
-      },
-    });
+    emit('updateQuestionBoxStyle', { borderRadius: value })
   }
-};
+}
 
 // Handlers pour PaddingModule
 const handleQuestionPaddingUpdate = (value: PaddingConfig) => {
-  emit("updateQuestionBoxStyle", { padding: value });
-};
+  emit('updateQuestionBoxStyle', { padding: value })
+}
 
 const handleOptionPaddingUpdate = (value: PaddingConfig) => {
-  emit("updateOptionBoxStyle", { padding: value });
-};
+  emit('updateOptionBoxStyle', { padding: value })
+}
 
 // Handlers pour TextShadowModule
 const handleQuestionTextShadowUpdate = (value: TextShadowConfig) => {
-  emit("updateQuestionStyle", {
+  emit('updateQuestionStyle', {
     textShadow: {
       enabled: value.enabled,
       color: value.color,
@@ -891,11 +868,11 @@ const handleQuestionTextShadowUpdate = (value: TextShadowConfig) => {
       offsetX: value.offsetX,
       offsetY: value.offsetY,
     },
-  });
-};
+  })
+}
 
 const handleOptionTextShadowUpdate = (value: TextShadowConfig) => {
-  emit("updateOptionTextStyle", {
+  emit('updateOptionTextStyle', {
     textShadow: {
       enabled: value.enabled,
       color: value.color,
@@ -903,31 +880,31 @@ const handleOptionTextShadowUpdate = (value: TextShadowConfig) => {
       offsetX: value.offsetX,
       offsetY: value.offsetY,
     },
-  });
-};
+  })
+}
 
 // Handler pour le gradient de la progress bar
 const updateFillGradient = (key: string, value: boolean | string) => {
   const currentGradient = props.progressBar.fillGradient ?? {
     enabled: false,
-    startColor: "#22c55e",
-    endColor: "#3b82f6",
-  };
-  emit("updateProgressBar", {
+    startColor: '#22c55e',
+    endColor: '#3b82f6',
+  }
+  emit('updateProgressBar', {
     fillGradient: {
       ...currentGradient,
       [key]: value,
     },
-  });
-};
+  })
+}
 
 const updateMedalColor = (key: keyof MedalColors, value: string) => {
-  emit("updateMedalColors", { [key]: value });
-};
+  emit('updateMedalColors', { [key]: value })
+}
 
 const updateProgressBar = (key: keyof ProgressBarConfig, value: string | number | boolean) => {
-  emit("updateProgressBar", { [key]: value });
-};
+  emit('updateProgressBar', { [key]: value })
+}
 
 const handleTimeTextStyleUpdate = (value: TextStyleConfig) => {
   const updatedTimeTextStyle: TypographySettings = {
@@ -935,45 +912,49 @@ const handleTimeTextStyleUpdate = (value: TextStyleConfig) => {
     fontFamily: value.fontFamily || props.progressBar.timeTextStyle.fontFamily,
     fontSize: value.fontSize || props.progressBar.timeTextStyle.fontSize,
     fontWeight: value.fontWeight || props.progressBar.timeTextStyle.fontWeight,
-  };
-  emit("updateProgressBar", { timeTextStyle: updatedTimeTextStyle });
-};
+  }
+  emit('updateProgressBar', { timeTextStyle: updatedTimeTextStyle })
+}
 
 const updateTimeTextStyle = (key: keyof TypographySettings, value: string | number) => {
   const updatedTimeTextStyle: TypographySettings = {
     ...props.progressBar.timeTextStyle,
     [key]: value,
-  };
-  emit("updateProgressBar", { timeTextStyle: updatedTimeTextStyle });
-};
+  }
+  emit('updateProgressBar', { timeTextStyle: updatedTimeTextStyle })
+}
 
 const handleAnimationUpdate = (value: AnimationConfig) => {
-  emit("updateAnimations", {
+  emit('updateAnimations', {
     entry: {
       ...props.animations.entry,
-      slideDirection: value.entry.type as "up" | "down" | "left" | "right",
+      slideDirection: value.entry.type as 'up' | 'down' | 'left' | 'right',
       animation: {
         duration: value.entry.duration,
         delay: value.entry.delay || 0,
-        easing: (value.entry.easing as "linear" | "ease" | "ease-in" | "ease-out" | "ease-in-out") || "ease-out",
+        easing:
+          (value.entry.easing as 'linear' | 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out') ||
+          'ease-out',
       },
     },
     exit: {
       animation: {
         duration: value.exit.duration,
         delay: value.exit.delay || 0,
-        easing: (value.exit.easing as "linear" | "ease" | "ease-in" | "ease-out" | "ease-in-out") || "ease-in",
+        easing:
+          (value.exit.easing as 'linear' | 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out') ||
+          'ease-in',
       },
     },
-  });
-};
+  })
+}
 
 const updateResultAnimation = (
-  effect: "winnerEnlarge" | "loserFadeOut",
+  effect: 'winnerEnlarge' | 'loserFadeOut',
   key: string,
-  value: number,
+  value: number
 ) => {
-  emit("updateAnimations", {
+  emit('updateAnimations', {
     result: {
       ...props.animations.result,
       [effect]: {
@@ -981,38 +962,38 @@ const updateResultAnimation = (
         [key]: value,
       },
     },
-  });
-};
+  })
+}
 
 const updateEntrySound = (value: AudioConfig) => {
-  emit("updateAnimations", {
+  emit('updateAnimations', {
     entry: {
       ...props.animations.entry,
       sound: { enabled: value.enabled, volume: value.volume },
     },
-  });
-};
+  })
+}
 
 const updateLoopMusic = (value: AudioConfig) => {
-  emit("updateAnimations", {
+  emit('updateAnimations', {
     loop: {
       music: { enabled: value.enabled, volume: value.volume },
     },
-  });
-};
+  })
+}
 
 const updateResultSound = (value: AudioConfig) => {
-  emit("updateAnimations", {
+  emit('updateAnimations', {
     result: {
       ...props.animations.result,
       sound: { enabled: value.enabled, volume: value.volume },
     },
-  });
-};
+  })
+}
 
 const updateMockData = (key: keyof PollMockData, value: string | number | string[] | number[]) => {
-  emit("updateMockData", { [key]: value });
-};
+  emit('updateMockData', { [key]: value })
+}
 </script>
 
 <style scoped>

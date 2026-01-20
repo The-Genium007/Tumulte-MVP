@@ -1,9 +1,9 @@
-import { ref } from "vue";
+import { ref } from 'vue'
 
 interface UseActionButtonOptions {
-  action: () => Promise<void>;
-  cooldownMs?: number;
-  onError?: (error: unknown) => void;
+  action: () => Promise<void>
+  cooldownMs?: number
+  onError?: (error: unknown) => void
 }
 
 /**
@@ -15,44 +15,44 @@ interface UseActionButtonOptions {
  * @param options.onError - Callback optionnel en cas d'erreur
  */
 export function useActionButton(options: UseActionButtonOptions) {
-  const { action, cooldownMs = 1000, onError } = options;
+  const { action, cooldownMs = 1000, onError } = options
 
-  const isLoading = ref(false);
-  const isDisabled = ref(false);
-  const lastClickTime = ref(0);
+  const isLoading = ref(false)
+  const isDisabled = ref(false)
+  const lastClickTime = ref(0)
 
   async function execute(): Promise<void> {
-    const now = Date.now();
+    const now = Date.now()
 
     // Protection anti-double-clic
     if (now - lastClickTime.value < cooldownMs) {
-      return;
+      return
     }
 
     // Ne pas exécuter si déjà en cours ou désactivé
     if (isLoading.value || isDisabled.value) {
-      return;
+      return
     }
 
-    lastClickTime.value = now;
-    isLoading.value = true;
-    isDisabled.value = true;
+    lastClickTime.value = now
+    isLoading.value = true
+    isDisabled.value = true
 
     try {
-      await action();
+      await action()
     } catch (error) {
       if (onError) {
-        onError(error);
+        onError(error)
       } else {
-        console.error("[useActionButton] Action failed:", error);
+        console.error('[useActionButton] Action failed:', error)
       }
     } finally {
-      isLoading.value = false;
+      isLoading.value = false
 
       // Garder le bouton désactivé pendant le cooldown
       setTimeout(() => {
-        isDisabled.value = false;
-      }, cooldownMs);
+        isDisabled.value = false
+      }, cooldownMs)
     }
   }
 
@@ -60,9 +60,9 @@ export function useActionButton(options: UseActionButtonOptions) {
    * Reset l'état du bouton (utile pour les cas edge)
    */
   function reset(): void {
-    isLoading.value = false;
-    isDisabled.value = false;
-    lastClickTime.value = 0;
+    isLoading.value = false
+    isDisabled.value = false
+    lastClickTime.value = 0
   }
 
   return {
@@ -70,5 +70,5 @@ export function useActionButton(options: UseActionButtonOptions) {
     isDisabled,
     execute,
     reset,
-  };
+  }
 }

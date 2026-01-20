@@ -1,18 +1,16 @@
 <template>
   <!-- Message pour mobile/tablette -->
-  <div v-if="!isDesktop" class="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-page">
+  <div
+    v-if="!isDesktop"
+    class="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-page"
+  >
     <UIcon name="i-lucide-monitor" class="size-16 text-primary-500 mb-6" />
     <h1 class="text-2xl font-bold text-primary mb-4">Éditeur non disponible</h1>
     <p class="text-muted mb-8 max-w-md">
-      L'éditeur d'overlay est optimisé pour les écrans larges.
-      Veuillez utiliser un ordinateur pour accéder à cette fonctionnalité.
+      L'éditeur d'overlay est optimisé pour les écrans larges. Veuillez utiliser un ordinateur pour
+      accéder à cette fonctionnalité.
     </p>
-    <UButton
-      to="/streamer"
-      color="primary"
-      size="lg"
-      icon="i-lucide-arrow-left"
-    >
+    <UButton to="/streamer" color="primary" size="lg" icon="i-lucide-arrow-left">
       Retour au tableau de bord
     </UButton>
   </div>
@@ -89,7 +87,10 @@
 
               <div class="config-dropdown-content">
                 <div v-if="loading" class="config-dropdown-empty">
-                  <UIcon name="i-game-icons-dice-twenty-faces-twenty" class="size-6 animate-spin-slow text-muted" />
+                  <UIcon
+                    name="i-game-icons-dice-twenty-faces-twenty"
+                    class="size-6 animate-spin-slow text-muted"
+                  />
                 </div>
 
                 <div v-else-if="api.configs.value.length === 0" class="config-dropdown-empty">
@@ -112,7 +113,7 @@
                         </UBadge>
                       </div>
                       <div class="config-date">
-                        {{ new Date(config.updatedAt).toLocaleDateString("fr-FR") }}
+                        {{ new Date(config.updatedAt).toLocaleDateString('fr-FR') }}
                       </div>
                     </div>
                     <div class="config-actions">
@@ -256,12 +257,7 @@
             label="Annuler"
             @click="showNewConfigModal = false"
           />
-          <UButton
-            color="primary"
-            label="Créer"
-            :loading="saving"
-            @click="createNewConfig"
-          />
+          <UButton color="primary" label="Créer" :loading="saving" @click="createNewConfig" />
         </div>
       </template>
     </UModal>
@@ -338,7 +334,10 @@
         :class="{ 'inspector-closed': !showInspector }"
         @click="showInspector = !showInspector"
       >
-        <UIcon :name="showInspector ? 'i-lucide-panel-right-close' : 'i-lucide-panel-right-open'" class="size-4" />
+        <UIcon
+          :name="showInspector ? 'i-lucide-panel-right-close' : 'i-lucide-panel-right-open'"
+          class="size-4"
+        />
       </button>
 
       <!-- Sidebar droite - Inspecteur -->
@@ -350,11 +349,7 @@
               <UIcon :name="getElementIcon(selectedElement.type)" class="size-5 text-primary-500" />
               <h2 class="inspector-element-name">{{ selectedElement.name }}</h2>
             </div>
-            <button
-              class="inspector-delete-btn"
-              title="Supprimer"
-              @click="deleteSelected"
-            >
+            <button class="inspector-delete-btn" title="Supprimer" @click="deleteSelected">
               <UIcon name="i-lucide-trash-2" class="size-4" />
             </button>
           </div>
@@ -385,7 +380,9 @@
               :question-box-style="(selectedElement.properties as PollProperties).questionBoxStyle"
               :option-box-style="(selectedElement.properties as PollProperties).optionBoxStyle"
               :option-text-style="(selectedElement.properties as PollProperties).optionTextStyle"
-              :option-percentage-style="(selectedElement.properties as PollProperties).optionPercentageStyle"
+              :option-percentage-style="
+                (selectedElement.properties as PollProperties).optionPercentageStyle
+              "
               :option-spacing="(selectedElement.properties as PollProperties).optionSpacing"
               :medal-colors="(selectedElement.properties as PollProperties).medalColors"
               :progress-bar="(selectedElement.properties as PollProperties).progressBar"
@@ -418,97 +415,109 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, provide, ref, watch } from "vue";
-import { useOverlayStudioStore } from "~/overlay-studio/stores/overlayStudio";
-import { useOverlayStudioApi } from "~/overlay-studio/composables/useOverlayStudioApi";
-import { useUndoRedo, UNDO_REDO_KEY } from "~/overlay-studio/composables/useUndoRedo";
-import { useUnsavedChangesGuard } from "~/overlay-studio/composables/useUnsavedChangesGuard";
-import { useDevice } from "~/composables/useDevice";
-import StudioCanvas from "~/overlay-studio/components/StudioCanvas.vue";
-import DiceInspector from "~/overlay-studio/components/inspector/DiceInspector.vue";
-import PollInspector from "~/overlay-studio/components/inspector/PollInspector.vue";
-import UnsavedChangesModal from "~/overlay-studio/components/UnsavedChangesModal.vue";
-import type { OverlayElementType, DiceProperties, PollProperties } from "~/overlay-studio/types";
+import { computed, onMounted, onUnmounted, provide, ref, watch } from 'vue'
+import { useOverlayStudioStore } from '~/overlay-studio/stores/overlayStudio'
+import { useOverlayStudioApi } from '~/overlay-studio/composables/useOverlayStudioApi'
+import { useUndoRedo, UNDO_REDO_KEY } from '~/overlay-studio/composables/useUndoRedo'
+import { useUnsavedChangesGuard } from '~/overlay-studio/composables/useUnsavedChangesGuard'
+import { useElementUpdater } from '~/overlay-studio/composables/useElementUpdater'
+import { useDevice } from '~/composables/useDevice'
+import StudioCanvas from '~/overlay-studio/components/StudioCanvas.vue'
+import DiceInspector from '~/overlay-studio/components/inspector/DiceInspector.vue'
+import PollInspector from '~/overlay-studio/components/inspector/PollInspector.vue'
+import UnsavedChangesModal from '~/overlay-studio/components/UnsavedChangesModal.vue'
+import type { OverlayElementType, DiceProperties, PollProperties } from '~/overlay-studio/types'
 
 definePageMeta({
-  layout: "studio" as const,
-  middleware: ["auth"],
-});
+  layout: 'studio' as const,
+  middleware: ['auth'],
+})
 
-const { isDesktop } = useDevice();
+const { isDesktop } = useDevice()
 
-const store = useOverlayStudioStore();
-const api = useOverlayStudioApi();
-const toast = useToast();
+const store = useOverlayStudioStore()
+const api = useOverlayStudioApi()
+const toast = useToast()
 
 // Undo/Redo - utiliser le composable directement ici et le fournir aux enfants
-const undoRedo = useUndoRedo(store);
-provide(UNDO_REDO_KEY, undoRedo);
-const { canUndo, canRedo, undoLabel, redoLabel, undo, redo, pushSnapshot, initialize: initializeHistory } = undoRedo;
+const undoRedo = useUndoRedo(store)
+provide(UNDO_REDO_KEY, undoRedo)
+const {
+  canUndo,
+  canRedo,
+  undoLabel,
+  redoLabel,
+  undo,
+  redo,
+  pushSnapshot,
+  initialize: initializeHistory,
+} = undoRedo
 
 // Debounced pushSnapshot pour éviter de créer trop de snapshots lors des changements rapides (sliders, color pickers)
-const pendingSnapshots = new Map<string, ReturnType<typeof setTimeout>>();
-const SNAPSHOT_DEBOUNCE_MS = 500;
+const pendingSnapshots = new Map<string, ReturnType<typeof setTimeout>>()
+const SNAPSHOT_DEBOUNCE_MS = 500
 
 const debouncedPushSnapshot = (label: string, debounceKey: string) => {
   // Annuler le timer précédent pour cette clé
-  const existing = pendingSnapshots.get(debounceKey);
+  const existing = pendingSnapshots.get(debounceKey)
   if (existing) {
-    clearTimeout(existing);
+    clearTimeout(existing)
   }
 
   // Créer un nouveau timer
   const timer = setTimeout(() => {
-    pushSnapshot(label);
-    pendingSnapshots.delete(debounceKey);
-  }, SNAPSHOT_DEBOUNCE_MS);
+    pushSnapshot(label)
+    pendingSnapshots.delete(debounceKey)
+  }, SNAPSHOT_DEBOUNCE_MS)
 
-  pendingSnapshots.set(debounceKey, timer);
-};
+  pendingSnapshots.set(debounceKey, timer)
+}
 
 // Guard pour les modifications non sauvegardées
-const { showUnsavedModal, confirmLeave, cancelLeave } = useUnsavedChangesGuard();
+const { showUnsavedModal, confirmLeave, cancelLeave } = useUnsavedChangesGuard()
 
 // État dirty du store
-const isDirty = computed(() => store.isDirty);
-const isAutoSaving = computed(() => api.autoSaving.value);
+const isDirty = computed(() => store.isDirty)
+const isAutoSaving = computed(() => api.autoSaving.value)
 
 // Undo/Redo handlers
 const handleUndo = () => {
-  undo();
-};
+  undo()
+}
 
 const handleRedo = () => {
-  redo();
-};
+  redo()
+}
 
 // État local
-const currentConfigId = ref<string | null>(null);
-const currentConfigName = ref("Nouvelle configuration");
-const showConfigDropdown = ref(false);
-const showNewConfigModal = ref(false);
-const newConfigName = ref("");
-const showInspector = ref(false);
+const currentConfigId = ref<string | null>(null)
+const currentConfigName = ref('Nouvelle configuration')
+const showConfigDropdown = ref(false)
+const showNewConfigModal = ref(false)
+const newConfigName = ref('')
+const showInspector = ref(false)
 
 // État pour la prévisualisation des dés
-const showDicePreview = ref(false);
-const diceBoxRef = ref<{ roll: (notation: string) => Promise<void>; clear: () => void } | null>(null);
-const diceBoxReady = ref(false);
-const dicePreviewNotation = ref("");
+const showDicePreview = ref(false)
+const diceBoxRef = ref<{ roll: (notation: string) => Promise<void>; clear: () => void } | null>(
+  null
+)
+const diceBoxReady = ref(false)
+const dicePreviewNotation = ref('')
 
 // État du store
-const elements = computed(() => store.elements);
-const selectedElementId = computed(() => store.selectedElementId);
-const selectedElement = computed(() => store.selectedElement);
-const saving = computed(() => api.saving.value);
-const loading = computed(() => api.loading.value);
+const elements = computed(() => store.elements)
+const selectedElementId = computed(() => store.selectedElementId)
+const selectedElement = computed(() => store.selectedElement)
+const saving = computed(() => api.saving.value)
+const loading = computed(() => api.loading.value)
 
 // Types d'éléments disponibles
 // NOTE: Ajouter de nouveaux types ici
 const elementTypes = [
-  { type: "poll" as const, label: "Sondage", icon: "i-lucide-bar-chart-3" },
-  { type: "dice" as const, label: "Dés 3D", icon: "i-lucide-dice-5" },
-];
+  { type: 'poll' as const, label: 'Sondage', icon: 'i-lucide-bar-chart-3' },
+  { type: 'dice' as const, label: 'Dés 3D', icon: 'i-lucide-dice-5' },
+]
 
 // Auto-save: surveiller les modifications et sauvegarder automatiquement
 watch(
@@ -516,605 +525,374 @@ watch(
   (dirty) => {
     if (dirty && currentConfigId.value) {
       // Déclencher l'auto-save (debounced dans le composable API)
-      api.autoSave(currentConfigId.value, store.getCurrentConfig());
+      api.autoSave(currentConfigId.value, store.getCurrentConfig())
     }
-  },
-);
+  }
+)
 
 // Icône selon le type
 const getElementIcon = (type: OverlayElementType): string => {
-  const found = elementTypes.find((t) => t.type === type);
-  return found?.icon || "i-lucide-box";
-};
+  const found = elementTypes.find((t) => t.type === type)
+  return found?.icon || 'i-lucide-box'
+}
 
 // Actions
 const addElement = (type: OverlayElementType) => {
-  store.addElement(type);
-  pushSnapshot(`Ajouter ${type}`);
-};
+  store.addElement(type)
+  pushSnapshot(`Ajouter ${type}`)
+}
 
 const removeElement = (id: string) => {
-  store.removeElement(id);
-  pushSnapshot("Supprimer élément");
-};
+  store.removeElement(id)
+  pushSnapshot('Supprimer élément')
+}
 
 const selectElement = (id: string) => {
-  store.selectElement(id);
-};
+  store.selectElement(id)
+}
 
 const toggleVisibility = (id: string) => {
-  const element = elements.value.find((e) => e.id === id);
+  const element = elements.value.find((e) => e.id === id)
   if (element) {
-    store.updateElement(id, { visible: !element.visible });
-    pushSnapshot(element.visible ? "Masquer élément" : "Afficher élément");
+    store.updateElement(id, { visible: !element.visible })
+    pushSnapshot(element.visible ? 'Masquer élément' : 'Afficher élément')
   }
-};
+}
 
 const duplicateSelected = () => {
   if (selectedElementId.value) {
-    store.duplicateElement(selectedElementId.value);
-    pushSnapshot("Dupliquer élément");
+    store.duplicateElement(selectedElementId.value)
+    pushSnapshot('Dupliquer élément')
   }
-};
+}
 
 const deleteSelected = () => {
   if (selectedElementId.value) {
-    store.removeElement(selectedElementId.value);
-    pushSnapshot("Supprimer élément");
+    store.removeElement(selectedElementId.value)
+    pushSnapshot('Supprimer élément')
   }
-};
+}
 
-// Mise à jour des propriétés de dice
-const updateDiceProperty = (path: string, value: unknown) => {
-  if (!selectedElement.value || selectedElement.value.type !== "dice") return;
-
-  const props = selectedElement.value.properties as DiceProperties;
-  const keys = path.split(".");
-  const newProps = JSON.parse(JSON.stringify(props));
-
-  let current: Record<string, unknown> = newProps;
-  for (let i = 0; i < keys.length - 1; i++) {
-    const key = keys[i];
-    if (key) {
-      current = current[key] as Record<string, unknown>;
-    }
-  }
-  const lastKey = keys[keys.length - 1];
-  if (lastKey) {
-    current[lastKey] = value;
-  }
-
-  store.updateElement(selectedElement.value.id, { properties: newProps });
-  // Utiliser le debounce pour regrouper les changements rapides (sliders, color pickers)
-  debouncedPushSnapshot(`Modifier ${path}`, `dice.${path}`);
-};
-
-const updateDiceBox = (diceBox: Partial<DiceProperties["diceBox"]>) => {
-  if (!selectedElement.value) return;
-  const props = selectedElement.value.properties as DiceProperties;
-  // Deep merge pour colors
-  const merged = { ...props.diceBox };
-  for (const key of Object.keys(diceBox) as (keyof typeof diceBox)[]) {
-    if (key === "colors" && diceBox.colors) {
-      merged.colors = { ...merged.colors, ...diceBox.colors };
-    } else {
-      (merged as Record<string, unknown>)[key] = diceBox[key];
-    }
-  }
-  updateDiceProperty("diceBox", merged);
-};
-
-const updateDiceHud = (hud: Partial<DiceProperties["hud"]>) => {
-  if (!selectedElement.value) return;
-  const props = selectedElement.value.properties as DiceProperties;
-  // Deep merge pour les sous-sections du HUD
-  const merged = JSON.parse(JSON.stringify(props.hud));
-  for (const key of Object.keys(hud) as (keyof typeof hud)[]) {
-    if (hud[key] && typeof hud[key] === "object") {
-      merged[key] = { ...merged[key], ...hud[key] };
-    } else {
-      merged[key] = hud[key];
-    }
-  }
-  updateDiceProperty("hud", merged);
-};
-
-const updateDiceColors = (colors: Partial<DiceProperties["colors"]>) => {
-  if (!selectedElement.value) return;
-  const props = selectedElement.value.properties as DiceProperties;
-  updateDiceProperty("colors", { ...props.colors, ...colors });
-};
-
-const updateDiceAnimations = (animations: Partial<DiceProperties["animations"]>) => {
-  if (!selectedElement.value) return;
-  const props = selectedElement.value.properties as DiceProperties;
-  // Deep merge pour les animations imbriquées
-  const merged = JSON.parse(JSON.stringify(props.animations));
-  for (const key of Object.keys(animations) as (keyof typeof animations)[]) {
-    if (animations[key] && typeof animations[key] === "object") {
-      merged[key] = { ...merged[key], ...animations[key] };
-    } else {
-      merged[key] = animations[key];
-    }
-  }
-  updateDiceProperty("animations", merged);
-};
-
-const updateDiceAudio = (audio: Partial<DiceProperties["audio"]>) => {
-  if (!selectedElement.value) return;
-  const props = selectedElement.value.properties as DiceProperties;
-  // Deep merge pour les sous-sections audio
-  const merged = JSON.parse(JSON.stringify(props.audio));
-  for (const key of Object.keys(audio) as (keyof typeof audio)[]) {
-    if (audio[key] && typeof audio[key] === "object") {
-      merged[key] = { ...merged[key], ...audio[key] };
-    } else {
-      merged[key] = audio[key];
-    }
-  }
-  updateDiceProperty("audio", merged);
-};
-
-const updateDiceMockData = (mockData: Partial<DiceProperties["mockData"]>) => {
-  if (!selectedElement.value) return;
-  const props = selectedElement.value.properties as DiceProperties;
-  updateDiceProperty("mockData", { ...props.mockData, ...mockData });
-};
-
-// Mise à jour des propriétés de poll
-const updatePollProperty = (path: string, value: unknown) => {
-  if (!selectedElement.value || selectedElement.value.type !== "poll") return;
-
-  const props = selectedElement.value.properties as PollProperties;
-  const keys = path.split(".");
-  const newProps = JSON.parse(JSON.stringify(props));
-
-  let current: Record<string, unknown> = newProps;
-  for (let i = 0; i < keys.length - 1; i++) {
-    const key = keys[i];
-    if (key) {
-      current = current[key] as Record<string, unknown>;
-    }
-  }
-  const lastKey = keys[keys.length - 1];
-  if (lastKey) {
-    current[lastKey] = value;
-  }
-
-  store.updateElement(selectedElement.value.id, { properties: newProps });
-  // Utiliser le debounce pour regrouper les changements rapides (sliders, color pickers)
-  debouncedPushSnapshot(`Modifier ${path}`, path);
-};
-
-const updatePollQuestionStyle = (style: Partial<PollProperties["questionStyle"]>) => {
-  if (!selectedElement.value) return;
-  const props = selectedElement.value.properties as PollProperties;
-  // Deep merge pour textShadow
-  const merged = { ...props.questionStyle };
-  for (const key of Object.keys(style) as (keyof typeof style)[]) {
-    if (key === "textShadow" && style.textShadow) {
-      merged.textShadow = { ...merged.textShadow, ...style.textShadow };
-    } else {
-      (merged as Record<string, unknown>)[key] = style[key];
-    }
-  }
-  updatePollProperty("questionStyle", merged);
-};
-
-const updatePollQuestionBoxStyle = (style: Partial<PollProperties["questionBoxStyle"]>) => {
-  if (!selectedElement.value) return;
-  const props = selectedElement.value.properties as PollProperties;
-  // Default values for backwards compatibility
-  const defaultQuestionBoxStyle = {
-    backgroundColor: "transparent",
-    borderColor: "transparent",
-    borderWidth: 0,
-    borderRadius: 0,
-    opacity: 1,
-    padding: { top: 0, right: 0, bottom: 16, left: 0 },
-  };
-  // Deep merge pour padding
-  const base = { ...defaultQuestionBoxStyle, ...props.questionBoxStyle };
-  const merged = { ...base };
-  for (const key of Object.keys(style) as (keyof typeof style)[]) {
-    if (key === "padding" && style.padding) {
-      merged.padding = { ...merged.padding, ...style.padding };
-    } else {
-      (merged as Record<string, unknown>)[key] = style[key];
-    }
-  }
-  updatePollProperty("questionBoxStyle", merged);
-};
-
-const updatePollOptionBoxStyle = (style: Partial<PollProperties["optionBoxStyle"]>) => {
-  if (!selectedElement.value) return;
-  const props = selectedElement.value.properties as PollProperties;
-  // Deep merge pour padding
-  const merged = { ...props.optionBoxStyle };
-  for (const key of Object.keys(style) as (keyof typeof style)[]) {
-    if (key === "padding" && style.padding) {
-      merged.padding = { ...merged.padding, ...style.padding };
-    } else {
-      (merged as Record<string, unknown>)[key] = style[key];
-    }
-  }
-  updatePollProperty("optionBoxStyle", merged);
-};
-
-const updatePollOptionTextStyle = (style: Partial<PollProperties["optionTextStyle"]>) => {
-  if (!selectedElement.value) return;
-  const props = selectedElement.value.properties as PollProperties;
-  // Deep merge pour textShadow
-  const merged = { ...props.optionTextStyle };
-  for (const key of Object.keys(style) as (keyof typeof style)[]) {
-    if (key === "textShadow" && style.textShadow) {
-      merged.textShadow = { ...merged.textShadow, ...style.textShadow };
-    } else {
-      (merged as Record<string, unknown>)[key] = style[key];
-    }
-  }
-  updatePollProperty("optionTextStyle", merged);
-};
-
-const updatePollPercentageStyle = (style: Partial<PollProperties["optionPercentageStyle"]>) => {
-  if (!selectedElement.value) return;
-  const props = selectedElement.value.properties as PollProperties;
-  updatePollProperty("optionPercentageStyle", { ...props.optionPercentageStyle, ...style });
-};
-
-const updatePollOptionSpacing = (spacing: number) => {
-  updatePollProperty("optionSpacing", spacing);
-};
-
-const updatePollMedalColors = (colors: Partial<PollProperties["medalColors"]>) => {
-  if (!selectedElement.value) return;
-  const props = selectedElement.value.properties as PollProperties;
-  updatePollProperty("medalColors", { ...props.medalColors, ...colors });
-};
-
-const updatePollProgressBar = (config: Partial<PollProperties["progressBar"]>) => {
-  if (!selectedElement.value) return;
-  const props = selectedElement.value.properties as PollProperties;
-  // Deep merge pour fillGradient et timeTextStyle
-  const merged = { ...props.progressBar };
-  for (const key of Object.keys(config) as (keyof typeof config)[]) {
-    if ((key === "fillGradient" || key === "timeTextStyle") && config[key]) {
-      (merged as Record<string, unknown>)[key] = { ...(merged as Record<string, unknown>)[key] as object, ...config[key] as object };
-    } else {
-      (merged as Record<string, unknown>)[key] = config[key];
-    }
-  }
-  updatePollProperty("progressBar", merged);
-};
-
-const updatePollAnimations = (animations: Partial<PollProperties["animations"]>) => {
-  if (!selectedElement.value) return;
-  const props = selectedElement.value.properties as PollProperties;
-  // Deep merge pour les animations imbriquées
-  const merged = JSON.parse(JSON.stringify(props.animations));
-  for (const key of Object.keys(animations) as (keyof typeof animations)[]) {
-    if (animations[key] && typeof animations[key] === "object") {
-      merged[key] = { ...merged[key], ...animations[key] };
-    } else {
-      merged[key] = animations[key];
-    }
-  }
-  updatePollProperty("animations", merged);
-};
-
-const updatePollLayout = (layout: Partial<PollProperties["layout"]>) => {
-  if (!selectedElement.value) return;
-  const props = selectedElement.value.properties as PollProperties;
-  updatePollProperty("layout", { ...props.layout, ...layout });
-};
-
-const updatePollMockData = (mockData: Partial<PollProperties["mockData"]>) => {
-  if (!selectedElement.value) return;
-  const props = selectedElement.value.properties as PollProperties;
-  updatePollProperty("mockData", { ...props.mockData, ...mockData });
-};
+// Mise à jour des propriétés d'éléments via composable
+const {
+  // Dice
+  updateDiceBox,
+  updateDiceHud,
+  updateDiceColors,
+  updateDiceAnimations,
+  updateDiceAudio,
+  updateDiceMockData,
+  // Poll
+  updatePollQuestionStyle,
+  updatePollQuestionBoxStyle,
+  updatePollOptionBoxStyle,
+  updatePollOptionTextStyle,
+  updatePollPercentageStyle,
+  updatePollOptionSpacing,
+  updatePollMedalColors,
+  updatePollProgressBar,
+  updatePollAnimations,
+  updatePollLayout,
+  updatePollMockData,
+} = useElementUpdater(selectedElement, store.updateElement, debouncedPushSnapshot)
 
 // Prévisualisation du sondage
 const playPollPreview = () => {
   // TODO: Implémenter la prévisualisation du sondage
-  console.log("[Studio] Poll preview requested");
-};
+  console.log('[Studio] Poll preview requested')
+}
 
 const handleDiceBoxReady = () => {
-  diceBoxReady.value = true;
+  diceBoxReady.value = true
   // Si on a une notation en attente, lancer les dés
   if (dicePreviewNotation.value && diceBoxRef.value) {
-    rollDice(dicePreviewNotation.value);
+    rollDice(dicePreviewNotation.value)
   }
-};
+}
 
 const handleDiceRollComplete = (results: unknown) => {
-  console.log("[Studio] Dice roll complete:", results);
-};
+  console.log('[Studio] Dice roll complete:', results)
+}
 
 const rollDice = async (notation: string) => {
-  if (!diceBoxRef.value) return;
+  if (!diceBoxRef.value) return
 
   // Clear les dés précédents avant de lancer
   if (diceBoxRef.value.clear) {
-    diceBoxRef.value.clear();
+    diceBoxRef.value.clear()
   }
 
   try {
-    await diceBoxRef.value.roll(notation);
+    await diceBoxRef.value.roll(notation)
   } catch (error) {
-    console.error("[Studio] Error rolling dice:", error);
+    console.error('[Studio] Error rolling dice:', error)
   }
-};
+}
 
 const rollDiceAgain = () => {
   if (dicePreviewNotation.value) {
-    rollDice(dicePreviewNotation.value);
+    rollDice(dicePreviewNotation.value)
   }
-};
+}
 
 // Nouvelle configuration vierge (bouton "Nouveau" dans la toolbar)
 const handleNewCanvas = () => {
-  store.resetEditor();
-  currentConfigId.value = null;
-  currentConfigName.value = "";
+  store.resetEditor()
+  currentConfigId.value = null
+  currentConfigName.value = ''
   // Réinitialiser l'historique undo/redo
-  initializeHistory();
-};
+  initializeHistory()
+}
 
 // Sauvegarde
 const handleSave = async () => {
   try {
-    const configData = store.getCurrentConfig();
+    const configData = store.getCurrentConfig()
 
     if (currentConfigId.value) {
       // Mode modification : sauvegarde directe
       await api.updateConfig(currentConfigId.value, {
         name: currentConfigName.value,
         config: configData,
-      });
+      })
       // Marquer comme sauvegardé (reset du dirty state)
-      store.markAsSaved();
+      store.markAsSaved()
       toast.add({
-        title: "Sauvegardé",
-        color: "success",
-        icon: "i-lucide-check",
-      });
+        title: 'Sauvegardé',
+        color: 'success',
+        icon: 'i-lucide-check',
+      })
     } else {
       // Nouvelle config : ouvrir modale pour nommer
-      newConfigName.value = "";
-      showNewConfigModal.value = true;
+      newConfigName.value = ''
+      showNewConfigModal.value = true
     }
   } catch (error) {
     toast.add({
-      title: "Erreur de sauvegarde",
-      description:
-        error instanceof Error ? error.message : "Une erreur est survenue",
-      color: "error",
-      icon: "i-lucide-alert-circle",
-    });
+      title: 'Erreur de sauvegarde',
+      description: error instanceof Error ? error.message : 'Une erreur est survenue',
+      color: 'error',
+      icon: 'i-lucide-alert-circle',
+    })
   }
-};
+}
 
 // Créer une nouvelle configuration
 const createNewConfig = async () => {
   if (!newConfigName.value.trim()) {
     toast.add({
-      title: "Nom requis",
-      description: "Veuillez entrer un nom pour la configuration",
-      color: "warning",
-      icon: "i-lucide-alert-triangle",
-    });
-    return;
+      title: 'Nom requis',
+      description: 'Veuillez entrer un nom pour la configuration',
+      color: 'warning',
+      icon: 'i-lucide-alert-triangle',
+    })
+    return
   }
 
-  const name = newConfigName.value.trim();
+  const name = newConfigName.value.trim()
 
   // Vérifier si une config avec ce nom existe déjà
-  const existingConfig = api.configs.value.find((c) => c.name === name);
+  const existingConfig = api.configs.value.find((c) => c.name === name)
   if (existingConfig) {
     toast.add({
-      title: "Nom déjà utilisé",
-      description: "Une configuration avec ce nom existe déjà. Veuillez choisir un autre nom.",
-      color: "error",
-      icon: "i-lucide-alert-circle",
-    });
-    return;
+      title: 'Nom déjà utilisé',
+      description: 'Une configuration avec ce nom existe déjà. Veuillez choisir un autre nom.',
+      color: 'error',
+      icon: 'i-lucide-alert-circle',
+    })
+    return
   }
 
   try {
-    const configData = store.getCurrentConfig();
+    const configData = store.getCurrentConfig()
     const newConfig = await api.createConfig({
       name,
       config: configData,
-    });
+    })
 
-    currentConfigId.value = newConfig.id;
-    currentConfigName.value = newConfig.name;
-    showNewConfigModal.value = false;
-    newConfigName.value = "";
+    currentConfigId.value = newConfig.id
+    currentConfigName.value = newConfig.name
+    showNewConfigModal.value = false
+    newConfigName.value = ''
 
     // Marquer comme sauvegardé (la config vient d'être créée)
-    store.markAsSaved();
+    store.markAsSaved()
 
     toast.add({
-      title: "Configuration créée",
-      color: "success",
-      icon: "i-lucide-check",
-    });
+      title: 'Configuration créée',
+      color: 'success',
+      icon: 'i-lucide-check',
+    })
   } catch (error) {
     toast.add({
-      title: "Erreur de création",
-      description:
-        error instanceof Error ? error.message : "Une erreur est survenue",
-      color: "error",
-      icon: "i-lucide-alert-circle",
-    });
+      title: 'Erreur de création',
+      description: error instanceof Error ? error.message : 'Une erreur est survenue',
+      color: 'error',
+      icon: 'i-lucide-alert-circle',
+    })
   }
-};
+}
 
 // Charger une configuration
 const loadConfig = async (configId: string) => {
   try {
-    const fullConfig = await api.fetchConfig(configId);
-    store.loadConfig(fullConfig.config);
-    currentConfigId.value = fullConfig.id;
-    currentConfigName.value = fullConfig.name;
-    showConfigDropdown.value = false;
+    const fullConfig = await api.fetchConfig(configId)
+    store.loadConfig(fullConfig.config)
+    currentConfigId.value = fullConfig.id
+    currentConfigName.value = fullConfig.name
+    showConfigDropdown.value = false
 
     toast.add({
-      title: "Configuration chargée",
+      title: 'Configuration chargée',
       description: fullConfig.name,
-      color: "success",
-      icon: "i-lucide-check",
-    });
+      color: 'success',
+      icon: 'i-lucide-check',
+    })
   } catch (error) {
     toast.add({
-      title: "Erreur de chargement",
-      description:
-        error instanceof Error ? error.message : "Une erreur est survenue",
-      color: "error",
-      icon: "i-lucide-alert-circle",
-    });
+      title: 'Erreur de chargement',
+      description: error instanceof Error ? error.message : 'Une erreur est survenue',
+      color: 'error',
+      icon: 'i-lucide-alert-circle',
+    })
   }
-};
+}
 
 // Nouvelle configuration vierge
 const startNewConfig = () => {
-  store.resetEditor();
-  currentConfigId.value = null;
-  currentConfigName.value = "Nouvelle configuration";
-  showConfigDropdown.value = false;
-};
+  store.resetEditor()
+  currentConfigId.value = null
+  currentConfigName.value = 'Nouvelle configuration'
+  showConfigDropdown.value = false
+}
 
 // Supprimer une configuration
 const deleteConfigItem = async (id: string) => {
   try {
-    await api.deleteConfig(id);
+    await api.deleteConfig(id)
     if (currentConfigId.value === id) {
-      startNewConfig();
+      startNewConfig()
     }
     toast.add({
-      title: "Configuration supprimée",
-      color: "success",
-      icon: "i-lucide-check",
-    });
+      title: 'Configuration supprimée',
+      color: 'success',
+      icon: 'i-lucide-check',
+    })
   } catch (error) {
     toast.add({
-      title: "Erreur de suppression",
-      description:
-        error instanceof Error ? error.message : "Une erreur est survenue",
-      color: "error",
-      icon: "i-lucide-alert-circle",
-    });
+      title: 'Erreur de suppression',
+      description: error instanceof Error ? error.message : 'Une erreur est survenue',
+      color: 'error',
+      icon: 'i-lucide-alert-circle',
+    })
   }
-};
+}
 
 // Vérifier si une configuration peut être supprimée
 // La configuration par défaut (la seule restante) ne peut pas être supprimée
 const canDeleteConfig = (_config: { id: string; isActive: boolean }): boolean => {
   // On ne peut pas supprimer s'il n'y a qu'une seule configuration
   if (api.configs.value.length <= 1) {
-    return false;
+    return false
   }
-  return true;
-};
+  return true
+}
 
 // Activer une configuration pour l'overlay
 const activateConfigItem = async (id: string) => {
   try {
-    await api.activateConfig(id);
+    await api.activateConfig(id)
     toast.add({
-      title: "Configuration activée",
-      description: "Cette configuration sera utilisée dans votre overlay OBS",
-      color: "success",
-      icon: "i-lucide-check",
-    });
+      title: 'Configuration activée',
+      description: 'Cette configuration sera utilisée dans votre overlay OBS',
+      color: 'success',
+      icon: 'i-lucide-check',
+    })
   } catch (error) {
     toast.add({
       title: "Erreur d'activation",
-      description:
-        error instanceof Error ? error.message : "Une erreur est survenue",
-      color: "error",
-      icon: "i-lucide-alert-circle",
-    });
+      description: error instanceof Error ? error.message : 'Une erreur est survenue',
+      color: 'error',
+      icon: 'i-lucide-alert-circle',
+    })
   }
-};
+}
 
 // Charger la liste des configurations au démarrage et charger la config active
 const loadConfigs = async () => {
   try {
-    const configs = await api.fetchConfigs();
+    const configs = await api.fetchConfigs()
 
     // Charger automatiquement la configuration active
-    const activeConfig = configs.find((c) => c.isActive);
+    const activeConfig = configs.find((c) => c.isActive)
     if (activeConfig) {
-      const fullConfig = await api.fetchConfig(activeConfig.id);
-      store.loadConfig(fullConfig.config);
-      currentConfigId.value = fullConfig.id;
-      currentConfigName.value = fullConfig.name;
+      const fullConfig = await api.fetchConfig(activeConfig.id)
+      store.loadConfig(fullConfig.config)
+      currentConfigId.value = fullConfig.id
+      currentConfigName.value = fullConfig.name
     }
   } catch (error) {
-    console.error("Failed to load configs:", error);
+    console.error('Failed to load configs:', error)
   }
-};
+}
 
 // Raccourcis clavier
 const handleKeydown = (event: KeyboardEvent) => {
   // Ignorer si l'utilisateur est dans un input
-  if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return;
+  if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement)
+    return
 
   // Undo: Ctrl+Z (Windows/Linux) ou Cmd+Z (Mac)
-  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z" && !event.shiftKey) {
-    event.preventDefault();
-    handleUndo();
-    return;
+  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z' && !event.shiftKey) {
+    event.preventDefault()
+    handleUndo()
+    return
   }
 
   // Redo: Ctrl+Shift+Z ou Ctrl+Y (Windows/Linux) ou Cmd+Shift+Z (Mac)
-  if ((event.ctrlKey || event.metaKey) && (
-    (event.key.toLowerCase() === "z" && event.shiftKey) ||
-    event.key.toLowerCase() === "y"
-  )) {
-    event.preventDefault();
-    handleRedo();
-    return;
+  if (
+    (event.ctrlKey || event.metaKey) &&
+    ((event.key.toLowerCase() === 'z' && event.shiftKey) || event.key.toLowerCase() === 'y')
+  ) {
+    event.preventDefault()
+    handleRedo()
+    return
   }
 
   switch (event.key.toLowerCase()) {
-    case "delete":
-    case "backspace":
+    case 'delete':
+    case 'backspace':
       if (selectedElementId.value) {
-        deleteSelected();
+        deleteSelected()
       }
-      break;
-    case "d":
+      break
+    case 'd':
       if (event.ctrlKey || event.metaKey) {
-        event.preventDefault();
-        duplicateSelected();
+        event.preventDefault()
+        duplicateSelected()
       }
-      break;
-    case "escape":
-      store.deselectElement();
-      break;
+      break
+    case 'escape':
+      store.deselectElement()
+      break
   }
-};
+}
 
 onMounted(() => {
-  window.addEventListener("keydown", handleKeydown);
-  loadConfigs();
+  window.addEventListener('keydown', handleKeydown)
+  loadConfigs()
 
   // Initialiser l'historique
-  initializeHistory();
-});
+  initializeHistory()
+})
 
 onUnmounted(() => {
   // Cleanup des timers de snapshot en attente pour éviter les memory leaks
-  pendingSnapshots.forEach((timer) => clearTimeout(timer));
-  pendingSnapshots.clear();
+  pendingSnapshots.forEach((timer) => clearTimeout(timer))
+  pendingSnapshots.clear()
 
-  window.removeEventListener("keydown", handleKeydown);
-});
+  window.removeEventListener('keydown', handleKeydown)
+})
 </script>
 
 <style scoped>
@@ -1170,8 +948,13 @@ onUnmounted(() => {
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 .back-link {
@@ -1262,7 +1045,10 @@ onUnmounted(() => {
   justify-content: center;
   color: var(--color-text-muted);
   cursor: pointer;
-  transition: right 0.3s ease, background 0.2s, color 0.2s;
+  transition:
+    right 0.3s ease,
+    background 0.2s,
+    color 0.2s;
   z-index: 20;
 }
 

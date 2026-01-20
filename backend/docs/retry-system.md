@@ -27,15 +27,15 @@ The retry system is an agnostic and reusable infrastructure for handling transie
 
 ## Files
 
-| File | Description |
-|------|-------------|
-| `app/services/resilience/types.ts` | Interfaces, types, and predefined policies |
-| `app/services/resilience/backoff_strategy.ts` | Retry delay calculation |
-| `app/services/resilience/circuit_breaker.ts` | Redis circuit breaker |
-| `app/services/resilience/retry_utility.ts` | Main wrapper |
-| `app/services/resilience/retry_event_store.ts` | DB persistence |
-| `app/models/retry_event.ts` | Lucid model |
-| `app/exceptions/circuit_open_error.ts` | Custom exception |
+| File                                           | Description                                |
+| ---------------------------------------------- | ------------------------------------------ |
+| `app/services/resilience/types.ts`             | Interfaces, types, and predefined policies |
+| `app/services/resilience/backoff_strategy.ts`  | Retry delay calculation                    |
+| `app/services/resilience/circuit_breaker.ts`   | Redis circuit breaker                      |
+| `app/services/resilience/retry_utility.ts`     | Main wrapper                               |
+| `app/services/resilience/retry_event_store.ts` | DB persistence                             |
+| `app/models/retry_event.ts`                    | Lucid model                                |
+| `app/exceptions/circuit_open_error.ts`         | Custom exception                           |
 
 ## Usage
 
@@ -79,28 +79,25 @@ if (result.success) {
 ### With Rate Limiting (429)
 
 ```typescript
-const result = await retryUtility.execute(
-  async (): Promise<HttpCallResult<void>> => {
-    const response = await fetch('https://api.example.com/action', {
-      method: 'POST',
-    })
+const result = await retryUtility.execute(async (): Promise<HttpCallResult<void>> => {
+  const response = await fetch('https://api.example.com/action', {
+    method: 'POST',
+  })
 
-    // Extract Retry-After header for 429s
-    const retryAfter = response.headers.get('Retry-After')
+  // Extract Retry-After header for 429s
+  const retryAfter = response.headers.get('Retry-After')
 
-    if (!response.ok) {
-      return {
-        success: false,
-        statusCode: response.status,
-        retryAfterSeconds: retryAfter ? parseInt(retryAfter, 10) : undefined,
-        error: new Error(`HTTP ${response.status}`),
-      }
+  if (!response.ok) {
+    return {
+      success: false,
+      statusCode: response.status,
+      retryAfterSeconds: retryAfter ? parseInt(retryAfter, 10) : undefined,
+      error: new Error(`HTTP ${response.status}`),
     }
+  }
 
-    return { success: true, statusCode: 200 }
-  },
-  RetryPolicies.RATE_LIMITED
-)
+  return { success: true, statusCode: 200 }
+}, RetryPolicies.RATE_LIMITED)
 ```
 
 ### With Circuit Breaker
@@ -119,21 +116,27 @@ if (result.circuitBreakerOpen) {
 ## Predefined Policies
 
 ### RATE_LIMITED
+
 For 429 (Too Many Requests) errors:
+
 - Max retries: 3
 - Base delay: 1000ms
 - Backoff: Exponential with jitter
 - Max delay: 30s
 
 ### SERVER_ERROR
+
 For 5xx errors:
+
 - Max retries: 3
 - Base delay: 500ms
 - Backoff: Progressive (500ms → 1s → 2s)
 - Max delay: 4s
 
 ### TWITCH_API
+
 Optimized combination for Twitch API:
+
 - Max retries: 3
 - Base delay: 500ms
 - Backoff: Exponential
@@ -164,9 +167,9 @@ Optimized combination for Twitch API:
 
 ```typescript
 const retryUtility = new RetryUtility({
-  failureThreshold: 5,    // Failures before opening
-  resetTimeoutMs: 30000,  // OPEN duration
-  successThreshold: 2,    // Successes to close
+  failureThreshold: 5, // Failures before opening
+  resetTimeoutMs: 30000, // OPEN duration
+  successThreshold: 2, // Successes to close
 })
 ```
 
@@ -188,6 +191,7 @@ delay = baseDelay × 2^attempt + random(0, 1000)
 ```
 
 Example with baseDelay=500ms:
+
 - Attempt 1: 500-1500ms
 - Attempt 2: 1000-2000ms
 - Attempt 3: 2000-3000ms
@@ -199,6 +203,7 @@ delay = baseDelay × (attempt + 1)
 ```
 
 Example with baseDelay=500ms:
+
 - Attempt 1: 500ms
 - Attempt 2: 1000ms
 - Attempt 3: 1500ms
@@ -225,8 +230,8 @@ Real-time notifications to GM via `campaign:{id}:notifications` channel:
 
 ```typescript
 // Emitted events
-'api:retry'           // On each attempt
-'api:retry-success'   // Success after retry(s)
+'api:retry' // On each attempt
+'api:retry-success' // Success after retry(s)
 'api:retry-exhausted' // Final failure
 ```
 
@@ -237,8 +242,8 @@ Events are persisted in the `retry_events` table for analytics:
 ```typescript
 interface RetryEvent {
   id: string
-  service: string           // e.g., 'TwitchPollService'
-  operation: string         // e.g., 'createPoll'
+  service: string // e.g., 'TwitchPollService'
+  operation: string // e.g., 'createPoll'
   attempts: number
   success: boolean
   totalDurationMs: number
@@ -261,20 +266,20 @@ Structure returned by `execute()`:
 ```typescript
 interface RetryResult<T> {
   success: boolean
-  data?: T                          // Data if success
-  error?: Error                     // Error if failure
-  attempts: number                  // Number of attempts
-  totalDurationMs: number           // Total duration
-  circuitBreakerOpen: boolean       // If blocked by circuit breaker
-  attemptDetails: AttemptDetail[]   // Detail of each attempt
+  data?: T // Data if success
+  error?: Error // Error if failure
+  attempts: number // Number of attempts
+  totalDurationMs: number // Total duration
+  circuitBreakerOpen: boolean // If blocked by circuit breaker
+  attemptDetails: AttemptDetail[] // Detail of each attempt
 }
 
 interface AttemptDetail {
   attempt: number
   statusCode?: number
   errorMessage?: string
-  delayMs: number                   // Delay before this attempt
-  durationMs: number                // Duration of this attempt
+  delayMs: number // Delay before this attempt
+  durationMs: number // Duration of this attempt
   timestamp: Date
   usedRetryAfter: boolean
 }
@@ -307,6 +312,7 @@ Unit tests cover:
 - `retry_utility.spec.ts`: Complete retry logic
 
 Run:
+
 ```bash
 npm run test:unit -- --files="tests/unit/services/resilience/**"
 ```

@@ -5,47 +5,34 @@
         <div class="bg-warning-light p-2 rounded-lg">
           <UIcon name="i-lucide-bell-off" class="size-6 text-warning-500" />
         </div>
-        <h3 class="text-xl font-semibold text-primary">
-          Notifications désactivées
-        </h3>
+        <h3 class="text-xl font-semibold text-primary">Notifications désactivées</h3>
       </div>
     </template>
 
     <template #body>
       <div class="space-y-4">
-        <p class="text-secondary">
-          Les notifications push vous permettent de ne rien manquer :
-        </p>
+        <p class="text-secondary">Les notifications push vous permettent de ne rien manquer :</p>
 
         <ul class="space-y-2 text-muted">
           <li class="flex items-start gap-2">
-            <UIcon
-              name="i-lucide-mail"
-              class="size-5 text-primary-500 mt-0.5 shrink-0"
-            />
+            <UIcon name="i-lucide-mail" class="size-5 text-primary-500 mt-0.5 shrink-0" />
             <span
-              ><strong class="text-primary">Invitations</strong> - Soyez averti
-              quand un MJ vous invite à une campagne</span
+              ><strong class="text-primary">Invitations</strong> - Soyez averti quand un MJ vous
+              invite à une campagne</span
             >
           </li>
           <li class="flex items-start gap-2">
-            <UIcon
-              name="i-lucide-bar-chart-3"
-              class="size-5 text-primary-500 mt-0.5 shrink-0"
-            />
+            <UIcon name="i-lucide-bar-chart-3" class="size-5 text-primary-500 mt-0.5 shrink-0" />
             <span
-              ><strong class="text-primary">Sondages</strong> - Recevez une alerte
-              quand un sondage démarre ou se termine</span
+              ><strong class="text-primary">Sondages</strong> - Recevez une alerte quand un sondage
+              démarre ou se termine</span
             >
           </li>
           <li class="flex items-start gap-2">
-            <UIcon
-              name="i-lucide-alert-triangle"
-              class="size-5 text-primary-500 mt-0.5 shrink-0"
-            />
+            <UIcon name="i-lucide-alert-triangle" class="size-5 text-primary-500 mt-0.5 shrink-0" />
             <span
-              ><strong class="text-primary">Alertes</strong> - Problèmes de
-              connexion, tokens expirés...</span
+              ><strong class="text-primary">Alertes</strong> - Problèmes de connexion, tokens
+              expirés...</span
             >
           </li>
         </ul>
@@ -75,9 +62,9 @@
 </template>
 
 <script setup lang="ts">
-const isOpen = defineModel<boolean>("open", { default: false });
+const isOpen = defineModel<boolean>('open', { default: false })
 
 const close = () => {
-  isOpen.value = false;
-};
+  isOpen.value = false
+}
 </script>

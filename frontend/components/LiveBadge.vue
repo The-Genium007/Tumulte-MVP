@@ -9,24 +9,24 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
-import type { LiveStatus } from "@/types";
+import { computed } from 'vue'
+import type { LiveStatus } from '@/types'
 
 const props = defineProps<{
-  liveStatus?: LiveStatus | null;
-}>();
+  liveStatus?: LiveStatus | null
+}>()
 
-const isLive = computed(() => props.liveStatus?.is_live === true);
+const isLive = computed(() => props.liveStatus?.is_live === true)
 
 const tooltipText = computed(() => {
-  if (!props.liveStatus?.is_live) return "";
-  const parts: string[] = ["En live"];
+  if (!props.liveStatus?.is_live) return ''
+  const parts: string[] = ['En live']
   if (props.liveStatus.game_name) {
-    parts.push(`sur ${props.liveStatus.game_name}`);
+    parts.push(`sur ${props.liveStatus.game_name}`)
   }
   if (props.liveStatus.viewer_count !== undefined) {
-    parts.push(`(${props.liveStatus.viewer_count} viewers)`);
+    parts.push(`(${props.liveStatus.viewer_count} viewers)`)
   }
-  return parts.join(" ");
-});
+  return parts.join(' ')
+})
 </script>

@@ -79,10 +79,7 @@
       <div v-if="showPreview" class="backdrop-preview">
         <div class="preview-background">
           <div class="preview-pattern" />
-          <div
-            class="preview-overlay"
-            :style="previewStyle"
-          >
+          <div class="preview-overlay" :style="previewStyle">
             <span>Aperçu</span>
           </div>
         </div>
@@ -105,29 +102,29 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed } from 'vue'
 
 export interface BackdropFilterConfig {
-  enabled: boolean;
-  blur: number;
-  brightness: number;
-  saturation: number;
-  contrast: number;
+  enabled: boolean
+  blur: number
+  brightness: number
+  saturation: number
+  contrast: number
 }
 
 interface BackdropPreset {
-  label: string;
-  values: Omit<BackdropFilterConfig, "enabled">;
+  label: string
+  values: Omit<BackdropFilterConfig, 'enabled'>
 }
 
 const props = withDefaults(
   defineProps<{
-    modelValue: BackdropFilterConfig;
-    showBrightness?: boolean;
-    showSaturation?: boolean;
-    showContrast?: boolean;
-    showPreview?: boolean;
-    showPresets?: boolean;
+    modelValue: BackdropFilterConfig
+    showBrightness?: boolean
+    showSaturation?: boolean
+    showContrast?: boolean
+    showPreview?: boolean
+    showPresets?: boolean
   }>(),
   {
     showBrightness: true,
@@ -135,46 +132,48 @@ const props = withDefaults(
     showContrast: false,
     showPreview: true,
     showPresets: true,
-  },
-);
+  }
+)
 
 const emit = defineEmits<{
-  "update:modelValue": [value: BackdropFilterConfig];
-}>();
+  'update:modelValue': [value: BackdropFilterConfig]
+}>()
 
 const presets: BackdropPreset[] = [
   {
-    label: "Léger",
+    label: 'Léger',
     values: { blur: 4, brightness: 100, saturation: 100, contrast: 100 },
   },
   {
-    label: "Glass",
+    label: 'Glass',
     values: { blur: 12, brightness: 105, saturation: 100, contrast: 100 },
   },
   {
-    label: "Frosted",
+    label: 'Frosted',
     values: { blur: 20, brightness: 110, saturation: 80, contrast: 100 },
   },
   {
-    label: "Heavy",
+    label: 'Heavy',
     values: { blur: 30, brightness: 100, saturation: 100, contrast: 100 },
   },
-];
+]
 
 const previewStyle = computed(() => {
-  const { blur, brightness, saturation, contrast } = props.modelValue;
+  const { blur, brightness, saturation, contrast } = props.modelValue
   const filters = [
     `blur(${blur}px)`,
-    brightness !== 100 ? `brightness(${brightness}%)` : "",
-    saturation !== 100 ? `saturate(${saturation}%)` : "",
-    contrast !== 100 ? `contrast(${contrast}%)` : "",
-  ].filter(Boolean).join(" ");
+    brightness !== 100 ? `brightness(${brightness}%)` : '',
+    saturation !== 100 ? `saturate(${saturation}%)` : '',
+    contrast !== 100 ? `contrast(${contrast}%)` : '',
+  ]
+    .filter(Boolean)
+    .join(' ')
 
   return {
     backdropFilter: filters,
     WebkitBackdropFilter: filters,
-  };
-});
+  }
+})
 
 const isPresetActive = (preset: BackdropPreset) => {
   return (
@@ -182,26 +181,26 @@ const isPresetActive = (preset: BackdropPreset) => {
     props.modelValue.brightness === preset.values.brightness &&
     props.modelValue.saturation === preset.values.saturation &&
     props.modelValue.contrast === preset.values.contrast
-  );
-};
+  )
+}
 
 const updateField = <K extends keyof BackdropFilterConfig>(
   field: K,
-  value: BackdropFilterConfig[K],
+  value: BackdropFilterConfig[K]
 ) => {
-  emit("update:modelValue", {
+  emit('update:modelValue', {
     ...props.modelValue,
     [field]: value,
-  });
-};
+  })
+}
 
 const applyPreset = (preset: BackdropPreset) => {
-  emit("update:modelValue", {
+  emit('update:modelValue', {
     ...props.modelValue,
     ...preset.values,
     enabled: true,
-  });
-};
+  })
+}
 </script>
 
 <style scoped>
@@ -266,7 +265,11 @@ const applyPreset = (preset: BackdropPreset) => {
     linear-gradient(45deg, transparent 75%, #45b7d1 75%),
     linear-gradient(-45deg, transparent 75%, #96ceb4 75%);
   background-size: 20px 20px;
-  background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+  background-position:
+    0 0,
+    0 10px,
+    10px -10px,
+    -10px 0;
 }
 
 .preview-overlay {

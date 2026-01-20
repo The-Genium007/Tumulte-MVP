@@ -1,12 +1,12 @@
-import { storeToRefs } from "pinia";
-import { usePushNotificationsStore } from "@/stores/pushNotifications";
+import { storeToRefs } from 'pinia'
+import { usePushNotificationsStore } from '@/stores/pushNotifications'
 
 /**
  * Composable pour gérer les notifications push
  * Wrapper autour du store avec initialisation automatique
  */
 export function usePushNotifications() {
-  const store = usePushNotificationsStore();
+  const store = usePushNotificationsStore()
 
   const {
     subscriptions,
@@ -22,7 +22,7 @@ export function usePushNotifications() {
     isPermissionDenied,
     shouldShowBanner,
     isCurrentBrowserSubscribed,
-  } = storeToRefs(store);
+  } = storeToRefs(store)
 
   return {
     // State (refs)
@@ -58,5 +58,5 @@ export function usePushNotifications() {
     checkPermissionStatus: store.checkPermissionStatus,
     // Deprecated - use initialize() instead
     checkCurrentBrowserSubscription: store.checkCurrentBrowserSubscription,
-  };
+  }
 }

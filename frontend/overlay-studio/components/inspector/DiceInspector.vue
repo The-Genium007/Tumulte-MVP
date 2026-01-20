@@ -60,7 +60,9 @@
           <button class="sub-section-header" @click="toggleHudSubsection('container')">
             <span>Conteneur</span>
             <UIcon
-              :name="expandedHudSections.container ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+              :name="
+                expandedHudSections.container ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'
+              "
               class="size-3"
             />
           </button>
@@ -188,7 +190,9 @@
           <button class="sub-section-header" @click="toggleHudSubsection('badgeSuccess')">
             <span>Badge critique succès</span>
             <UIcon
-              :name="expandedHudSections.badgeSuccess ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+              :name="
+                expandedHudSections.badgeSuccess ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'
+              "
               class="size-3"
             />
           </button>
@@ -216,7 +220,9 @@
           <button class="sub-section-header" @click="toggleHudSubsection('badgeFailure')">
             <span>Badge critique échec</span>
             <UIcon
-              :name="expandedHudSections.badgeFailure ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+              :name="
+                expandedHudSections.badgeFailure ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'
+              "
               class="size-3"
             />
           </button>
@@ -244,7 +250,9 @@
           <button class="sub-section-header" @click="toggleHudSubsection('diceBreakdown')">
             <span>Détail des dés</span>
             <UIcon
-              :name="expandedHudSections.diceBreakdown ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+              :name="
+                expandedHudSections.diceBreakdown ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'
+              "
               class="size-3"
             />
           </button>
@@ -280,7 +288,9 @@
           <button class="sub-section-header" @click="toggleHudSubsection('skillInfo')">
             <span>Info compétence</span>
             <UIcon
-              :name="expandedHudSections.skillInfo ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+              :name="
+                expandedHudSections.skillInfo ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'
+              "
               class="size-3"
             />
           </button>
@@ -527,7 +537,7 @@
             :min="1"
             :max="10"
             :step="1"
-            @update:model-value="(v) => previewDiceCount = v"
+            @update:model-value="(v) => (previewDiceCount = v)"
           />
         </div>
 
@@ -550,7 +560,11 @@
         <div class="formula-display">
           <UIcon name="i-lucide-function-square" class="size-4 text-neutral-400" />
           <span class="formula-text">{{ props.mockData.rollFormula }}</span>
-          <span v-if="props.mockData.isCritical" class="critical-badge" :class="props.mockData.criticalType">
+          <span
+            v-if="props.mockData.isCritical"
+            class="critical-badge"
+            :class="props.mockData.criticalType"
+          >
             {{ props.mockData.criticalType === 'success' ? 'Critique !' : 'Échec critique' }}
           </span>
         </div>
@@ -560,7 +574,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, computed } from "vue";
+import { computed } from 'vue'
 import {
   ColorModule,
   AudioModule,
@@ -568,7 +582,8 @@ import {
   NumberInput,
   type AudioConfig,
   type TextStyleConfig,
-} from "./modules";
+} from './modules'
+import { useCollapsibleSections } from '~/overlay-studio/composables'
 import type {
   DiceBoxConfig,
   DiceHudConfig,
@@ -579,41 +594,37 @@ import type {
   DiceType,
   DiceTexture,
   DiceMaterial,
-} from "~/overlay-studio/types";
+} from '~/overlay-studio/types'
 
 const props = defineProps<{
-  diceBox: DiceBoxConfig;
-  hud: DiceHudConfig;
-  colors: DiceCriticalColors;
-  animations: DiceAnimationsConfig;
-  audio: DiceAudioConfig;
-  mockData: DiceMockData;
-}>();
+  diceBox: DiceBoxConfig
+  hud: DiceHudConfig
+  colors: DiceCriticalColors
+  animations: DiceAnimationsConfig
+  audio: DiceAudioConfig
+  mockData: DiceMockData
+}>()
 
 const emit = defineEmits<{
-  updateDiceBox: [diceBox: Partial<DiceBoxConfig>];
-  updateHud: [hud: Partial<DiceHudConfig>];
-  updateColors: [colors: Partial<DiceCriticalColors>];
-  updateAnimations: [animations: Partial<DiceAnimationsConfig>];
-  updateAudio: [audio: Partial<DiceAudioConfig>];
-  updateMockData: [mockData: Partial<DiceMockData>];
-}>();
+  updateDiceBox: [diceBox: Partial<DiceBoxConfig>]
+  updateHud: [hud: Partial<DiceHudConfig>]
+  updateColors: [colors: Partial<DiceCriticalColors>]
+  updateAnimations: [animations: Partial<DiceAnimationsConfig>]
+  updateAudio: [audio: Partial<DiceAudioConfig>]
+  updateMockData: [mockData: Partial<DiceMockData>]
+}>()
 
-// Sections collapsed/expanded state
-const expandedSections = reactive({
+// Sections collapsed/expanded state - using composable
+const { sections: expandedSections, toggle: toggleSection } = useCollapsibleSections({
   dice3d: true,
   hud: false,
   animations: false,
   audio: false,
   preview: true,
-});
+})
 
-const toggleSection = (section: keyof typeof expandedSections) => {
-  expandedSections[section] = !expandedSections[section];
-};
-
-// HUD subsections collapsed/expanded state
-const expandedHudSections = reactive({
+// HUD subsections
+const { sections: expandedHudSections, toggle: toggleHudSubsection } = useCollapsibleSections({
   container: true,
   result: false,
   formula: false,
@@ -621,179 +632,174 @@ const expandedHudSections = reactive({
   badgeFailure: false,
   diceBreakdown: false,
   skillInfo: false,
-});
+})
 
-const toggleHudSubsection = (section: keyof typeof expandedHudSections) => {
-  expandedHudSections[section] = !expandedHudSections[section];
-};
-
-// Animation subsections collapsed/expanded state
-const expandedAnimSections = reactive({
+// Animation subsections
+const { sections: expandedAnimSections, toggle: toggleAnimSubsection } = useCollapsibleSections({
   entry: true,
   exit: false,
   glow: false,
-});
-
-const toggleAnimSubsection = (section: keyof typeof expandedAnimSections) => {
-  expandedAnimSections[section] = !expandedAnimSections[section];
-};
+})
 
 // Options pour les textures
 const textureOptions: { label: string; value: DiceTexture }[] = [
-  { label: "Aucune", value: "none" },
-  { label: "Nuages", value: "cloudy" },
-  { label: "Feu", value: "fire" },
-  { label: "Marbre", value: "marble" },
-  { label: "Eau", value: "water" },
-  { label: "Glace", value: "ice" },
-  { label: "Papier", value: "paper" },
-  { label: "Taches", value: "speckles" },
-  { label: "Paillettes", value: "glitter" },
-  { label: "Étoiles", value: "stars" },
-  { label: "Vitrail", value: "stainedglass" },
-  { label: "Bois", value: "wood" },
-  { label: "Métal", value: "metal" },
-  { label: "Crânes", value: "skulls" },
-  { label: "Léopard", value: "leopard" },
-  { label: "Tigre", value: "tiger" },
-  { label: "Dragon", value: "dragon" },
-  { label: "Lézard", value: "lizard" },
-  { label: "Plumes", value: "bird" },
-  { label: "Astral", value: "astral" },
-];
+  { label: 'Aucune', value: 'none' },
+  { label: 'Nuages', value: 'cloudy' },
+  { label: 'Feu', value: 'fire' },
+  { label: 'Marbre', value: 'marble' },
+  { label: 'Eau', value: 'water' },
+  { label: 'Glace', value: 'ice' },
+  { label: 'Papier', value: 'paper' },
+  { label: 'Taches', value: 'speckles' },
+  { label: 'Paillettes', value: 'glitter' },
+  { label: 'Étoiles', value: 'stars' },
+  { label: 'Vitrail', value: 'stainedglass' },
+  { label: 'Bois', value: 'wood' },
+  { label: 'Métal', value: 'metal' },
+  { label: 'Crânes', value: 'skulls' },
+  { label: 'Léopard', value: 'leopard' },
+  { label: 'Tigre', value: 'tiger' },
+  { label: 'Dragon', value: 'dragon' },
+  { label: 'Lézard', value: 'lizard' },
+  { label: 'Plumes', value: 'bird' },
+  { label: 'Astral', value: 'astral' },
+]
 
 // Options pour les matériaux
 const materialOptions: { label: string; value: DiceMaterial }[] = [
-  { label: "Plastique", value: "none" },
-  { label: "Verre", value: "glass" },
-  { label: "Métal", value: "metal" },
-  { label: "Bois", value: "wood" },
-];
+  { label: 'Plastique', value: 'none' },
+  { label: 'Verre', value: 'glass' },
+  { label: 'Métal', value: 'metal' },
+  { label: 'Bois', value: 'wood' },
+]
 
 // Options pour les animations
 const entryTypes = [
-  { label: "Drop", value: "drop" },
-  { label: "Throw", value: "throw" },
-  { label: "Appear", value: "appear" },
-];
+  { label: 'Drop', value: 'drop' },
+  { label: 'Throw', value: 'throw' },
+  { label: 'Appear', value: 'appear' },
+]
 
 const exitTypes = [
-  { label: "Fade", value: "fade" },
-  { label: "Fall", value: "fall" },
-];
+  { label: 'Fade', value: 'fade' },
+  { label: 'Fall', value: 'fall' },
+]
 
 // Options de types de dés avec leur valeur maximale
 const diceTypeOptions: { label: string; value: DiceType; maxValue: number }[] = [
-  { label: "d4", value: "d4", maxValue: 4 },
-  { label: "d6", value: "d6", maxValue: 6 },
-  { label: "d8", value: "d8", maxValue: 8 },
-  { label: "d10", value: "d10", maxValue: 10 },
-  { label: "d12", value: "d12", maxValue: 12 },
-  { label: "d20", value: "d20", maxValue: 20 },
-];
+  { label: 'd4', value: 'd4', maxValue: 4 },
+  { label: 'd6', value: 'd6', maxValue: 6 },
+  { label: 'd8', value: 'd8', maxValue: 8 },
+  { label: 'd10', value: 'd10', maxValue: 10 },
+  { label: 'd12', value: 'd12', maxValue: 12 },
+  { label: 'd20', value: 'd20', maxValue: 20 },
+]
 
 // Configuration UI pour les selects (fond neutre comme les inputs, chevron coloré)
 const selectUiConfig = {
-  base: "bg-neutral-100",
-  trailingIcon: "text-primary-700",
-};
+  base: 'bg-neutral-100',
+  trailingIcon: 'text-primary-700',
+}
 
 // ===== DiceBox Updates =====
-const updateDiceBoxColor = (key: keyof DiceBoxConfig["colors"], value: string) => {
-  emit("updateDiceBox", {
+const updateDiceBoxColor = (key: keyof DiceBoxConfig['colors'], value: string) => {
+  emit('updateDiceBox', {
     colors: { ...props.diceBox.colors, [key]: value },
-  });
-};
+  })
+}
 
-const updateDiceBox = (key: "texture" | "material" | "lightIntensity", value: string | number) => {
-  emit("updateDiceBox", { [key]: value });
-};
+const updateDiceBox = (key: 'texture' | 'material' | 'lightIntensity', value: string | number) => {
+  emit('updateDiceBox', { [key]: value })
+}
 
 // ===== HUD Updates =====
-const updateHudContainer = (key: keyof DiceHudConfig["container"], value: string | number) => {
-  emit("updateHud", {
+const updateHudContainer = (key: keyof DiceHudConfig['container'], value: string | number) => {
+  emit('updateHud', {
     container: { ...props.hud.container, [key]: value },
-  });
-};
+  })
+}
 
-const updateHudResult = (key: keyof DiceHudConfig["result"], value: string) => {
-  emit("updateHud", {
+const updateHudResult = (key: keyof DiceHudConfig['result'], value: string) => {
+  emit('updateHud', {
     result: { ...props.hud.result, [key]: value },
-  });
-};
+  })
+}
 
 const updateHudResultTypography = (key: string, value: string | number) => {
-  emit("updateHud", {
+  emit('updateHud', {
     result: {
       ...props.hud.result,
       typography: { ...props.hud.result.typography, [key]: value },
     },
-  });
-};
+  })
+}
 
 const updateHudFormulaTypography = (key: string, value: string | number) => {
-  emit("updateHud", {
+  emit('updateHud', {
     formula: {
       ...props.hud.formula,
       typography: { ...props.hud.formula.typography, [key]: value },
     },
-  });
-};
+  })
+}
 
-const updateHudCriticalBadge = (key: keyof DiceHudConfig["criticalBadge"], value: string) => {
-  emit("updateHud", {
+const updateHudCriticalBadge = (key: keyof DiceHudConfig['criticalBadge'], value: string) => {
+  emit('updateHud', {
     criticalBadge: { ...props.hud.criticalBadge, [key]: value },
-  });
-};
+  })
+}
 
-const updateHudDiceBreakdown = (key: keyof DiceHudConfig["diceBreakdown"], value: string | number) => {
-  emit("updateHud", {
+const updateHudDiceBreakdown = (
+  key: keyof DiceHudConfig['diceBreakdown'],
+  value: string | number
+) => {
+  emit('updateHud', {
     diceBreakdown: { ...props.hud.diceBreakdown, [key]: value },
-  });
-};
+  })
+}
 
 const updateHudDiceBreakdownTypography = (key: string, value: string | number) => {
-  emit("updateHud", {
+  emit('updateHud', {
     diceBreakdown: {
       ...props.hud.diceBreakdown,
       typography: { ...props.hud.diceBreakdown.typography, [key]: value },
     },
-  });
-};
+  })
+}
 
-const updateHudSkillInfo = (key: keyof DiceHudConfig["skillInfo"], value: string | number) => {
-  emit("updateHud", {
+const updateHudSkillInfo = (key: keyof DiceHudConfig['skillInfo'], value: string | number) => {
+  emit('updateHud', {
     skillInfo: { ...props.hud.skillInfo, [key]: value },
-  });
-};
+  })
+}
 
 const updateHudSkillTypography = (key: string, value: string | number) => {
-  emit("updateHud", {
+  emit('updateHud', {
     skillInfo: {
       ...props.hud.skillInfo,
       skillTypography: { ...props.hud.skillInfo.skillTypography, [key]: value },
     },
-  });
-};
+  })
+}
 
 const updateHudAbilityTypography = (key: string, value: string | number) => {
-  emit("updateHud", {
+  emit('updateHud', {
     skillInfo: {
       ...props.hud.skillInfo,
       abilityTypography: { ...props.hud.skillInfo.abilityTypography, [key]: value },
     },
-  });
-};
+  })
+}
 
 // ===== Typography Adapters for TextModule =====
 const resultTypographyConfig = computed<TextStyleConfig>(() => ({
   fontFamily: props.hud.result.typography.fontFamily,
   fontSize: props.hud.result.typography.fontSize,
   fontWeight: props.hud.result.typography.fontWeight,
-}));
+}))
 
 const updateResultTypography = (config: TextStyleConfig) => {
-  emit("updateHud", {
+  emit('updateHud', {
     result: {
       ...props.hud.result,
       typography: {
@@ -803,17 +809,17 @@ const updateResultTypography = (config: TextStyleConfig) => {
         ...(config.fontWeight !== undefined && { fontWeight: config.fontWeight }),
       },
     },
-  });
-};
+  })
+}
 
 const formulaTypographyConfig = computed<TextStyleConfig>(() => ({
   fontFamily: props.hud.formula.typography.fontFamily,
   fontSize: props.hud.formula.typography.fontSize,
   fontWeight: props.hud.formula.typography.fontWeight,
-}));
+}))
 
 const updateFormulaTypography = (config: TextStyleConfig) => {
-  emit("updateHud", {
+  emit('updateHud', {
     formula: {
       ...props.hud.formula,
       typography: {
@@ -823,16 +829,16 @@ const updateFormulaTypography = (config: TextStyleConfig) => {
         ...(config.fontWeight !== undefined && { fontWeight: config.fontWeight }),
       },
     },
-  });
-};
+  })
+}
 
 const diceBreakdownTypographyConfig = computed<TextStyleConfig>(() => ({
   fontSize: props.hud.diceBreakdown.typography.fontSize,
   fontWeight: props.hud.diceBreakdown.typography.fontWeight,
-}));
+}))
 
 const updateDiceBreakdownTypography = (config: TextStyleConfig) => {
-  emit("updateHud", {
+  emit('updateHud', {
     diceBreakdown: {
       ...props.hud.diceBreakdown,
       typography: {
@@ -841,149 +847,146 @@ const updateDiceBreakdownTypography = (config: TextStyleConfig) => {
         ...(config.fontWeight !== undefined && { fontWeight: config.fontWeight }),
       },
     },
-  });
-};
+  })
+}
 
 // ===== Critical Colors Updates =====
 const updateCriticalColor = (key: keyof DiceCriticalColors, value: string) => {
-  emit("updateColors", { [key]: value });
-};
+  emit('updateColors', { [key]: value })
+}
 
 // ===== Animation Updates =====
 const updateAnimationEntry = (key: string, value: string | number) => {
-  emit("updateAnimations", {
+  emit('updateAnimations', {
     entry: { ...props.animations.entry, [key]: value },
-  });
-};
+  })
+}
 
 const updateAnimationExit = (key: string, value: string | number) => {
-  emit("updateAnimations", {
+  emit('updateAnimations', {
     exit: { ...props.animations.exit, [key]: value },
-  });
-};
+  })
+}
 
 const updateAnimationResult = (key: string, value: number) => {
-  emit("updateAnimations", {
+  emit('updateAnimations', {
     result: { ...props.animations.result, [key]: value },
-  });
-};
+  })
+}
 
 // ===== Audio Module Adapters =====
 const rollSoundConfig = computed<AudioConfig>(() => ({
   enabled: props.audio.rollSound.enabled,
   volume: props.audio.rollSound.volume,
-}));
+}))
 
 const criticalSuccessSoundConfig = computed<AudioConfig>(() => ({
   enabled: props.audio.criticalSuccessSound.enabled,
   volume: props.audio.criticalSuccessSound.volume,
-}));
+}))
 
 const criticalFailureSoundConfig = computed<AudioConfig>(() => ({
   enabled: props.audio.criticalFailureSound.enabled,
   volume: props.audio.criticalFailureSound.volume,
-}));
+}))
 
-const updateAudioFromModule = (
-  soundKey: keyof DiceAudioConfig,
-  config: AudioConfig,
-) => {
-  emit("updateAudio", {
+const updateAudioFromModule = (soundKey: keyof DiceAudioConfig, config: AudioConfig) => {
+  emit('updateAudio', {
     [soundKey]: { enabled: config.enabled, volume: config.volume },
-  });
-};
+  })
+}
 
 // ===== Preview / Mock Data =====
 const previewDiceType = computed({
-  get: () => props.mockData.diceTypes[0] || "d20",
+  get: () => props.mockData.diceTypes[0] || 'd20',
   set: (value: DiceType) => {
-    const diceCount = props.mockData.diceTypes.length || 1;
-    const newTypes = Array(diceCount).fill(value) as DiceType[];
-    const maxVal = getDiceMaxValue(value);
-    const currentTotal = computeTotalResult();
-    const newMin = diceCount;
-    const newMax = diceCount * maxVal;
-    const clampedTotal = Math.min(Math.max(currentTotal, newMin), newMax);
-    const newValues = distributeTotal(clampedTotal, diceCount, maxVal);
-    emit("updateMockData", {
+    const diceCount = props.mockData.diceTypes.length || 1
+    const newTypes = Array(diceCount).fill(value) as DiceType[]
+    const maxVal = getDiceMaxValue(value)
+    const currentTotal = computeTotalResult()
+    const newMin = diceCount
+    const newMax = diceCount * maxVal
+    const clampedTotal = Math.min(Math.max(currentTotal, newMin), newMax)
+    const newValues = distributeTotal(clampedTotal, diceCount, maxVal)
+    emit('updateMockData', {
       diceTypes: newTypes,
       diceValues: newValues,
       rollFormula: `${diceCount}${value}`,
-    });
+    })
   },
-});
+})
 
 const previewDiceCount = computed({
   get: () => props.mockData.diceTypes.length || 1,
   set: (value: number) => {
-    const diceType = props.mockData.diceTypes[0] || "d20";
-    const newTypes = Array(value).fill(diceType) as DiceType[];
-    const maxVal = getDiceMaxValue(diceType);
-    const currentTotal = computeTotalResult();
-    const newMin = value;
-    const newMax = value * maxVal;
-    const clampedTotal = Math.min(Math.max(currentTotal, newMin), newMax);
-    const newValues = distributeTotal(clampedTotal, value, maxVal);
-    emit("updateMockData", {
+    const diceType = props.mockData.diceTypes[0] || 'd20'
+    const newTypes = Array(value).fill(diceType) as DiceType[]
+    const maxVal = getDiceMaxValue(diceType)
+    const currentTotal = computeTotalResult()
+    const newMin = value
+    const newMax = value * maxVal
+    const clampedTotal = Math.min(Math.max(currentTotal, newMin), newMax)
+    const newValues = distributeTotal(clampedTotal, value, maxVal)
+    emit('updateMockData', {
       diceTypes: newTypes,
       diceValues: newValues,
       rollFormula: `${value}${diceType}`,
-    });
+    })
   },
-});
+})
 
-const resultMin = computed(() => props.mockData.diceTypes.length || 1);
+const resultMin = computed(() => props.mockData.diceTypes.length || 1)
 
 const resultMax = computed(() => {
-  const diceType = props.mockData.diceTypes[0] || "d20";
-  const count = props.mockData.diceTypes.length || 1;
-  return count * getDiceMaxValue(diceType);
-});
+  const diceType = props.mockData.diceTypes[0] || 'd20'
+  const count = props.mockData.diceTypes.length || 1
+  return count * getDiceMaxValue(diceType)
+})
 
 const currentTotalResult = computed(() => {
-  return props.mockData.diceValues.reduce((sum, val) => sum + val, 0);
-});
+  return props.mockData.diceValues.reduce((sum, val) => sum + val, 0)
+})
 
 function getDiceMaxValue(diceType: DiceType): number {
-  const option = diceTypeOptions.find((opt) => opt.value === diceType);
-  return option?.maxValue || parseInt(diceType.slice(1), 10);
+  const option = diceTypeOptions.find((opt) => opt.value === diceType)
+  return option?.maxValue || parseInt(diceType.slice(1), 10)
 }
 
 function computeTotalResult(): number {
-  return props.mockData.diceValues.reduce((sum, val) => sum + val, 0);
+  return props.mockData.diceValues.reduce((sum, val) => sum + val, 0)
 }
 
 function distributeTotal(total: number, diceCount: number, maxPerDie: number): number[] {
-  const values: number[] = [];
-  let remaining = total;
+  const values: number[] = []
+  let remaining = total
 
   for (let i = 0; i < diceCount; i++) {
-    const diceLeft = diceCount - i;
-    const minForThis = Math.max(1, remaining - (diceLeft - 1) * maxPerDie);
-    const maxForThis = Math.min(maxPerDie, remaining - (diceLeft - 1));
-    const idealValue = Math.round(remaining / diceLeft);
-    const value = Math.min(Math.max(idealValue, minForThis), maxForThis);
-    values.push(value);
-    remaining -= value;
+    const diceLeft = diceCount - i
+    const minForThis = Math.max(1, remaining - (diceLeft - 1) * maxPerDie)
+    const maxForThis = Math.min(maxPerDie, remaining - (diceLeft - 1))
+    const idealValue = Math.round(remaining / diceLeft)
+    const value = Math.min(Math.max(idealValue, minForThis), maxForThis)
+    values.push(value)
+    remaining -= value
   }
 
-  return values;
+  return values
 }
 
 function updateTotalResult(newTotal: number) {
-  const diceType = props.mockData.diceTypes[0] || "d20";
-  const count = props.mockData.diceTypes.length || 1;
-  const maxVal = getDiceMaxValue(diceType);
-  const newValues = distributeTotal(newTotal, count, maxVal);
+  const diceType = props.mockData.diceTypes[0] || 'd20'
+  const count = props.mockData.diceTypes.length || 1
+  const maxVal = getDiceMaxValue(diceType)
+  const newValues = distributeTotal(newTotal, count, maxVal)
 
-  const isCriticalSuccess = newTotal === count * maxVal;
-  const isCriticalFailure = newTotal === count;
+  const isCriticalSuccess = newTotal === count * maxVal
+  const isCriticalFailure = newTotal === count
 
-  emit("updateMockData", {
+  emit('updateMockData', {
     diceValues: newValues,
     isCritical: isCriticalSuccess || isCriticalFailure,
-    criticalType: isCriticalSuccess ? "success" : isCriticalFailure ? "failure" : null,
-  });
+    criticalType: isCriticalSuccess ? 'success' : isCriticalFailure ? 'failure' : null,
+  })
 }
 </script>
 

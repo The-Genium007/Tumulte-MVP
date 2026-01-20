@@ -108,14 +108,24 @@
           square
           :loading="props.closeLoading"
           :disabled="props.closeLoading"
-          :class="status === 'sending' || status === 'running' ? 'border-2 border-error-500' : 'border border-neutral-300'"
+          :class="
+            status === 'sending' || status === 'running'
+              ? 'border-2 border-error-500'
+              : 'border border-neutral-300'
+          "
           @click="$emit('close')"
         />
       </div>
     </div>
 
     <!-- Options et Résultats -->
-    <div v-if="(status === 'sending' || status === 'running' || status === 'pending' || results) && status !== 'cancelled'" class="mt-6 pt-6 border-t border-default">
+    <div
+      v-if="
+        (status === 'sending' || status === 'running' || status === 'pending' || results) &&
+        status !== 'cancelled'
+      "
+      class="mt-6 pt-6 border-t border-default"
+    >
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         <div
           v-for="(option, index) in allOptions"
@@ -124,7 +134,7 @@
             'p-3 rounded-lg border transition-all duration-300',
             isWinningOption(option)
               ? 'bg-linear-to-br from-warning-medium to-warning-light border-warning-light shadow-lg shadow-warning-500/20'
-              : 'bg-neutral-100 border-default'
+              : 'bg-neutral-100 border-default',
           ]"
         >
           <div class="flex items-center justify-between mb-2">
@@ -132,7 +142,7 @@
               <span
                 :class="[
                   'font-medium text-sm',
-                  isWinningOption(option) ? 'text-warning-600' : 'text-primary'
+                  isWinningOption(option) ? 'text-warning-600' : 'text-primary',
                 ]"
               >
                 {{ option.label }}
@@ -149,14 +159,16 @@
                     :name="hasMultipleWinners ? 'i-lucide-equal' : 'i-lucide-crown'"
                     class="size-3"
                   />
-                  <span class="font-semibold">{{ hasMultipleWinners ? 'Ex-aequo' : 'Gagnant' }}</span>
+                  <span class="font-semibold">{{
+                    hasMultipleWinners ? 'Ex-aequo' : 'Gagnant'
+                  }}</span>
                 </div>
               </UBadge>
             </div>
             <span
               :class="[
                 'font-bold',
-                isWinningOption(option) ? 'text-warning-600 text-lg' : 'text-brand-500'
+                isWinningOption(option) ? 'text-warning-600 text-lg' : 'text-brand-500',
               ]"
             >
               {{ option.votes }}
@@ -166,7 +178,9 @@
             <div
               :class="[
                 'h-2 rounded-full transition-all duration-500',
-                isWinningOption(option) ? 'bg-linear-to-r from-warning-500 to-warning-400' : 'bg-brand-500'
+                isWinningOption(option)
+                  ? 'bg-linear-to-r from-warning-500 to-warning-400'
+                  : 'bg-brand-500',
               ]"
               :style="{ width: `${option.percentage}%` }"
             ></div>
@@ -181,86 +195,85 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed } from 'vue'
 
 // Simplified poll type - only what this component needs
 interface SimplePoll {
-  id: string;
-  question: string;
-  options: string[];
+  id: string
+  question: string
+  options: string[]
 }
 
 interface PollResult {
-  option: string;
-  votes: number;
+  option: string
+  votes: number
 }
 
 interface PollResultsData {
-  results: PollResult[];
-  totalVotes: number;
+  results: PollResult[]
+  totalVotes: number
 }
 
 interface Props {
-  poll: SimplePoll | null;
-  currentIndex: number;
-  totalPolls: number;
-  status: 'idle' | 'pending' | 'sending' | 'running' | 'sent' | 'cancelled';
-  countdown: number;
-  results?: PollResultsData | null;
-  sendLoading?: boolean;
-  closeLoading?: boolean;
+  poll: SimplePoll | null
+  currentIndex: number
+  totalPolls: number
+  status: 'idle' | 'pending' | 'sending' | 'running' | 'sent' | 'cancelled'
+  countdown: number
+  results?: PollResultsData | null
+  sendLoading?: boolean
+  closeLoading?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   results: null,
   sendLoading: false,
   closeLoading: false,
-});
+})
 
 defineEmits<{
-  send: [];
-  previous: [];
-  next: [];
-  close: [];
-}>();
+  send: []
+  previous: []
+  next: []
+  close: []
+}>()
 
 // Computed: Toutes les options avec leurs votes
 const allOptions = computed(() => {
-  if (!props.poll) return [];
+  if (!props.poll) return []
 
   return props.poll.options.map((optionLabel) => {
-    const resultForOption = props.results?.results.find(r => r.option === optionLabel);
-    const votes = resultForOption?.votes || 0;
-    const percentage = props.results && props.results.totalVotes > 0
-      ? (votes / props.results.totalVotes) * 100
-      : 0;
+    const resultForOption = props.results?.results.find((r) => r.option === optionLabel)
+    const votes = resultForOption?.votes || 0
+    const percentage =
+      props.results && props.results.totalVotes > 0 ? (votes / props.results.totalVotes) * 100 : 0
 
     return {
       label: optionLabel,
       votes,
       percentage,
-    };
-  });
-});
+    }
+  })
+})
 
 // Computed: Total des votes
-const totalVotes = computed(() => props.results?.totalVotes || 0);
+const totalVotes = computed(() => props.results?.totalVotes || 0)
 
 // Computed: Score maximum (pour déterminer les gagnants)
 const maxVotes = computed(() => {
-  if (!props.results || !props.results.results.length) return 0;
-  return Math.max(...props.results.results.map(r => r.votes));
-});
+  if (!props.results || !props.results.results.length) return 0
+  return Math.max(...props.results.results.map((r) => r.votes))
+})
 
 // Function: Vérifier si une option est gagnante
 const isWinningOption = (option: { label: string; votes: number }) => {
-  return option.votes > 0 && option.votes === maxVotes.value;
-};
+  return option.votes > 0 && option.votes === maxVotes.value
+}
 
 // Computed: Détecter s'il y a plusieurs gagnants (ex-aequo)
 const hasMultipleWinners = computed(() => {
-  if (!props.results || !props.results.results.length) return false;
-  const winnersCount = props.results.results.filter(r => r.votes === maxVotes.value).length;
-  return winnersCount > 1;
-});
+  if (!props.results || !props.results.results.length) return false
+  const winnersCount = props.results.results.filter((r) => r.votes === maxVotes.value).length
+  return winnersCount > 1
+})
 </script>

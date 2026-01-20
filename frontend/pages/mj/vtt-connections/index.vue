@@ -21,12 +21,8 @@
               </template>
             </UButton>
             <div>
-              <h1 class="text-3xl font-bold text-primary">
-                Connexions VTT
-              </h1>
-              <p class="text-muted mt-1">
-                Gérez vos connexions avec Foundry VTT
-              </p>
+              <h1 class="text-3xl font-bold text-primary">Connexions VTT</h1>
+              <p class="text-muted mt-1">Gérez vos connexions avec Foundry VTT</p>
             </div>
           </div>
           <UButton
@@ -45,10 +41,7 @@
 
       <!-- Connections List -->
       <div v-else-if="connections.length > 0" class="space-y-4">
-        <UCard
-          v-for="connection in connections"
-          :key="connection.id"
-        >
+        <UCard v-for="connection in connections" :key="connection.id">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-4">
               <!-- Status Indicator -->
@@ -79,21 +72,13 @@
 
             <div class="flex items-center gap-2">
               <!-- Status Badge -->
-              <UBadge
-                :color="getStatusColor(connection.tunnelStatus)"
-                variant="soft"
-              >
+              <UBadge :color="getStatusColor(connection.tunnelStatus)" variant="soft">
                 {{ getStatusLabel(connection.tunnelStatus) }}
               </UBadge>
 
               <!-- Actions -->
               <UDropdown :items="getConnectionActions(connection)">
-                <UButton
-                  color="neutral"
-                  variant="ghost"
-                  icon="i-lucide-more-vertical"
-                  square
-                />
+                <UButton color="neutral" variant="ghost" icon="i-lucide-more-vertical" square />
               </UDropdown>
             </div>
           </div>
@@ -137,9 +122,7 @@
             <div class="space-y-6">
               <!-- Step 1: Choose method -->
               <div v-if="pairingStep === 'choose'" class="space-y-4">
-                <p class="text-muted">
-                  Choisissez comment connecter votre Foundry VTT :
-                </p>
+                <p class="text-muted">Choisissez comment connecter votre Foundry VTT :</p>
 
                 <div class="grid gap-4">
                   <!-- Code Method -->
@@ -153,9 +136,7 @@
                       </div>
                       <div>
                         <h4 class="font-semibold text-primary">Entrer un code</h4>
-                        <p class="text-sm text-muted">
-                          Entrez le code affiché dans Foundry VTT
-                        </p>
+                        <p class="text-sm text-muted">Entrez le code affiché dans Foundry VTT</p>
                       </div>
                     </div>
                   </button>
@@ -182,11 +163,7 @@
 
               <!-- Step 2: Enter code -->
               <div v-if="pairingStep === 'code'" class="space-y-6">
-                <UAlert
-                  color="primary"
-                  variant="soft"
-                  icon="i-lucide-info"
-                >
+                <UAlert color="primary" variant="soft" icon="i-lucide-info">
                   <template #description>
                     <ol class="list-decimal list-inside space-y-2 mt-2">
                       <li>Ouvrez Foundry VTT</li>
@@ -242,18 +219,16 @@
 
               <!-- Step 3: Success -->
               <div v-if="pairingStep === 'success'" class="text-center py-6">
-                <div class="size-16 rounded-full bg-success-100 flex items-center justify-center mx-auto mb-4">
+                <div
+                  class="size-16 rounded-full bg-success-100 flex items-center justify-center mx-auto mb-4"
+                >
                   <UIcon name="i-lucide-check" class="size-8 text-success-500" />
                 </div>
                 <h3 class="text-xl font-semibold text-primary mb-2">Connexion établie !</h3>
                 <p class="text-muted mb-6">
                   {{ pairingResult?.connection?.name || 'Votre VTT' }} est maintenant connecté.
                 </p>
-                <UButton
-                  color="primary"
-                  label="Fermer"
-                  @click="closePairingModal"
-                />
+                <UButton color="primary" label="Fermer" @click="closePairingModal" />
               </div>
             </div>
           </UCard>
@@ -299,279 +274,279 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
-import { useRouter } from "vue-router";
-import { useToast } from "#ui/composables/useToast";
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useToast } from '#ui/composables/useToast'
 
 definePageMeta({
-  layout: "authenticated" as const,
-  middleware: ["auth"],
-});
+  layout: 'authenticated' as const,
+  middleware: ['auth'],
+})
 
 interface VttConnection {
-  id: string;
-  name: string;
-  worldId: string | null;
-  worldName: string | null;
-  moduleVersion: string | null;
-  status: "pending" | "active" | "expired" | "revoked";
-  tunnelStatus: "disconnected" | "connecting" | "connected" | "error";
+  id: string
+  name: string
+  worldId: string | null
+  worldName: string | null
+  moduleVersion: string | null
+  status: 'pending' | 'active' | 'expired' | 'revoked'
+  tunnelStatus: 'disconnected' | 'connecting' | 'connected' | 'error'
   provider?: {
-    id: string;
-    name: string;
-  };
+    id: string
+    name: string
+  }
 }
 
-const _router = useRouter();
-const toast = useToast();
-const config = useRuntimeConfig();
+const _router = useRouter()
+const toast = useToast()
+const config = useRuntimeConfig()
 
 // State
-const loading = ref(true);
-const connections = ref<VttConnection[]>([]);
+const loading = ref(true)
+const connections = ref<VttConnection[]>([])
 
 // Pairing modal state
-const pairingModalOpen = ref(false);
-const pairingStep = ref<"choose" | "code" | "success">("choose");
-const pairingCode = ref("");
-const pairingInProgress = ref(false);
-const pairingError = ref("");
-const pairingResult = ref<{ connection?: VttConnection } | null>(null);
+const pairingModalOpen = ref(false)
+const pairingStep = ref<'choose' | 'code' | 'success'>('choose')
+const pairingCode = ref('')
+const pairingInProgress = ref(false)
+const pairingError = ref('')
+const pairingResult = ref<{ connection?: VttConnection } | null>(null)
 
 // Revoke modal state
-const revokeModalOpen = ref(false);
-const connectionToRevoke = ref<VttConnection | null>(null);
-const revoking = ref(false);
+const revokeModalOpen = ref(false)
+const connectionToRevoke = ref<VttConnection | null>(null)
+const revoking = ref(false)
 
 // Computed
 const isCodeValid = computed(() => {
-  const code = pairingCode.value.replace(/[^A-Z0-9]/gi, "");
-  return code.length === 6;
-});
+  const code = pairingCode.value.replace(/[^A-Z0-9]/gi, '')
+  return code.length === 6
+})
 
 // Methods
 const fetchConnections = async () => {
-  loading.value = true;
+  loading.value = true
   try {
     const response = await fetch(`${config.public.apiBase}/mj/vtt-connections`, {
-      credentials: "include",
-    });
+      credentials: 'include',
+    })
 
     if (!response.ok) {
-      throw new Error("Failed to fetch connections");
+      throw new Error('Failed to fetch connections')
     }
 
-    connections.value = await response.json();
+    connections.value = await response.json()
   } catch (error) {
-    console.error("Failed to fetch connections:", error);
+    console.error('Failed to fetch connections:', error)
     toast.add({
-      title: "Erreur",
-      description: "Impossible de charger les connexions",
-      color: "error",
-    });
+      title: 'Erreur',
+      description: 'Impossible de charger les connexions',
+      color: 'error',
+    })
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+}
 
 const openPairingModal = () => {
-  pairingStep.value = "choose";
-  pairingCode.value = "";
-  pairingError.value = "";
-  pairingResult.value = null;
-  pairingModalOpen.value = true;
-};
+  pairingStep.value = 'choose'
+  pairingCode.value = ''
+  pairingError.value = ''
+  pairingResult.value = null
+  pairingModalOpen.value = true
+}
 
 const closePairingModal = () => {
-  pairingModalOpen.value = false;
-  if (pairingStep.value === "success") {
-    fetchConnections();
+  pairingModalOpen.value = false
+  if (pairingStep.value === 'success') {
+    fetchConnections()
   }
-};
+}
 
 const startCodePairing = () => {
-  pairingStep.value = "code";
-};
+  pairingStep.value = 'code'
+}
 
 const formatPairingCode = () => {
   // Auto-format as ABC-123
-  let value = pairingCode.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  let value = pairingCode.value.toUpperCase().replace(/[^A-Z0-9]/g, '')
   if (value.length > 3) {
-    value = value.slice(0, 3) + "-" + value.slice(3, 6);
+    value = value.slice(0, 3) + '-' + value.slice(3, 6)
   }
-  pairingCode.value = value;
-};
+  pairingCode.value = value
+}
 
 const submitPairingCode = async () => {
-  if (!isCodeValid.value) return;
+  if (!isCodeValid.value) return
 
-  pairingInProgress.value = true;
-  pairingError.value = "";
+  pairingInProgress.value = true
+  pairingError.value = ''
 
   try {
     const response = await fetch(`${config.public.apiBase}/mj/vtt-connections/pair-with-code`, {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         code: pairingCode.value,
       }),
-    });
+    })
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || "Échec de la connexion");
+      const error = await response.json()
+      throw new Error(error.error || 'Échec de la connexion')
     }
 
-    const data = await response.json();
-    pairingResult.value = data;
-    pairingStep.value = "success";
+    const data = await response.json()
+    pairingResult.value = data
+    pairingStep.value = 'success'
 
     toast.add({
-      title: "Connexion établie",
-      description: data.message || "Le VTT est maintenant connecté",
-      color: "success",
-    });
+      title: 'Connexion établie',
+      description: data.message || 'Le VTT est maintenant connecté',
+      color: 'success',
+    })
   } catch (error: unknown) {
-    console.error("Failed to pair:", error);
-    pairingError.value = error instanceof Error ? error.message : "Erreur inconnue";
+    console.error('Failed to pair:', error)
+    pairingError.value = error instanceof Error ? error.message : 'Erreur inconnue'
     toast.add({
-      title: "Erreur",
+      title: 'Erreur',
       description: pairingError.value,
-      color: "error",
-    });
+      color: 'error',
+    })
   } finally {
-    pairingInProgress.value = false;
+    pairingInProgress.value = false
   }
-};
+}
 
 const getStatusColor = (status: string) => {
   switch (status) {
-    case "connected":
-      return "success";
-    case "connecting":
-      return "warning";
-    case "error":
-      return "error";
+    case 'connected':
+      return 'success'
+    case 'connecting':
+      return 'warning'
+    case 'error':
+      return 'error'
     default:
-      return "neutral";
+      return 'neutral'
   }
-};
+}
 
 const getStatusLabel = (status: string) => {
   switch (status) {
-    case "connected":
-      return "Connecté";
-    case "connecting":
-      return "Connexion...";
-    case "error":
-      return "Erreur";
+    case 'connected':
+      return 'Connecté'
+    case 'connecting':
+      return 'Connexion...'
+    case 'error':
+      return 'Erreur'
     default:
-      return "Déconnecté";
+      return 'Déconnecté'
   }
-};
+}
 
 const getConnectionActions = (connection: VttConnection) => [
   [
     {
-      label: "Voir les détails",
-      icon: "i-lucide-eye",
+      label: 'Voir les détails',
+      icon: 'i-lucide-eye',
       click: () => _router.push(`/mj/vtt-connections/${connection.id}`),
     },
     {
-      label: "Synchroniser",
-      icon: "i-lucide-refresh-cw",
+      label: 'Synchroniser',
+      icon: 'i-lucide-refresh-cw',
       click: () => syncConnection(connection.id),
     },
   ],
   [
     {
-      label: "Révoquer",
-      icon: "i-lucide-trash-2",
-      color: "error" as const,
+      label: 'Révoquer',
+      icon: 'i-lucide-trash-2',
+      color: 'error' as const,
       click: () => openRevokeModal(connection),
     },
   ],
-];
+]
 
 const syncConnection = async (connectionId: string) => {
   try {
     const response = await fetch(
       `${config.public.apiBase}/mj/vtt-connections/${connectionId}/sync-campaigns`,
       {
-        method: "POST",
-        credentials: "include",
+        method: 'POST',
+        credentials: 'include',
       }
-    );
+    )
 
     if (!response.ok) {
-      throw new Error("Sync failed");
+      throw new Error('Sync failed')
     }
 
     toast.add({
-      title: "Synchronisation",
-      description: "Synchronisation lancée",
-      color: "success",
-    });
+      title: 'Synchronisation',
+      description: 'Synchronisation lancée',
+      color: 'success',
+    })
   } catch (error) {
-    console.error("Failed to sync:", error);
+    console.error('Failed to sync:', error)
     toast.add({
-      title: "Erreur",
-      description: "Impossible de synchroniser",
-      color: "error",
-    });
+      title: 'Erreur',
+      description: 'Impossible de synchroniser',
+      color: 'error',
+    })
   }
-};
+}
 
 const openRevokeModal = (connection: VttConnection) => {
-  connectionToRevoke.value = connection;
-  revokeModalOpen.value = true;
-};
+  connectionToRevoke.value = connection
+  revokeModalOpen.value = true
+}
 
 const confirmRevoke = async () => {
-  if (!connectionToRevoke.value) return;
+  if (!connectionToRevoke.value) return
 
-  revoking.value = true;
+  revoking.value = true
 
   try {
     const response = await fetch(
       `${config.public.apiBase}/mj/vtt-connections/${connectionToRevoke.value.id}/revoke`,
       {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          reason: "Revoked by user from dashboard",
+          reason: 'Revoked by user from dashboard',
         }),
       }
-    );
+    )
 
     if (!response.ok) {
-      throw new Error("Revoke failed");
+      throw new Error('Revoke failed')
     }
 
     toast.add({
-      title: "Connexion révoquée",
-      description: "La connexion a été révoquée avec succès",
-      color: "success",
-    });
+      title: 'Connexion révoquée',
+      description: 'La connexion a été révoquée avec succès',
+      color: 'success',
+    })
 
-    revokeModalOpen.value = false;
-    fetchConnections();
+    revokeModalOpen.value = false
+    fetchConnections()
   } catch (error) {
-    console.error("Failed to revoke:", error);
+    console.error('Failed to revoke:', error)
     toast.add({
-      title: "Erreur",
-      description: "Impossible de révoquer la connexion",
-      color: "error",
-    });
+      title: 'Erreur',
+      description: 'Impossible de révoquer la connexion',
+      color: 'error',
+    })
   } finally {
-    revoking.value = false;
+    revoking.value = false
   }
-};
+}
 
 // Lifecycle
 onMounted(() => {
-  fetchConnections();
-});
+  fetchConnections()
+})
 </script>

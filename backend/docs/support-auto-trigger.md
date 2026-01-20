@@ -79,6 +79,7 @@ await service.clearUserLogs(userId)
 ```
 
 **Redis Configuration**:
+
 - Key: `support:logs:user:{userId}`
 - TTL: 1 hour (3600 seconds)
 - Max logs: 100 per user (circular buffer)
@@ -90,6 +91,7 @@ Automatically captures requests and pushes them to Redis.
 **File**: `app/middleware/tracing_middleware.ts`
 
 The middleware captures:
+
 - Request ID
 - HTTP method
 - URL
@@ -104,9 +106,11 @@ Endpoint to retrieve user logs.
 **Route**: `GET /api/v2/support/logs`
 
 **Query params**:
+
 - `limit`: Number of logs (default: 50, max: 100)
 
 **Response**:
+
 ```json
 {
   "data": {
@@ -134,15 +138,15 @@ Endpoint to retrieve user logs.
 
 The system supports 60+ action types across categories:
 
-| Category | Examples |
-|----------|----------|
-| auth | `auth_login`, `auth_callback`, `auth_logout` |
-| campaign | `campaign_fetch`, `campaign_create`, `campaign_delete` |
-| session | `session_launch`, `session_close` |
-| poll | `poll_launch`, `poll_cancel`, `poll_fetch_results` |
-| push | `push_subscribe`, `push_unsubscribe` |
-| websocket | `websocket_connect`, `websocket_reconnect` |
-| generic | `generic_server_error`, `generic_network_error`, `generic_timeout` |
+| Category  | Examples                                                           |
+| --------- | ------------------------------------------------------------------ |
+| auth      | `auth_login`, `auth_callback`, `auth_logout`                       |
+| campaign  | `campaign_fetch`, `campaign_create`, `campaign_delete`             |
+| session   | `session_launch`, `session_close`                                  |
+| poll      | `poll_launch`, `poll_cancel`, `poll_fetch_results`                 |
+| push      | `push_subscribe`, `push_unsubscribe`                               |
+| websocket | `websocket_connect`, `websocket_reconnect`                         |
+| generic   | `generic_server_error`, `generic_network_error`, `generic_timeout` |
 
 See `frontend/utils/supportErrorMessages.ts` for the complete list.
 

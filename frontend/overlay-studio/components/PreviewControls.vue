@@ -17,7 +17,11 @@
           @click="$emit('selectElement', element.id)"
         >
           <UIcon
-            :name="selectedElementId === element.id ? 'i-heroicons-chevron-down' : 'i-heroicons-chevron-right'"
+            :name="
+              selectedElementId === element.id
+                ? 'i-heroicons-chevron-down'
+                : 'i-heroicons-chevron-right'
+            "
             class="element-chevron"
           />
           <span class="element-name">{{ element.name }}</span>
@@ -126,11 +130,7 @@
         <!-- État actuel -->
         <div class="current-state">
           <span class="state-label">État:</span>
-          <UBadge
-            :color="getStateColor(currentState)"
-            variant="subtle"
-            size="sm"
-          >
+          <UBadge :color="getStateColor(currentState)" variant="subtle" size="sm">
             {{ currentState }}
           </UBadge>
         </div>
@@ -158,7 +158,7 @@
             :disabled="currentState !== 'active'"
             @click="handleLoopToggle"
           >
-            {{ isLoopPlaying ? "Stop Loop" : "Loop" }}
+            {{ isLoopPlaying ? 'Stop Loop' : 'Loop' }}
           </UButton>
           <UButton
             color="primary"
@@ -204,133 +204,126 @@
         <!-- État actuel -->
         <div class="current-state">
           <span class="state-label">État:</span>
-          <UBadge
-            :color="getStateColor(currentState)"
-            variant="subtle"
-            size="sm"
-          >
+          <UBadge :color="getStateColor(currentState)" variant="subtle" size="sm">
             {{ currentState }}
           </UBadge>
         </div>
       </div>
     </template>
-
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from "vue";
-import type { OverlayElement, DiceType, DiceRollEvent } from "../types";
-import type { AnimationState } from "../composables/useAnimationController";
+import { ref, computed, watch } from 'vue'
+import type { OverlayElement, DiceType, DiceRollEvent } from '../types'
+import type { AnimationState } from '../composables/useAnimationController'
 
 const props = defineProps<{
-  elements: OverlayElement[];
-  selectedElementId: string | null;
-  currentState: AnimationState;
-}>();
+  elements: OverlayElement[]
+  selectedElementId: string | null
+  currentState: AnimationState
+}>()
 
 const emit = defineEmits<{
-  (e: "selectElement", id: string): void;
-  (e: "toggleVisibility", id: string): void;
-  (e: "playEntry"): void;
-  (e: "playLoop"): void;
-  (e: "stopLoop"): void;
-  (e: "playResult"): void;
-  (e: "playExit"): void;
-  (e: "playFullSequence"): void;
-  (e: "reset"): void;
-  (e: "rollDice", data: DiceRollEvent): void;
-}>();
+  (e: 'selectElement', id: string): void
+  (e: 'toggleVisibility', id: string): void
+  (e: 'playEntry'): void
+  (e: 'playLoop'): void
+  (e: 'stopLoop'): void
+  (e: 'playResult'): void
+  (e: 'playExit'): void
+  (e: 'playFullSequence'): void
+  (e: 'reset'): void
+  (e: 'rollDice', data: DiceRollEvent): void
+}>()
 
 // Types de dés disponibles
-const standardDiceTypes: DiceType[] = ["d4", "d6", "d8", "d10", "d12", "d20"];
+const standardDiceTypes: DiceType[] = ['d4', 'd6', 'd8', 'd10', 'd12', 'd20']
 
 // État pour les contrôles de poll
-const isLoopPlaying = ref(false);
+const isLoopPlaying = ref(false)
 
 // État pour les contrôles de dés
-const selectedDiceType = ref<DiceType>("d20");
-const diceCount = ref(1);
-const expectedResult = ref(10);
+const selectedDiceType = ref<DiceType>('d20')
+const diceCount = ref(1)
+const expectedResult = ref(10)
 
 // Élément sélectionné
 const selectedElement = computed(() => {
-  if (!props.selectedElementId) return null;
-  return props.elements.find((el) => el.id === props.selectedElementId) || null;
-});
+  if (!props.selectedElementId) return null
+  return props.elements.find((el) => el.id === props.selectedElementId) || null
+})
 
 const isPlaying = computed(() => {
-  return (
-    props.currentState === "entering" || props.currentState === "exiting"
-  );
-});
+  return props.currentState === 'entering' || props.currentState === 'exiting'
+})
 
 // Calcul des bornes min/max pour le résultat
 const getDiceMaxValue = (diceType: DiceType): number => {
-  const match = diceType.match(/d(\d+)/);
-  return match ? parseInt(match[1] || "20", 10) : 20;
-};
+  const match = diceType.match(/d(\d+)/)
+  return match ? parseInt(match[1] || '20', 10) : 20
+}
 
-const resultMin = computed(() => diceCount.value);
-const resultMax = computed(() => diceCount.value * getDiceMaxValue(selectedDiceType.value));
+const resultMin = computed(() => diceCount.value)
+const resultMax = computed(() => diceCount.value * getDiceMaxValue(selectedDiceType.value))
 
 // Réajuster le résultat attendu si hors limites
 watch([selectedDiceType, diceCount], () => {
-  const min = resultMin.value;
-  const max = resultMax.value;
+  const min = resultMin.value
+  const max = resultMax.value
   if (expectedResult.value < min) {
-    expectedResult.value = min;
+    expectedResult.value = min
   } else if (expectedResult.value > max) {
-    expectedResult.value = max;
+    expectedResult.value = max
   }
-});
+})
 
 // Distribuer le total sur plusieurs dés
 const distributeTotal = (total: number, count: number, maxPerDie: number): number[] => {
-  const values: number[] = [];
-  let remaining = total;
+  const values: number[] = []
+  let remaining = total
 
   for (let i = 0; i < count; i++) {
-    const diceLeft = count - i;
+    const diceLeft = count - i
     // Minimum requis pour les dés restants (chacun doit avoir au moins 1)
-    const minForRest = diceLeft - 1;
+    const minForRest = diceLeft - 1
     // Maximum possible pour les dés restants
-    const maxForRest = (diceLeft - 1) * maxPerDie;
+    const maxForRest = (diceLeft - 1) * maxPerDie
 
     // Ce dé doit avoir au moins (remaining - maxForRest) et au plus (remaining - minForRest)
-    const minThisDie = Math.max(1, remaining - maxForRest);
-    const maxThisDie = Math.min(maxPerDie, remaining - minForRest);
+    const minThisDie = Math.max(1, remaining - maxForRest)
+    const maxThisDie = Math.min(maxPerDie, remaining - minForRest)
 
     // Choisir une valeur aléatoire dans l'intervalle
-    const value = Math.floor(Math.random() * (maxThisDie - minThisDie + 1)) + minThisDie;
-    values.push(value);
-    remaining -= value;
+    const value = Math.floor(Math.random() * (maxThisDie - minThisDie + 1)) + minThisDie
+    values.push(value)
+    remaining -= value
   }
 
-  return values;
-};
+  return values
+}
 
 // Lancer les dés
 const handleRollDice = () => {
-  const maxPerDie = getDiceMaxValue(selectedDiceType.value);
-  const diceResults = distributeTotal(expectedResult.value, diceCount.value, maxPerDie);
+  const maxPerDie = getDiceMaxValue(selectedDiceType.value)
+  const diceResults = distributeTotal(expectedResult.value, diceCount.value, maxPerDie)
 
   // Détection critique
-  const isCriticalSuccess = diceResults.every((v) => v === maxPerDie);
-  const isCriticalFailure = diceResults.every((v) => v === 1);
+  const isCriticalSuccess = diceResults.every((v) => v === maxPerDie)
+  const isCriticalFailure = diceResults.every((v) => v === 1)
 
   const diceRollEvent: DiceRollEvent = {
     id: `preview-${Date.now()}`,
-    characterId: "preview",
-    characterName: "Preview",
+    characterId: 'preview',
+    characterName: 'Preview',
     characterAvatar: null,
     rollFormula: `${diceCount.value}${selectedDiceType.value}`,
     result: expectedResult.value,
     diceResults,
-    rollType: "preview",
+    rollType: 'preview',
     rolledAt: new Date().toISOString(),
     isCritical: isCriticalSuccess || isCriticalFailure,
-    criticalType: isCriticalSuccess ? "success" : isCriticalFailure ? "failure" : null,
+    criticalType: isCriticalSuccess ? 'success' : isCriticalFailure ? 'failure' : null,
     isHidden: false,
     // Enriched flavor data (preview mode - no real parsing)
     skill: null,
@@ -338,40 +331,40 @@ const handleRollDice = () => {
     ability: null,
     abilityRaw: null,
     modifiers: null,
-  };
+  }
 
-  emit("rollDice", diceRollEvent);
-};
+  emit('rollDice', diceRollEvent)
+}
 
 // Toggle loop pour les polls
 const handleLoopToggle = () => {
   if (isLoopPlaying.value) {
-    emit("stopLoop");
-    isLoopPlaying.value = false;
+    emit('stopLoop')
+    isLoopPlaying.value = false
   } else {
-    emit("playLoop");
-    isLoopPlaying.value = true;
+    emit('playLoop')
+    isLoopPlaying.value = true
   }
-};
+}
 
 const getStateColor = (
-  state: AnimationState,
-): "neutral" | "primary" | "success" | "warning" | "error" => {
+  state: AnimationState
+): 'neutral' | 'primary' | 'success' | 'warning' | 'error' => {
   switch (state) {
-    case "hidden":
-      return "neutral";
-    case "entering":
-      return "primary";
-    case "active":
-      return "success";
-    case "result":
-      return "warning";
-    case "exiting":
-      return "error";
+    case 'hidden':
+      return 'neutral'
+    case 'entering':
+      return 'primary'
+    case 'active':
+      return 'success'
+    case 'result':
+      return 'warning'
+    case 'exiting':
+      return 'error'
     default:
-      return "neutral";
+      return 'neutral'
   }
-};
+}
 </script>
 
 <style scoped>
