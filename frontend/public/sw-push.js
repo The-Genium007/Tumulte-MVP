@@ -18,8 +18,8 @@ self.addEventListener('push', (event) => {
 
   const options = {
     body: payload.body,
-    icon: payload.icon || '/pwa-192x192.png',
-    badge: payload.badge || '/pwa-64x64.png',
+    icon: payload.icon || '/web-app-manifest-192x192.png',
+    badge: payload.badge || '/favicon-96x96.png',
     data: payload.data || {},
     tag: payload.type, // Évite les notifications dupliquées du même type
     renotify: true,

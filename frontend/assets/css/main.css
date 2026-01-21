@@ -5,40 +5,31 @@
    TUMULTE - THEME CONFIGURATION
    ============================================================================
 
-   Pour personnaliser le thème, modifiez uniquement les variables dans la
-   section "CONFIGURATION RAPIDE" ci-dessous. Les palettes complètes sont
-   générées automatiquement via OKLCH.
+   Palettes de couleurs statiques en HEX pour compatibilité cross-browser.
+   Compatible avec: Chrome, Firefox, Safari, Edge (toutes versions modernes)
 
    ============================================================================ */
 
 @theme {
   /* ==========================================================================
-     🎨 CONFIGURATION RAPIDE - Modifiez ces valeurs pour changer le thème
+     🎨 CONFIGURATION RAPIDE - Couleurs de base du thème
      ========================================================================== */
 
-  /* Couleur principale (brand/primary) - base: #0f0b04 */
+  /* Couleur principale (brand/primary) */
   --theme-brand: #0f0b04;
-  --theme-brand: oklch(0.152 0.018 85.45);
 
-  /* Couleur secondaire - base: #d8b790 */
+  /* Couleur secondaire */
   --theme-secondary: #d8b790;
-  --theme-secondary: oklch(0.7986 0.0646 71.36);
 
-  /* Couleur de fond de page #F2E4D4*/
+  /* Couleur de fond de page */
   --theme-bg-page: #f2e4d4;
-  --theme-bg-page: oklch(0.9257 0.0263 71.18);
 
-  /* Couleurs sémantiques (modifier la teinte OKLCH si besoin) */
+  /* Couleurs sémantiques */
   --theme-success: #4ade80; /* Vert */
-  --theme-success: oklch(0.8537 0.1986 118.21);
   --theme-error: #dc2626; /* Rouge */
-  --theme-error: oklch(0.5808 0.2 32.75);
   --theme-warning: #f59e0b; /* Ambre */
-  --theme-warning: oklch(0.7353 0.1763 48.5);
   --theme-info: #3b82f6; /* Bleu */
-  --theme-info: oklch(0.7289 0.1494 241.58);
   --theme-neutral: #737373; /* Gris */
-  --theme-neutral: oklch(0.499 0.034 53.48);
 
   /* Polices */
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
@@ -46,26 +37,21 @@
   --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
 
   /* ==========================================================================
-     PALETTES GÉNÉRÉES - Ne pas modifier directement
+     PALETTES DE COULEURS - Valeurs HEX statiques
      ========================================================================== */
 
-  /* Brand / Primary - Palette générée depuis --theme-brand */
+  /* Brand / Primary - Palette marron foncé */
   --color-brand-50: #f5f3f0;
   --color-brand-100: #e8e4dd;
   --color-brand-200: #d4cdc2;
   --color-brand-300: #b5aa99;
   --color-brand-400: #8a7d6a;
-  --color-brand-500: var(--theme-brand);
+  --color-brand-500: #0f0b04;
   --color-brand-600: #0d0a03;
-  --color-brand-600: color-mix(in oklch, var(--theme-brand) 90%, black);
   --color-brand-700: #0b0802;
-  --color-brand-700: color-mix(in oklch, var(--theme-brand) 80%, black);
   --color-brand-800: #080602;
-  --color-brand-800: color-mix(in oklch, var(--theme-brand) 70%, black);
   --color-brand-900: #060502;
-  --color-brand-900: color-mix(in oklch, var(--theme-brand) 60%, black);
   --color-brand-950: #040301;
-  --color-brand-950: color-mix(in oklch, var(--theme-brand) 50%, black);
 
   /* Alias primary → brand */
   --color-primary-50: var(--color-brand-50);
@@ -80,123 +66,86 @@
   --color-primary-900: var(--color-brand-900);
   --color-primary-950: var(--color-brand-950);
 
-  /* Secondary - Palette générée depuis --theme-secondary */
-  --color-secondary-50: #f5f3f0;
-  --color-secondary-100: #e8e4dd;
-  --color-secondary-200: #d4cdc2;
-  --color-secondary-300: #b5aa99;
-  --color-secondary-400: #8a7d6a;
-  --color-secondary-500: var(--theme-secondary);
+  /* Secondary - Palette beige/doré */
+  --color-secondary-50: #faf8f5;
+  --color-secondary-100: #f2ebe0;
+  --color-secondary-200: #e8dcc8;
+  --color-secondary-300: #d8c4a6;
+  --color-secondary-400: #c9a97e;
+  --color-secondary-500: #d8b790;
   --color-secondary-600: #c2a582;
-  --color-secondary-600: color-mix(in oklch, var(--theme-secondary) 90%, black);
   --color-secondary-700: #ad9374;
-  --color-secondary-700: color-mix(in oklch, var(--theme-secondary) 80%, black);
   --color-secondary-800: #988166;
-  --color-secondary-800: color-mix(in oklch, var(--theme-secondary) 70%, black);
   --color-secondary-900: #836f58;
-  --color-secondary-900: color-mix(in oklch, var(--theme-secondary) 60%, black);
   --color-secondary-950: #6e5d4a;
-  --color-secondary-950: color-mix(in oklch, var(--theme-secondary) 50%, black);
 
-  /* Neutral - Palette OKLCH auto-générée */
-  --color-neutral-500: var(--theme-neutral);
+  /* Neutral - Palette grise */
   --color-neutral-50: #fafafa;
-  --color-neutral-50: oklch(from var(--color-neutral-500) 98% 0.005 h);
   --color-neutral-100: #f5f5f5;
-  --color-neutral-100: oklch(from var(--color-neutral-500) 96% 0.01 h);
   --color-neutral-200: #e5e5e5;
-  --color-neutral-200: oklch(from var(--color-neutral-500) 92% 0.01 h);
   --color-neutral-300: #d4d4d4;
-  --color-neutral-300: oklch(from var(--color-neutral-500) 82% 0.02 h);
   --color-neutral-400: #a3a3a3;
-  --color-neutral-400: oklch(from var(--color-neutral-500) 65% 0.02 h);
+  --color-neutral-500: #737373;
+  --color-neutral-600: #525252;
+  --color-neutral-700: #404040;
+  --color-neutral-800: #262626;
+  --color-neutral-900: #171717;
+  --color-neutral-950: #0a0a0a;
 
-  /* Success - Palette OKLCH auto-générée */
-  --color-success-500: var(--theme-success);
+  /* Success - Palette verte */
   --color-success-50: #f0fdf4;
-  --color-success-50: oklch(from var(--color-success-500) 97% 0.02 h);
   --color-success-100: #dcfce7;
-  --color-success-100: oklch(from var(--color-success-500) 94% 0.04 h);
   --color-success-200: #bbf7d0;
-  --color-success-200: oklch(from var(--color-success-500) 88% 0.08 h);
   --color-success-300: #86efac;
-  --color-success-300: oklch(from var(--color-success-500) 82% 0.12 h);
   --color-success-400: #4ade80;
-  --color-success-400: oklch(from var(--color-success-500) 80% 0.22 h);
-  --color-success-600: #22c55e;
-  --color-success-600: oklch(from var(--color-success-500) 55% 0.22 h);
-  --color-success-700: #16a34a;
-  --color-success-700: oklch(from var(--color-success-500) 45% 0.2 h);
-  --color-success-800: #15803d;
-  --color-success-800: oklch(from var(--color-success-500) 35% 0.16 h);
+  --color-success-500: #22c55e;
+  --color-success-600: #16a34a;
+  --color-success-700: #15803d;
+  --color-success-800: #166534;
   --color-success-900: #14532d;
-  --color-success-900: oklch(from var(--color-success-500) 25% 0.12 h);
+  --color-success-950: #052e16;
 
-  /* Error - Palette OKLCH auto-générée */
-  --color-error-500: var(--theme-error);
+  /* Error - Palette rouge */
   --color-error-50: #fef2f2;
-  --color-error-50: oklch(from var(--color-error-500) 97% 0.02 h);
   --color-error-100: #fee2e2;
-  --color-error-100: oklch(from var(--color-error-500) 94% 0.04 h);
   --color-error-200: #fecaca;
-  --color-error-200: oklch(from var(--color-error-500) 88% 0.08 h);
   --color-error-300: #fca5a5;
-  --color-error-300: oklch(from var(--color-error-500) 82% 0.12 h);
   --color-error-400: #f87171;
-  --color-error-400: oklch(from var(--color-error-500) 70% 0.2 h);
+  --color-error-500: #ef4444;
   --color-error-600: #dc2626;
-  --color-error-600: oklch(from var(--color-error-500) 55% 0.22 h);
   --color-error-700: #b91c1c;
-  --color-error-700: oklch(from var(--color-error-500) 45% 0.2 h);
   --color-error-800: #991b1b;
-  --color-error-800: oklch(from var(--color-error-500) 35% 0.16 h);
   --color-error-900: #7f1d1d;
-  --color-error-900: oklch(from var(--color-error-500) 25% 0.12 h);
+  --color-error-950: #450a0a;
 
-  /* Warning - Palette OKLCH auto-générée */
-  --color-warning-500: var(--theme-warning);
+  /* Warning - Palette ambre */
   --color-warning-50: #fffbeb;
-  --color-warning-50: oklch(from var(--color-warning-500) 97% 0.02 h);
   --color-warning-100: #fef3c7;
-  --color-warning-100: oklch(from var(--color-warning-500) 94% 0.04 h);
   --color-warning-200: #fde68a;
-  --color-warning-200: oklch(from var(--color-warning-500) 88% 0.08 h);
   --color-warning-300: #fcd34d;
-  --color-warning-300: oklch(from var(--color-warning-500) 82% 0.12 h);
   --color-warning-400: #fbbf24;
-  --color-warning-400: oklch(from var(--color-warning-500) 85% 0.18 h);
+  --color-warning-500: #f59e0b;
   --color-warning-600: #d97706;
-  --color-warning-600: oklch(from var(--color-warning-500) 70% 0.16 h);
   --color-warning-700: #b45309;
-  --color-warning-700: oklch(from var(--color-warning-500) 55% 0.14 h);
   --color-warning-800: #92400e;
-  --color-warning-800: oklch(from var(--color-warning-500) 45% 0.12 h);
   --color-warning-900: #78350f;
-  --color-warning-900: oklch(from var(--color-warning-500) 35% 0.1 h);
+  --color-warning-950: #451a03;
 
-  /* Info - Palette OKLCH auto-générée */
-  --color-info-500: var(--theme-info);
+  /* Info - Palette bleue */
   --color-info-50: #eff6ff;
-  --color-info-50: oklch(from var(--color-info-500) 97% 0.02 h);
   --color-info-100: #dbeafe;
-  --color-info-100: oklch(from var(--color-info-500) 94% 0.04 h);
   --color-info-200: #bfdbfe;
-  --color-info-200: oklch(from var(--color-info-500) 88% 0.08 h);
   --color-info-300: #93c5fd;
-  --color-info-300: oklch(from var(--color-info-500) 82% 0.12 h);
   --color-info-400: #60a5fa;
-  --color-info-400: oklch(from var(--color-info-500) 72% 0.18 h);
+  --color-info-500: #3b82f6;
   --color-info-600: #2563eb;
-  --color-info-600: oklch(from var(--color-info-500) 55% 0.16 h);
   --color-info-700: #1d4ed8;
-  --color-info-700: oklch(from var(--color-info-500) 45% 0.14 h);
   --color-info-800: #1e40af;
-  --color-info-800: oklch(from var(--color-info-500) 35% 0.12 h);
   --color-info-900: #1e3a8a;
-  --color-info-900: oklch(from var(--color-info-500) 25% 0.1 h);
+  --color-info-950: #172554;
 
   /* Live (utilise error) */
-  --color-live: var(--theme-error);
+  --color-live: #dc2626;
 
   /* ==========================================================================
      INTERFACE - BACKGROUNDS

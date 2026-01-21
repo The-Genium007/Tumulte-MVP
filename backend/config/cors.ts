@@ -17,15 +17,18 @@ const corsConfig = defineConfig({
       return true
     }
 
-    // Allow Foundry VTT (localhost with any port) for VTT-related endpoints
-    // Foundry runs on localhost with configurable ports (default 30000)
+    // Allow Foundry VTT for VTT-related endpoints
+    // Foundry can run on:
+    // - localhost with configurable ports (default 30000)
+    // - Traefik tunnels (*.traefik.me) for remote access
     const url = ctx.request.url()
     const isFoundryEndpoint =
       url.startsWith('/webhooks/foundry') || url.startsWith('/mj/vtt-connections')
     const isLocalhost =
       origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')
+    const isTraefikTunnel = origin.endsWith('.traefik.me')
 
-    if (isFoundryEndpoint && isLocalhost) {
+    if (isFoundryEndpoint && (isLocalhost || isTraefikTunnel)) {
       return true
     }
 

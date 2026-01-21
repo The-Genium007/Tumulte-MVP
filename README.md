@@ -147,8 +147,8 @@ node ace vtt:create-test
 - 📋 **Alchemy RPG** (Browser Extension) - Coming soon
 
 **Documentation:**
-- [VTT Integration Complete Guide](./VTT_INTEGRATION_COMPLETE.md)
-- [Quick Start Testing Guide](./VTT_QUICK_START.md)
+- [VTT Integration Complete Guide](./docs/vtt-integration/complete-guide.md)
+- [Quick Start Testing Guide](./docs/vtt-integration/quick-start.md)
 - [Foundry Module README](./modules-vtt/foundry/README.md)
 
 ---

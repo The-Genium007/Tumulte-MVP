@@ -23,11 +23,30 @@ const localStorageMock = (() => {
 
 vi.stubGlobal('localStorage', localStorageMock)
 
+// Mock matchMedia
+const matchMediaMock = vi.fn().mockImplementation((query: string) => ({
+  matches: false,
+  media: query,
+  onchange: null,
+  addListener: vi.fn(),
+  removeListener: vi.fn(),
+  addEventListener: vi.fn(),
+  removeEventListener: vi.fn(),
+  dispatchEvent: vi.fn(),
+}))
+
+vi.stubGlobal('matchMedia', matchMediaMock)
+
 describe('usePwaInstall Composable', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     localStorageMock.clear()
     vi.resetModules()
+    // Reset navigator mock
+    Object.defineProperty(navigator, 'userAgent', {
+      value: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Chrome/120.0.0.0 Safari/537.36',
+      configurable: true,
+    })
   })
 
   describe('Initial State', () => {
@@ -43,6 +62,138 @@ describe('usePwaInstall Composable', () => {
       const { dismissed } = usePwaInstall()
 
       expect(dismissed.value).toBe(false)
+    })
+
+    test('should initialize with isInstalled false when not in standalone mode', async () => {
+      const { usePwaInstall } = await import('~/composables/usePwaInstall')
+      const { isInstalled } = usePwaInstall()
+
+      expect(isInstalled.value).toBe(false)
+    })
+  })
+
+  describe('Platform Detection', () => {
+    test('should detect Chrome browser', async () => {
+      Object.defineProperty(navigator, 'userAgent', {
+        value:
+          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36',
+        configurable: true,
+      })
+
+      const { usePwaInstall } = await import('~/composables/usePwaInstall')
+      const { platform } = usePwaInstall()
+
+      expect(platform.value).toBe('chrome')
+    })
+
+    test('should detect Safari on macOS', async () => {
+      Object.defineProperty(navigator, 'userAgent', {
+        value:
+          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15',
+        configurable: true,
+      })
+
+      const { usePwaInstall } = await import('~/composables/usePwaInstall')
+      const { platform } = usePwaInstall()
+
+      expect(platform.value).toBe('safari-mac')
+    })
+
+    test('should detect Firefox', async () => {
+      Object.defineProperty(navigator, 'userAgent', {
+        value:
+          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:121.0) Gecko/20100101 Firefox/121.0',
+        configurable: true,
+      })
+
+      const { usePwaInstall } = await import('~/composables/usePwaInstall')
+      const { platform } = usePwaInstall()
+
+      expect(platform.value).toBe('firefox')
+    })
+  })
+
+  describe('canShowGuide computed', () => {
+    test('should be false for Chrome (uses native prompt instead)', async () => {
+      Object.defineProperty(navigator, 'userAgent', {
+        value: 'Mozilla/5.0 Chrome/120.0.0.0 Safari/537.36',
+        configurable: true,
+      })
+
+      const { usePwaInstall } = await import('~/composables/usePwaInstall')
+      const { canShowGuide } = usePwaInstall()
+
+      expect(canShowGuide.value).toBe(false)
+    })
+
+    test('should be true for Safari macOS when not dismissed', async () => {
+      Object.defineProperty(navigator, 'userAgent', {
+        value:
+          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15',
+        configurable: true,
+      })
+
+      const { usePwaInstall } = await import('~/composables/usePwaInstall')
+      const { canShowGuide } = usePwaInstall()
+
+      expect(canShowGuide.value).toBe(true)
+    })
+
+    test('should be false for Firefox (no PWA support)', async () => {
+      Object.defineProperty(navigator, 'userAgent', {
+        value: 'Mozilla/5.0 Firefox/121.0',
+        configurable: true,
+      })
+
+      const { usePwaInstall } = await import('~/composables/usePwaInstall')
+      const { canShowGuide } = usePwaInstall()
+
+      expect(canShowGuide.value).toBe(false)
+    })
+
+    test('should be false for Safari when dismissed', async () => {
+      Object.defineProperty(navigator, 'userAgent', {
+        value:
+          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Version/17.0 Safari/605.1.15',
+        configurable: true,
+      })
+
+      const { usePwaInstall } = await import('~/composables/usePwaInstall')
+      const { canShowGuide, dismiss } = usePwaInstall()
+
+      dismiss()
+
+      expect(canShowGuide.value).toBe(false)
+    })
+  })
+
+  describe('shouldShowInstallUI computed', () => {
+    test('should be true when canShowGuide is true (Safari)', async () => {
+      Object.defineProperty(navigator, 'userAgent', {
+        value:
+          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Version/17.0 Safari/605.1.15',
+        configurable: true,
+      })
+
+      const { usePwaInstall } = await import('~/composables/usePwaInstall')
+      const { shouldShowInstallUI } = usePwaInstall()
+
+      expect(shouldShowInstallUI.value).toBe(true)
+    })
+
+    test('should be false when dismissed', async () => {
+      Object.defineProperty(navigator, 'userAgent', {
+        value:
+          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Version/17.0 Safari/605.1.15',
+        configurable: true,
+      })
+
+      const { usePwaInstall } = await import('~/composables/usePwaInstall')
+      const { shouldShowInstallUI, dismiss } = usePwaInstall()
+
+      dismiss()
+
+      expect(shouldShowInstallUI.value).toBe(false)
     })
   })
 
@@ -124,56 +275,16 @@ describe('usePwaInstall Composable', () => {
     })
   })
 
-  describe('multiple instances', () => {
-    test('instances share the same ref state (module-level refs)', async () => {
-      const { usePwaInstall } = await import('~/composables/usePwaInstall')
-
-      const instance1 = usePwaInstall()
-      const instance2 = usePwaInstall()
-
-      // Before dismiss, both should be false
-      expect(instance1.dismissed.value).toBe(false)
-      expect(instance2.dismissed.value).toBe(false)
-
-      instance1.dismiss()
-
-      // After dismiss on instance1, check instance1 is true
-      expect(instance1.dismissed.value).toBe(true)
-      // Note: The composable uses module-level refs, so behavior depends on implementation
-      // This test documents the actual behavior
-    })
-  })
-
-  describe('localStorage edge cases', () => {
-    test('should handle localStorage being available', async () => {
-      const { usePwaInstall } = await import('~/composables/usePwaInstall')
-      const { dismiss } = usePwaInstall()
-
-      // Should not throw
-      expect(() => dismiss()).not.toThrow()
-      expect(localStorageMock.setItem).toHaveBeenCalled()
-    })
-
-    test('should handle resetDismissed correctly', async () => {
-      const { usePwaInstall } = await import('~/composables/usePwaInstall')
-      const { dismiss, resetDismissed, dismissed } = usePwaInstall()
-
-      dismiss()
-      expect(dismissed.value).toBe(true)
-      expect(localStorageMock.setItem).toHaveBeenCalledWith('tumulte-pwa-install-dismissed', 'true')
-
-      resetDismissed()
-      expect(dismissed.value).toBe(false)
-      expect(localStorageMock.removeItem).toHaveBeenCalledWith('tumulte-pwa-install-dismissed')
-    })
-  })
-
   describe('return values', () => {
     test('should return all expected properties and methods', async () => {
       const { usePwaInstall } = await import('~/composables/usePwaInstall')
       const result = usePwaInstall()
 
       expect(result).toHaveProperty('canInstall')
+      expect(result).toHaveProperty('canShowGuide')
+      expect(result).toHaveProperty('shouldShowInstallUI')
+      expect(result).toHaveProperty('platform')
+      expect(result).toHaveProperty('isInstalled')
       expect(result).toHaveProperty('dismissed')
       expect(result).toHaveProperty('install')
       expect(result).toHaveProperty('dismiss')

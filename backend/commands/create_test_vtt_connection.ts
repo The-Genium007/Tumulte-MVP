@@ -90,7 +90,7 @@ export default class CreateTestVttConnection extends BaseCommand {
   curl -X POST http://localhost:3333/webhooks/vtt/test \\
     -H "Authorization: Bearer ${apiKey}"
 
-📚 For more testing commands, see VTT_QUICK_START.md
+📚 For more testing commands, see docs/vtt-integration/quick-start.md
       `)
     } catch (error) {
       this.logger.error('Failed to create test connection:')

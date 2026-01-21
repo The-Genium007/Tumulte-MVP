@@ -17,6 +17,8 @@ If you want to self-host Tumulte or learn how to use it:
 Connect Tumulte with your Virtual Tabletop for real-time overlay events:
 
 - [VTT Integration Overview](vtt-integration/overview.md) - Supported platforms and architecture
+- [VTT Integration Complete Guide](vtt-integration/complete-guide.md) - Complete technical documentation
+- [VTT Quick Start Testing Guide](vtt-integration/quick-start.md) - Test integration without VTT setup
 - [Foundry VTT Setup Guide](vtt-integration/foundry-module.md) - Install and configure Foundry integration
 - [VTT Webhook API Reference](vtt-integration/api-reference.md) - API documentation for VTT events
 
