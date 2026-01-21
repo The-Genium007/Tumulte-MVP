@@ -1,4 +1,4 @@
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import type { BeforeInstallPromptEvent } from '@/types/pwa'
 
 const DISMISSED_KEY = 'tumulte-pwa-install-dismissed'
@@ -47,10 +47,63 @@ function checkIsInstalled(): boolean {
   return false
 }
 
+// ============================================================================
+// SINGLETON STATE - Shared across all usePwaInstall() calls
+// This prevents multiple instances from having different state values,
+// which was causing Safari hydration loops when the layout and UserMenu
+// had independent refs that updated at different times.
+// ============================================================================
+const deferredPrompt = ref<BeforeInstallPromptEvent | null>(null)
+const dismissed = ref(false)
+const platform = ref<PwaPlatform>('unknown')
+const isInstalled = ref(false)
+const isHydrated = ref(false)
+let isInitialized = false
+
+/**
+ * Handles the beforeinstallprompt event (singleton handler).
+ */
+function handleBeforeInstallPrompt(e: Event) {
+  e.preventDefault()
+  deferredPrompt.value = e as BeforeInstallPromptEvent
+  console.log('[usePwaInstall] Install prompt captured')
+}
+
+/**
+ * Initialize PWA detection (called once on first mount).
+ */
+function initializePwa() {
+  if (isInitialized) return
+  isInitialized = true
+
+  // Load dismissed state from localStorage
+  if (typeof localStorage !== 'undefined') {
+    const wasDismissed = localStorage.getItem(DISMISSED_KEY)
+    dismissed.value = wasDismissed === 'true'
+  }
+
+  // Detect platform and installation status
+  platform.value = detectPlatform()
+  isInstalled.value = checkIsInstalled()
+
+  // Mark as hydrated AFTER all client-specific values are set
+  isHydrated.value = true
+
+  // Listen for the beforeinstallprompt event (Chrome/Edge only)
+  window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+
+  console.log('[usePwaInstall] Initialized:', {
+    platform: platform.value,
+    dismissed: dismissed.value,
+  })
+}
+
 /**
  * Composable for PWA installation management.
  * Handles the beforeinstallprompt event for Chrome/Edge and provides
  * installation guidance for Safari (macOS and iOS).
+ *
+ * Uses singleton state pattern - all calls share the same refs.
  *
  * @returns PWA install state and methods
  *
@@ -58,14 +111,6 @@ function checkIsInstalled(): boolean {
  * const { canInstall, canShowGuide, platform, install, dismiss } = usePwaInstall()
  */
 export function usePwaInstall() {
-  const deferredPrompt = ref<BeforeInstallPromptEvent | null>(null)
-  // Initialize with SSR-safe defaults to avoid hydration mismatch
-  // ALL client-specific values are set in onMounted only
-  const dismissed = ref(false)
-  const platform = ref<PwaPlatform>('unknown')
-  const isInstalled = ref(false)
-  const isHydrated = ref(false)
-
   /**
    * Can the app be installed via Chrome/Edge prompt?
    */
@@ -139,46 +184,13 @@ export function usePwaInstall() {
     }
   }
 
-  /**
-   * Handles the beforeinstallprompt event.
-   */
-  const handleBeforeInstallPrompt = (e: Event) => {
-    // Prevent the default browser install prompt
-    e.preventDefault()
-    // Store the event for later use
-    deferredPrompt.value = e as BeforeInstallPromptEvent
-    console.log('[usePwaInstall] Install prompt captured')
-  }
-
+  // Initialize on first mount - singleton pattern ensures this only runs once
   onMounted(() => {
-    // CRITICAL: ALL client-specific detection must happen in onMounted
-    // to prevent SSR hydration mismatch that causes Safari reload loops.
-    // The isHydrated flag gates shouldShowInstallUI to ensure the banner
-    // only renders after client-side detection is complete.
-
-    // Load dismissed state from localStorage (client-side only)
-    if (typeof localStorage !== 'undefined') {
-      const wasDismissed = localStorage.getItem(DISMISSED_KEY)
-      dismissed.value = wasDismissed === 'true'
-    }
-
-    // Detect platform and installation status
-    platform.value = detectPlatform()
-    isInstalled.value = checkIsInstalled()
-
-    // Mark as hydrated AFTER all client-specific values are set
-    // This ensures shouldShowInstallUI returns consistent values
-    isHydrated.value = true
-
-    // Listen for the beforeinstallprompt event (Chrome/Edge only)
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+    initializePwa()
   })
 
-  onUnmounted(() => {
-    if (typeof window !== 'undefined') {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
-    }
-  })
+  // Note: We intentionally don't remove the event listener on unmount
+  // because this is a singleton - the listener should persist for the app lifetime
 
   return {
     // State
