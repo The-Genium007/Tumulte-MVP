@@ -6,6 +6,7 @@ import { campaign as Campaign } from '#models/campaign'
 import VttSyncService from '#services/vtt/vtt_sync_service'
 import VttPairingService from '#services/vtt/vtt_pairing_service'
 import VttWebSocketService from '#services/vtt/vtt_websocket_service'
+import { CampaignService } from '#services/campaigns/campaign_service'
 import redis from '@adonisjs/redis/services/main'
 import { randomBytes } from 'node:crypto'
 import { DateTime } from 'luxon'
@@ -26,7 +27,8 @@ export default class VttConnectionsController {
   constructor(
     private vttSyncService: VttSyncService,
     private vttPairingService: VttPairingService,
-    private vttWebSocketService: VttWebSocketService
+    private vttWebSocketService: VttWebSocketService,
+    private campaignService: CampaignService
   ) {}
 
   /**
@@ -410,6 +412,9 @@ export default class VttConnectionsController {
           vttCampaignName: pending.worldName,
           lastVttSyncAt: DateTime.now(),
         })
+
+        // Ajouter le propriétaire comme membre avec autorisation permanente
+        await this.campaignService.addOwnerAsMember(campaign.id, user.id)
       }
 
       return response.created({

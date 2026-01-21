@@ -1,6 +1,7 @@
 import VttConnection from '#models/vtt_connection'
 import { campaign as Campaign } from '#models/campaign'
 import { DateTime } from 'luxon'
+import app from '@adonisjs/core/services/app'
 
 export interface VttCampaignData {
   id: string
@@ -127,6 +128,10 @@ export default class VttSyncService {
           description: campaignData.description || null,
           lastVttSyncAt: DateTime.now(),
         })
+
+        // Ajouter le propriétaire comme membre avec autorisation permanente
+        const campaignService = await app.container.make('campaignService')
+        await campaignService.addOwnerAsMember(campaign.id, connection.userId)
       }
 
       syncedCampaigns.push(campaign)

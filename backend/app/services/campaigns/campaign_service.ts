@@ -19,6 +19,57 @@ export class CampaignService {
   ) {}
 
   /**
+   * Ajoute le propriétaire d'une campagne comme membre ACTIVE avec autorisation permanente
+   * Utilisable après la création d'une campagne (peu importe le chemin de création)
+   */
+  async addOwnerAsMember(campaignId: string, ownerId: string): Promise<void> {
+    // Charger le user avec sa relation streamer
+    const owner = await User.query().where('id', ownerId).preload('streamer').firstOrFail()
+
+    if (!owner.streamer) {
+      logger.info(
+        { campaignId, ownerId },
+        'Owner has no streamer profile, skipping membership creation'
+      )
+      return
+    }
+
+    // Vérifier si le membership existe déjà
+    const existingMembership = await this.membershipRepository.findByCampaignAndStreamer(
+      campaignId,
+      owner.streamer.id
+    )
+
+    if (existingMembership) {
+      logger.info(
+        { campaignId, ownerId, streamerId: owner.streamer.id },
+        'Owner membership already exists'
+      )
+      return
+    }
+
+    // Créer le membership ACTIVE avec autorisation permanente
+    const membership = await this.membershipRepository.create({
+      campaignId,
+      streamerId: owner.streamer.id,
+      status: 'ACTIVE',
+      invitedAt: DateTime.now(),
+    })
+
+    membership.acceptedAt = DateTime.now()
+    const now = DateTime.now()
+    membership.pollAuthorizationGrantedAt = now
+    membership.pollAuthorizationExpiresAt = now.plus({ years: 100 })
+
+    await this.membershipRepository.update(membership)
+
+    logger.info(
+      { campaignId, ownerId, streamerId: owner.streamer.id },
+      'Owner added as campaign member with permanent poll authorization'
+    )
+  }
+
+  /**
    * Créer une nouvelle campagne
    */
   async createCampaign(
@@ -32,39 +83,10 @@ export class CampaignService {
         description: data.description,
       })
 
-      // Charger le user avec sa relation streamer
-      const owner = await User.query().where('id', ownerId).preload('streamer').firstOrFail()
+      // Ajouter automatiquement le propriétaire comme membre
+      await this.addOwnerAsMember(campaign.id, ownerId)
 
-      // Si le MJ a un profil streamer, l'ajouter automatiquement comme membre ACTIVE
-      if (owner.streamer) {
-        const membership = await this.membershipRepository.create({
-          campaignId: campaign.id,
-          streamerId: owner.streamer.id,
-          status: 'ACTIVE',
-          invitedAt: DateTime.now(),
-        })
-
-        // Mettre à jour acceptedAt puisque c'est automatique
-        membership.acceptedAt = DateTime.now()
-
-        // Accorder automatiquement l'autorisation de sondages pour le MJ (pas besoin de s'autoriser lui-même)
-        const now = DateTime.now()
-        membership.pollAuthorizationGrantedAt = now
-        // Autorisation permanente pour le MJ propriétaire (100 ans)
-        membership.pollAuthorizationExpiresAt = now.plus({ years: 100 })
-
-        await this.membershipRepository.update(membership)
-
-        // Charger la relation streamer pour le membership
-        await membership.load('streamer')
-
-        logger.info(
-          { campaignId: campaign.id, ownerId, streamerId: owner.streamer.id },
-          'Campaign created with owner as default streamer member with permanent poll authorization'
-        )
-      } else {
-        logger.info({ campaignId: campaign.id, ownerId }, 'Campaign created')
-      }
+      logger.info({ campaignId: campaign.id, ownerId }, 'Campaign created')
 
       return campaign
     } catch (error) {
