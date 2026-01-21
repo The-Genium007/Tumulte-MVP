@@ -77,7 +77,8 @@
 <script setup lang="ts">
 import { usePwaInstall } from '@/composables/usePwaInstall'
 
-const { canInstall, canShowGuide, shouldShowInstallUI, platform, install, dismiss } = usePwaInstall()
+const { canInstall, canShowGuide, shouldShowInstallUI, platform, install, dismiss } =
+  usePwaInstall()
 
 // Silence unused variable warning - canShowGuide is used indirectly via shouldShowInstallUI
 void canShowGuide
