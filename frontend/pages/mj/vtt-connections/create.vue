@@ -310,7 +310,7 @@ const config = useRuntimeConfig()
 
 // Foundry module URL for installation
 const foundryModuleUrl =
-  'https://raw.githubusercontent.com/The-Genium007/Tumulte-Foundry-module/staging/module.json'
+  'https://raw.githubusercontent.com/The-Genium007/Tumulte-Foundry-module/main/module.json'
 
 // Provider instructions per VTT type
 type VttProvider = 'foundry' | 'owlbear' | 'talespire'
