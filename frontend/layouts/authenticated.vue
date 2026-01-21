@@ -1,12 +1,11 @@
 <template>
   <div class="min-h-screen bg-subtle flex flex-col">
-    <!-- PWA Install Prompt -->
-    <PwaInstallPrompt />
+    <!-- PWA Install Prompt - DISABLED for Safari debugging -->
+    <!-- <PwaInstallPrompt /> -->
 
-    <!-- Header flottant - padding-top when PWA banner is visible -->
+    <!-- Header flottant -->
     <div
       class="container mx-auto px-4 sm:px-6 lg:px-8 pt-6 max-w-7xl transition-[padding] duration-300"
-      :class="{ 'pt-16': shouldShowInstallUI }"
     >
       <AppHeader />
     </div>
@@ -46,10 +45,11 @@ import SupportWidget from '@/components/SupportWidget.vue'
 import { useAuth } from '@/composables/useAuth'
 import { usePushNotifications } from '@/composables/usePushNotifications'
 import { useVttAutoSync } from '@/composables/useVttAutoSync'
-import { usePwaInstall } from '@/composables/usePwaInstall'
+// PWA disabled for Safari debugging
+// import { usePwaInstall } from '@/composables/usePwaInstall'
 
 const { fetchMe } = useAuth()
-const { shouldShowInstallUI } = usePwaInstall()
+// const { shouldShowInstallUI } = usePwaInstall()
 const { initialize: initializePushNotifications } = usePushNotifications()
 const { initialize: initializeVttSync } = useVttAutoSync()
 
