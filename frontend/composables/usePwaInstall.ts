@@ -4,29 +4,92 @@ import type { BeforeInstallPromptEvent } from '@/types/pwa'
 const DISMISSED_KEY = 'tumulte-pwa-install-dismissed'
 
 /**
+ * Platform types for PWA installation
+ */
+export type PwaPlatform = 'chrome' | 'safari-mac' | 'safari-ios' | 'firefox' | 'unknown'
+
+/**
+ * Detects the current platform for PWA installation guidance.
+ */
+function detectPlatform(): PwaPlatform {
+  if (typeof navigator === 'undefined') return 'unknown'
+
+  const ua = navigator.userAgent
+  const isIOS =
+    /iPad|iPhone|iPod/.test(ua) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+  const isSafari = /^((?!chrome|android).)*safari/i.test(ua)
+  const isMac = /Macintosh/.test(ua)
+  const isFirefox = /Firefox/.test(ua)
+  const isChromium = (/Chrome/.test(ua) && !/Edg/.test(ua)) || /Edg/.test(ua)
+
+  if (isIOS && isSafari) return 'safari-ios'
+  if (isMac && isSafari && !isChromium) return 'safari-mac'
+  if (isFirefox) return 'firefox'
+  if (isChromium) return 'chrome'
+
+  return 'unknown'
+}
+
+/**
+ * Checks if the app is running in standalone mode (already installed).
+ */
+function checkIsInstalled(): boolean {
+  if (typeof window === 'undefined') return false
+
+  // Check display-mode media query
+  if (window.matchMedia('(display-mode: standalone)').matches) return true
+
+  // iOS Safari standalone check
+  if ('standalone' in navigator && (navigator as { standalone?: boolean }).standalone === true)
+    return true
+
+  return false
+}
+
+/**
  * Composable for PWA installation management.
- * Handles the beforeinstallprompt event and provides install/dismiss functionality.
+ * Handles the beforeinstallprompt event for Chrome/Edge and provides
+ * installation guidance for Safari (macOS and iOS).
  *
  * @returns PWA install state and methods
  *
  * @example
- * const { canInstall, dismissed, install, dismiss } = usePwaInstall()
+ * const { canInstall, canShowGuide, platform, install, dismiss } = usePwaInstall()
  */
 export function usePwaInstall() {
   const deferredPrompt = ref<BeforeInstallPromptEvent | null>(null)
   const dismissed = ref(false)
+  // Initialize platform and isInstalled immediately (not in onMounted)
+  // This ensures computed properties work correctly on first render
+  const platform = ref<PwaPlatform>(detectPlatform())
+  const isInstalled = ref(checkIsInstalled())
 
   /**
-   * Can the app be installed?
+   * Can the app be installed via Chrome/Edge prompt?
    */
   const canInstall = computed(() => {
-    return deferredPrompt.value !== null && !dismissed.value
+    return deferredPrompt.value !== null && !dismissed.value && !isInstalled.value
   })
 
   /**
-   * Triggers the PWA installation prompt.
-   *
-   * @throws {Error} If no install prompt is available
+   * Should we show installation guide for Safari?
+   * Only shows for Safari (mac/iOS) when not dismissed and not already installed.
+   */
+  const canShowGuide = computed(() => {
+    const isSafari = platform.value === 'safari-mac' || platform.value === 'safari-ios'
+    return isSafari && !dismissed.value && !isInstalled.value
+  })
+
+  /**
+   * Should we show any installation UI (prompt or guide)?
+   */
+  const shouldShowInstallUI = computed(() => {
+    return canInstall.value || canShowGuide.value
+  })
+
+  /**
+   * Triggers the PWA installation prompt (Chrome/Edge only).
    */
   async function install(): Promise<void> {
     if (!deferredPrompt.value) {
@@ -40,6 +103,7 @@ export function usePwaInstall() {
 
       if (choiceResult.outcome === 'accepted') {
         console.log('[usePwaInstall] User accepted the install prompt')
+        isInstalled.value = true
       } else {
         console.log('[usePwaInstall] User dismissed the install prompt')
         dismiss()
@@ -53,7 +117,7 @@ export function usePwaInstall() {
   }
 
   /**
-   * Dismisses the install prompt and saves the preference.
+   * Dismisses the install prompt/guide and saves the preference.
    */
   function dismiss(): void {
     dismissed.value = true
@@ -83,21 +147,16 @@ export function usePwaInstall() {
     console.log('[usePwaInstall] Install prompt captured')
   }
 
-  onMounted(() => {
-    // Check if user previously dismissed the prompt
-    if (typeof localStorage !== 'undefined') {
-      const wasDismissed = localStorage.getItem(DISMISSED_KEY)
-      dismissed.value = wasDismissed === 'true'
-    }
+  // Initialize dismissed state from localStorage (synchronous, safe outside onMounted)
+  if (typeof localStorage !== 'undefined') {
+    const wasDismissed = localStorage.getItem(DISMISSED_KEY)
+    dismissed.value = wasDismissed === 'true'
+  }
 
-    // Listen for the beforeinstallprompt event
+  onMounted(() => {
+    // Listen for the beforeinstallprompt event (Chrome/Edge only)
     if (typeof window !== 'undefined') {
       window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
-
-      // Check if app is already installed
-      if (window.matchMedia('(display-mode: standalone)').matches) {
-        console.log('[usePwaInstall] App is already installed')
-      }
     }
   })
 
@@ -108,8 +167,14 @@ export function usePwaInstall() {
   })
 
   return {
+    // State
     canInstall,
+    canShowGuide,
+    shouldShowInstallUI,
+    platform,
+    isInstalled,
     dismissed,
+    // Actions
     install,
     dismiss,
     resetDismissed,

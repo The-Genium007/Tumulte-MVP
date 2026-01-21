@@ -3,8 +3,11 @@
     <!-- PWA Install Prompt -->
     <PwaInstallPrompt />
 
-    <!-- Header flottant -->
-    <div class="container mx-auto px-4 sm:px-6 lg:px-8 pt-6 max-w-7xl">
+    <!-- Header flottant - padding-top when PWA banner is visible -->
+    <div
+      class="container mx-auto px-4 sm:px-6 lg:px-8 pt-6 max-w-7xl transition-[padding] duration-300"
+      :class="{ 'pt-16': shouldShowInstallUI }"
+    >
       <AppHeader />
     </div>
 
@@ -43,8 +46,10 @@ import SupportWidget from '@/components/SupportWidget.vue'
 import { useAuth } from '@/composables/useAuth'
 import { usePushNotifications } from '@/composables/usePushNotifications'
 import { useVttAutoSync } from '@/composables/useVttAutoSync'
+import { usePwaInstall } from '@/composables/usePwaInstall'
 
 const { fetchMe } = useAuth()
+const { shouldShowInstallUI } = usePwaInstall()
 const { initialize: initializePushNotifications } = usePushNotifications()
 const { initialize: initializeVttSync } = useVttAutoSync()
 
