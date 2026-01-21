@@ -59,9 +59,9 @@ function checkIsInstalled(): boolean {
  */
 export function usePwaInstall() {
   const deferredPrompt = ref<BeforeInstallPromptEvent | null>(null)
-  const dismissed = ref(false)
   // Initialize with SSR-safe defaults to avoid hydration mismatch
-  // Real values are set in onMounted (client-side only)
+  // ALL client-specific values are set in onMounted only
+  const dismissed = ref(false)
   const platform = ref<PwaPlatform>('unknown')
   const isInstalled = ref(false)
   const isHydrated = ref(false)
@@ -150,23 +150,28 @@ export function usePwaInstall() {
     console.log('[usePwaInstall] Install prompt captured')
   }
 
-  // Initialize dismissed state from localStorage (synchronous, safe outside onMounted)
-  if (typeof localStorage !== 'undefined') {
-    const wasDismissed = localStorage.getItem(DISMISSED_KEY)
-    dismissed.value = wasDismissed === 'true'
-  }
-
   onMounted(() => {
-    // Detect platform and installation status client-side only
-    // This prevents SSR hydration mismatch on Safari
+    // CRITICAL: ALL client-specific detection must happen in onMounted
+    // to prevent SSR hydration mismatch that causes Safari reload loops.
+    // The isHydrated flag gates shouldShowInstallUI to ensure the banner
+    // only renders after client-side detection is complete.
+
+    // Load dismissed state from localStorage (client-side only)
+    if (typeof localStorage !== 'undefined') {
+      const wasDismissed = localStorage.getItem(DISMISSED_KEY)
+      dismissed.value = wasDismissed === 'true'
+    }
+
+    // Detect platform and installation status
     platform.value = detectPlatform()
     isInstalled.value = checkIsInstalled()
+
+    // Mark as hydrated AFTER all client-specific values are set
+    // This ensures shouldShowInstallUI returns consistent values
     isHydrated.value = true
 
     // Listen for the beforeinstallprompt event (Chrome/Edge only)
-    if (typeof window !== 'undefined') {
-      window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
-    }
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
   })
 
   onUnmounted(() => {
