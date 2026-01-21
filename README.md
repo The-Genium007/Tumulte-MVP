@@ -243,8 +243,6 @@ docker compose exec backend node ace migration:status
 
 The project is in active development and **contributions are not yet open** formally.
 
-**Coming soon**: Once beta is reached, we'll open contributions with a detailed CONTRIBUTING.md guide.
-
 **In the meantime**:
 - Report bugs via [Bugs & Issues](https://github.com/The-Genium007/Tumulte/discussions/categories/bugs-issues)
 - Suggest improvements in [Ideas & Suggestions](https://github.com/The-Genium007/Tumulte/discussions/categories/ideas-suggestions)
