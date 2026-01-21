@@ -355,6 +355,7 @@ describe('useCampaigns Composable', () => {
         memberCount: 3,
         activeMemberCount: 2,
         createdAt: '2024-01-01T00:00:00Z',
+        vttConnection: null,
       })
       expect(result.members).toEqual(mockResponse.members)
     })

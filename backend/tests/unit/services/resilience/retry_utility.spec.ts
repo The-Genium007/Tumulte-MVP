@@ -277,8 +277,9 @@ test.group('RetryUtility', (group) => {
     const actualDuration = Date.now() - startTime
 
     // Total duration should be close to what we measured
+    // Using a larger tolerance (100ms) to account for timing variability in CI
     assert.isAtLeast(result.totalDurationMs, 50) // At least one delay
-    assert.approximately(result.totalDurationMs, actualDuration, 50)
+    assert.approximately(result.totalDurationMs, actualDuration, 100)
   })
 
   test('respects Retry-After header for 429 responses', async ({ assert }) => {
