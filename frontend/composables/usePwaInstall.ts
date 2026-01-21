@@ -60,10 +60,11 @@ function checkIsInstalled(): boolean {
 export function usePwaInstall() {
   const deferredPrompt = ref<BeforeInstallPromptEvent | null>(null)
   const dismissed = ref(false)
-  // Initialize platform and isInstalled immediately (not in onMounted)
-  // This ensures computed properties work correctly on first render
-  const platform = ref<PwaPlatform>(detectPlatform())
-  const isInstalled = ref(checkIsInstalled())
+  // Initialize with SSR-safe defaults to avoid hydration mismatch
+  // Real values are set in onMounted (client-side only)
+  const platform = ref<PwaPlatform>('unknown')
+  const isInstalled = ref(false)
+  const isHydrated = ref(false)
 
   /**
    * Can the app be installed via Chrome/Edge prompt?
@@ -83,8 +84,10 @@ export function usePwaInstall() {
 
   /**
    * Should we show any installation UI (prompt or guide)?
+   * Only shows after hydration to avoid SSR mismatch.
    */
   const shouldShowInstallUI = computed(() => {
+    if (!isHydrated.value) return false
     return canInstall.value || canShowGuide.value
   })
 
@@ -154,6 +157,12 @@ export function usePwaInstall() {
   }
 
   onMounted(() => {
+    // Detect platform and installation status client-side only
+    // This prevents SSR hydration mismatch on Safari
+    platform.value = detectPlatform()
+    isInstalled.value = checkIsInstalled()
+    isHydrated.value = true
+
     // Listen for the beforeinstallprompt event (Chrome/Edge only)
     if (typeof window !== 'undefined') {
       window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
