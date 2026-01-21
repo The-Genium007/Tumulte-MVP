@@ -237,13 +237,24 @@ jobs:
       - name: Create GitHub Release
         if: steps.check_sync.outputs.needed == 'true'
         run: |
-          gh release create "${{ steps.urls.outputs.tag }}" \
+          BRANCH_NAME="${{ steps.branch.outputs.name }}"
+          VERSION="${{ steps.urls.outputs.version }}"
+          TAG="${{ steps.urls.outputs.tag }}"
+
+          # Title: "Tumulte Integration 2.0.2" (prod) or "Tumulte Integration staging-2.0.2" (staging)
+          if [ "${BRANCH_NAME}" = "main" ]; then
+            TITLE="Tumulte Integration ${VERSION}"
+          else
+            TITLE="Tumulte Integration ${TAG}"
+          fi
+
+          gh release create "${TAG}" \
             --repo "The-Genium007/Tumulte-Foundry-module" \
-            --title "Tumulte Integration ${{ steps.urls.outputs.tag }}" \
-            --notes "Module Foundry pour Tumulte - Version ${{ steps.urls.outputs.version }}" \
-            --target "${{ steps.branch.outputs.name }}" \
+            --title "${TITLE}" \
+            --notes "Module Foundry pour Tumulte - Version ${VERSION}" \
+            --target "${BRANCH_NAME}" \
             tumulte-integration.zip
-          echo "✅ Release created: ${{ steps.urls.outputs.tag }}"
+          echo "✅ Release created: ${TAG}"
         env:
           GH_TOKEN: ${{ secrets.FOUNDRY_REPO_TOKEN }}
 
