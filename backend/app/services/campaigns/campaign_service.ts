@@ -143,9 +143,22 @@ export class CampaignService {
       'Deleting campaign, checking for VTT connection'
     )
 
-    // Revoke VTT connection if exists (notifies Foundry module via WebSocket)
+    // Notify VTT and revoke connection if exists
     if (campaign.vttConnectionId) {
       try {
+        // First, notify the module that the campaign is being deleted
+        // This allows the module to show a specific message to the user
+        logger.info(
+          { campaignId, vttConnectionId: campaign.vttConnectionId },
+          'Notifying VTT of campaign deletion'
+        )
+        await this.vttWebSocketService.notifyCampaignDeleted(
+          campaign.vttConnectionId,
+          campaignId,
+          campaign.name
+        )
+
+        // Then revoke the connection
         logger.info(
           { campaignId, vttConnectionId: campaign.vttConnectionId },
           'Revoking VTT connection before campaign deletion'
@@ -159,10 +172,10 @@ export class CampaignService {
           'VTT connection revoked due to campaign deletion'
         )
       } catch (error) {
-        // Log but don't fail deletion if revocation fails
+        // Log but don't fail deletion if notification/revocation fails
         logger.warn(
           { campaignId, vttConnectionId: campaign.vttConnectionId, error },
-          'Failed to revoke VTT connection during campaign deletion'
+          'Failed to notify/revoke VTT connection during campaign deletion'
         )
       }
     } else {

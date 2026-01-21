@@ -8,6 +8,14 @@
         :campaigns="campaigns"
       />
 
+      <!-- VTT Connection Alert Banner -->
+      <MjVttAlertBanner
+        v-if="selectedCampaignId && vttHasIssue"
+        :status="vttHealthStatus"
+        :campaign-id="selectedCampaignId"
+        :campaign-name="currentCampaign?.name"
+      />
+
       <!-- Carte 2: Dashboard de la campagne sélectionnée -->
       <MjCampaignDashboard
         v-if="campaignsLoaded && selectedCampaignId && currentCampaign"
@@ -152,6 +160,7 @@ import { usePollControlStore } from '@/stores/pollControl'
 import { useWebSocket } from '@/composables/useWebSocket'
 import { useSupportTrigger } from '@/composables/useSupportTrigger'
 import { useActionButton } from '@/composables/useActionButton'
+import { useVttHealth } from '@/composables/useVttHealth'
 import { loggers } from '@/utils/logger'
 
 definePageMeta({
@@ -213,6 +222,14 @@ const { selectedCampaignId, loadFromStorage } = useSelectedCampaign()
 const currentCampaign = computed(
   () => campaigns.value.find((c) => c.id === selectedCampaignId.value) || null
 )
+
+// VTT Health monitoring for selected campaign
+const {
+  healthStatus: vttHealthStatus,
+  hasIssue: vttHasIssue,
+  startPolling: startVttPolling,
+  stopPolling: _stopVttPolling,
+} = useVttHealth(selectedCampaignId)
 
 // Streamers data
 const streamersLoading = ref(false)
@@ -779,6 +796,11 @@ onMounted(async () => {
   ) {
     // Si pas de campagne valide dans localStorage, sélectionner la première
     selectedCampaignId.value = campaigns.value[0]?.id ?? null
+  }
+
+  // Start VTT health polling if a campaign is selected
+  if (selectedCampaignId.value) {
+    startVttPolling()
   }
 
   // 2. Forcer le rechargement de l'état depuis localStorage côté client

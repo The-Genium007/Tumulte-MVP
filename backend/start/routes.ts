@@ -361,6 +361,12 @@ router
     router.post('/revoke', '#controllers/webhooks/foundry_webhook_controller.revoke')
     router.post('/ping', '#controllers/webhooks/foundry_webhook_controller.ping')
     router.post('/status', '#controllers/webhooks/foundry_webhook_controller.status')
+
+    // Connection health check (for resilience)
+    router.get(
+      '/connection-health',
+      '#controllers/webhooks/foundry_webhook_controller.connectionHealth'
+    )
   })
   .prefix('/webhooks/foundry')
 

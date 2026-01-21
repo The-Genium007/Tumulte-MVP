@@ -418,7 +418,7 @@ const copyModuleUrl = async () => {
   } catch {
     toast.add({
       title: 'Erreur',
-      description: "Impossible de copier dans le presse-papier",
+      description: 'Impossible de copier dans le presse-papier',
       color: 'error',
     })
   }

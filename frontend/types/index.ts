@@ -27,7 +27,32 @@ export interface Campaign {
   joinedAt?: string
   createdAt: string
   isOwner?: boolean
+  vttConnection?: VttConnectionStatus | null
 }
+
+// VTT Connection types
+export interface VttConnectionStatus {
+  id: string
+  status: 'pending' | 'active' | 'expired' | 'revoked'
+  tunnelStatus: 'connected' | 'connecting' | 'disconnected' | 'error'
+  lastHeartbeatAt: string | null
+  worldName: string | null
+  moduleVersion: string | null
+}
+
+/**
+ * Computed health status for VTT connection
+ * Used by the frontend to determine what to display
+ */
+export type VttHealthStatus =
+  | 'connected' // WebSocket actif, heartbeat récent
+  | 'connecting' // En cours de connexion
+  | 'disconnected' // Pas de WebSocket actif
+  | 'server_unavailable' // Backend Tumulte non joignable
+  | 'campaign_deleted' // La campagne a été supprimée sur Tumulte
+  | 'revoked' // Connexion révoquée par l'utilisateur
+  | 'error' // Erreur générique (token invalide, etc.)
+  | 'not_paired' // Jamais appairé à Foundry
 
 export interface CampaignMembership {
   id: string

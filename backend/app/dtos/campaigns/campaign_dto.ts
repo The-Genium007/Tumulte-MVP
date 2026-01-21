@@ -1,6 +1,32 @@
 import type { campaign as Campaign } from '#models/campaign'
 import { StreamerDto } from '#dtos/auth/streamer_dto'
 
+/**
+ * DTO for VTT connection status information
+ * Used to display connection health in the campaign dashboard
+ */
+export class VttConnectionStatusDto {
+  id!: string
+  status!: 'pending' | 'active' | 'expired' | 'revoked'
+  tunnelStatus!: 'connected' | 'connecting' | 'disconnected' | 'error'
+  lastHeartbeatAt!: string | null
+  worldName!: string | null
+  moduleVersion!: string | null
+
+  static fromModel(connection: any): VttConnectionStatusDto | null {
+    if (!connection) return null
+
+    return {
+      id: connection.id,
+      status: connection.status,
+      tunnelStatus: connection.tunnelStatus || 'disconnected',
+      lastHeartbeatAt: connection.lastHeartbeatAt?.toISO() || null,
+      worldName: connection.worldName || null,
+      moduleVersion: connection.moduleVersion || null,
+    }
+  }
+}
+
 export class CampaignDto {
   id!: string
   ownerId!: string
@@ -31,9 +57,13 @@ export class CampaignDto {
 
 export class CampaignDetailDto extends CampaignDto {
   members!: CampaignMemberDto[]
+  vttConnection!: VttConnectionStatusDto | null
 
   static override fromModel(campaign: Campaign): CampaignDetailDto {
     const base = CampaignDto.fromModel(campaign)
+
+    // Cast to access vttConnection relation (may be preloaded)
+    const campaignWithVtt = campaign as Campaign & { vttConnection?: any }
 
     return {
       ...base,
@@ -42,6 +72,7 @@ export class CampaignDetailDto extends CampaignDto {
             CampaignMemberDto.fromModel(membership, campaign.ownerId)
           )
         : [],
+      vttConnection: VttConnectionStatusDto.fromModel(campaignWithVtt.vttConnection),
     }
   }
 }

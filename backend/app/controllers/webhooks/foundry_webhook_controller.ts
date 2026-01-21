@@ -307,6 +307,97 @@ export default class FoundryWebhookController {
   }
 
   /**
+   * Check connection health for Foundry VTT module
+   * GET /webhooks/foundry/connection-health
+   *
+   * Allows the module to verify if its connection is still valid
+   * without needing a WebSocket connection
+   */
+  async connectionHealth({ request, response }: HttpContext) {
+    try {
+      // Get API key from Authorization header
+      const authHeader = request.header('Authorization')
+      const apiKey = authHeader?.replace('Bearer ', '')
+
+      // Or from query params (for simple health checks)
+      const worldId = request.input('worldId')
+
+      if (!apiKey && !worldId) {
+        return response.badRequest({
+          error: 'Missing authentication: provide Authorization header or worldId query param',
+        })
+      }
+
+      // Find connection by API key or worldId
+      let connection: VttConnection | null = null
+
+      if (apiKey) {
+        connection = await VttConnection.query()
+          .where('api_key', apiKey)
+          .preload('campaigns')
+          .first()
+      } else if (worldId) {
+        connection = await VttConnection.query()
+          .where('world_id', worldId)
+          .preload('campaigns')
+          .first()
+      }
+
+      if (!connection) {
+        return response.notFound({
+          status: 'not_found',
+          error: 'Connection not found',
+        })
+      }
+
+      // Check if connection is revoked
+      if (connection.status === 'revoked') {
+        return response.status(401).json({
+          status: 'revoked',
+          error: 'Connection has been revoked',
+          revokedAt: connection.updatedAt?.toISO(),
+        })
+      }
+
+      // Check if connection is expired
+      if (connection.status === 'expired') {
+        return response.status(401).json({
+          status: 'expired',
+          error: 'Connection has expired',
+        })
+      }
+
+      // Check if linked campaign still exists
+      const linkedCampaign = connection.campaigns?.[0]
+      if (!linkedCampaign) {
+        return response.status(410).json({
+          status: 'campaign_deleted',
+          error: 'The linked campaign no longer exists',
+          connectionId: connection.id,
+        })
+      }
+
+      // Connection is healthy
+      return response.ok({
+        status: 'healthy',
+        connectionId: connection.id,
+        campaignId: linkedCampaign.id,
+        campaignName: linkedCampaign.name,
+        tunnelStatus: connection.tunnelStatus,
+        lastHeartbeatAt: connection.lastHeartbeatAt?.toISO() || null,
+        worldName: connection.worldName,
+        moduleVersion: connection.moduleVersion,
+      })
+    } catch (error) {
+      logger.error('Failed to check connection health', { error })
+      return response.internalServerError({
+        status: 'error',
+        error: 'Failed to check connection health',
+      })
+    }
+  }
+
+  /**
    * Handle status update from Foundry VTT module
    * POST /webhooks/foundry/status
    */

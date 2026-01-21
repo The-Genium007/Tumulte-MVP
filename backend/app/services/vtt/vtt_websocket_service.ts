@@ -678,6 +678,37 @@ export default class VttWebSocketService {
   }
 
   /**
+   * Notify VTT that a campaign has been deleted
+   * This sends a specific event so the module can distinguish from revocation
+   */
+  async notifyCampaignDeleted(
+    connectionId: string,
+    campaignId: string,
+    campaignName: string
+  ): Promise<void> {
+    // Skip WebSocket notification if server not initialized
+    if (!this.io) {
+      logger.debug('WebSocket service not initialized, skipping campaign deletion notification', {
+        connectionId,
+        campaignId,
+      })
+      return
+    }
+
+    const vttNamespace = this.io.of('/vtt')
+
+    // Emit campaign deleted event to VTT
+    vttNamespace.to(`vtt:${connectionId}`).emit('campaign:deleted', {
+      campaignId,
+      campaignName,
+      reason: 'deleted_by_owner',
+      timestamp: DateTime.now().toISO(),
+    })
+
+    logger.info('VTT notified of campaign deletion', { connectionId, campaignId, campaignName })
+  }
+
+  /**
    * Revoke a connection and notify VTT via WebSocket
    * Note: If WebSocket server is not initialized (e.g., in tests),
    * this method will skip the WebSocket notification gracefully.

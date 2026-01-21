@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen">
-    <div class="max-w-300 mx-auto space-y-6">
+    <div class="w-full max-w-300 mx-auto space-y-6">
       <!-- Header -->
       <UCard>
         <div class="flex items-center gap-4">
@@ -12,7 +12,7 @@
               size="xl"
               square
               class="group"
-              @click="_router.push('/mj/vtt-connections')"
+              @click="_router.push('/mj/campaigns/import')"
             >
               <template #leading>
                 <UIcon
@@ -27,7 +27,7 @@
               {{ connection?.name || 'Chargement...' }}
             </h1>
             <p class="text-muted mt-1">
-              {{ connection?.provider?.displayName || 'Provider VTT' }}
+              {{ connection?.provider?.displayName || 'Connexion VTT' }}
             </p>
           </div>
           <UBadge v-if="connection" :color="getStatusColor(connection.status)" size="lg">
@@ -42,111 +42,11 @@
       </div>
 
       <template v-else-if="connection">
-        <!-- Authentication Token Card -->
+        <!-- Connection Status Card -->
         <UCard>
           <template #header>
             <div class="flex items-center justify-between">
-              <h2 class="text-xl font-semibold text-primary">Clé d'authentification</h2>
-              <UButton
-                color="neutral"
-                variant="soft"
-                icon="i-lucide-refresh-cw"
-                label="Régénérer"
-                :loading="regenerating"
-                @click="handleRegenerateKey"
-              />
-            </div>
-          </template>
-
-          <div class="space-y-4">
-            <!-- Token Display -->
-            <div>
-              <label class="block text-sm font-bold text-secondary ml-4 uppercase mb-2">
-                Token d'accès
-              </label>
-              <div class="flex gap-2">
-                <UInput
-                  :model-value="showToken ? getConnectionToken(connection) : '••••••••••••••••'"
-                  readonly
-                  size="lg"
-                  class="flex-1"
-                  :ui="{
-                    root: 'ring-0 border-0 rounded-lg overflow-hidden',
-                    base: 'px-3.5 py-2.5 bg-primary-100 text-primary-500 rounded-lg font-mono',
-                  }"
-                />
-                <UButton
-                  :icon="showToken ? 'i-lucide-eye-off' : 'i-lucide-eye'"
-                  color="neutral"
-                  variant="soft"
-                  size="lg"
-                  square
-                  @click="showToken = !showToken"
-                />
-                <UButton
-                  icon="i-lucide-copy"
-                  color="neutral"
-                  variant="soft"
-                  size="lg"
-                  square
-                  @click="copyToken"
-                />
-              </div>
-            </div>
-
-            <!-- Webhook URL -->
-            <div>
-              <label class="block text-sm font-bold text-secondary ml-4 uppercase mb-2">
-                URL du Webhook
-              </label>
-              <UInput
-                :model-value="connection.webhookUrl"
-                readonly
-                size="lg"
-                :ui="{
-                  root: 'ring-0 border-0 rounded-lg overflow-hidden',
-                  base: 'px-3.5 py-2.5 bg-primary-100 text-primary-500 rounded-lg',
-                }"
-              />
-            </div>
-
-            <!-- Last Webhook -->
-            <div v-if="connection.lastWebhookAt">
-              <label class="block text-sm font-bold text-secondary ml-4 uppercase mb-2">
-                Dernier webhook reçu
-              </label>
-              <p class="text-muted ml-4">
-                {{ new Date(connection.lastWebhookAt).toLocaleString() }}
-              </p>
-            </div>
-          </div>
-
-          <!-- Instructions Alert -->
-          <UAlert
-            color="primary"
-            variant="soft"
-            title="Configuration du module"
-            icon="i-lucide-info"
-            class="mt-6"
-          >
-            <template #description>
-              <div class="space-y-2 text-sm">
-                <p>Copiez le token ci-dessus et configurez-le dans votre module VTT :</p>
-                <ul class="list-disc list-inside space-y-1 ml-2">
-                  <li><strong>Foundry VTT</strong> : Game Settings → Tumulte Integration</li>
-                  <li><strong>Owlbear Rodeo</strong> : Extensions → Tumulte Settings</li>
-                  <li><strong>TaleSpire</strong> : Symbiotes → Tumulte Configuration</li>
-                </ul>
-              </div>
-            </template>
-          </UAlert>
-        </UCard>
-
-        <!-- Tunnel Status Card -->
-        <UCard v-if="connection.worldId">
-          <template #header>
-            <div class="flex items-center justify-between">
-              <h2 class="text-xl font-semibold text-primary">Tunnel sécurisé</h2>
+              <h2 class="text-xl font-semibold text-primary">État de la connexion</h2>
               <UBadge :color="getTunnelStatusColor(connection.tunnelStatus)" size="lg">
                 {{ getTunnelStatusLabel(connection.tunnelStatus) }}
               </UBadge>
@@ -155,31 +55,25 @@
 
           <div class="space-y-4">
             <!-- World Information -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label class="block text-sm font-bold text-secondary ml-4 uppercase mb-2">
                   Monde VTT
                 </label>
-                <p class="text-primary ml-4">{{ connection.worldName }}</p>
-              </div>
-              <div>
-                <label class="block text-sm font-bold text-secondary ml-4 uppercase mb-2">
-                  ID du Monde
-                </label>
-                <p class="text-muted ml-4 font-mono text-sm">{{ connection.worldId }}</p>
+                <p class="text-primary ml-4">{{ connection.worldName || 'Non configuré' }}</p>
               </div>
               <div v-if="connection.moduleVersion">
                 <label class="block text-sm font-bold text-secondary ml-4 uppercase mb-2">
                   Version du Module
                 </label>
-                <p class="text-muted ml-4">{{ connection.moduleVersion }}</p>
+                <p class="text-muted ml-4">v{{ connection.moduleVersion }}</p>
               </div>
               <div v-if="connection.lastHeartbeatAt">
                 <label class="block text-sm font-bold text-secondary ml-4 uppercase mb-2">
-                  Dernier Heartbeat
+                  Dernière activité
                 </label>
                 <p class="text-muted ml-4">
-                  {{ new Date(connection.lastHeartbeatAt).toLocaleString() }}
+                  {{ formatRelativeTime(connection.lastHeartbeatAt) }}
                 </p>
               </div>
             </div>
@@ -190,8 +84,8 @@
               color="success"
               variant="soft"
               icon="i-lucide-check-circle"
-              title="Tunnel actif"
-              description="La connexion sécurisée avec votre VTT est établie et fonctionnelle."
+              title="Connexion active"
+              description="La connexion avec votre VTT est établie et fonctionnelle."
             />
             <UAlert
               v-else-if="connection.tunnelStatus === 'connecting'"
@@ -215,19 +109,24 @@
               variant="soft"
               icon="i-lucide-unplug"
               title="Déconnecté"
-              description="Le tunnel n'est pas actuellement actif. Lancez votre VTT pour établir la connexion."
+              description="Le tunnel n'est pas actif. Lancez votre VTT pour établir la connexion."
             />
 
             <!-- Revoke Connection -->
-            <div v-if="connection.status !== 'revoked'" class="pt-4 border-t border-gray-200">
-              <h3 class="font-semibold text-primary mb-2">Révoquer la connexion</h3>
-              <p class="text-sm text-muted mb-4">
-                Cela mettra fin au tunnel sécurisé et notifiera votre VTT. La connexion ne pourra
-                plus être utilisée.
-              </p>
+            <div
+              v-if="connection.status !== 'revoked'"
+              class="pt-4 border-t border-neutral-200 flex items-center justify-between"
+            >
+              <div>
+                <h3 class="font-semibold text-primary">Révoquer la connexion</h3>
+                <p class="text-sm text-muted">
+                  Déconnecte le VTT et invalide les tokens d'authentification.
+                </p>
+              </div>
               <UButton
                 color="warning"
-                label="Révoquer la connexion"
+                variant="soft"
+                label="Révoquer"
                 icon="i-lucide-shield-off"
                 :loading="revoking"
                 @click="handleRevoke"
@@ -236,40 +135,34 @@
           </div>
         </UCard>
 
-        <!-- Campaigns Card -->
+        <!-- Campaign Card -->
         <UCard>
           <template #header>
-            <h2 class="text-xl font-semibold text-primary">
-              Campagnes liées ({{ campaigns.length }})
-            </h2>
+            <h2 class="text-xl font-semibold text-primary">Campagne liée</h2>
           </template>
 
           <!-- Empty State -->
           <div v-if="campaigns.length === 0" class="text-center py-8">
             <UIcon name="i-lucide-folder" class="size-12 text-muted mx-auto mb-3" />
-            <p class="text-muted">Aucune campagne n'utilise encore cette connexion VTT</p>
+            <p class="text-muted">Aucune campagne n'utilise cette connexion</p>
           </div>
 
-          <!-- Campaigns List -->
-          <div v-else class="space-y-3">
-            <div
-              v-for="campaign in campaigns"
-              :key="campaign.id"
-              class="p-4 rounded-lg bg-primary-50 hover:bg-primary-100 transition-colors cursor-pointer"
-              @click="_router.push(`/mj/campaigns/${campaign.id}`)"
-            >
-              <div class="flex items-center justify-between">
-                <div>
-                  <h3 class="font-semibold text-primary">
-                    {{ campaign.name }}
-                  </h3>
-                  <p class="text-xs text-muted mt-1">
-                    Créée le
-                    {{ new Date(campaign.createdAt).toLocaleDateString() }}
-                  </p>
-                </div>
-                <UIcon name="i-lucide-chevron-right" class="size-5 text-muted" />
+          <!-- Campaign (single) -->
+          <div
+            v-else-if="linkedCampaign"
+            class="p-4 rounded-lg bg-primary-50 hover:bg-primary-100 transition-colors cursor-pointer"
+            @click="_router.push(`/mj/campaigns/${linkedCampaign.id}`)"
+          >
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="font-semibold text-primary">
+                  {{ linkedCampaign.name }}
+                </h3>
+                <p class="text-xs text-muted mt-1">
+                  Créée le {{ new Date(linkedCampaign.createdAt).toLocaleDateString() }}
+                </p>
               </div>
+              <UIcon name="i-lucide-chevron-right" class="size-5 text-muted" />
             </div>
           </div>
         </UCard>
@@ -280,24 +173,26 @@
             <h2 class="text-xl font-semibold text-error-500">Zone de danger</h2>
           </template>
 
-          <div class="space-y-4">
+          <div class="flex items-center justify-between">
             <div>
-              <h3 class="font-semibold text-primary mb-2">Supprimer la connexion</h3>
-              <p class="text-sm text-muted mb-4">
-                Cette action est irréversible. La connexion sera supprimée définitivement.
-              </p>
-              <UButton
-                color="error"
-                label="Supprimer la connexion"
-                icon="i-lucide-trash-2"
-                :loading="deleting"
-                :disabled="campaigns.length > 0"
-                @click="handleDelete"
-              />
-              <p v-if="campaigns.length > 0" class="text-xs text-error-500 mt-2">
-                Impossible de supprimer : {{ campaigns.length }} campagne(s) liée(s)
+              <h3 class="font-semibold text-primary">Supprimer la connexion</h3>
+              <p class="text-sm text-muted">
+                {{
+                  campaigns.length > 0
+                    ? 'Impossible : une campagne est liée à cette connexion.'
+                    : 'Cette action est irréversible.'
+                }}
               </p>
             </div>
+            <UButton
+              color="error"
+              variant="soft"
+              label="Supprimer"
+              icon="i-lucide-trash-2"
+              :loading="deleting"
+              :disabled="campaigns.length > 0"
+              @click="handleDelete"
+            />
           </div>
         </UCard>
       </template>
@@ -306,7 +201,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useVttConnections, type VttConnection } from '@/composables/useVttConnections'
 import { useToast } from '#ui/composables/useToast'
@@ -318,20 +213,19 @@ definePageMeta({
 
 const _router = useRouter()
 const route = useRoute()
-const { getConnectionDetails, deleteConnection, regenerateApiKey } = useVttConnections()
+const { getConnectionDetails, deleteConnection } = useVttConnections()
 const toast = useToast()
 
 const connection = ref<VttConnection | null>(null)
 const campaigns = ref<Array<{ id: string; name: string; createdAt: string }>>([])
 const loading = ref(false)
-const showToken = ref(false)
-const regenerating = ref(false)
 const deleting = ref(false)
 const revoking = ref(false)
 
 const config = useRuntimeConfig()
 
-const getConnectionToken = (conn: VttConnection) => conn.apiKey
+// Computed for the first campaign (TypeScript safety)
+const linkedCampaign = computed(() => campaigns.value[0] || null)
 
 onMounted(async () => {
   loading.value = true
@@ -346,11 +240,27 @@ onMounted(async () => {
       description: 'Impossible de charger la connexion VTT',
       color: 'error',
     })
-    _router.push('/mj/vtt-connections')
+    _router.push('/mj/campaigns/import')
   } finally {
     loading.value = false
   }
 })
+
+const formatRelativeTime = (dateString: string) => {
+  const date = new Date(dateString)
+  const now = new Date()
+  const diffMs = now.getTime() - date.getTime()
+  const diffSeconds = Math.floor(diffMs / 1000)
+  const diffMinutes = Math.floor(diffSeconds / 60)
+  const diffHours = Math.floor(diffMinutes / 60)
+  const diffDays = Math.floor(diffHours / 24)
+
+  if (diffSeconds < 60) return "À l'instant"
+  if (diffMinutes < 60) return `Il y a ${diffMinutes} min`
+  if (diffHours < 24) return `Il y a ${diffHours}h`
+  if (diffDays < 7) return `Il y a ${diffDays} jour${diffDays > 1 ? 's' : ''}`
+  return date.toLocaleDateString()
+}
 
 const getStatusColor = (status: string): 'success' | 'warning' | 'error' | 'neutral' => {
   switch (status) {
@@ -381,75 +291,6 @@ const getStatusLabel = (status: string): string => {
   }
 }
 
-const copyToken = async () => {
-  if (!connection.value) return
-
-  try {
-    await navigator.clipboard.writeText(getConnectionToken(connection.value))
-    toast.add({
-      title: 'Copié',
-      description: 'Token copié dans le presse-papiers',
-      color: 'success',
-    })
-  } catch (error) {
-    console.error('Failed to copy token:', error)
-    toast.add({
-      title: 'Erreur',
-      description: 'Impossible de copier le token',
-      color: 'error',
-    })
-  }
-}
-
-const handleRegenerateKey = async () => {
-  if (!connection.value) return
-
-  regenerating.value = true
-  try {
-    const updated = await regenerateApiKey(connection.value.id)
-    connection.value = updated
-    toast.add({
-      title: 'Token régénéré',
-      description: 'Le nouveau token a été généré avec succès',
-      color: 'success',
-    })
-  } catch (error) {
-    console.error('Failed to regenerate token:', error)
-    toast.add({
-      title: 'Erreur',
-      description: 'Impossible de régénérer le token',
-      color: 'error',
-    })
-  } finally {
-    regenerating.value = false
-  }
-}
-
-const handleDelete = async () => {
-  if (!connection.value) return
-
-  deleting.value = true
-  try {
-    await deleteConnection(connection.value.id)
-    toast.add({
-      title: 'Connexion supprimée',
-      description: 'La connexion VTT a été supprimée avec succès',
-      color: 'success',
-    })
-    _router.push('/mj/vtt-connections')
-  } catch (error: unknown) {
-    console.error('Failed to delete connection:', error)
-    const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue'
-    toast.add({
-      title: 'Erreur',
-      description: errorMessage,
-      color: 'error',
-    })
-  } finally {
-    deleting.value = false
-  }
-}
-
 const getTunnelStatusColor = (status?: string): 'success' | 'warning' | 'error' | 'neutral' => {
   switch (status) {
     case 'connected':
@@ -476,6 +317,31 @@ const getTunnelStatusLabel = (status?: string): string => {
       return 'Déconnecté'
     default:
       return status || 'Inconnu'
+  }
+}
+
+const handleDelete = async () => {
+  if (!connection.value) return
+
+  deleting.value = true
+  try {
+    await deleteConnection(connection.value.id)
+    toast.add({
+      title: 'Connexion supprimée',
+      description: 'La connexion VTT a été supprimée avec succès',
+      color: 'success',
+    })
+    _router.push('/mj/campaigns/import')
+  } catch (error: unknown) {
+    console.error('Failed to delete connection:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue'
+    toast.add({
+      title: 'Erreur',
+      description: errorMessage,
+      color: 'error',
+    })
+  } finally {
+    deleting.value = false
   }
 }
 

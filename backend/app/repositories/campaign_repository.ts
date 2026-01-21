@@ -14,7 +14,7 @@ export class CampaignRepository {
   }
 
   /**
-   * Trouver une campagne avec ses membres
+   * Trouver une campagne avec ses membres et sa connexion VTT
    */
   async findByIdWithMembers(id: string): Promise<Campaign | null> {
     return await Campaign.query()
@@ -22,6 +22,7 @@ export class CampaignRepository {
       .preload('memberships', (query) => {
         query.preload('streamer')
       })
+      .preload('vttConnection')
       .first()
   }
 

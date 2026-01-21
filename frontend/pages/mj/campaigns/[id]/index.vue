@@ -133,6 +133,9 @@
                 <p class="text-lg font-bold text-primary">{{ pendingMembersCount }}</p>
               </div>
             </div>
+
+            <!-- VTT Connection Status (Mobile) -->
+            <MjVttStatusCard :vtt-connection="campaign?.vttConnection" :campaign-id="campaignId" />
           </div>
         </UCard>
       </div>
@@ -188,6 +191,9 @@
             <p class="text-xl font-bold text-primary">{{ pendingMembersCount }}</p>
           </div>
         </div>
+
+        <!-- VTT Connection Status -->
+        <MjVttStatusCard :vtt-connection="campaign?.vttConnection" :campaign-id="campaignId" />
       </div>
 
       <!-- Liste des membres -->

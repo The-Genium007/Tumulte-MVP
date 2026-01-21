@@ -69,6 +69,8 @@ export default class VttConnection extends BaseModel {
   @belongsTo(() => VttProvider)
   declare provider: BelongsTo<typeof VttProvider>
 
-  @hasMany(() => Campaign)
+  @hasMany(() => Campaign, {
+    foreignKey: 'vttConnectionId',
+  })
   declare campaigns: HasMany<typeof Campaign>
 }
