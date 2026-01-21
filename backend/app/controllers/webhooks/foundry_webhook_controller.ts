@@ -183,10 +183,18 @@ export default class FoundryWebhookController {
         JSON.stringify(pendingPairing)
       )
 
-      logger.info('Foundry pairing code generated', { code, worldId, worldName })
-
       // Build API URL - use API_URL env var if set, otherwise construct from HOST:PORT
       const apiUrl = env.get('API_URL') || `http://${env.get('HOST')}:${env.get('PORT')}`
+
+      logger.info('Foundry pairing code generated', {
+        code,
+        worldId,
+        worldName,
+        apiUrl,
+        envApiUrl: env.get('API_URL'),
+        envHost: env.get('HOST'),
+        envPort: env.get('PORT'),
+      })
 
       return response.ok({
         success: true,
