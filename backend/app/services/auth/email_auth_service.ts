@@ -125,7 +125,7 @@ class EmailAuthService {
       }
     }
 
-    // Verify password
+    // Verify password (hash.verify takes hashedValue first, then plainValue)
     const isValid = await hash.verify(user.password, password)
     if (!isValid) {
       return { error: 'Email ou mot de passe incorrect.' }

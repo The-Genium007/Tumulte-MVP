@@ -20,6 +20,8 @@
           <UInput
             v-model="form.displayName"
             type="text"
+            name="name"
+            autocomplete="name"
             placeholder="Votre pseudo"
             size="xl"
             required
@@ -38,6 +40,8 @@
           <UInput
             v-model="form.email"
             type="email"
+            name="email"
+            autocomplete="email"
             placeholder="votre@email.com"
             size="xl"
             required
@@ -58,6 +62,8 @@
           <UInput
             v-model="form.password"
             type="password"
+            name="new-password"
+            autocomplete="new-password"
             placeholder="Minimum 8 caractères"
             size="xl"
             required
@@ -86,6 +92,8 @@
           <UInput
             v-model="form.passwordConfirmation"
             type="password"
+            name="new-password-confirm"
+            autocomplete="new-password"
             placeholder="Confirmez votre mot de passe"
             size="xl"
             required

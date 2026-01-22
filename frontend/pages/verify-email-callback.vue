@@ -90,7 +90,12 @@ onMounted(async () => {
   }
 
   try {
-    const response = await fetch(`${config.public.apiBase}/auth/verify-email?token=${token}`, {
+    const response = await fetch(`${config.public.apiBase}/auth/verify-email`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ token }),
       credentials: 'include',
     })
 

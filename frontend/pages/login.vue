@@ -20,6 +20,8 @@
           <UInput
             v-model="email"
             type="email"
+            name="email"
+            autocomplete="email"
             placeholder="votre@email.com"
             size="xl"
             required
@@ -37,6 +39,8 @@
           <UInput
             v-model="password"
             type="password"
+            name="current-password"
+            autocomplete="current-password"
             placeholder="Votre mot de passe"
             size="xl"
             required

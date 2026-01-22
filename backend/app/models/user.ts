@@ -82,10 +82,14 @@ class User extends compose(BaseModel, AuthFinder) {
   })
   declare streamer: HasOne<typeof Streamer>
 
-  @hasMany(() => AuthProvider)
+  @hasMany(() => AuthProvider, {
+    foreignKey: 'userId',
+  })
   declare authProviders: HasMany<typeof AuthProvider>
 
-  @hasMany(() => Subscription)
+  @hasMany(() => Subscription, {
+    foreignKey: 'userId',
+  })
   declare subscriptions: HasMany<typeof Subscription>
 
   // Token providers for AdonisJS Auth
