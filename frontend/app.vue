@@ -1,6 +1,6 @@
 <template>
   <UApp>
-    <UiLoadingLoadingScreen :is-visible="isLoading" />
+    <UiLoadingScreen :is-visible="isLoading" />
     <NuxtLayout>
       <NuxtPage />
     </NuxtLayout>

@@ -9,7 +9,7 @@ export const useSettings = () => {
    */
   const revokeTwitchAccess = async () => {
     try {
-      const response = await $fetch('/streamer/revoke', {
+      const response = await $fetch('/dashboard/revoke', {
         method: 'POST',
         baseURL: config.public.apiBase as string,
         credentials: 'include',

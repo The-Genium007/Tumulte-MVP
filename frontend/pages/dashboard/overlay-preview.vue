@@ -5,7 +5,7 @@
       <!-- Desktop header: single row -->
       <div class="preview-header-desktop">
         <div class="flex items-center gap-4">
-          <UButton color="neutral" variant="soft" size="xl" square class="group" to="/streamer">
+          <UButton color="neutral" variant="soft" size="xl" square class="group" to="/dashboard">
             <template #leading>
               <UIcon
                 name="i-lucide-arrow-left"
@@ -26,7 +26,7 @@
           </div>
         </div>
         <div v-if="isDev" class="preview-actions">
-          <UButton color="primary" icon="i-lucide-pencil" to="/streamer/studio">
+          <UButton color="primary" icon="i-lucide-pencil" to="/dashboard/studio">
             Ouvrir le Studio
           </UButton>
         </div>
@@ -35,7 +35,7 @@
       <!-- Mobile header: stacked layout -->
       <div class="preview-header-mobile">
         <div class="mobile-top-row">
-          <UButton color="neutral" variant="soft" size="lg" square class="group" to="/streamer">
+          <UButton color="neutral" variant="soft" size="lg" square class="group" to="/dashboard">
             <template #leading>
               <UIcon
                 name="i-lucide-arrow-left"
@@ -59,7 +59,7 @@
             color="primary"
             icon="i-lucide-pencil"
             size="sm"
-            to="/streamer/studio"
+            to="/dashboard/studio"
           >
             Studio
           </UButton>
@@ -111,7 +111,7 @@
           <div v-if="!hasConfig && !loading" class="no-config-message">
             <UIcon name="i-heroicons-exclamation-triangle" class="warning-icon" />
             <p>Aucune configuration d'overlay trouvée.</p>
-            <UButton color="primary" to="/streamer/studio"> Créer une configuration </UButton>
+            <UButton color="primary" to="/dashboard/studio"> Créer une configuration </UButton>
           </div>
         </div>
       </div>

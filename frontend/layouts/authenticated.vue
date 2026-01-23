@@ -3,12 +3,8 @@
     <!-- PWA Install Prompt - DISABLED for Safari debugging -->
     <!-- <PwaInstallPrompt /> -->
 
-    <!-- Header flottant -->
-    <div
-      class="container mx-auto px-4 sm:px-6 lg:px-8 pt-6 max-w-7xl transition-[padding] duration-300"
-    >
-      <AppHeader />
-    </div>
+    <!-- Header -->
+    <AppHeader />
 
     <!-- Main Content -->
     <main class="flex-1 flex flex-col pb-20 lg:pb-0">
@@ -34,11 +30,14 @@
 
     <!-- Widgets globaux -->
     <SupportWidget />
+
+    <!-- Modal d'onboarding Twitch (bloquant si non lié) -->
+    <OnboardingTwitchModal :open="showTwitchOnboarding" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import AppHeader from '@/components/AppHeader.vue'
 import AppFooter from '@/components/AppFooter.vue'
 import SupportWidget from '@/components/SupportWidget.vue'
@@ -48,13 +47,18 @@ import { useVttAutoSync } from '@/composables/useVttAutoSync'
 // PWA disabled for Safari debugging
 // import { usePwaInstall } from '@/composables/usePwaInstall'
 
-const { fetchMe } = useAuth()
+const { fetchMe, user } = useAuth()
 // const { shouldShowInstallUI } = usePwaInstall()
 const { initialize: initializePushNotifications } = usePushNotifications()
 const { initialize: initializeVttSync } = useVttAutoSync()
 
+// Affiche le modal d'onboarding si l'utilisateur est connecté mais n'a pas lié Twitch
+const showTwitchOnboarding = computed(() => {
+  return user.value !== null && user.value.streamer === null
+})
+
 // Charger l'utilisateur au montage initial du layout
-// Nécessaire car la page /mj ou /streamer est la première chargée après login
+// Nécessaire car la page /mj ou /dashboard est la première chargée après login
 onMounted(async () => {
   try {
     await fetchMe()

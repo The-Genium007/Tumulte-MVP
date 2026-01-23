@@ -1,38 +1,72 @@
 <template>
-  <div class="max-w-md mx-auto space-y-6">
-    <div class="flex items-center gap-3">
-      <UButton icon="i-lucide-arrow-left" variant="ghost" size="sm" to="/account" />
-      <h1 class="text-2xl font-bold">
-        {{ user?.hasPassword ? 'Modifier le mot de passe' : 'Créer un mot de passe' }}
-      </h1>
-    </div>
+  <div class="max-w-2xl mx-auto space-y-6">
+    <!-- Header avec retour -->
+    <UCard>
+      <div class="flex items-center gap-4">
+        <UButton
+          color="neutral"
+          variant="soft"
+          size="xl"
+          square
+          class="group shrink-0"
+          to="/settings"
+        >
+          <template #leading>
+            <UIcon
+              name="i-lucide-arrow-left"
+              class="size-6 transition-transform duration-200 group-hover:-translate-x-1"
+            />
+          </template>
+        </UButton>
+        <h1 class="text-xl sm:text-3xl font-bold text-primary">
+          {{ user?.hasPassword ? 'Modifier le mot de passe' : 'Créer un mot de passe' }}
+        </h1>
+      </div>
+    </UCard>
 
     <UCard>
-      <form @submit.prevent="handleSubmit" class="space-y-4">
+      <template #header>
+        <h2 class="text-xl font-semibold text-primary">
+          {{ user?.hasPassword ? 'Changer votre mot de passe' : 'Définir un mot de passe' }}
+        </h2>
+      </template>
+
+      <form @submit.prevent="handleSubmit" class="space-y-6">
         <!-- Current password (only if has password) -->
         <UFormField
           v-if="user?.hasPassword"
           label="Mot de passe actuel"
           name="currentPassword"
           :error="fieldErrors.currentPassword"
+          required
         >
           <UInput
             v-model="form.currentPassword"
             type="password"
             placeholder="Votre mot de passe actuel"
-            icon="i-lucide-lock"
-            size="lg"
+            leading-icon="i-lucide-lock"
+            color="primary"
+            variant="outline"
+            size="xl"
             required
           />
         </UFormField>
 
-        <UFormField label="Nouveau mot de passe" name="password" :error="fieldErrors.password">
+        <UFormField
+          label="Nouveau mot de passe"
+          name="password"
+          :error="fieldErrors.password"
+          required
+          hint="Minimum 8 caractères"
+        >
           <UInput
             v-model="form.password"
             type="password"
-            placeholder="Minimum 8 caractères"
-            icon="i-lucide-lock"
-            size="lg"
+            placeholder="Votre nouveau mot de passe"
+            leading-icon="i-lucide-lock"
+            color="primary"
+            variant="outline"
+            size="xl"
             required
           />
         </UFormField>
@@ -41,13 +75,16 @@
           label="Confirmer le mot de passe"
           name="passwordConfirmation"
           :error="fieldErrors.passwordConfirmation"
+          required
         >
           <UInput
             v-model="form.passwordConfirmation"
             type="password"
-            placeholder="Confirmez votre mot de passe"
-            icon="i-lucide-lock"
-            size="lg"
+            placeholder="Confirmez votre nouveau mot de passe"
+            leading-icon="i-lucide-lock"
+            color="primary"
+            variant="outline"
+            size="xl"
             required
           />
         </UFormField>
@@ -55,24 +92,48 @@
         <UAlert
           v-if="errorMessage"
           color="error"
-          variant="soft"
-          :title="errorMessage"
+          variant="subtle"
           icon="i-lucide-alert-circle"
-        />
+        >
+          <template #title>
+            <span class="font-semibold">{{ errorMessage }}</span>
+          </template>
+        </UAlert>
 
         <UAlert
           v-if="successMessage"
           color="success"
-          variant="soft"
-          :title="successMessage"
-          icon="i-lucide-check-circle"
-        />
+          variant="subtle"
+          icon="i-lucide-check-circle-2"
+        >
+          <template #title>
+            <span class="font-semibold">{{ successMessage }}</span>
+          </template>
+        </UAlert>
 
-        <div class="flex gap-3 pt-2">
-          <UButton type="submit" :loading="loading" :disabled="!isFormValid">
-            {{ user?.hasPassword ? 'Modifier' : 'Créer' }}
+        <div class="flex flex-col sm:flex-row gap-3 pt-4">
+          <UButton
+            type="submit"
+            color="primary"
+            variant="solid"
+            size="xl"
+            class="w-full sm:w-auto"
+            :loading="loading"
+            :disabled="!isFormValid"
+            trailing-icon="i-lucide-check"
+          >
+            {{ user?.hasPassword ? 'Modifier le mot de passe' : 'Créer le mot de passe' }}
           </UButton>
-          <UButton variant="ghost" to="/account"> Annuler </UButton>
+          <UButton
+            color="neutral"
+            variant="soft"
+            size="xl"
+            class="w-full sm:w-auto"
+            to="/settings"
+            trailing-icon="i-lucide-x"
+          >
+            Annuler
+          </UButton>
         </div>
       </form>
     </UCard>

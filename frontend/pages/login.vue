@@ -128,6 +128,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
+import { useAnalytics } from '@/composables/useAnalytics'
 
 definePageMeta({
   layout: 'auth' as const,
@@ -136,6 +137,7 @@ definePageMeta({
 const route = useRoute()
 const router = useRouter()
 const { login, loginWithOAuth, loading } = useAuth()
+const { track } = useAnalytics()
 
 const email = ref('')
 const password = ref('')
@@ -146,10 +148,13 @@ onMounted(() => {
   const errorParam = route.query.error as string
   if (errorParam === 'invalid_state') {
     errorMessage.value = 'Erreur de validation CSRF. Veuillez réessayer.'
+    track('auth_error', { action: 'oauth', error: 'invalid_state' })
   } else if (errorParam === 'oauth_failed') {
     errorMessage.value = "Échec de l'authentification OAuth. Veuillez réessayer."
+    track('auth_error', { action: 'oauth', error: 'oauth_failed' })
   } else if (errorParam === 'session_failed') {
     errorMessage.value = 'Erreur de session. Veuillez vous reconnecter.'
+    track('auth_error', { action: 'session', error: 'session_failed' })
   } else if (errorParam === 'email_not_verified') {
     errorMessage.value = 'Veuillez vérifier votre email avant de vous connecter.'
   }
@@ -157,6 +162,7 @@ onMounted(() => {
 
 async function handleEmailLogin() {
   errorMessage.value = null
+  track('signup_started', { method: 'email' })
   const result = await login({ email: email.value, password: password.value })
 
   if (result.success) {
@@ -164,7 +170,7 @@ async function handleEmailLogin() {
     if (result.emailVerified === false) {
       router.push('/verify-email')
     } else {
-      router.push('/streamer')
+      router.push('/dashboard')
     }
   } else if (result.error) {
     errorMessage.value = result.error.error
@@ -173,6 +179,7 @@ async function handleEmailLogin() {
 
 function handleOAuthLogin(provider: 'twitch' | 'google') {
   errorMessage.value = null
+  track('signup_started', { method: provider })
   loginWithOAuth(provider)
 }
 </script>

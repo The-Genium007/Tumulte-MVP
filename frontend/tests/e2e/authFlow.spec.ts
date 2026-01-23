@@ -61,7 +61,7 @@ test.describe('Authentication Flow', () => {
 
   test('should protect streamer routes when not authenticated', async ({ page }) => {
     // Try to access protected route without authentication
-    await page.goto('/streamer')
+    await page.goto('/dashboard')
 
     // Should redirect to login
     await page.waitForURL(/\/login/, { timeout: 10000 })

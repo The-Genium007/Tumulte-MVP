@@ -43,7 +43,7 @@
           les fonctionnalités de Tumulte.
         </p>
 
-        <UButton block size="lg" to="/streamer"> Accéder à Tumulte </UButton>
+        <UButton block size="lg" to="/dashboard"> Accéder à Tumulte </UButton>
       </template>
 
       <template v-else>

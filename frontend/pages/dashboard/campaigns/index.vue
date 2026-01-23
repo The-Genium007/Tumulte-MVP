@@ -10,7 +10,7 @@
             size="xl"
             square
             class="group shrink-0"
-            to="/streamer"
+            to="/dashboard"
           >
             <template #leading>
               <UIcon
@@ -242,7 +242,7 @@
                   size="sm"
                   icon="i-lucide-settings"
                   label="Paramètres"
-                  :to="`/streamer/campaigns/${campaign.id}/settings`"
+                  :to="`/dashboard/campaigns/${campaign.id}/settings`"
                 />
               </div>
             </div>
@@ -266,7 +266,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import AuthorizationCard from '@/components/AuthorizationCard.vue'
-import CharacterSelectionModal from '@/components/streamer/CharacterSelectionModal.vue'
+import CharacterSelectionModal from '@/components/dashboard/CharacterSelectionModal.vue'
 import { useCampaigns } from '@/composables/useCampaigns'
 import { useCampaignCharacters } from '@/composables/useCampaignCharacters'
 import type { Campaign, CampaignInvitation, AuthorizationStatus } from '@/types'

@@ -341,6 +341,121 @@ router
   .use(middleware.validateUuid())
 
 // ==========================================
+// Routes Dashboard - Nouvelle destination (remplace /streamer/)
+// ==========================================
+router
+  .group(() => {
+    // Campaigns & Invitations
+    router.get('/campaigns/invitations', '#controllers/streamer/campaigns_controller.invitations')
+    router.post(
+      '/campaigns/invitations/:id/accept',
+      '#controllers/streamer/campaigns_controller.acceptInvitation'
+    )
+    router.post(
+      '/campaigns/invitations/:id/decline',
+      '#controllers/streamer/campaigns_controller.declineInvitation'
+    )
+    router.get('/campaigns', '#controllers/streamer/campaigns_controller.index')
+    router.post('/campaigns/:id/leave', '#controllers/streamer/campaigns_controller.leave')
+
+    // Authorization (double validation system)
+    router.get(
+      '/campaigns/authorization-status',
+      '#controllers/streamer/authorization_controller.status'
+    )
+    router.post(
+      '/campaigns/:campaignId/authorize',
+      '#controllers/streamer/authorization_controller.grant'
+    )
+    router.delete(
+      '/campaigns/:campaignId/authorize',
+      '#controllers/streamer/authorization_controller.revoke'
+    )
+
+    // Revoke Twitch access
+    router.post('/revoke', '#controllers/streamer/authorization_controller.revokeAccess')
+
+    // Overlay URL
+    router.get('/overlay-url', '#controllers/streamer/campaigns_controller.getOverlayUrl')
+
+    // Characters (VTT Integration)
+    router.get(
+      '/campaigns/:campaignId/characters',
+      '#controllers/streamer/characters_controller.index'
+    )
+    router.post(
+      '/campaigns/:campaignId/characters/:characterId/assign',
+      '#controllers/streamer/characters_controller.assign'
+    )
+    router.delete(
+      '/campaigns/:campaignId/characters/unassign',
+      '#controllers/streamer/characters_controller.unassign'
+    )
+
+    // Campaign Settings (Character Assignment & Overlay)
+    router.get(
+      '/campaigns/:campaignId/settings',
+      '#controllers/streamer/campaigns_controller.getSettings'
+    )
+    router.put(
+      '/campaigns/:campaignId/character',
+      '#controllers/streamer/campaigns_controller.updateCharacter'
+    )
+    router.put(
+      '/campaigns/:campaignId/overlay',
+      '#controllers/streamer/campaigns_controller.updateOverlay'
+    )
+    router.get(
+      '/campaigns/:campaignId/available-overlays',
+      '#controllers/streamer/campaigns_controller.getAvailableOverlays'
+    )
+
+    // Overlay Studio - Configurations (avec rate limiting sur les mutations)
+    router.get(
+      '/overlay-studio/configs',
+      '#controllers/overlay-studio/overlay_studio_controller.index'
+    )
+    router
+      .post(
+        '/overlay-studio/configs',
+        '#controllers/overlay-studio/overlay_studio_controller.store'
+      )
+      .use(middleware.rateLimit())
+    router.get(
+      '/overlay-studio/configs/:id',
+      '#controllers/overlay-studio/overlay_studio_controller.show'
+    )
+    router
+      .put(
+        '/overlay-studio/configs/:id',
+        '#controllers/overlay-studio/overlay_studio_controller.update'
+      )
+      .use(middleware.rateLimit())
+    router
+      .delete(
+        '/overlay-studio/configs/:id',
+        '#controllers/overlay-studio/overlay_studio_controller.destroy'
+      )
+      .use(middleware.rateLimit())
+    router
+      .post(
+        '/overlay-studio/configs/:id/activate',
+        '#controllers/overlay-studio/overlay_studio_controller.activate'
+      )
+      .use(middleware.rateLimit())
+    // Preview command - synchronisation overlay OBS (rate limited)
+    router
+      .post(
+        '/overlay-studio/preview-command',
+        '#controllers/overlay-studio/overlay_studio_controller.sendPreviewCommand'
+      )
+      .use(middleware.rateLimit())
+  })
+  .prefix('/dashboard')
+  .use(middleware.auth({ guards: ['web', 'api'] }))
+  .use(middleware.validateUuid())
+
+// ==========================================
 // Routes Overlay (publiques, sans authentification)
 // ==========================================
 router

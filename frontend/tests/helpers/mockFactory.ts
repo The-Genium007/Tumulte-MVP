@@ -95,7 +95,7 @@ export function createMockCampaignMembership(
       twitchUsername: 'teststreamer',
       twitchDisplayName: 'Test Streamer',
       twitchLogin: 'teststreamer',
-      profileImageUrl: 'https://example.com/streamer.png',
+      profileImageUrl: 'https://example.com/dashboard.png',
       isActive: true,
       broadcasterType: 'affiliate',
     },

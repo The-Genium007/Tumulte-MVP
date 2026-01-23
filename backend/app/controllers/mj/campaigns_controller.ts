@@ -343,7 +343,7 @@ export default class CampaignsController {
         title: 'Session de sondage en attente',
         body: `Le MJ de "${campaign.name}" souhaite lancer une session. Veuillez autoriser votre chaîne.`,
         data: {
-          url: '/streamer',
+          url: '/dashboard',
           campaignId: params.id,
         },
         actions: [

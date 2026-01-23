@@ -175,7 +175,7 @@ describe('UserMenu Component', () => {
     await wrapper.vm.$nextTick()
 
     expect(wrapper.text()).toContain('Accueil')
-    const homeLink = wrapper.find("a[href='/streamer']")
+    const homeLink = wrapper.find("a[href='/dashboard']")
     expect(homeLink.exists()).toBe(true)
   })
 
@@ -193,7 +193,7 @@ describe('UserMenu Component', () => {
     await wrapper.vm.$nextTick()
 
     expect(wrapper.text()).toContain('Mes Campagnes')
-    const campaignsLink = wrapper.find("a[href='/streamer/campaigns']")
+    const campaignsLink = wrapper.find("a[href='/dashboard/campaigns']")
     expect(campaignsLink.exists()).toBe(true)
   })
 

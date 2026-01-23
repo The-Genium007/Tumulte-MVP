@@ -52,6 +52,7 @@
               size="xl"
               class="cta-glow shimmer w-full sm:w-auto justify-center"
               trailing-icon="i-lucide-wand-sparkles"
+              @click="trackCtaClick('Rejoindre l\'Aventure', 'hero_primary')"
             >
               Rejoindre l'Aventure
             </UButton>
@@ -60,6 +61,7 @@
               variant="outline"
               size="xl"
               class="w-full sm:w-auto justify-center"
+              @click="trackCtaClick('Découvrir', 'hero_secondary')"
             >
               Découvrir
             </UButton>
@@ -76,4 +78,19 @@
   </section>
 </template>
 
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { useAnalytics } from '~/composables/useAnalytics'
+
+const { track } = useAnalytics()
+
+/**
+ * Track CTA clicks for funnel analysis.
+ * Helps identify which CTAs convert best.
+ */
+function trackCtaClick(ctaText: string, ctaPosition: string) {
+  track('cta_clicked', {
+    cta_text: ctaText,
+    cta_position: ctaPosition,
+  })
+}
+</script>

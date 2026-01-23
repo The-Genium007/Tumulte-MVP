@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import CharacterSelectionModal from '@/components/streamer/CharacterSelectionModal.vue'
+import CharacterSelectionModal from '@/components/dashboard/CharacterSelectionModal.vue'
 import { useCampaignCharacters } from '@/composables/useCampaignCharacters'
 import type { CampaignSettings } from '@/types'
 
@@ -42,7 +42,7 @@ const loadSettings = async () => {
       color: 'error',
     })
     // Rediriger vers la liste des campagnes en cas d'erreur
-    router.push('/streamer/campaigns')
+    router.push('/dashboard/campaigns')
   } finally {
     loading.value = false
   }
@@ -99,9 +99,9 @@ const overlayOptions = computed(() => {
 // URL de prévisualisation de l'overlay
 const previewUrl = computed(() => {
   if (selectedOverlayId.value === null) {
-    return `/streamer/overlay-preview?config=default`
+    return `/dashboard/overlay-preview?config=default`
   }
-  return `/streamer/overlay-preview?config=${selectedOverlayId.value}`
+  return `/dashboard/overlay-preview?config=${selectedOverlayId.value}`
 })
 
 // Gérer le changement d'overlay
@@ -143,7 +143,7 @@ const handleOverlayChange = async (overlayId: string | null) => {
             size="xl"
             square
             class="group shrink-0"
-            to="/streamer/campaigns"
+            to="/dashboard/campaigns"
           >
             <template #leading>
               <UIcon
@@ -292,7 +292,7 @@ const handleOverlayChange = async (overlayId: string | null) => {
                       color="primary"
                       variant="solid"
                       size="sm"
-                      to="/streamer/studio"
+                      to="/dashboard/studio"
                       icon="i-lucide-external-link"
                       class="w-full sm:w-auto"
                     >

@@ -90,6 +90,9 @@ export default defineNuxtConfig({
       apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:3333',
       sentryDsn: process.env.NUXT_PUBLIC_SENTRY_DSN || '',
       envSuffix: process.env.ENV_SUFFIX || 'dev',
+      // PostHog Analytics (EU)
+      posthogKey: process.env.NUXT_PUBLIC_POSTHOG_KEY || '',
+      posthogHost: process.env.NUXT_PUBLIC_POSTHOG_HOST || 'https://eu.i.posthog.com',
     },
   },
 
@@ -133,7 +136,7 @@ export default defineNuxtConfig({
         },
         {
           name: 'Invitations',
-          url: '/streamer/invitations',
+          url: '/dashboard/invitations',
           icons: [{ src: '/favicon-96x96.png', sizes: '96x96' }],
         },
       ],
@@ -200,7 +203,7 @@ export default defineNuxtConfig({
         },
         // Backend API - Streamer routes (7 days cache)
         {
-          urlPattern: /\/streamer\/campaigns(\/.*)?$/,
+          urlPattern: /\/dashboard\/campaigns(\/.*)?$/,
           handler: 'NetworkFirst',
           options: {
             cacheName: 'tumulte-streamer-cache',
@@ -257,16 +260,16 @@ export default defineNuxtConfig({
           'http-equiv': 'Content-Security-Policy',
           content: [
             "default-src 'self'",
-            // Scripts: self + inline (Vue/Nuxt needs it) + Umami analytics
+            // Scripts: self + inline (Vue/Nuxt needs it)
             // Note: unsafe-eval only needed in dev for HMR, removed in production for security
-            `script-src 'self' 'unsafe-inline' ${process.env.NODE_ENV === 'development' ? "'unsafe-eval'" : ''} https://zerocase-umami-2548df-51-83-45-107.traefik.me`,
+            `script-src 'self' 'unsafe-inline' ${process.env.NODE_ENV === 'development' ? "'unsafe-eval'" : ''}`,
             // Styles: self + inline (Tailwind/Vue needs it)
             "style-src 'self' 'unsafe-inline'",
             // Images: self + data URIs + Twitch CDN for profile images
             "img-src 'self' data: https: blob:",
-            // Connect: API backend + Twitch API + GitHub API + WebSocket + Iconify
+            // Connect: API backend + Twitch API + GitHub API + WebSocket + Iconify + PostHog
             // Note: Backend URL is dynamic based on environment
-            `connect-src 'self' ${process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:3333'} https://*.twitch.tv wss://*.twitch.tv https://api.github.com https://api.iconify.design https://zerocase-umami-2548df-51-83-45-107.traefik.me https://*.traefik.me`,
+            `connect-src 'self' ${process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:3333'} https://*.twitch.tv wss://*.twitch.tv https://api.github.com https://api.iconify.design https://*.traefik.me https://eu.i.posthog.com https://eu-assets.i.posthog.com`,
             // Fonts: self + data URIs
             "font-src 'self' data:",
             // Workers: self + blob (for PWA service worker)
@@ -372,13 +375,7 @@ export default defineNuxtConfig({
             '(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2)',
         },
       ],
-      script: [
-        {
-          defer: true,
-          src: 'https://zerocase-umami-2548df-51-83-45-107.traefik.me/script.js',
-          'data-website-id': '07e569f4-6e75-445b-9db9-51a821f38d5b',
-        },
-      ],
+      // PostHog is initialized via plugin, no external script needed
     },
   },
 

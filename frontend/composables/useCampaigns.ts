@@ -230,7 +230,7 @@ export const useCampaigns = () => {
    * Recherche des streamers via Twitch API
    */
   const searchTwitchStreamers = async (query: string): Promise<StreamerSearchResult[]> => {
-    const response = await fetch(`${API_URL}/mj/streamers/search?q=${encodeURIComponent(query)}`, {
+    const response = await fetch(`${API_URL}/mj/dashboards/search?q=${encodeURIComponent(query)}`, {
       credentials: 'include',
     })
     if (!response.ok) throw new Error('Failed to search streamers')
@@ -257,7 +257,7 @@ export const useCampaigns = () => {
    */
   const fetchInvitations = async (): Promise<CampaignInvitation[]> => {
     try {
-      const response = await fetch(`${API_URL}/streamer/campaigns/invitations`, {
+      const response = await fetch(`${API_URL}/dashboard/campaigns/invitations`, {
         credentials: 'include',
       })
       if (!response.ok) throw new Error('Failed to fetch invitations')
@@ -274,7 +274,7 @@ export const useCampaigns = () => {
    */
   const acceptInvitation = async (id: string): Promise<void> => {
     try {
-      const response = await fetch(`${API_URL}/streamer/campaigns/invitations/${id}/accept`, {
+      const response = await fetch(`${API_URL}/dashboard/campaigns/invitations/${id}/accept`, {
         method: 'POST',
         credentials: 'include',
       })
@@ -290,7 +290,7 @@ export const useCampaigns = () => {
    */
   const declineInvitation = async (id: string): Promise<void> => {
     try {
-      const response = await fetch(`${API_URL}/streamer/campaigns/invitations/${id}/decline`, {
+      const response = await fetch(`${API_URL}/dashboard/campaigns/invitations/${id}/decline`, {
         method: 'POST',
         credentials: 'include',
       })
@@ -306,7 +306,7 @@ export const useCampaigns = () => {
    */
   const fetchActiveCampaigns = async (): Promise<Campaign[]> => {
     try {
-      const response = await fetch(`${API_URL}/streamer/campaigns`, {
+      const response = await fetch(`${API_URL}/dashboard/campaigns`, {
         credentials: 'include',
       })
       if (!response.ok) throw new Error('Failed to fetch active campaigns')
@@ -323,7 +323,7 @@ export const useCampaigns = () => {
    */
   const leaveCampaign = async (id: string): Promise<void> => {
     try {
-      const response = await fetch(`${API_URL}/streamer/campaigns/${id}/leave`, {
+      const response = await fetch(`${API_URL}/dashboard/campaigns/${id}/leave`, {
         method: 'POST',
         credentials: 'include',
       })
@@ -344,7 +344,7 @@ export const useCampaigns = () => {
     // eslint-disable-next-line @typescript-eslint/naming-convention
   ): Promise<{ expires_at: string; remaining_seconds: number }> => {
     try {
-      const response = await fetch(`${API_URL}/streamer/campaigns/${campaignId}/authorize`, {
+      const response = await fetch(`${API_URL}/dashboard/campaigns/${campaignId}/authorize`, {
         method: 'POST',
         credentials: 'include',
       })
@@ -362,7 +362,7 @@ export const useCampaigns = () => {
    */
   const revokeAuthorization = async (campaignId: string): Promise<void> => {
     try {
-      const response = await fetch(`${API_URL}/streamer/campaigns/${campaignId}/authorize`, {
+      const response = await fetch(`${API_URL}/dashboard/campaigns/${campaignId}/authorize`, {
         method: 'DELETE',
         credentials: 'include',
       })
@@ -410,7 +410,7 @@ export const useCampaigns = () => {
     }[]
   > => {
     try {
-      const response = await fetch(`${API_URL}/streamer/campaigns/authorization-status`, {
+      const response = await fetch(`${API_URL}/dashboard/campaigns/authorization-status`, {
         credentials: 'include',
       })
       if (!response.ok) throw new Error('Failed to fetch authorization status')

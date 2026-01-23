@@ -18,7 +18,7 @@
                 color="primary"
                 size="sm"
                 label="Voir les invitations"
-                to="/streamer/campaigns"
+                to="/dashboard/campaigns"
                 class="w-full sm:w-auto"
               />
             </div>
@@ -178,7 +178,7 @@
                   color="primary"
                   size="lg"
                   icon="i-lucide-eye"
-                  to="/streamer/overlay-preview"
+                  to="/dashboard/overlay-preview"
                   class="flex-1 sm:flex-initial"
                 >
                   <span class="hidden sm:inline">Prévisualiser</span>
@@ -225,7 +225,7 @@
                 variant="solid"
                 icon="i-lucide-palette"
                 label="Overlay Studio"
-                to="/streamer/studio"
+                to="/dashboard/studio"
                 size="lg"
               />
               <UAlert color="warning" variant="soft" icon="i-lucide-flask-conical" class="flex-1">
@@ -341,7 +341,7 @@ let refreshInterval: ReturnType<typeof setInterval> | null = null
 const fetchOverlayUrl = async () => {
   loadingOverlay.value = true
   try {
-    const response = await fetch(`${API_URL}/streamer/overlay-url`, {
+    const response = await fetch(`${API_URL}/dashboard/overlay-url`, {
       credentials: 'include',
     })
     if (!response.ok) throw new Error('Failed to fetch overlay URL')

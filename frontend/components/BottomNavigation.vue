@@ -43,12 +43,12 @@ const route = useRoute()
  */
 const navigationItems: NavigationItem[] = [
   {
-    to: '/streamer',
+    to: '/dashboard',
     icon: 'i-lucide-home',
     label: 'Accueil',
   },
   {
-    to: '/streamer/campaigns',
+    to: '/dashboard/campaigns',
     icon: 'i-lucide-mail',
     label: 'Invitations',
   },
@@ -71,7 +71,7 @@ const navigationItems: NavigationItem[] = [
  * @returns True if the current route matches the path
  */
 function isActive(path: string): boolean {
-  if (path === '/mj' || path === '/streamer') {
+  if (path === '/mj' || path === '/dashboard') {
     // Exact match for home pages
     return route.path === path
   }

@@ -18,9 +18,24 @@ import LandingFeatures from '~/components/landing/LandingFeatures.vue'
 import LandingUseCases from '~/components/landing/LandingUseCases.vue'
 import LandingTestimonials from '~/components/landing/LandingTestimonials.vue'
 import LandingCta from '~/components/landing/LandingCta.vue'
+import { useAnalytics } from '~/composables/useAnalytics'
 
 definePageMeta({
   layout: 'landing' as const,
+})
+
+// Analytics: Track landing page view with UTM parameters
+const route = useRoute()
+const { track } = useAnalytics()
+
+onMounted(() => {
+  track('landing_page_viewed', {
+    source: route.query.ref || 'direct',
+    utm_source: route.query.utm_source || null,
+    utm_medium: route.query.utm_medium || null,
+    utm_campaign: route.query.utm_campaign || null,
+    utm_content: route.query.utm_content || null,
+  })
 })
 
 // SEO

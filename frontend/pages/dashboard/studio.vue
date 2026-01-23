@@ -10,7 +10,7 @@
       L'éditeur d'overlay est optimisé pour les écrans larges. Veuillez utiliser un ordinateur pour
       accéder à cette fonctionnalité.
     </p>
-    <UButton to="/streamer" color="primary" size="lg" icon="i-lucide-arrow-left">
+    <UButton to="/dashboard" color="primary" size="lg" icon="i-lucide-arrow-left">
       Retour au tableau de bord
     </UButton>
   </div>
@@ -20,7 +20,7 @@
     <!-- Toolbar -->
     <header class="studio-toolbar">
       <div class="toolbar-left">
-        <NuxtLink to="/streamer" class="back-link">
+        <NuxtLink to="/dashboard" class="back-link">
           <UIcon name="i-lucide-arrow-left" class="size-5" />
         </NuxtLink>
         <h1 class="toolbar-title">Overlay Studio</h1>
@@ -149,7 +149,7 @@
           icon="i-lucide-eye"
           label="Prévisualiser"
           size="sm"
-          to="/streamer/overlay-preview"
+          to="/dashboard/overlay-preview"
         />
         <!-- Indicateur de sauvegarde -->
         <div v-if="isDirty || isAutoSaving" class="save-indicator">

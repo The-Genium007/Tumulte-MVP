@@ -96,7 +96,7 @@ export const handlers = [
   }),
 
   // Streamers endpoints
-  http.get(`${API_URL}/api/v2/mj/streamers/search`, ({ request }) => {
+  http.get(`${API_URL}/api/v2/mj/dashboards/search`, ({ request }) => {
     const url = new URL(request.url)
     const query = url.searchParams.get('query')
     return HttpResponse.json([
@@ -113,11 +113,11 @@ export const handlers = [
     return HttpResponse.json({ success: true, twitchUserId: body.twitchUserId }, { status: 201 })
   }),
 
-  http.post(`${API_URL}/api/v2/streamer/invitations/:invitationId/accept`, () => {
+  http.post(`${API_URL}/api/v2/dashboard/invitations/:invitationId/accept`, () => {
     return HttpResponse.json({ success: true })
   }),
 
-  http.post(`${API_URL}/api/v2/streamer/invitations/:invitationId/decline`, () => {
+  http.post(`${API_URL}/api/v2/dashboard/invitations/:invitationId/decline`, () => {
     return HttpResponse.json({ success: true })
   }),
 

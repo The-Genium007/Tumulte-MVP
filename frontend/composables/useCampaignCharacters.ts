@@ -17,7 +17,7 @@ export const useCampaignCharacters = () => {
   const fetchCharacters = async (campaignId: string): Promise<void> => {
     loading.value = true
     try {
-      const response = await fetch(`${API_URL}/streamer/campaigns/${campaignId}/characters`, {
+      const response = await fetch(`${API_URL}/dashboard/campaigns/${campaignId}/characters`, {
         credentials: 'include',
       })
 
@@ -46,7 +46,7 @@ export const useCampaignCharacters = () => {
   ): Promise<void> => {
     try {
       const response = await fetch(
-        `${API_URL}/streamer/campaigns/invitations/${invitationId}/accept`,
+        `${API_URL}/dashboard/campaigns/invitations/${invitationId}/accept`,
         {
           method: 'POST',
           credentials: 'include',
@@ -70,7 +70,7 @@ export const useCampaignCharacters = () => {
    */
   const getCampaignSettings = async (campaignId: string): Promise<CampaignSettings> => {
     try {
-      const response = await fetch(`${API_URL}/streamer/campaigns/${campaignId}/settings`, {
+      const response = await fetch(`${API_URL}/dashboard/campaigns/${campaignId}/settings`, {
         credentials: 'include',
       })
 
@@ -88,7 +88,7 @@ export const useCampaignCharacters = () => {
    */
   const updateCharacter = async (campaignId: string, characterId: string): Promise<void> => {
     try {
-      const response = await fetch(`${API_URL}/streamer/campaigns/${campaignId}/character`, {
+      const response = await fetch(`${API_URL}/dashboard/campaigns/${campaignId}/character`, {
         method: 'PUT',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -114,7 +114,7 @@ export const useCampaignCharacters = () => {
     overlayConfigId: string | null
   ): Promise<void> => {
     try {
-      const response = await fetch(`${API_URL}/streamer/campaigns/${campaignId}/overlay`, {
+      const response = await fetch(`${API_URL}/dashboard/campaigns/${campaignId}/overlay`, {
         method: 'PUT',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },

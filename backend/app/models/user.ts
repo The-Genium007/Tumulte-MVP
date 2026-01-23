@@ -114,16 +114,64 @@ class User extends compose(BaseModel, AuthFinder) {
 
   /**
    * Check if user is an admin (based on ADMIN_EMAILS env variable)
+   * Checks both user.email AND all authProvider emails
    */
   @computed()
   get isAdmin(): boolean {
-    if (!this.email) return false
+    // Quick synchronous check for user.email
     const adminEmails = env.get('ADMIN_EMAILS', '')
     const emailList = adminEmails
       .split(',')
       .map((e) => e.trim().toLowerCase())
       .filter(Boolean)
-    return emailList.includes(this.email.toLowerCase())
+
+    if (emailList.length === 0) return false
+
+    // Check user's primary email
+    if (this.email && emailList.includes(this.email.toLowerCase())) {
+      return true
+    }
+
+    // Check preloaded authProviders' emails (if loaded)
+    if (this.$preloaded.authProviders) {
+      for (const provider of this.authProviders) {
+        if (provider.providerEmail && emailList.includes(provider.providerEmail.toLowerCase())) {
+          return true
+        }
+      }
+    }
+
+    return false
+  }
+
+  /**
+   * Async version that loads authProviders if needed
+   * Use this in API responses where you can await
+   */
+  async checkIsAdmin(): Promise<boolean> {
+    const adminEmails = env.get('ADMIN_EMAILS', '')
+    const emailList = adminEmails
+      .split(',')
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean)
+
+    if (emailList.length === 0) return false
+
+    // Check user's primary email
+    if (this.email && emailList.includes(this.email.toLowerCase())) {
+      return true
+    }
+
+    // Query authProviders directly to check provider emails
+    const providers = await AuthProvider.query().where('userId', this.id).select('providerEmail')
+
+    for (const provider of providers) {
+      if (provider.providerEmail && emailList.includes(provider.providerEmail.toLowerCase())) {
+        return true
+      }
+    }
+
+    return false
   }
 
   /**

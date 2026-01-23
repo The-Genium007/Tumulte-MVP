@@ -78,10 +78,10 @@ class EmailAuthService {
       return { error: passwordValidation.error! }
     }
 
-    // Create user with hashed password
+    // Create user - password will be hashed automatically by AuthFinder mixin
     const user = await User.create({
       email: normalizedEmail,
-      password: await hash.make(data.password),
+      password: data.password,
       displayName: data.displayName.trim(),
       tier: 'free',
     })
@@ -165,8 +165,8 @@ class EmailAuthService {
       return { success: false, error: passwordValidation.error }
     }
 
-    // Hash and save new password
-    user.password = await hash.make(newPassword)
+    // Save new password - will be hashed automatically by AuthFinder mixin
+    user.password = newPassword
     await user.save()
 
     logger.info({ userId: user.id }, 'Password changed successfully')
@@ -198,7 +198,8 @@ class EmailAuthService {
       return { success: false, error: passwordValidation.error }
     }
 
-    user.password = await hash.make(newPassword)
+    // Password will be hashed automatically by AuthFinder mixin
+    user.password = newPassword
     await user.save()
 
     logger.info({ userId: user.id }, 'Password set for OAuth user')

@@ -105,7 +105,7 @@ describe('useCharacters Composable', () => {
       await fetchCampaignCharacters('campaign-1')
 
       expect(mockFetch).toHaveBeenCalledWith(
-        'http://localhost:3333/api/v2/streamer/campaigns/campaign-1/characters',
+        'http://localhost:3333/api/v2/dashboard/campaigns/campaign-1/characters',
         { credentials: 'include' }
       )
       expect(characters.value).toEqual(mockCharacters)
@@ -195,7 +195,7 @@ describe('useCharacters Composable', () => {
       const result = await assignCharacter('campaign-1', 'char-1')
 
       expect(mockFetch).toHaveBeenCalledWith(
-        'http://localhost:3333/api/v2/streamer/campaigns/campaign-1/characters/char-1/assign',
+        'http://localhost:3333/api/v2/dashboard/campaigns/campaign-1/characters/char-1/assign',
         {
           method: 'POST',
           credentials: 'include',
@@ -262,7 +262,7 @@ describe('useCharacters Composable', () => {
       await unassignCharacter('campaign-1')
 
       expect(mockFetch).toHaveBeenCalledWith(
-        'http://localhost:3333/api/v2/streamer/campaigns/campaign-1/characters/unassign',
+        'http://localhost:3333/api/v2/dashboard/campaigns/campaign-1/characters/unassign',
         {
           method: 'DELETE',
           credentials: 'include',

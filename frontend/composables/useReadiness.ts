@@ -20,7 +20,7 @@ export const useReadiness = () => {
     store.setLoading(true)
 
     try {
-      const response = await fetch(`${API_URL}/mj/campaigns/${campaignId}/streamers/readiness`, {
+      const response = await fetch(`${API_URL}/mj/campaigns/${campaignId}/dashboards/readiness`, {
         credentials: 'include',
       })
 

@@ -64,9 +64,9 @@
 
           <!-- Items du menu -->
           <div class="py-1">
-            <!-- Accueil (toujours vers la page streamer) -->
+            <!-- Accueil (toujours vers la page dashboard) -->
             <NuxtLink
-              to="/streamer"
+              to="/dashboard"
               @click="isOpen = false"
               class="flex items-center gap-3 px-4 py-2 text-sm text-primary-500 hover:bg-neutral-100 rounded-lg transition-colors"
             >
@@ -76,7 +76,7 @@
 
             <!-- Mes Campagnes -->
             <NuxtLink
-              to="/streamer/campaigns"
+              to="/dashboard/campaigns"
               @click="isOpen = false"
               class="flex items-center justify-between px-4 py-2 text-sm text-primary-500 hover:bg-neutral-100 rounded-lg transition-colors"
             >
@@ -112,27 +112,7 @@
             <!-- Divider -->
             <div class="my-1 border-t border-default"></div>
 
-            <!-- Mon compte -->
-            <NuxtLink
-              to="/account"
-              @click="isOpen = false"
-              class="flex items-center gap-3 px-4 py-2 text-sm text-primary-500 hover:bg-neutral-100 rounded-lg transition-colors"
-            >
-              <UIcon name="i-lucide-user" class="size-4" />
-              <span>Mon compte</span>
-            </NuxtLink>
-
-            <!-- Réglages -->
-            <NuxtLink
-              to="/settings"
-              @click="isOpen = false"
-              class="flex items-center gap-3 px-4 py-2 text-sm text-primary-500 hover:bg-neutral-100 rounded-lg transition-colors"
-            >
-              <UIcon name="i-lucide-settings" class="size-4" />
-              <span>Réglages</span>
-            </NuxtLink>
-
-            <!-- Admin Dashboard (admin only) -->
+            <!-- Administration (admin only) -->
             <NuxtLink
               v-if="isAdmin"
               to="/admin"
@@ -140,7 +120,17 @@
               class="flex items-center gap-3 px-4 py-2 text-sm text-error-500 hover:bg-error-100 rounded-lg transition-colors"
             >
               <UIcon name="i-lucide-shield" class="size-4" />
-              <span>Dashboard Admin</span>
+              <span>Administration</span>
+            </NuxtLink>
+
+            <!-- Mon compte -->
+            <NuxtLink
+              to="/settings"
+              @click="isOpen = false"
+              class="flex items-center gap-3 px-4 py-2 text-sm text-primary-500 hover:bg-neutral-100 rounded-lg transition-colors"
+            >
+              <UIcon name="i-lucide-user" class="size-4" />
+              <span>Mon compte</span>
             </NuxtLink>
 
             <!-- Support -->

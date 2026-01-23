@@ -93,7 +93,7 @@ describe('useReadiness Composable', () => {
       const result = await fetchReadiness('campaign-1')
 
       expect(mockFetch).toHaveBeenCalledWith(
-        'http://localhost:3333/api/v2/mj/campaigns/campaign-1/streamers/readiness',
+        'http://localhost:3333/api/v2/mj/campaigns/campaign-1/dashboards/readiness',
         { credentials: 'include' }
       )
       expect(result).toEqual(mockReadinessData)

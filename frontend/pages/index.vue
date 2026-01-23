@@ -9,8 +9,8 @@ definePageMeta({
       // Essayer de récupérer l'utilisateur connecté
       await fetchMe()
 
-      // Tous les utilisateurs authentifiés vont vers /streamer
-      return navigateTo('/streamer')
+      // Tous les utilisateurs authentifiés vont vers /dashboard
+      return navigateTo('/dashboard')
     } catch {
       // Si non authentifié, rediriger vers la landing page
       return navigateTo('/home')

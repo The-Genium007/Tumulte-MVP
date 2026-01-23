@@ -262,7 +262,7 @@ describe('useCampaigns Composable', () => {
     const result = await searchTwitchStreamers('streamer1')
 
     expect(fetch).toHaveBeenCalledWith(
-      'http://localhost:3333/api/v2/mj/streamers/search?q=streamer1',
+      'http://localhost:3333/api/v2/mj/dashboards/search?q=streamer1',
       { credentials: 'include' }
     )
     expect(result).toEqual([
@@ -492,7 +492,7 @@ describe('useCampaigns Composable', () => {
       const result = await fetchInvitations()
 
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:3333/api/v2/streamer/campaigns/invitations',
+        'http://localhost:3333/api/v2/dashboard/campaigns/invitations',
         { credentials: 'include' }
       )
       expect(result).toEqual(mockInvitations)
@@ -520,7 +520,7 @@ describe('useCampaigns Composable', () => {
       await acceptInvitation('inv-1')
 
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:3333/api/v2/streamer/campaigns/invitations/inv-1/accept',
+        'http://localhost:3333/api/v2/dashboard/campaigns/invitations/inv-1/accept',
         {
           method: 'POST',
           credentials: 'include',
@@ -550,7 +550,7 @@ describe('useCampaigns Composable', () => {
       await declineInvitation('inv-1')
 
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:3333/api/v2/streamer/campaigns/invitations/inv-1/decline',
+        'http://localhost:3333/api/v2/dashboard/campaigns/invitations/inv-1/decline',
         {
           method: 'POST',
           credentials: 'include',
@@ -585,7 +585,7 @@ describe('useCampaigns Composable', () => {
       const { fetchActiveCampaigns } = useCampaigns()
       const result = await fetchActiveCampaigns()
 
-      expect(fetch).toHaveBeenCalledWith('http://localhost:3333/api/v2/streamer/campaigns', {
+      expect(fetch).toHaveBeenCalledWith('http://localhost:3333/api/v2/dashboard/campaigns', {
         credentials: 'include',
       })
       expect(result).toEqual(mockCampaigns)
@@ -613,7 +613,7 @@ describe('useCampaigns Composable', () => {
       await leaveCampaign('campaign-1')
 
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:3333/api/v2/streamer/campaigns/campaign-1/leave',
+        'http://localhost:3333/api/v2/dashboard/campaigns/campaign-1/leave',
         {
           method: 'POST',
           credentials: 'include',
@@ -649,7 +649,7 @@ describe('useCampaigns Composable', () => {
       const result = await grantAuthorization('campaign-1')
 
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:3333/api/v2/streamer/campaigns/campaign-1/authorize',
+        'http://localhost:3333/api/v2/dashboard/campaigns/campaign-1/authorize',
         {
           method: 'POST',
           credentials: 'include',
@@ -682,7 +682,7 @@ describe('useCampaigns Composable', () => {
       await revokeAuthorization('campaign-1')
 
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:3333/api/v2/streamer/campaigns/campaign-1/authorize',
+        'http://localhost:3333/api/v2/dashboard/campaigns/campaign-1/authorize',
         {
           method: 'DELETE',
           credentials: 'include',
@@ -734,7 +734,7 @@ describe('useCampaigns Composable', () => {
       const result = await getAuthorizationStatus()
 
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:3333/api/v2/streamer/campaigns/authorization-status',
+        'http://localhost:3333/api/v2/dashboard/campaigns/authorization-status',
         { credentials: 'include' }
       )
       expect(result).toEqual(mockStatus)
@@ -818,7 +818,7 @@ describe('useCampaigns Composable', () => {
       await searchTwitchStreamers('test user&special')
 
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:3333/api/v2/mj/streamers/search?q=test%20user%26special',
+        'http://localhost:3333/api/v2/mj/dashboards/search?q=test%20user%26special',
         { credentials: 'include' }
       )
     })

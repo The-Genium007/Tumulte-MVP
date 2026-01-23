@@ -73,7 +73,7 @@ export default class OAuthController {
 
       // Redirect to appropriate page
       await user.load('streamer')
-      const redirectPath = user.streamer ? '/streamer' : '/mj'
+      const redirectPath = '/dashboard'
       return response.redirect(
         `${env.get('FRONTEND_URL')}/auth/callback?redirect=${encodeURIComponent(redirectPath)}`
       )
@@ -97,11 +97,14 @@ export default class OAuthController {
 
   /**
    * Handle Twitch OAuth callback
+   * This handles both login/register AND linking flows
+   * (Twitch uses the same redirect_uri for both)
    */
   async twitchCallback({ request, response, session, auth }: HttpContext) {
     const code = request.input('code')
     const state = request.input('state')
     const storedState = session.get('oauth_state')
+    const linkUserId = session.get('oauth_link_user_id')
 
     // Validate parameters
     if (!code || typeof code !== 'string') {
@@ -122,6 +125,32 @@ export default class OAuthController {
     session.forget('oauth_state')
     session.forget('oauth_provider')
 
+    // Check if this is a LINK flow (user was already authenticated)
+    if (linkUserId) {
+      session.forget('oauth_link_user_id')
+
+      // Find the existing user to link to
+      const User = (await import('#models/user')).default
+      const existingUser = await User.find(linkUserId)
+
+      if (!existingUser) {
+        logger.warn({ linkUserId }, 'Twitch link: user not found')
+        return response.redirect(`${env.get('FRONTEND_URL')}/dashboard?error=user_not_found`)
+      }
+
+      try {
+        await oauthService.handleTwitchAuth(code, existingUser)
+
+        logger.info({ userId: existingUser.id }, 'Twitch account linked successfully')
+
+        return response.redirect(`${env.get('FRONTEND_URL')}/dashboard?linked=twitch`)
+      } catch (error) {
+        logger.error({ error }, 'Twitch link callback failed')
+        return response.redirect(`${env.get('FRONTEND_URL')}/dashboard?error=link_failed`)
+      }
+    }
+
+    // Regular login/register flow
     try {
       const { user } = await oauthService.handleTwitchAuth(code)
 
@@ -130,7 +159,7 @@ export default class OAuthController {
       logger.info({ userId: user.id, provider: 'twitch' }, 'User logged in via Twitch')
 
       return response.redirect(
-        `${env.get('FRONTEND_URL')}/auth/callback?redirect=${encodeURIComponent('/streamer')}`
+        `${env.get('FRONTEND_URL')}/auth/callback?redirect=${encodeURIComponent('/dashboard')}`
       )
     } catch (error) {
       logger.error({ error }, 'Twitch OAuth callback failed')
@@ -237,10 +266,14 @@ export default class OAuthController {
     try {
       await oauthService.handleTwitchAuth(code, user)
 
-      return response.redirect(`${env.get('FRONTEND_URL')}/account/security?linked=twitch`)
+      logger.info({ userId: user.id }, 'Twitch account linked successfully')
+
+      // Redirect to dashboard after linking (for onboarding flow)
+      // The frontend will show a success message
+      return response.redirect(`${env.get('FRONTEND_URL')}/dashboard?linked=twitch`)
     } catch (error) {
       logger.error({ error }, 'Twitch link callback failed')
-      return response.redirect(`${env.get('FRONTEND_URL')}/account/security?error=link_failed`)
+      return response.redirect(`${env.get('FRONTEND_URL')}/dashboard?error=link_failed`)
     }
   }
 

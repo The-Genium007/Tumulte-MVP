@@ -5,12 +5,14 @@ import type { User, LoginCredentials, RegisterData, AuthError } from '@/types'
 import { useSupportTrigger } from '@/composables/useSupportTrigger'
 import { usePushNotificationsStore } from '@/stores/pushNotifications'
 import { storeUser, getStoredUser, clearUserData } from '@/utils/offline-storage'
+import { useAnalytics } from '@/composables/useAnalytics'
 
 export const useAuthStore = defineStore('auth', () => {
   const _router = useRouter()
   const config = useRuntimeConfig()
   const API_URL = config.public.apiBase
   const { triggerSupportForError } = useSupportTrigger()
+  const { identify, reset: resetAnalytics, setUserProperties, track } = useAnalytics()
 
   // State
   const user = ref<User | null>(null)
@@ -23,6 +25,28 @@ export const useAuthStore = defineStore('auth', () => {
   const isAdmin = computed(() => user.value?.isAdmin ?? false)
   const isPremium = computed(() => user.value?.isPremium ?? false)
   const isEmailVerified = computed(() => user.value?.emailVerifiedAt !== null)
+
+  /**
+   * Identify user in PostHog analytics.
+   * Links anonymous events to identified user for funnel tracking.
+   */
+  function identifyUserInAnalytics(userData: User): void {
+    identify(userData.id, {
+      email: userData.email,
+      display_name: userData.displayName,
+      tier: userData.tier,
+      has_twitch: !!userData.streamer,
+      is_email_verified: !!userData.emailVerifiedAt,
+      created_at: userData.createdAt,
+    })
+
+    // Set properties that may change over time
+    setUserProperties({
+      tier: userData.tier,
+      is_premium: userData.isPremium,
+      is_admin: userData.isAdmin,
+    })
+  }
 
   /**
    * Load user from offline storage (IndexedDB)
@@ -62,6 +86,9 @@ export const useAuthStore = defineStore('auth', () => {
 
       // Persist to offline storage
       await storeUser(freshUser)
+
+      // Identify user in PostHog analytics
+      identifyUserInAnalytics(freshUser)
     } catch (error) {
       // If we have offline data, don't clear the user
       if (!isOfflineData.value) {
@@ -88,6 +115,9 @@ export const useAuthStore = defineStore('auth', () => {
       // Reset les stores dépendants de l'authentification
       const pushStore = usePushNotificationsStore()
       pushStore.reset()
+
+      // Reset PostHog analytics (creates new anonymous ID)
+      resetAnalytics()
 
       // Clear offline storage
       await clearUserData()
@@ -127,11 +157,17 @@ export const useAuthStore = defineStore('auth', () => {
 
       user.value = result.user
       await storeUser(result.user)
+
+      // Track signup completion and identify user
+      track('signup_completed', { method: 'email' })
+      identifyUserInAnalytics(result.user)
+
       return { success: true }
     } catch (error) {
       const err = { error: 'Une erreur est survenue. Veuillez réessayer.' }
       authError.value = err
       triggerSupportForError('auth_register', error)
+      track('auth_error', { action: 'register', error: 'network_error' })
       return { success: false, error: err }
     } finally {
       loading.value = false
@@ -164,11 +200,16 @@ export const useAuthStore = defineStore('auth', () => {
 
       user.value = result.user
       await storeUser(result.user)
+
+      // Identify user in analytics after successful login
+      identifyUserInAnalytics(result.user)
+
       return { success: true, emailVerified: result.emailVerified }
     } catch (error) {
       const err = { error: 'Une erreur est survenue. Veuillez réessayer.' }
       authError.value = err
       triggerSupportForError('auth_login', error)
+      track('auth_error', { action: 'login', error: 'network_error' })
       return { success: false, error: err }
     } finally {
       loading.value = false

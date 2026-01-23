@@ -26,7 +26,7 @@ describe('useSettings Composable', () => {
   })
 
   describe('revokeTwitchAccess', () => {
-    test('should call POST /streamer/revoke with correct options', async () => {
+    test('should call POST /dashboard/revoke with correct options', async () => {
       mockFetch.mockResolvedValueOnce({ success: true })
 
       const { useSettings } = await import('~/composables/useSettings')
@@ -34,7 +34,7 @@ describe('useSettings Composable', () => {
 
       const result = await revokeTwitchAccess()
 
-      expect(mockFetch).toHaveBeenCalledWith('/streamer/revoke', {
+      expect(mockFetch).toHaveBeenCalledWith('/dashboard/revoke', {
         method: 'POST',
         baseURL: 'http://localhost:3333/api/v2',
         credentials: 'include',

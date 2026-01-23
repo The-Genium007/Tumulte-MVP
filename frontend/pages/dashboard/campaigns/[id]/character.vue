@@ -12,7 +12,7 @@
               size="xl"
               square
               class="group"
-              @click="_router.push('/streamer/campaigns')"
+              @click="_router.push('/dashboard/campaigns')"
             >
               <template #leading>
                 <UIcon
@@ -221,7 +221,7 @@ onMounted(async () => {
       description: 'Impossible de charger les personnages',
       color: 'error',
     })
-    _router.push('/streamer/campaigns')
+    _router.push('/dashboard/campaigns')
   }
 })
 

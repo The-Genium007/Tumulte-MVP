@@ -53,7 +53,7 @@ export default class AuthController {
       emailVerifiedAt: user.emailVerifiedAt?.toISO() ?? null,
       tier: user.tier,
       avatarUrl: user.avatarUrl,
-      isAdmin: user.isAdmin,
+      isAdmin: await user.checkIsAdmin(),
       isPremium: await user.isPremium(),
       hasPassword: user.password !== null,
       authProviders:
@@ -280,8 +280,8 @@ export default class AuthController {
       logger.info(`User ${user.id} logged in successfully`)
 
       // Rediriger vers le frontend avec une page intermédiaire qui gère la redirection
-      // All users go to /streamer by default (role restrictions are disabled)
-      const redirectPath = '/streamer'
+      // All users go to /dashboard by default
+      const redirectPath = '/dashboard'
       const redirectUrl = `${env.get('FRONTEND_URL')}/auth/callback?redirect=${encodeURIComponent(redirectPath)}`
 
       logger.info({
