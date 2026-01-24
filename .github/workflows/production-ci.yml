@@ -461,7 +461,7 @@ jobs:
         working-directory: ./frontend
         env:
           NODE_ENV: production
-          NUXT_PUBLIC_API_URL: https://api.tumulte.app
+          NUXT_PUBLIC_API_URL: https://api-app.tumulte.app
         run: npm run build
 
       - name: Check build size

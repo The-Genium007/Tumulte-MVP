@@ -502,7 +502,7 @@ modules-vtt/foundry/
          │    Stocke en localStorage                 │
          │                                           │
          │ 8. Connexion WebSocket                    │
-         │    wss://api.tumulte.app/vtt              │
+         │    wss://api-app.tumulte.app/vtt              │
          │    auth: { token: sessionToken }          │
          │────────────────────────────────────────►  │
          │                                           │

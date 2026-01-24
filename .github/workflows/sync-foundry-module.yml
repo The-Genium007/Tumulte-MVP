@@ -145,7 +145,7 @@ jobs:
           BRANCH_NAME="${{ steps.branch.outputs.name }}"
 
           if [ "${BRANCH_NAME}" = "main" ]; then
-            API_URL="https://api.tumulte.app"
+            API_URL="https://api-app.tumulte.app"
             echo "🏷️ Production build - using ${API_URL}"
           else
             API_URL="https://api-staging.tumulte.app"

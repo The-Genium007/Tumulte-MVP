@@ -74,7 +74,7 @@ test.group('Foundry Webhook - Complete Pairing Flow', (group) => {
       sessionToken: 'test_session_' + faker.string.alphanumeric(40),
       refreshToken: 'test_refresh_' + faker.string.alphanumeric(40),
       expiresIn: 3600,
-      serverUrl: 'https://api.tumulte.app',
+      serverUrl: 'https://api-app.tumulte.app',
     }
     await redis.setex(`pairing:completed:${worldId}`, 300, JSON.stringify(completedData))
 
@@ -86,7 +86,7 @@ test.group('Foundry Webhook - Complete Pairing Flow', (group) => {
     assert.equal(completedResponse.body().connectionId, connection.id)
     assert.exists(completedResponse.body().sessionToken)
     assert.exists(completedResponse.body().refreshToken)
-    assert.equal(completedResponse.body().serverUrl, 'https://api.tumulte.app')
+    assert.equal(completedResponse.body().serverUrl, 'https://api-app.tumulte.app')
 
     // Step 5: Module can now use ping endpoint
     const pingResponse = await client.post('/webhooks/foundry/ping').json({

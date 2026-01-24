@@ -57,7 +57,7 @@ test.group('Foundry Webhook - Pairing Status', (group) => {
       sessionToken: 'test_session_' + faker.string.alphanumeric(20),
       refreshToken: 'test_refresh_' + faker.string.alphanumeric(20),
       expiresIn: 3600,
-      serverUrl: 'https://api.tumulte.app',
+      serverUrl: 'https://api-app.tumulte.app',
     }
     await redis.setex(`pairing:completed:${worldId}`, 300, JSON.stringify(completedData))
 
@@ -70,7 +70,7 @@ test.group('Foundry Webhook - Pairing Status', (group) => {
     assert.exists(statusResponse.body().apiKey)
     assert.exists(statusResponse.body().sessionToken)
     assert.exists(statusResponse.body().refreshToken)
-    assert.equal(statusResponse.body().serverUrl, 'https://api.tumulte.app')
+    assert.equal(statusResponse.body().serverUrl, 'https://api-app.tumulte.app')
   })
 
   test('GET /webhooks/foundry/pairing-status should cleanup Redis after completion', async ({
