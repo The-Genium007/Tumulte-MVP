@@ -1,6 +1,5 @@
 import { randomBytes } from 'node:crypto'
 import { DateTime } from 'luxon'
-import hash from '@adonisjs/core/services/hash'
 import env from '#start/env'
 import User from '#models/user'
 import logger from '@adonisjs/core/services/logger'
@@ -154,8 +153,8 @@ class PasswordResetService {
       return { error: passwordValidation.error! }
     }
 
-    // Hash and save new password
-    user.password = await hash.make(newPassword)
+    // Save new password - will be hashed automatically by AuthFinder mixin
+    user.password = newPassword
     await user.clearPasswordResetToken()
 
     logger.info({ userId: user.id }, 'Password reset successfully')

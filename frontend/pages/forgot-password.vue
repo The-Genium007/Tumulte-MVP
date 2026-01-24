@@ -3,9 +3,7 @@
     <template #header>
       <div class="text-center space-y-3">
         <div class="flex justify-center">
-          <div class="size-16 rounded-full bg-primary/10 flex items-center justify-center">
-            <UIcon name="i-lucide-key-round" class="size-8 text-primary" />
-          </div>
+          <UIcon name="i-lucide-key-round" class="size-12 text-primary" />
         </div>
         <h1 class="text-2xl font-bold">Mot de passe oublié</h1>
         <p class="text-sm text-muted">
@@ -17,16 +15,22 @@
     <div class="space-y-6">
       <!-- Formulaire -->
       <form v-if="!emailSent" @submit.prevent="handleSubmit" class="space-y-4">
-        <UFormField label="Email" name="email">
+        <div>
+          <label class="block text-sm font-bold text-secondary ml-2 uppercase mb-2">
+            Email
+          </label>
           <UInput
             v-model="email"
             type="email"
             placeholder="votre@email.com"
-            icon="i-lucide-mail"
-            size="lg"
+            size="xl"
             required
+            :ui="{
+              root: 'ring-0 border-0 rounded-lg overflow-hidden',
+              base: 'px-3.5 py-2.5 bg-primary-100 text-primary-500 placeholder:text-primary-400 rounded-lg',
+            }"
           />
-        </UFormField>
+        </div>
 
         <UButton type="submit" block size="lg" :loading="loading" :disabled="!email">
           Envoyer le lien
@@ -56,13 +60,6 @@
         icon="i-lucide-alert-circle"
       />
 
-      <!-- Retour connexion -->
-      <div class="text-center">
-        <NuxtLink to="/login" class="text-sm text-primary hover:underline">
-          <UIcon name="i-lucide-arrow-left" class="size-4 mr-1" />
-          Retour à la connexion
-        </NuxtLink>
-      </div>
     </div>
   </UCard>
 </template>
