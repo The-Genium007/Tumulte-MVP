@@ -232,10 +232,18 @@ router
 // Routes VTT Publiques (sans authentification utilisateur)
 // Ces routes utilisent leur propre validation JWT via refresh token
 // ==========================================
-router.post(
-  '/mj/vtt-connections/refresh-token',
-  '#controllers/mj/vtt_connections_controller.refreshToken'
-)
+router
+  .post(
+    '/mj/vtt-connections/refresh-token',
+    '#controllers/mj/vtt_connections_controller.refreshToken'
+  )
+  .use(
+    middleware.rateLimit({
+      maxRequests: 30, // 30 refreshes per minute max (normal usage: ~1/hour)
+      windowSeconds: 60,
+      keyPrefix: 'vtt_refresh_token',
+    })
+  )
 
 // ==========================================
 // Routes Streamer - Architecture modulaire

@@ -249,6 +249,7 @@ export default class FoundryWebhookController {
           refreshToken: result.refreshToken,
           expiresIn: result.expiresIn,
           serverUrl: result.serverUrl,
+          fingerprint: result.fingerprint, // Module should store this and send it on refresh-token calls
         })
       }
 

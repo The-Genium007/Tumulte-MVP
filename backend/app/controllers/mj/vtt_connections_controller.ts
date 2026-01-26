@@ -262,12 +262,14 @@ export default class VttConnectionsController {
   /**
    * Refresh session token
    * POST /mj/vtt-connections/refresh-token
+   *
+   * Security: Validates fingerprint to detect token theft across Foundry instances
    */
   async refreshToken({ request, response }: HttpContext) {
-    const { refreshToken } = request.only(['refreshToken'])
+    const { refreshToken, fingerprint } = request.only(['refreshToken', 'fingerprint'])
 
     try {
-      const tokens = await this.vttPairingService.refreshSessionToken(refreshToken)
+      const tokens = await this.vttPairingService.refreshSessionToken(refreshToken, fingerprint)
 
       return response.ok({
         sessionToken: tokens.sessionToken,
@@ -332,6 +334,12 @@ export default class VttConnectionsController {
         .preload('provider')
         .first()
 
+      // Generate fingerprint for security validation on token refresh
+      const fingerprint = this.vttPairingService.generateFingerprint(
+        pending.worldId,
+        pending.moduleVersion
+      )
+
       if (connection) {
         // Reuse existing connection - update it with new pairing info
         connection.status = 'active'
@@ -340,6 +348,7 @@ export default class VttConnectionsController {
         connection.moduleVersion = pending.moduleVersion
         connection.lastHeartbeatAt = DateTime.now()
         connection.tokenVersion = (connection.tokenVersion || 1) + 1 // Invalidate old tokens
+        connection.connectionFingerprint = fingerprint // Update fingerprint
         await connection.save()
       } else {
         // Get Foundry provider
@@ -364,22 +373,25 @@ export default class VttConnectionsController {
           moduleVersion: pending.moduleVersion,
           lastHeartbeatAt: DateTime.now(),
           tokenVersion: 1,
+          connectionFingerprint: fingerprint,
         })
 
         await connection.load('provider')
       }
 
-      // Generate session tokens
+      // Generate session tokens with fingerprint for security
       const tokens = await this.vttPairingService.generateSessionTokensForConnection(
         connection.id,
         user.id,
-        connection.tokenVersion
+        connection.tokenVersion,
+        fingerprint
       )
 
       // Build API URL - use API_URL env var if set, otherwise construct from HOST:PORT
       const apiUrl = env.get('API_URL') || `http://${env.get('HOST')}:${env.get('PORT')}`
 
       // Store completed pairing for the module to pick up
+      // Include fingerprint so the module can send it back on token refresh
       const completedData = {
         connectionId: connection.id,
         apiKey: connection.apiKey,
@@ -387,6 +399,7 @@ export default class VttConnectionsController {
         refreshToken: tokens.refreshToken,
         expiresIn: tokens.expiresIn,
         serverUrl: apiUrl,
+        fingerprint, // Module should store this and send it on refresh-token calls
       }
 
       await redis.setex(
