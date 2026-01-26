@@ -61,8 +61,8 @@ services:
   #
   # ============================================================================
   frontend:
-    # container_name is ignored in Swarm mode (dynamic naming with replicas)
-    container_name: tumulte-frontend-${ENV_SUFFIX:-prod}
+    # Note: container_name removed - incompatible with replicas
+    # Dokploy manages container naming automatically
     hostname: tumulte-frontend-${ENV_SUFFIX:-prod}
     build:
       context: .
