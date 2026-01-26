@@ -7,12 +7,12 @@
         : 'bg-transparent',
     ]"
   >
-    <div class="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl py-4">
+    <div class="container-page py-4">
       <nav class="flex items-center justify-between">
         <!-- Logo -->
         <NuxtLink
           :to="user ? '/dashboard' : '/'"
-          class="flex items-center gap-3 sm:gap-4 group"
+          class="flex items-center gap-3 group"
         >
           <img
             src="~/assets/images/logo.png"
@@ -27,7 +27,7 @@
         <!-- Affichage conditionnel : UserMenu si connecté, CTA sinon -->
         <!-- Pendant le chargement, ne rien afficher pour éviter le flash -->
         <UserMenu v-if="!isCheckingAuth && user" />
-        <div v-else-if="!isCheckingAuth" class="flex items-center gap-2 sm:gap-3">
+        <div v-else-if="!isCheckingAuth" class="flex items-center gap-3">
           <UButton
             variant="ghost"
             to="/login"

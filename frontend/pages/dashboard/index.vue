@@ -30,7 +30,7 @@
       <UCard>
         <template #header>
           <div class="flex items-center gap-3">
-            <h2 class="text-xl font-semibold text-primary">Autorisations de sondages</h2>
+            <h2 class="heading-card">Autorisations de sondages</h2>
             <UBadge v-if="authorizationStatuses.length > 0" color="primary" variant="soft">
               {{ authorizationStatuses.length }}
             </UBadge>
@@ -49,13 +49,13 @@
           class="flex flex-col items-center justify-center text-center py-12"
         >
           <UIcon name="i-lucide-shield-off" class="size-12 text-neutral-400 mb-4" />
-          <p class="text-base font-normal text-neutral-400">Aucune campagne active</p>
-          <p class="text-sm text-neutral-400 mt-1">
+          <p class="text-body text-neutral-400">Aucune campagne active</p>
+          <p class="text-caption mt-1">
             Acceptez une invitation pour gérer vos autorisations de sondages
           </p>
         </div>
 
-        <div v-else class="space-y-4">
+        <div v-else class="content-spacing">
           <!-- Info text above list -->
           <UAlert color="primary" variant="soft" icon="i-lucide-info">
             <template #description>
@@ -74,7 +74,7 @@
             >
               <!-- Campaign name -->
               <div class="flex-1 min-w-0">
-                <h3 class="text-lg font-semibold text-primary truncate">
+                <h3 class="heading-subsection truncate">
                   {{ status.campaignName }}
                 </h3>
               </div>
@@ -150,7 +150,7 @@
         <template #header>
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
-              <h2 class="text-xl font-semibold text-primary">URL de l'overlay OBS</h2>
+              <h2 class="heading-card">URL de l'overlay OBS</h2>
             </div>
             <button
               class="flex items-center justify-center size-8 rounded-full bg-primary-100 hover:bg-primary-200 transition-colors"
@@ -162,7 +162,7 @@
           </div>
         </template>
 
-        <div class="space-y-4">
+        <div class="content-spacing">
           <div v-if="overlayUrl" class="space-y-3">
             <div class="flex flex-col sm:flex-row gap-2">
               <div class="flex-1 relative min-w-0">
@@ -259,7 +259,7 @@
         <template #header>
           <div class="flex items-center justify-between gap-4">
             <div class="flex items-center gap-3 min-w-0">
-              <h2 class="text-lg sm:text-xl font-semibold text-primary truncate">
+              <h2 class="heading-card truncate">
                 Ajouter l'overlay dans OBS
               </h2>
             </div>
@@ -309,7 +309,6 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import { useCampaigns } from '@/composables/useCampaigns'
-import { useSupportTrigger } from '@/composables/useSupportTrigger'
 import { useSupportWidget } from '@/composables/useSupportWidget'
 import type { AuthorizationStatus } from '@/types/index'
 
@@ -327,7 +326,6 @@ const API_URL = config.public.apiBase
 const { user: _user } = useAuth()
 const { fetchInvitations, getAuthorizationStatus, grantAuthorization, revokeAuthorization } =
   useCampaigns()
-const { triggerSupportForError } = useSupportTrigger()
 const { openSupport } = useSupportWidget()
 
 const overlayUrl = ref<string | null>(null)
@@ -352,7 +350,7 @@ const fetchOverlayUrl = async () => {
     const data = await response.json()
     overlayUrl.value = data.data.overlay_url
   } catch (error) {
-    triggerSupportForError('overlay_url_fetch', error)
+    console.error('Failed to fetch overlay URL:', error)
   } finally {
     loadingOverlay.value = false
   }

@@ -5,14 +5,15 @@ import app from '@adonisjs/core/services/app'
 import { PollInstanceRepository } from '#repositories/poll_instance_repository'
 import { PollRepository } from '#repositories/poll_repository'
 import { CampaignRepository } from '#repositories/campaign_repository'
-import { HealthCheckService } from '#services/health_check_service'
+import { HealthCheckService } from '#services/core/health_check_service'
 import { ReadinessService } from '#services/campaigns/readiness_service'
 import { PushNotificationService } from '#services/notifications/push_notification_service'
-import { PollInstanceDto } from '#dtos/polls/poll_instance_dto'
-import { PollDto } from '#dtos/polls/poll_dto'
-import { PollResultsDto } from '#dtos/polls/poll_results_dto'
-import { launchPollSchema } from '#validators/polls/launch_poll_validator'
-import { createPollSchema, updatePollSchema } from '#validators/polls/poll_validator'
+import { PollDto, PollInstanceDto, PollResultsDto } from '#dtos/polls/poll_dto'
+import {
+  launchPollSchema,
+  createPollSchema,
+  updatePollSchema,
+} from '#validators/polls/poll_validators'
 
 /**
  * Contrôleur pour la gestion des polls (templates) et leur lancement (MJ)

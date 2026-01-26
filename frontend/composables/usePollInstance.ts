@@ -1,10 +1,8 @@
 import type { PollInstance } from '@/types/index'
-import { useSupportTrigger } from '@/composables/useSupportTrigger'
 
 export function usePollInstance() {
   const config = useRuntimeConfig()
   const API_URL = config.public.apiBase
-  const { triggerSupportForError } = useSupportTrigger()
 
   /**
    * Fetch details of a specific poll instance
@@ -22,7 +20,7 @@ export function usePollInstance() {
       const data = await response.json()
       return data.data as PollInstance
     } catch (error) {
-      triggerSupportForError('poll_fetch_results', error)
+      console.error('Failed to fetch poll instance:', error)
       throw error
     }
   }
@@ -43,7 +41,7 @@ export function usePollInstance() {
       const data = await response.json()
       return data.data
     } catch (error) {
-      triggerSupportForError('session_fetch', error)
+      console.error('Failed to fetch active session:', error)
       throw error
     }
   }

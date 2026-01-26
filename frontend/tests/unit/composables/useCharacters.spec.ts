@@ -1,13 +1,5 @@
 import { describe, test, expect, beforeEach, vi } from 'vitest'
 
-// Mock useSupportTrigger
-const mockTriggerSupportForError = vi.fn()
-vi.mock('@/composables/useSupportTrigger', () => ({
-  useSupportTrigger: () => ({
-    triggerSupportForError: mockTriggerSupportForError,
-  }),
-}))
-
 // Mock fetch globally
 const mockFetch = vi.fn()
 vi.stubGlobal('fetch', mockFetch)
@@ -152,18 +144,6 @@ describe('useCharacters Composable', () => {
       expect(loading.value).toBe(false)
     })
 
-    test('should trigger support on error', async () => {
-      const error = new Error('Network error')
-      mockFetch.mockRejectedValueOnce(error)
-
-      const { useCharacters } = await import('~/composables/useCharacters')
-      const { fetchCampaignCharacters } = useCharacters()
-
-      await expect(fetchCampaignCharacters('campaign-1')).rejects.toThrow('Network error')
-
-      expect(mockTriggerSupportForError).toHaveBeenCalledWith('characters_fetch', error)
-    })
-
     test('should handle null currentAssignment', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
@@ -232,18 +212,6 @@ describe('useCharacters Composable', () => {
         'Failed to assign character'
       )
     })
-
-    test('should trigger support on error', async () => {
-      const error = new Error('Network error')
-      mockFetch.mockRejectedValueOnce(error)
-
-      const { useCharacters } = await import('~/composables/useCharacters')
-      const { assignCharacter } = useCharacters()
-
-      await expect(assignCharacter('campaign-1', 'char-1')).rejects.toThrow()
-
-      expect(mockTriggerSupportForError).toHaveBeenCalledWith('character_assign', error)
-    })
   })
 
   describe('unassignCharacter', () => {
@@ -281,18 +249,6 @@ describe('useCharacters Composable', () => {
       const { unassignCharacter } = useCharacters()
 
       await expect(unassignCharacter('campaign-1')).rejects.toThrow('Failed to unassign character')
-    })
-
-    test('should trigger support on error', async () => {
-      const error = new Error('Network error')
-      mockFetch.mockRejectedValueOnce(error)
-
-      const { useCharacters } = await import('~/composables/useCharacters')
-      const { unassignCharacter } = useCharacters()
-
-      await expect(unassignCharacter('campaign-1')).rejects.toThrow()
-
-      expect(mockTriggerSupportForError).toHaveBeenCalledWith('character_unassign', error)
     })
   })
 

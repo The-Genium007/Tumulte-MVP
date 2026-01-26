@@ -1,5 +1,4 @@
 import { ref, readonly } from 'vue'
-import { useSupportTrigger } from '@/composables/useSupportTrigger'
 
 export interface Character {
   id: string
@@ -33,7 +32,6 @@ export interface CampaignCharacters {
 export const useCharacters = () => {
   const config = useRuntimeConfig()
   const API_URL = config.public.apiBase
-  const { triggerSupportForError } = useSupportTrigger()
 
   const characters = ref<Character[]>([])
   const currentAssignment = ref<CharacterAssignment | null>(null)
@@ -55,7 +53,6 @@ export const useCharacters = () => {
       currentAssignment.value = data.currentAssignment
     } catch (error) {
       console.error('Failed to fetch characters:', error)
-      triggerSupportForError('characters_fetch', error)
       throw error
     } finally {
       loading.value = false
@@ -89,7 +86,7 @@ export const useCharacters = () => {
       currentAssignment.value = data
       return data
     } catch (error) {
-      triggerSupportForError('character_assign', error)
+      console.error('Failed to assign character:', error)
       throw error
     }
   }
@@ -110,7 +107,7 @@ export const useCharacters = () => {
       if (!response.ok) throw new Error('Failed to unassign character')
       currentAssignment.value = null
     } catch (error) {
-      triggerSupportForError('character_unassign', error)
+      console.error('Failed to unassign character:', error)
       throw error
     }
   }

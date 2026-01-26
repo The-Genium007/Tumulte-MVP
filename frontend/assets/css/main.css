@@ -429,7 +429,247 @@ h6 {
 }
 
 /* ============================================================================
-   CLASSES UTILITAIRES
+   DESIGN SYSTEM - CLASSES UTILITAIRES COMPOSÉES
+   ============================================================================
+   Ces classes combinent plusieurs propriétés pour garantir
+   la cohérence visuelle dans tout le projet.
+
+   Note: On utilise du CSS standard car @apply dans @layer components
+   ne fonctionne pas correctement avec Nuxt UI v3 / Tailwind v4.
+
+   Référence: frontend/design-system/index.ts
+   ============================================================================ */
+
+/* ==========================================================================
+   CONTAINERS
+   ========================================================================== */
+
+/** Container de page standard - max-width 1280px avec padding responsive */
+.container-page {
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem; /* px-4 */
+  padding-right: 1rem;
+  max-width: 80rem; /* max-w-7xl = 1280px */
+}
+
+@media (min-width: 640px) {
+  .container-page {
+    padding-left: 1.5rem; /* sm:px-6 */
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container-page {
+    padding-left: 2rem; /* lg:px-8 */
+    padding-right: 2rem;
+  }
+}
+
+/** Container étroit - max-width 768px pour formulaires, articles */
+.container-narrow {
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  max-width: 48rem; /* max-w-3xl = 768px */
+}
+
+@media (min-width: 640px) {
+  .container-narrow {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+/** Container très étroit - max-width 448px pour auth, modals */
+.container-xs {
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  max-width: 28rem; /* max-w-md = 448px */
+}
+
+/* ==========================================================================
+   TYPOGRAPHY - HEADINGS
+   ========================================================================== */
+
+/** Titre de page principal (H1) */
+.heading-page {
+  font-size: 1.5rem; /* text-2xl */
+  line-height: 2rem;
+  font-weight: 700; /* font-bold */
+  color: var(--color-text-primary);
+}
+
+@media (min-width: 640px) {
+  .heading-page {
+    font-size: 1.875rem; /* sm:text-3xl */
+    line-height: 2.25rem;
+  }
+}
+
+/** Titre de section (H2) */
+.heading-section {
+  font-size: 1.25rem; /* text-xl */
+  line-height: 1.75rem;
+  font-weight: 600; /* font-semibold */
+  color: var(--color-text-primary);
+}
+
+@media (min-width: 640px) {
+  .heading-section {
+    font-size: 1.5rem; /* sm:text-2xl */
+    line-height: 2rem;
+  }
+}
+
+/** Titre de card (H3) */
+.heading-card {
+  font-size: 1.125rem; /* text-lg */
+  line-height: 1.75rem;
+  font-weight: 600; /* font-semibold */
+  color: var(--color-text-primary);
+}
+
+@media (min-width: 640px) {
+  .heading-card {
+    font-size: 1.25rem; /* sm:text-xl */
+    line-height: 1.75rem;
+  }
+}
+
+/** Titre de sous-section (H4) */
+.heading-subsection {
+  font-size: 1rem; /* text-base */
+  line-height: 1.5rem;
+  font-weight: 500; /* font-medium */
+  color: var(--color-text-primary);
+}
+
+@media (min-width: 640px) {
+  .heading-subsection {
+    font-size: 1.125rem; /* sm:text-lg */
+    line-height: 1.75rem;
+  }
+}
+
+/** Label important */
+.heading-label {
+  font-size: 0.875rem; /* text-sm */
+  line-height: 1.25rem;
+  font-weight: 600; /* font-semibold */
+  color: var(--color-text-primary);
+}
+
+/* ==========================================================================
+   TYPOGRAPHY - BODY TEXT
+   ========================================================================== */
+
+/** Texte principal */
+.text-body {
+  font-size: 1rem; /* text-base */
+  line-height: 1.5rem;
+  color: var(--color-text-secondary);
+}
+
+/** Texte principal petit */
+.text-body-sm {
+  font-size: 0.875rem; /* text-sm */
+  line-height: 1.25rem;
+  color: var(--color-text-secondary);
+}
+
+/** Caption / légende */
+.text-caption {
+  font-size: 0.75rem; /* text-xs */
+  line-height: 1rem;
+  color: var(--color-text-muted);
+}
+
+/* ==========================================================================
+   SPACING - PRESETS
+   ========================================================================== */
+
+/** Espacement entre sections (space-y-6 = 24px) */
+.section-spacing > * + * {
+  margin-top: 1.5rem;
+}
+
+/** Espacement de contenu (space-y-4 = 16px) */
+.content-spacing > * + * {
+  margin-top: 1rem;
+}
+
+/** Gap inline - éléments proches (gap-2 = 8px) */
+.inline-spacing {
+  gap: 0.5rem;
+}
+
+/** Gap de groupe (gap-4 = 16px) */
+.group-spacing {
+  gap: 1rem;
+}
+
+/* ==========================================================================
+   SECTIONS - PADDING VERTICAL
+   ========================================================================== */
+
+/** Padding vertical de section standard */
+.section-py {
+  padding-top: 2rem; /* py-8 */
+  padding-bottom: 2rem;
+}
+
+@media (min-width: 1024px) {
+  .section-py {
+    padding-top: 3rem; /* lg:py-12 */
+    padding-bottom: 3rem;
+  }
+}
+
+/** Padding vertical de section large (hero) */
+.section-py-lg {
+  padding-top: 3rem; /* py-12 */
+  padding-bottom: 3rem;
+}
+
+@media (min-width: 1024px) {
+  .section-py-lg {
+    padding-top: 5rem; /* lg:py-20 */
+    padding-bottom: 5rem;
+  }
+}
+
+/* ==========================================================================
+   CARDS - PADDING
+   ========================================================================== */
+
+/** Padding standard de card (24px) */
+.card-padding {
+  padding: 1.5rem;
+}
+
+/** Padding compact de card (16px) */
+.card-padding-sm {
+  padding: 1rem;
+}
+
+/** Padding responsive de card */
+.card-padding-responsive {
+  padding: 1rem;
+}
+
+@media (min-width: 640px) {
+  .card-padding-responsive {
+    padding: 1.5rem;
+  }
+}
+
+/* ============================================================================
+   CLASSES UTILITAIRES - COULEURS ET BACKGROUNDS
    ============================================================================ */
 
 /* Backgrounds */

@@ -1,5 +1,6 @@
 import type { HttpContext } from '@adonisjs/core/http'
-import { verifyEmailValidator } from '#validators/auth/auth_validators'
+import { verifyEmailSchema, type VerifyEmailDto } from '#validators/auth/auth_validators'
+import { validateRequest } from '#middleware/validate_middleware'
 import emailVerificationService from '#services/auth/email_verification_service'
 
 /**
@@ -10,7 +11,8 @@ export default class VerificationController {
    * Verify email with token
    */
   async verify({ request, response }: HttpContext) {
-    const data = await request.validateUsing(verifyEmailValidator)
+    await validateRequest(verifyEmailSchema)({ request, response } as HttpContext, async () => {})
+    const data = request.all() as VerifyEmailDto
 
     const user = await emailVerificationService.verifyToken(data.token)
 

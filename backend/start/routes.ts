@@ -11,9 +11,10 @@
 import router from '@adonisjs/core/services/router'
 import { middleware } from '#start/kernel'
 
-// Legacy auth controller (will be deprecated)
-const authController = () => import('#controllers/auth_controller')
 const supportController = () => import('#controllers/support_controller')
+const sessionController = () => import('#controllers/auth/session_controller')
+const healthController = () => import('#controllers/health_controller')
+const metricsController = () => import('#controllers/metrics_controller')
 
 // New auth controllers
 const registerController = () => import('#controllers/auth/register_controller')
@@ -33,13 +34,24 @@ router.get('/', async () => {
   }
 })
 
-router.get('/health', async ({ response }) => {
-  return response.ok({
-    status: 'healthy',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-  })
-})
+// Simple health check for Docker/Kubernetes probes
+router.get('/health', [healthController, 'simple'])
+
+// Detailed health check with service status (protected)
+router
+  .get('/health/details', [healthController, 'details'])
+  .use(middleware.auth({ guards: ['web', 'api'] }))
+
+// Readiness probe - checks if app can serve traffic
+router.get('/health/ready', [healthController, 'ready'])
+
+// Liveness probe - checks if app is running
+router.get('/health/live', [healthController, 'live'])
+
+// Prometheus metrics endpoint (protected - admin only in production)
+router
+  .get('/metrics', [metricsController, 'index'])
+  .use(middleware.auth({ guards: ['web', 'api'] }))
 
 // ==========================================
 // Routes d'authentification
@@ -109,11 +121,11 @@ router
       .post('/unlink', [oauthController, 'unlinkProvider'])
       .use(middleware.auth({ guards: ['web', 'api'] }))
 
-    // ---- Legacy routes (keep for backward compatibility) ----
+    // ---- Session management ----
     router
-      .post('/logout', [authController, 'logout'])
+      .post('/logout', [sessionController, 'logout'])
       .use(middleware.auth({ guards: ['web', 'api'] }))
-    router.get('/me', [authController, 'me']).use(middleware.auth({ guards: ['web', 'api'] }))
+    router.get('/me', [sessionController, 'me']).use(middleware.auth({ guards: ['web', 'api'] }))
   })
   .prefix('/auth')
 

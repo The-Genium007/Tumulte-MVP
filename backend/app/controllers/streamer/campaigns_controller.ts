@@ -5,8 +5,7 @@ import env from '#start/env'
 import { MembershipService } from '#services/campaigns/membership_service'
 import { StreamerRepository } from '#repositories/streamer_repository'
 import { OverlayStudioRepository } from '#repositories/overlay_studio_repository'
-import { CampaignDto } from '#dtos/campaigns/campaign_dto'
-import { CampaignInvitationDto } from '#dtos/campaigns/campaign_invitation_dto'
+import { CampaignDto, CampaignInvitationDto } from '#dtos/campaigns/campaign_dto'
 import { CharacterDto } from '#dtos/characters/character_dto'
 import { campaignMembership as CampaignMembership } from '#models/campaign_membership'
 import { campaign as Campaign } from '#models/campaign'
@@ -14,9 +13,11 @@ import { overlayConfig as OverlayConfig } from '#models/overlay_config'
 import CharacterAssignment from '#models/character_assignment'
 import Character from '#models/character'
 import { pollInstance as PollInstance } from '#models/poll_instance'
-import { acceptInvitationSchema } from '#validators/streamer/accept_invitation_validator'
-import { updateCharacterSchema } from '#validators/streamer/update_character_validator'
-import { updateOverlaySchema } from '#validators/streamer/update_overlay_validator'
+import {
+  acceptInvitationSchema,
+  updateCharacterSchema,
+  updateOverlaySchema,
+} from '#validators/streamer/streamer_validators'
 
 /**
  * Contrôleur pour la gestion des campagnes (Streamer)

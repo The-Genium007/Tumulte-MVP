@@ -1,10 +1,15 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import {
-  forgotPasswordValidator,
-  resetPasswordValidator,
-  changePasswordValidator,
-  setPasswordValidator,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+  changePasswordSchema,
+  setPasswordSchema,
+  type ForgotPasswordDto,
+  type ResetPasswordDto,
+  type ChangePasswordDto,
+  type SetPasswordDto,
 } from '#validators/auth/auth_validators'
+import { validateRequest } from '#middleware/validate_middleware'
 import passwordResetService from '#services/auth/password_reset_service'
 import emailAuthService from '#services/auth/email_auth_service'
 
@@ -16,7 +21,11 @@ export default class PasswordController {
    * Request password reset email
    */
   async forgotPassword({ request, response }: HttpContext) {
-    const data = await request.validateUsing(forgotPasswordValidator)
+    await validateRequest(forgotPasswordSchema)(
+      { request, response } as HttpContext,
+      async () => {}
+    )
+    const data = request.all() as ForgotPasswordDto
 
     // Always send same response to prevent email enumeration
     await passwordResetService.sendResetEmail(data.email)
@@ -45,7 +54,8 @@ export default class PasswordController {
    * Reset password with token
    */
   async resetPassword({ request, response }: HttpContext) {
-    const data = await request.validateUsing(resetPasswordValidator)
+    await validateRequest(resetPasswordSchema)({ request, response } as HttpContext, async () => {})
+    const data = request.all() as ResetPasswordDto
 
     const result = await passwordResetService.resetPassword(data.token, data.password)
 
@@ -73,7 +83,11 @@ export default class PasswordController {
    */
   async changePassword({ request, response, auth }: HttpContext) {
     const user = auth.user!
-    const data = await request.validateUsing(changePasswordValidator)
+    await validateRequest(changePasswordSchema)(
+      { request, response } as HttpContext,
+      async () => {}
+    )
+    const data = request.all() as ChangePasswordDto
 
     const result = await emailAuthService.changePassword(
       user,
@@ -95,7 +109,8 @@ export default class PasswordController {
    */
   async setPassword({ request, response, auth }: HttpContext) {
     const user = auth.user!
-    const data = await request.validateUsing(setPasswordValidator)
+    await validateRequest(setPasswordSchema)({ request, response } as HttpContext, async () => {})
+    const data = request.all() as SetPasswordDto
 
     const result = await emailAuthService.setPassword(user, data.password)
 

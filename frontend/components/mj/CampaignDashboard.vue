@@ -27,8 +27,8 @@ const openResultsModal = (poll: PollInstance) => {
     <template #header>
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
-          <div class="w-3 h-3 rounded-full bg-brand-500 shrink-0" />
-          <h2 class="text-xl font-semibold text-primary">{{ campaign.name }}</h2>
+          <div class="size-3 rounded-full bg-brand-500 shrink-0" />
+          <h2 class="heading-card">{{ campaign.name }}</h2>
         </div>
         <UButton
           color="primary"

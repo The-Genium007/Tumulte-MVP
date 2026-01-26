@@ -1,7 +1,9 @@
 import { test } from '@japa/runner'
-import { launchPollSchema } from '#validators/polls/launch_poll_validator'
-import { addPollSchema } from '#validators/polls/add_poll_validator'
-import { createPollSessionSchema } from '#validators/polls/create_poll_session_validator'
+import {
+  launchPollSchema,
+  addPollSchema,
+  createPollSessionSchema,
+} from '#validators/polls/poll_validators'
 
 test.group('LaunchPollValidator', () => {
   test('should accept valid poll launch data', ({ assert }) => {

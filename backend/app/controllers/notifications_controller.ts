@@ -5,8 +5,8 @@ import NotificationPreferenceRepository from '#repositories/notification_prefere
 import {
   subscribePushSchema,
   unsubscribePushSchema,
-} from '#validators/notifications/subscribe_push_validator'
-import { updatePreferencesSchema } from '#validators/notifications/update_preferences_validator'
+  updatePreferencesSchema,
+} from '#validators/notifications/notification_validators'
 import { PushSubscriptionDto } from '#dtos/notifications/push_subscription_dto'
 import { NotificationPreferenceDto } from '#dtos/notifications/notification_preference_dto'
 

@@ -1,14 +1,6 @@
 import { describe, test, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 
-// Mock useSupportTrigger
-const mockTriggerSupportForError = vi.fn()
-vi.mock('@/composables/useSupportTrigger', () => ({
-  useSupportTrigger: () => ({
-    triggerSupportForError: mockTriggerSupportForError,
-  }),
-}))
-
 // Mock fetch globally
 const mockFetch = vi.fn()
 vi.stubGlobal('fetch', mockFetch)
@@ -352,7 +344,7 @@ describe('Push Notifications Store', () => {
       expect(store.subscriptions).toEqual(mockSubscriptions)
     })
 
-    test('fetchSubscriptions should trigger support on error', async () => {
+    test('fetchSubscriptions should throw on error', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 500,
@@ -362,10 +354,6 @@ describe('Push Notifications Store', () => {
       const store = usePushNotificationsStore()
 
       await expect(store.fetchSubscriptions()).rejects.toThrow()
-      expect(mockTriggerSupportForError).toHaveBeenCalledWith(
-        'push_subscriptions_fetch',
-        expect.any(Error)
-      )
     })
 
     test('fetchPreferences should fetch and store preferences', async () => {

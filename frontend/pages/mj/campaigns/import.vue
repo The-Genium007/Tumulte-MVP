@@ -16,13 +16,15 @@
               <template #leading>
                 <UIcon
                   name="i-lucide-arrow-left"
-                  class="size-12 transition-transform duration-200 group-hover:-translate-x-1"
+                  class="size-6 sm:size-12 transition-transform duration-200 group-hover:-translate-x-1"
                 />
               </template>
             </UButton>
             <div>
-              <h1 class="text-3xl font-bold text-primary">Gestion des campagnes</h1>
-              <p class="text-muted mt-1">Connexions VTT et import de campagnes</p>
+              <h1 class="text-xl sm:text-3xl font-bold text-primary">Gestion des campagnes</h1>
+              <p class="text-sm sm:text-base text-muted mt-1">
+                Connexions VTT et import de campagnes
+              </p>
             </div>
           </div>
           <UButton
@@ -289,7 +291,10 @@ definePageMeta({
 const router = useRouter()
 const config = useRuntimeConfig()
 const toast = useToast()
-const { connections, fetchConnections } = useVttConnections()
+const { connections, fetchConnections, getConnectionDetails } = useVttConnections()
+
+// Map to store linked campaign IDs for each connection
+const connectionCampaigns = ref<Map<string, string | null>>(new Map())
 
 // Loading states
 const loading = ref(true)
@@ -333,11 +338,28 @@ const loadData = async () => {
     await fetchConnections()
 
     if (connections.value.length > 0) {
+      // Load linked campaigns for each connection (for navigation)
+      await loadLinkedCampaigns()
       await syncAndFetchCampaigns()
     }
   } finally {
     loading.value = false
   }
+}
+
+// Load the linked campaign ID for each connection
+const loadLinkedCampaigns = async () => {
+  const promises = connections.value.map(async (conn) => {
+    try {
+      const data = await getConnectionDetails(conn.id)
+      const linkedCampaignId = data.campaigns?.length > 0 ? (data.campaigns[0]?.id ?? null) : null
+      connectionCampaigns.value.set(conn.id, linkedCampaignId)
+    } catch (error) {
+      console.error(`Failed to get linked campaign for connection ${conn.id}:`, error)
+      connectionCampaigns.value.set(conn.id, null)
+    }
+  })
+  await Promise.all(promises)
 }
 
 const syncAndFetchCampaigns = async () => {
@@ -399,28 +421,39 @@ const getStatusLabel = (status?: string) => {
 }
 
 // Connection actions
-const getConnectionActions = (connection: VttConnection) => [
-  [
-    {
+const getConnectionActions = (connection: VttConnection) => {
+  const linkedCampaignId = connectionCampaigns.value.get(connection.id)
+
+  // Build actions array dynamically
+  const primaryActions = []
+
+  // Only show "Voir les détails" if a campaign is linked
+  if (linkedCampaignId) {
+    primaryActions.push({
       label: 'Voir les détails',
       icon: 'i-lucide-eye',
-      onSelect: () => router.push(`/mj/vtt-connections/${connection.id}`),
-    },
-    {
-      label: 'Synchroniser',
-      icon: 'i-lucide-refresh-cw',
-      onSelect: () => syncConnection(connection.id),
-    },
-  ],
-  [
-    {
-      label: 'Révoquer',
-      icon: 'i-lucide-trash-2',
-      color: 'error' as const,
-      onSelect: () => openRevokeModal(connection),
-    },
-  ],
-]
+      onSelect: () => router.push(`/mj/campaigns/${linkedCampaignId}`),
+    })
+  }
+
+  primaryActions.push({
+    label: 'Synchroniser',
+    icon: 'i-lucide-refresh-cw',
+    onSelect: () => syncConnection(connection.id),
+  })
+
+  return [
+    primaryActions,
+    [
+      {
+        label: 'Révoquer',
+        icon: 'i-lucide-trash-2',
+        color: 'error' as const,
+        onSelect: () => openRevokeModal(connection),
+      },
+    ],
+  ]
+}
 
 const syncConnection = async (connectionId: string) => {
   try {

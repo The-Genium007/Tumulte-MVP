@@ -1,5 +1,6 @@
 import type { HttpContext } from '@adonisjs/core/http'
-import { loginValidator } from '#validators/auth/auth_validators'
+import { loginSchema, type LoginDto } from '#validators/auth/auth_validators'
+import { validateRequest } from '#middleware/validate_middleware'
 import emailAuthService from '#services/auth/email_auth_service'
 import { formatUserResponse } from '#utils/user_response'
 import AuthLockoutMiddleware from '#middleware/auth_lockout_middleware'
@@ -12,7 +13,8 @@ export default class LoginController {
    * Login with email and password
    */
   async handle({ request, response, auth }: HttpContext) {
-    const data = await request.validateUsing(loginValidator)
+    await validateRequest(loginSchema)({ request, response } as HttpContext, async () => {})
+    const data = request.all() as LoginDto
     const ip = request.ip()
 
     const result = await emailAuthService.validateCredentials(data.email, data.password)

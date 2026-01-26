@@ -1,5 +1,4 @@
 import { ref, readonly } from 'vue'
-import { useSupportTrigger } from '@/composables/useSupportTrigger'
 
 export interface VttProvider {
   id: string
@@ -41,7 +40,6 @@ export interface VttConnectionWithCampaigns {
 export const useVttConnections = () => {
   const config = useRuntimeConfig()
   const API_URL = config.public.apiBase
-  const { triggerSupportForError } = useSupportTrigger()
 
   const connections = ref<VttConnection[]>([])
   const providers = ref<VttProvider[]>([])
@@ -62,7 +60,6 @@ export const useVttConnections = () => {
       connections.value = data
     } catch (error) {
       console.error('Failed to fetch VTT connections:', error)
-      triggerSupportForError('vtt_connections_fetch', error)
       throw error
     } finally {
       loading.value = false
@@ -82,7 +79,7 @@ export const useVttConnections = () => {
       const data = await response.json()
       return data
     } catch (error) {
-      triggerSupportForError('vtt_connection_fetch_detail', error)
+      console.error('Failed to fetch VTT connection details:', error)
       throw error
     }
   }
@@ -108,7 +105,7 @@ export const useVttConnections = () => {
       connections.value.unshift(result)
       return result
     } catch (error) {
-      triggerSupportForError('vtt_connection_create', error)
+      console.error('Failed to create VTT connection:', error)
       throw error
     }
   }
@@ -140,7 +137,7 @@ export const useVttConnections = () => {
       }
       return result
     } catch (error) {
-      triggerSupportForError('vtt_connection_update', error)
+      console.error('Failed to update VTT connection:', error)
       throw error
     }
   }
@@ -164,7 +161,7 @@ export const useVttConnections = () => {
       }
       connections.value = connections.value.filter((c) => c.id !== id)
     } catch (error) {
-      triggerSupportForError('vtt_connection_delete', error)
+      console.error('Failed to delete VTT connection:', error)
       throw error
     }
   }
@@ -187,7 +184,7 @@ export const useVttConnections = () => {
       }
       return result
     } catch (error) {
-      triggerSupportForError('vtt_connection_regenerate_key', error)
+      console.error('Failed to regenerate VTT API key:', error)
       throw error
     }
   }
@@ -206,7 +203,6 @@ export const useVttConnections = () => {
       providers.value = data
     } catch (error) {
       console.error('Failed to fetch VTT providers:', error)
-      triggerSupportForError('vtt_providers_fetch', error)
       throw error
     }
   }

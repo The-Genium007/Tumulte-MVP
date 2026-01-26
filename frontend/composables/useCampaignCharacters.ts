@@ -1,11 +1,9 @@
 import { ref } from 'vue'
 import type { Character, CampaignSettings } from '@/types'
-import { useSupportTrigger } from '@/composables/useSupportTrigger'
 
 export const useCampaignCharacters = () => {
   const config = useRuntimeConfig()
   const API_URL = config.public.apiBase
-  const { triggerSupportForError } = useSupportTrigger()
 
   const characters = ref<Character[]>([])
   const currentCharacterId = ref<string | null>(null)
@@ -28,7 +26,6 @@ export const useCampaignCharacters = () => {
       currentCharacterId.value = data.currentAssignment?.character?.id || null
     } catch (error) {
       console.error('Failed to fetch characters:', error)
-      triggerSupportForError('characters_fetch', error)
       characters.value = []
       currentCharacterId.value = null
       throw error
@@ -60,7 +57,7 @@ export const useCampaignCharacters = () => {
         throw new Error(error.error || 'Failed to accept invitation')
       }
     } catch (error) {
-      triggerSupportForError('invitation_accept_character', error)
+      console.error('Failed to accept invitation with character:', error)
       throw error
     }
   }
@@ -78,7 +75,7 @@ export const useCampaignCharacters = () => {
 
       return await response.json()
     } catch (error) {
-      triggerSupportForError('campaign_settings_fetch', error)
+      console.error('Failed to fetch campaign settings:', error)
       throw error
     }
   }
@@ -100,7 +97,7 @@ export const useCampaignCharacters = () => {
         throw new Error(error.error || 'Failed to update character')
       }
     } catch (error) {
-      triggerSupportForError('character_update', error)
+      console.error('Failed to update character:', error)
       throw error
     }
   }
@@ -126,7 +123,7 @@ export const useCampaignCharacters = () => {
         throw new Error(error.error || 'Failed to update overlay')
       }
     } catch (error) {
-      triggerSupportForError('overlay_update', error)
+      console.error('Failed to update overlay:', error)
       throw error
     }
   }

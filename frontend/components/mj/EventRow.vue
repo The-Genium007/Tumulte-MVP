@@ -79,7 +79,7 @@ const rowClass = computed(() => {
         >
           {{ poll.question }}
         </p>
-        <div class="flex items-center gap-2 text-xs text-muted shrink-0">
+        <div class="flex items-center gap-2 text-caption shrink-0">
           <span class="shrink-0">{{ formatDuration(poll.durationSeconds) }}</span>
           <span v-if="poll.channelPointsEnabled" class="flex items-center gap-1 shrink-0">
             <UIcon name="i-lucide-coins" class="size-3" />

@@ -11,12 +11,10 @@
 import { onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
-import { useSupportTrigger } from '@/composables/useSupportTrigger'
 
 const route = useRoute()
 const _router = useRouter()
 const { fetchMe } = useAuth()
-const { triggerSupportForError } = useSupportTrigger()
 
 onMounted(async () => {
   try {
@@ -32,8 +30,7 @@ onMounted(async () => {
     // Rediriger vers la page appropriée
     _router.push(safeRedirect)
   } catch (error) {
-    // Déclencher le support pour l'erreur de callback
-    triggerSupportForError('auth_callback', error)
+    console.error('Auth callback error:', error)
     // Si erreur, rediriger vers login
     _router.push('/login?error=session_failed')
   }

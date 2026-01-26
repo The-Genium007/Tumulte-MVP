@@ -15,7 +15,7 @@ test.group('CampaignMembershipRepository - findByCampaignAndStreamer', (group) =
 
   group.each.setup(() => {
     repository = new CampaignMembershipRepository()
-    return testUtils.db().truncate()
+    return testUtils.db().withGlobalTransaction()
   })
 
   test('should find membership by campaign and streamer', async ({ assert }) => {
@@ -50,7 +50,7 @@ test.group('CampaignMembershipRepository - findActiveByCampaign', (group) => {
 
   group.each.setup(() => {
     repository = new CampaignMembershipRepository()
-    return testUtils.db().truncate()
+    return testUtils.db().withGlobalTransaction()
   })
 
   test('should return only ACTIVE memberships', async ({ assert }) => {
@@ -108,7 +108,7 @@ test.group('CampaignMembershipRepository - grantPollAuthorization', (group) => {
 
   group.each.setup(() => {
     repository = new CampaignMembershipRepository()
-    return testUtils.db().truncate()
+    return testUtils.db().withGlobalTransaction()
   })
 
   test('should grant 12-hour authorization window', async ({ assert }) => {
@@ -141,7 +141,7 @@ test.group('CampaignMembershipRepository - revokePollAuthorization', (group) => 
 
   group.each.setup(() => {
     repository = new CampaignMembershipRepository()
-    return testUtils.db().truncate()
+    return testUtils.db().withGlobalTransaction()
   })
 
   test('should revoke authorization', async ({ assert }) => {

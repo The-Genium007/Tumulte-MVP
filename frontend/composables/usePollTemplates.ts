@@ -1,11 +1,9 @@
 import { ref, readonly } from 'vue'
 import type { PollTemplate } from '@/types'
-import { useSupportTrigger } from '@/composables/useSupportTrigger'
 
 export const usePollTemplates = () => {
   const config = useRuntimeConfig()
   const API_URL = config.public.apiBase
-  const { triggerSupportForError } = useSupportTrigger()
 
   const templates = ref<PollTemplate[]>([])
   const loading = ref<boolean>(false)
@@ -28,7 +26,6 @@ export const usePollTemplates = () => {
       templates.value = data.data
     } catch (error) {
       console.error('Failed to fetch templates:', error)
-      triggerSupportForError('template_fetch', error)
       throw error
     } finally {
       loading.value = false
@@ -65,7 +62,6 @@ export const usePollTemplates = () => {
       return data.data
     } catch (error) {
       console.error('Failed to create template:', error)
-      triggerSupportForError('template_create', error)
       throw error
     }
   }
@@ -104,7 +100,6 @@ export const usePollTemplates = () => {
       return data.data
     } catch (error) {
       console.error('Failed to update template:', error)
-      triggerSupportForError('template_update', error)
       throw error
     }
   }
@@ -126,7 +121,6 @@ export const usePollTemplates = () => {
       templates.value = templates.value.filter((t) => t.id !== id)
     } catch (error) {
       console.error('Failed to delete template:', error)
-      triggerSupportForError('template_delete', error)
       throw error
     }
   }
@@ -150,7 +144,6 @@ export const usePollTemplates = () => {
       if (!response.ok) throw new Error('Failed to launch poll')
     } catch (error) {
       console.error('Failed to launch poll:', error)
-      triggerSupportForError('poll_launch', error)
       throw error
     }
   }

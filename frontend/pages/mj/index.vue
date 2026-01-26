@@ -29,8 +29,8 @@
       <UCard v-else-if="campaignsLoaded && campaigns.length === 0">
         <div class="text-center py-12">
           <UIcon name="i-lucide-folder-x" class="size-12 text-neutral-400 mb-4" />
-          <h2 class="text-neutral-400 mb-2">Aucune campagne disponible</h2>
-          <p class="text-neutral-400 mb-6 max-w-md mx-auto">
+          <h2 class="heading-section text-neutral-400 mb-2">Aucune campagne disponible</h2>
+          <p class="text-body-sm text-neutral-400 mb-6 max-w-md mx-auto">
             Créez votre premiere campagne pour commencer à configurer vos sondages
           </p>
           <UButton
@@ -98,15 +98,15 @@
                     <UIcon name="i-lucide-alert-triangle" class="size-6 text-error-500" />
                   </div>
                   <div>
-                    <h3 class="text-lg font-semibold text-primary">Tokens expirés</h3>
-                    <p class="text-sm text-muted mt-0.5">Reconnexion requise</p>
+                    <h3 class="heading-card">Tokens expirés</h3>
+                    <p class="text-caption mt-0.5">Reconnexion requise</p>
                   </div>
                 </div>
               </template>
 
-              <div class="space-y-4">
+              <div class="content-spacing">
                 <div class="p-4 rounded-lg bg-error-light border border-error-light">
-                  <p class="text-sm text-secondary mb-2">
+                  <p class="text-body-sm mb-2">
                     Les streamers suivants doivent se reconnecter pour rafraîchir leur token Twitch
                     :
                   </p>
@@ -120,7 +120,7 @@
                 <div class="p-3 rounded-lg bg-info-light border border-info-light">
                   <div class="flex items-start gap-2">
                     <UIcon name="i-lucide-info" class="size-4 text-info-500 mt-0.5 shrink-0" />
-                    <p class="text-xs text-secondary">
+                    <p class="text-caption">
                       Les streamers concernés doivent se déconnecter puis se reconnecter à Tumulte
                       pour renouveler leur autorisation Twitch.
                     </p>
@@ -158,7 +158,6 @@ import { useCampaigns } from '@/composables/useCampaigns'
 import type { CampaignMembership } from '@/types'
 import { usePollControlStore } from '@/stores/pollControl'
 import { useWebSocket } from '@/composables/useWebSocket'
-import { useSupportTrigger } from '@/composables/useSupportTrigger'
 import { useActionButton } from '@/composables/useActionButton'
 import { useVttHealth } from '@/composables/useVttHealth'
 import { loggers } from '@/utils/logger'
@@ -178,7 +177,6 @@ const route = useRoute()
 const router = useRouter()
 const { createTemplate, deleteTemplate, launchPoll } = usePollTemplates()
 const { campaigns, fetchCampaigns, getCampaignMembers, getLiveStatus } = useCampaigns()
-const { triggerSupportForError } = useSupportTrigger()
 
 // WebSocket setup
 const { subscribeToPoll } = useWebSocket()
@@ -436,7 +434,6 @@ const sendPollButton = useActionButton({
   cooldownMs: 1000,
   onError: (error) => {
     loggers.poll.error('[sendPoll] Action failed:', error)
-    triggerSupportForError('poll_launch', error)
   },
 })
 
@@ -448,7 +445,6 @@ const closeButton = useActionButton({
   cooldownMs: 1000,
   onError: (error) => {
     loggers.poll.error('[close] Action failed:', error)
-    triggerSupportForError('session_close', error)
   },
 })
 
@@ -552,7 +548,6 @@ const cancelPoll = async () => {
       }
     } catch (error) {
       loggers.poll.error('Failed to cancel poll:', error)
-      triggerSupportForError('poll_cancel', error)
     }
   }
 

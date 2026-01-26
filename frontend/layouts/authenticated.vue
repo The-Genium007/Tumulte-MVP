@@ -47,13 +47,16 @@ import { useVttAutoSync } from '@/composables/useVttAutoSync'
 // PWA disabled for Safari debugging
 // import { usePwaInstall } from '@/composables/usePwaInstall'
 
-const { fetchMe, user } = useAuth()
+const { fetchMe, user, loading, hasFetchedUser } = useAuth()
 // const { shouldShowInstallUI } = usePwaInstall()
 const { initialize: initializePushNotifications } = usePushNotifications()
 const { initialize: initializeVttSync } = useVttAutoSync()
 
 // Affiche le modal d'onboarding si l'utilisateur est connecté mais n'a pas lié Twitch
+// On attend que le fetch initial soit terminé pour éviter les flash
+// hasFetchedUser persiste dans le store Pinia, donc reste true entre les navigations
 const showTwitchOnboarding = computed(() => {
+  if (!hasFetchedUser.value || loading.value) return false
   return user.value !== null && user.value.streamer === null
 })
 
@@ -62,6 +65,7 @@ const showTwitchOnboarding = computed(() => {
 onMounted(async () => {
   try {
     await fetchMe()
+
     // Initialiser les notifications push après l'authentification
     // Cela charge : subscriptions backend, preferences, et browserEndpoint
     await initializePushNotifications()

@@ -1,5 +1,6 @@
 import type { HttpContext } from '@adonisjs/core/http'
-import { registerValidator } from '#validators/auth/auth_validators'
+import { registerSchema, type RegisterDto } from '#validators/auth/auth_validators'
+import { validateRequest } from '#middleware/validate_middleware'
 import emailAuthService from '#services/auth/email_auth_service'
 
 /**
@@ -10,7 +11,8 @@ export default class RegisterController {
    * Register a new user with email and password
    */
   async handle({ request, response }: HttpContext) {
-    const data = await request.validateUsing(registerValidator)
+    await validateRequest(registerSchema)({ request, response } as HttpContext, async () => {})
+    const data = request.all() as RegisterDto
 
     const result = await emailAuthService.register({
       email: data.email,

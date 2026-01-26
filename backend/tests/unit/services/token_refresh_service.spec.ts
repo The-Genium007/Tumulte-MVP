@@ -11,7 +11,7 @@ import {
 } from '#tests/helpers/test_utils'
 
 test.group('Streamer Model - Token Expiry Getters', (group) => {
-  group.each.setup(() => testUtils.db().truncate())
+  group.each.setup(() => testUtils.db().withGlobalTransaction())
 
   test('isTokenExpiringSoon returns true when tokenExpiresAt is null', async ({ assert }) => {
     const streamer = await createTestStreamer()
@@ -67,7 +67,7 @@ test.group('Streamer Model - Token Expiry Getters', (group) => {
 })
 
 test.group('Streamer Model - Token Tracking Columns', (group) => {
-  group.each.setup(() => testUtils.db().truncate())
+  group.each.setup(() => testUtils.db().withGlobalTransaction())
 
   test('should persist tokenExpiresAt to database', async ({ assert }) => {
     const streamer = await createTestStreamer()
@@ -124,7 +124,7 @@ test.group('Streamer Model - Token Tracking Columns', (group) => {
 })
 
 test.group('TokenRefreshService - findStreamersWithActiveAuthorization', (group) => {
-  group.each.setup(() => testUtils.db().truncate())
+  group.each.setup(() => testUtils.db().withGlobalTransaction())
 
   test('should return streamers with active poll authorization', async ({ assert }) => {
     const { TokenRefreshService } = await import('#services/auth/token_refresh_service')
@@ -262,7 +262,7 @@ test.group('TokenRefreshService - findStreamersWithActiveAuthorization', (group)
 })
 
 test.group('TokenRefreshService - findStreamersNeedingRetry', (group) => {
-  group.each.setup(() => testUtils.db().truncate())
+  group.each.setup(() => testUtils.db().withGlobalTransaction())
 
   test('should return streamers with failed refresh past retry delay', async ({ assert }) => {
     const { TokenRefreshService } = await import('#services/auth/token_refresh_service')
@@ -330,7 +330,7 @@ test.group('TokenRefreshService - findStreamersNeedingRetry', (group) => {
 })
 
 test.group('TokenRefreshService - handleRefreshFailure retry policy', (group) => {
-  group.each.setup(() => testUtils.db().truncate())
+  group.each.setup(() => testUtils.db().withGlobalTransaction())
 
   test('first failure should not deactivate streamer', async ({ assert }) => {
     const { TokenRefreshService } = await import('#services/auth/token_refresh_service')
@@ -395,7 +395,7 @@ test.group('TokenRefreshService - handleRefreshFailure retry policy', (group) =>
 })
 
 test.group('TokenRefreshService - refreshAllActiveTokens report', (group) => {
-  group.each.setup(() => testUtils.db().truncate())
+  group.each.setup(() => testUtils.db().withGlobalTransaction())
 
   test('should return report with correct counts for skipped streamers', async ({ assert }) => {
     const { TokenRefreshService } = await import('#services/auth/token_refresh_service')

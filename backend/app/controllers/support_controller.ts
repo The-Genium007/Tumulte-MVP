@@ -3,8 +3,8 @@ import logger from '@adonisjs/core/services/logger'
 import env from '#start/env'
 import { campaign as Campaign } from '#models/campaign'
 import { campaignMembership as CampaignMembership } from '#models/campaign_membership'
-import { supportReportService } from '#services/support_report_service'
-import type { BackendContext, FrontendContext } from '#services/support_report_service'
+import { supportReportService } from '#services/support/support_report_service'
+import type { BackendContext, FrontendContext } from '#services/support/support_report_service'
 import { backendLogService } from '#services/support/backend_log_service'
 
 export default class SupportController {

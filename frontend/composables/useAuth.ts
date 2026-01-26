@@ -7,8 +7,16 @@ import { storeToRefs } from 'pinia'
  */
 export function useAuth() {
   const authStore = useAuthStore()
-  const { user, loading, isAuthenticated, isAdmin, isPremium, isEmailVerified, authError } =
-    storeToRefs(authStore)
+  const {
+    user,
+    loading,
+    isAuthenticated,
+    isAdmin,
+    isPremium,
+    isEmailVerified,
+    authError,
+    hasFetchedUser,
+  } = storeToRefs(authStore)
 
   return {
     // State
@@ -19,6 +27,7 @@ export function useAuth() {
     isPremium,
     isEmailVerified,
     authError,
+    hasFetchedUser,
 
     // Actions
     fetchMe: authStore.fetchMe,

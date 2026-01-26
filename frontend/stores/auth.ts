@@ -2,7 +2,6 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import type { User, LoginCredentials, RegisterData, AuthError } from '@/types'
-import { useSupportTrigger } from '@/composables/useSupportTrigger'
 import { usePushNotificationsStore } from '@/stores/pushNotifications'
 import { storeUser, getStoredUser, clearUserData } from '@/utils/offline-storage'
 import { useAnalytics } from '@/composables/useAnalytics'
@@ -11,7 +10,6 @@ export const useAuthStore = defineStore('auth', () => {
   const _router = useRouter()
   const config = useRuntimeConfig()
   const API_URL = config.public.apiBase
-  const { triggerSupportForError } = useSupportTrigger()
   const { identify, reset: resetAnalytics, setUserProperties, track } = useAnalytics()
 
   // State
@@ -19,6 +17,7 @@ export const useAuthStore = defineStore('auth', () => {
   const loading = ref<boolean>(false)
   const isOfflineData = ref<boolean>(false)
   const authError = ref<AuthError | null>(null)
+  const hasFetchedUser = ref<boolean>(false) // Flag pour savoir si fetchMe a été appelé au moins une fois
 
   // Computed
   const isAuthenticated = computed(() => user.value !== null)
@@ -80,7 +79,9 @@ export const useAuthStore = defineStore('auth', () => {
         throw new Error('Failed to fetch user')
       }
 
-      const freshUser = await response.json()
+      const data = await response.json()
+      // Backend returns { user: ... } structure
+      const freshUser = data.user ?? data
       user.value = freshUser
       isOfflineData.value = false
 
@@ -94,10 +95,10 @@ export const useAuthStore = defineStore('auth', () => {
       if (!isOfflineData.value) {
         user.value = null
       }
-      triggerSupportForError('auth_fetch_me', error)
       throw error
     } finally {
       loading.value = false
+      hasFetchedUser.value = true
     }
   }
 
@@ -128,7 +129,6 @@ export const useAuthStore = defineStore('auth', () => {
       _router.push({ name: 'login' })
     } catch (error) {
       console.error('Logout failed:', error)
-      triggerSupportForError('auth_logout', error)
       throw error
     }
   }
@@ -166,7 +166,6 @@ export const useAuthStore = defineStore('auth', () => {
     } catch (error) {
       const err = { error: 'Une erreur est survenue. Veuillez réessayer.' }
       authError.value = err
-      triggerSupportForError('auth_register', error)
       track('auth_error', { action: 'register', error: 'network_error' })
       return { success: false, error: err }
     } finally {
@@ -208,7 +207,6 @@ export const useAuthStore = defineStore('auth', () => {
     } catch (error) {
       const err = { error: 'Une erreur est survenue. Veuillez réessayer.' }
       authError.value = err
-      triggerSupportForError('auth_login', error)
       track('auth_error', { action: 'login', error: 'network_error' })
       return { success: false, error: err }
     } finally {
@@ -244,7 +242,7 @@ export const useAuthStore = defineStore('auth', () => {
 
       return { success: true }
     } catch (error) {
-      triggerSupportForError('auth_forgot_password', error)
+      console.error('Forgot password failed:', error)
       return { success: false, error: { error: 'Une erreur est survenue.' } }
     } finally {
       loading.value = false
@@ -276,7 +274,7 @@ export const useAuthStore = defineStore('auth', () => {
 
       return { success: true }
     } catch (error) {
-      triggerSupportForError('auth_reset_password', error)
+      console.error('Reset password failed:', error)
       return { success: false, error: { error: 'Une erreur est survenue.' } }
     } finally {
       loading.value = false
@@ -301,7 +299,7 @@ export const useAuthStore = defineStore('auth', () => {
 
       return { success: true }
     } catch (error) {
-      triggerSupportForError('auth_resend_verification', error)
+      console.error('Resend verification failed:', error)
       return { success: false, error: { error: 'Une erreur est survenue.' } }
     }
   }
@@ -319,6 +317,7 @@ export const useAuthStore = defineStore('auth', () => {
     loading,
     isOfflineData,
     authError,
+    hasFetchedUser,
 
     // Computed
     isAuthenticated,

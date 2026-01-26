@@ -1,9 +1,6 @@
 <script setup lang="ts">
 import type { VttConnectionStatus, VttHealthStatus } from '~/types'
 
-// eslint-disable-next-line @typescript-eslint/naming-convention, no-undef
-const NuxtLink = resolveComponent('NuxtLink')
-
 const props = defineProps<{
   vttConnection?: VttConnectionStatus | null
   campaignId: string
@@ -110,15 +107,10 @@ const statusConfig = computed(() => {
   }
 })
 
-// Show action button for error states
-const showActionButton = computed(() => {
-  return ['revoked', 'error', 'not_paired'].includes(healthStatus.value)
-})
-
 // Tooltip text
 const tooltipText = computed(() => {
   if (!props.vttConnection) {
-    return 'Cliquez pour connecter Foundry VTT'
+    return 'Aucune connexion Foundry VTT'
   }
 
   const worldName = props.vttConnection.worldName || 'Monde inconnu'
@@ -134,70 +126,51 @@ const tooltipText = computed(() => {
     case 'server_unavailable':
       return 'Serveur Tumulte temporairement indisponible'
     case 'revoked':
-      return 'Connexion révoquée - Cliquez pour reconnecter'
+      return 'Connexion révoquée'
     case 'error':
-      return 'Erreur de connexion - Cliquez pour reconnecter'
+      return 'Erreur de connexion'
     default:
-      return 'Cliquez pour connecter Foundry VTT'
+      return 'Aucune connexion Foundry VTT'
   }
 })
 </script>
 
 <template>
-  <!-- Desktop version (square card) -->
-  <UTooltip :text="tooltipText" class="hidden lg:block">
-    <component
-      :is="showActionButton ? NuxtLink : 'div'"
-      :to="showActionButton ? '/mj/campaigns/import' : undefined"
-      class="block"
-    >
+  <!-- Desktop version (square card) - Indicative only, not clickable -->
+  <div class="hidden lg:block">
+    <UTooltip :text="tooltipText">
       <div
         :class="[
-          'relative size-32 rounded-3xl flex flex-col items-center justify-center text-center gap-2 transition-all',
+          'size-32 rounded-3xl flex flex-col items-center justify-center text-center gap-2',
           statusConfig.bgClass,
-          showActionButton ? 'hover:scale-105 cursor-pointer' : '',
         ]"
       >
-        <!-- Clickable indicator -->
-        <UIcon
-          v-if="showActionButton"
-          name="i-lucide-arrow-up-right"
-          class="absolute top-2 right-2 size-4 text-primary-400"
-        />
         <UIcon :name="statusConfig.icon" :class="['size-7', statusConfig.iconClass]" />
-        <div>
+        <div class="flex flex-col items-center">
           <p class="text-xs text-primary-500 font-medium">{{ statusConfig.label }}</p>
-          <p class="text-sm font-bold text-primary">{{ statusConfig.value }}</p>
+          <p class="text-xl font-bold text-primary">{{ statusConfig.value }}</p>
         </div>
       </div>
-    </component>
-  </UTooltip>
+    </UTooltip>
+  </div>
 
-  <!-- Mobile version (inline) -->
-  <UTooltip :text="tooltipText" class="lg:hidden">
-    <component
-      :is="showActionButton ? NuxtLink : 'div'"
-      :to="showActionButton ? '/mj/campaigns/import' : undefined"
-      class="flex items-center gap-3"
-    >
-      <div
-        :class="[
-          'size-10 rounded-lg flex items-center justify-center shrink-0',
-          statusConfig.bgClass,
-        ]"
-      >
-        <UIcon :name="statusConfig.icon" :class="['size-5', statusConfig.iconClass]" />
+  <!-- Mobile version (inline) - Indicative only, not clickable -->
+  <div class="lg:hidden">
+    <UTooltip :text="tooltipText">
+      <div class="flex items-center gap-3">
+        <div
+          :class="[
+            'size-10 rounded-lg flex items-center justify-center shrink-0',
+            statusConfig.bgClass,
+          ]"
+        >
+          <UIcon :name="statusConfig.icon" :class="['size-5', statusConfig.iconClass]" />
+        </div>
+        <div class="flex-1">
+          <p class="text-xs text-primary-500 font-medium">{{ statusConfig.label }}</p>
+          <p class="text-lg font-bold text-primary">{{ statusConfig.value }}</p>
+        </div>
       </div>
-      <div class="flex-1">
-        <p class="text-xs text-primary-500 font-medium">{{ statusConfig.label }}</p>
-        <p class="text-lg font-bold text-primary">{{ statusConfig.value }}</p>
-      </div>
-      <!-- Clickable indicator for mobile -->
-      <UIcon
-        v-if="showActionButton"
-        name="i-lucide-arrow-up-right"
-        class="size-5 text-primary-400 shrink-0"
-      />
-    </component>
-  </UTooltip>
+    </UTooltip>
+  </div>
 </template>

@@ -12,7 +12,7 @@ import VttConnection from '#models/vtt_connection'
 /* eslint-disable camelcase -- JWT standard claims use snake_case */
 
 test.group('VttPairingService - generateSessionTokensForConnection', (group) => {
-  group.each.setup(() => testUtils.db().truncate())
+  group.each.setup(() => testUtils.db().withGlobalTransaction())
 
   test('should generate valid session and refresh tokens', async ({ assert }) => {
     const { default: VttPairingService } = await import('#services/vtt/vtt_pairing_service')
@@ -55,7 +55,7 @@ test.group('VttPairingService - generateSessionTokensForConnection', (group) => 
 })
 
 test.group('VttPairingService - refreshSessionToken', (group) => {
-  group.each.setup(() => testUtils.db().truncate())
+  group.each.setup(() => testUtils.db().withGlobalTransaction())
 
   test('should refresh valid refresh token', async ({ assert }) => {
     const { default: VttPairingService } = await import('#services/vtt/vtt_pairing_service')
@@ -200,7 +200,7 @@ test.group('VttPairingService - refreshSessionToken', (group) => {
 })
 
 test.group('VttPairingService - revokeConnectionTokens', (group) => {
-  group.each.setup(() => testUtils.db().truncate())
+  group.each.setup(() => testUtils.db().withGlobalTransaction())
 
   test('should increment tokenVersion and set status to revoked', async ({ assert }) => {
     const { default: VttPairingService } = await import('#services/vtt/vtt_pairing_service')
@@ -247,7 +247,7 @@ test.group('VttPairingService - revokeConnectionTokens', (group) => {
 })
 
 test.group('VttPairingService - invalidateAllTokens', (group) => {
-  group.each.setup(() => testUtils.db().truncate())
+  group.each.setup(() => testUtils.db().withGlobalTransaction())
 
   test('should increment tokenVersion without changing status', async ({ assert }) => {
     const { default: VttPairingService } = await import('#services/vtt/vtt_pairing_service')

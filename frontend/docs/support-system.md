@@ -2,7 +2,7 @@
 
 ## Overview
 
-The frontend support system automatically detects errors and opens the support widget with a pre-filled message in French. Designed for the Alpha phase, it maximizes bug capture.
+The frontend support system allows users to report issues through a support widget. It provides contextual error messages and pre-fills the support form based on the action that triggered the error.
 
 ## Components
 
@@ -33,38 +33,9 @@ const category = ACTION_CATEGORIES['poll_launch']
 // => "poll"
 ```
 
-### 2. useSupportTrigger
+### 2. useSupportWidget
 
-Composable to trigger the widget with rate limiting.
-
-**File**: `composables/useSupportTrigger.ts`
-
-```typescript
-import { useSupportTrigger } from '@/composables/useSupportTrigger'
-
-const { triggerSupportForError, canAutoOpen, getRemainingCooldown, resetRateLimit, RATE_LIMIT_MS } =
-  useSupportTrigger()
-
-// Trigger on error
-try {
-  await fetchCampaigns()
-} catch (error) {
-  triggerSupportForError('campaign_fetch', error, 'Optional context')
-  throw error
-}
-
-// Check if we can open
-if (canAutoOpen()) {
-  // Widget can be opened automatically
-}
-
-// Time remaining before next opening (ms)
-const remaining = getRemainingCooldown()
-```
-
-### 3. useSupportWidget
-
-Composable to control the widget.
+Composable to control the support widget.
 
 **File**: `composables/useSupportWidget.ts`
 
@@ -83,11 +54,14 @@ const {
 // Open with pre-filled message
 openWithPrefill('Custom message', 'poll_launch')
 
+// Open without pre-fill
+openSupport()
+
 // Close the widget
 closeSupport()
 ```
 
-### 4. SupportWidget.vue
+### 3. SupportWidget.vue
 
 Vue component for the support widget.
 
@@ -100,61 +74,23 @@ The widget displays:
 - "Attach logs" checkbox (enabled by default)
 - Cancel/Send buttons
 
-## Integration in Stores
+## Manual Error Reporting
 
-### Recommended Pattern
-
-```typescript
-// stores/campaigns.ts
-import { useSupportTrigger } from '@/composables/useSupportTrigger'
-
-export const useCampaignsStore = defineStore('campaigns', () => {
-  const { triggerSupportForError } = useSupportTrigger()
-
-  const fetchCampaigns = async () => {
-    try {
-      // ... existing logic
-    } catch (error) {
-      triggerSupportForError('campaign_fetch', error)
-      throw error
-    }
-  }
-
-  const createCampaign = async (data: CampaignData) => {
-    try {
-      // ... existing logic
-    } catch (error) {
-      triggerSupportForError('campaign_create', error)
-      throw error
-    }
-  }
-
-  return { fetchCampaigns, createCampaign }
-})
-```
-
-## Integration in HTTP Client
+To open the support widget with a contextual error message:
 
 ```typescript
-// api/http_client.ts
-import { useSupportTrigger } from '@/composables/useSupportTrigger'
+import { useSupportWidget } from '@/composables/useSupportWidget'
+import { SUPPORT_ERROR_MESSAGES } from '@/utils/supportErrorMessages'
 
-// In the response interceptor
-this.instance.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 500) {
-      this.triggerSupport?.('generic_server_error', error)
-    }
-    if (error.code === 'ECONNABORTED') {
-      this.triggerSupport?.('generic_timeout', error)
-    }
-    if (!error.response) {
-      this.triggerSupport?.('generic_network_error', error)
-    }
-    return Promise.reject(error)
-  }
-)
+const { openWithPrefill } = useSupportWidget()
+
+try {
+  await fetchCampaigns()
+} catch (error) {
+  console.error('Failed to fetch campaigns:', error)
+  openWithPrefill(SUPPORT_ERROR_MESSAGES['campaign_fetch'], 'campaign_fetch')
+  throw error
+}
 ```
 
 ## Adding a New Action Type
@@ -195,26 +131,11 @@ export const ACTION_CATEGORIES: Record<SupportActionType, ActionCategory> = {
 }
 ```
 
-## Rate Limiting
-
-The system implements a rate limit of **1 automatic opening per minute** to prevent spam.
-
-```typescript
-const RATE_LIMIT_MS = 60_000 // 1 minute
-
-const canAutoOpen = (): boolean => {
-  return Date.now() - lastAutoOpenTime.value >= RATE_LIMIT_MS
-}
-```
-
 ## Tests
 
 ```bash
 # Tests for message catalog
 npm run test -- --run tests/unit/utils/supportErrorMessages.spec.ts
-
-# Tests for trigger composable
-npm run test -- --run tests/unit/composables/useSupportTrigger.spec.ts
 ```
 
 ## Action Types List (60+)

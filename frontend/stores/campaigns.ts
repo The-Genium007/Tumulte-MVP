@@ -7,7 +7,6 @@ import type {
   CreateCampaignRequest,
   UpdateCampaignRequest,
 } from '~/types/api'
-import { useSupportTrigger } from '@/composables/useSupportTrigger'
 import {
   storeCampaigns,
   getStoredCampaigns,
@@ -19,8 +18,6 @@ import {
  * Store Pinia pour la gestion des campagnes (MJ)
  */
 export const useCampaignsStore = defineStore('campaigns', () => {
-  const { triggerSupportForError } = useSupportTrigger()
-
   // State
   const campaigns = ref<Campaign[]>([])
   const selectedCampaign = ref<CampaignDetail | null>(null)
@@ -65,7 +62,6 @@ export const useCampaignsStore = defineStore('campaigns', () => {
       if (!isOfflineData.value) {
         _error.value = err instanceof Error ? err.message : 'Failed to fetch campaigns'
       }
-      triggerSupportForError('campaign_fetch', err)
       throw err
     } finally {
       loading.value = false
@@ -101,7 +97,6 @@ export const useCampaignsStore = defineStore('campaigns', () => {
       if (!isOfflineData.value) {
         _error.value = err instanceof Error ? err.message : 'Failed to fetch campaign'
       }
-      triggerSupportForError('campaign_fetch_detail', err)
       throw err
     } finally {
       loading.value = false
@@ -118,7 +113,6 @@ export const useCampaignsStore = defineStore('campaigns', () => {
       return newCampaign
     } catch (err) {
       _error.value = err instanceof Error ? err.message : 'Failed to create campaign'
-      triggerSupportForError('campaign_create', err)
       throw err
     } finally {
       loading.value = false
@@ -149,7 +143,6 @@ export const useCampaignsStore = defineStore('campaigns', () => {
       return updatedCampaign
     } catch (err) {
       _error.value = err instanceof Error ? err.message : 'Failed to update campaign'
-      triggerSupportForError('campaign_update', err)
       throw err
     } finally {
       loading.value = false
@@ -172,7 +165,6 @@ export const useCampaignsStore = defineStore('campaigns', () => {
       }
     } catch (err) {
       _error.value = err instanceof Error ? err.message : 'Failed to delete campaign'
-      triggerSupportForError('campaign_delete', err)
       throw err
     } finally {
       loading.value = false
@@ -199,7 +191,6 @@ export const useCampaignsStore = defineStore('campaigns', () => {
       return member
     } catch (err) {
       _error.value = err instanceof Error ? err.message : 'Failed to invite streamer'
-      triggerSupportForError('campaign_invite', err)
       throw err
     } finally {
       loading.value = false
@@ -221,7 +212,6 @@ export const useCampaignsStore = defineStore('campaigns', () => {
       }
     } catch (err) {
       _error.value = err instanceof Error ? err.message : 'Failed to remove member'
-      triggerSupportForError('campaign_member_remove', err)
       throw err
     } finally {
       loading.value = false

@@ -11,6 +11,21 @@
     </template>
 
     <div class="space-y-6">
+      <!-- Message d'erreur global (bien visible en haut) -->
+      <UAlert
+        v-if="errorMessage"
+        color="error"
+        variant="soft"
+        icon="i-lucide-alert-circle"
+      >
+        <template #title>
+          <span class="font-semibold">Erreur</span>
+        </template>
+        <template #description>
+          <span class="text-sm">{{ errorMessage }}</span>
+        </template>
+      </UAlert>
+
       <!-- Formulaire email/password -->
       <form @submit.prevent="handleEmailLogin" class="space-y-4">
         <div>
@@ -67,14 +82,6 @@
           Se connecter
         </UButton>
       </form>
-
-      <UAlert
-        v-if="errorMessage"
-        color="error"
-        variant="soft"
-        :title="errorMessage"
-        icon="i-lucide-alert-circle"
-      />
 
       <!-- Séparateur -->
       <div class="relative">

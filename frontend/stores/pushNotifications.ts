@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { PushSubscription, NotificationPreferences } from '@/types'
-import { useSupportTrigger } from '@/composables/useSupportTrigger'
 
 /**
  * Helper pour convertir une clé base64 URL-safe en Uint8Array
@@ -32,7 +31,6 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
 export const usePushNotificationsStore = defineStore('pushNotifications', () => {
   const config = useRuntimeConfig()
   const API_URL = config.public.apiBase
-  const { triggerSupportForError } = useSupportTrigger()
 
   // State
   const vapidPublicKey = ref<string | null>(null)
@@ -172,7 +170,7 @@ export const usePushNotificationsStore = defineStore('pushNotifications', () => 
       subscriptions.value = data.data
       console.log('[Push] fetchSubscriptions() - subscriptions set:', subscriptions.value?.length)
     } catch (error) {
-      triggerSupportForError('push_subscriptions_fetch', error)
+      console.error('Failed to fetch subscriptions:', error)
       throw error
     }
   }
@@ -190,7 +188,7 @@ export const usePushNotificationsStore = defineStore('pushNotifications', () => 
       const data = await response.json()
       preferences.value = data.data
     } catch (error) {
-      triggerSupportForError('push_preferences_update', error)
+      console.error('Failed to fetch preferences:', error)
       throw error
     }
   }
@@ -211,7 +209,7 @@ export const usePushNotificationsStore = defineStore('pushNotifications', () => 
       const data = await response.json()
       preferences.value = data.data
     } catch (error) {
-      triggerSupportForError('push_preferences_update', error)
+      console.error('Failed to update preferences:', error)
       throw error
     }
   }
@@ -338,7 +336,6 @@ export const usePushNotificationsStore = defineStore('pushNotifications', () => 
       return true
     } catch (error) {
       console.error('Failed to subscribe to push notifications:', error)
-      triggerSupportForError('push_subscribe', error)
       return false
     } finally {
       loading.value = false
@@ -372,7 +369,6 @@ export const usePushNotificationsStore = defineStore('pushNotifications', () => 
       return true
     } catch (error) {
       console.error('Failed to unsubscribe:', error)
-      triggerSupportForError('push_unsubscribe', error)
       return false
     } finally {
       loading.value = false
@@ -409,7 +405,7 @@ export const usePushNotificationsStore = defineStore('pushNotifications', () => 
 
       await fetchSubscriptions()
     } catch (error) {
-      triggerSupportForError('push_subscription_delete', error)
+      console.error('Failed to delete subscription:', error)
       throw error
     }
   }

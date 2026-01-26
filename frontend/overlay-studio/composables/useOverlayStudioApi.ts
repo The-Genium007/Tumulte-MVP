@@ -2,7 +2,6 @@ import { ref, readonly } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
 import type { OverlayConfig, OverlayConfigData } from '../types'
 import type { PreviewCommand, PreviewMockData } from '@/types'
-import { useSupportTrigger } from '@/composables/useSupportTrigger'
 import { useOverlayStudioStore } from '../stores/overlayStudio'
 
 /**
@@ -27,7 +26,6 @@ interface OverlayConfigDetailResponse extends OverlayConfigResponse {
 export const useOverlayStudioApi = () => {
   const config = useRuntimeConfig()
   const API_URL = config.public.apiBase
-  const { triggerSupportForError } = useSupportTrigger()
 
   const configs = ref<OverlayConfig[]>([])
   const currentConfig = ref<OverlayConfig | null>(null)
@@ -53,7 +51,6 @@ export const useOverlayStudioApi = () => {
       return configs.value
     } catch (error) {
       console.error('Failed to fetch overlay configs:', error)
-      triggerSupportForError('overlay_configs_fetch', error)
       throw error
     } finally {
       loading.value = false
@@ -75,7 +72,6 @@ export const useOverlayStudioApi = () => {
       return currentConfig.value
     } catch (error) {
       console.error('Failed to fetch overlay config:', error)
-      triggerSupportForError('overlay_config_fetch', error)
       throw error
     } finally {
       loading.value = false
@@ -108,7 +104,6 @@ export const useOverlayStudioApi = () => {
       return newConfig
     } catch (error) {
       console.error('Failed to create overlay config:', error)
-      triggerSupportForError('overlay_config_create', error)
       throw error
     } finally {
       saving.value = false
@@ -154,7 +149,6 @@ export const useOverlayStudioApi = () => {
       return updatedConfig
     } catch (error) {
       console.error('Failed to update overlay config:', error)
-      triggerSupportForError('overlay_config_update', error)
       throw error
     } finally {
       saving.value = false
@@ -178,7 +172,6 @@ export const useOverlayStudioApi = () => {
       }
     } catch (error) {
       console.error('Failed to delete overlay config:', error)
-      triggerSupportForError('overlay_config_delete', error)
       throw error
     }
   }
@@ -210,7 +203,6 @@ export const useOverlayStudioApi = () => {
       return activatedConfig
     } catch (error) {
       console.error('Failed to activate overlay config:', error)
-      triggerSupportForError('overlay_config_activate', error)
       throw error
     } finally {
       saving.value = false

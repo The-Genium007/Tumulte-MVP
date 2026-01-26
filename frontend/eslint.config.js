@@ -69,7 +69,6 @@ export default [
         useWebSocket: 'readonly',
         useWorkerTimer: 'readonly',
         useOnlineStatus: 'readonly',
-        useSupportTrigger: 'readonly',
         useSelectedCampaign: 'readonly',
         useOfflineFirst: 'readonly',
         useDevice: 'readonly',

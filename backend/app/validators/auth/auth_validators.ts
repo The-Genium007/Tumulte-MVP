@@ -1,70 +1,63 @@
-import vine from '@vinejs/vine'
+import { z } from 'zod'
 
-/**
- * Validator for user registration
- */
-export const registerValidator = vine.compile(
-  vine.object({
-    email: vine.string().email().normalizeEmail(),
-    password: vine.string().minLength(8).maxLength(100),
-    displayName: vine.string().minLength(2).maxLength(50).trim(),
-  })
-)
+// ========================================
+// REGISTER
+// ========================================
+export const registerSchema = z.object({
+  email: z.string().email().toLowerCase().trim(),
+  password: z.string().min(8).max(100),
+  displayName: z.string().min(2).max(50).trim(),
+})
+export type RegisterDto = z.infer<typeof registerSchema>
 
-/**
- * Validator for email/password login
- */
-export const loginValidator = vine.compile(
-  vine.object({
-    email: vine.string().email().normalizeEmail(),
-    password: vine.string().minLength(1),
-    rememberMe: vine.boolean().optional(),
-  })
-)
+// ========================================
+// LOGIN
+// ========================================
+export const loginSchema = z.object({
+  email: z.string().email().toLowerCase().trim(),
+  password: z.string().min(1),
+  rememberMe: z.boolean().optional(),
+})
+export type LoginDto = z.infer<typeof loginSchema>
 
-/**
- * Validator for forgot password request
- */
-export const forgotPasswordValidator = vine.compile(
-  vine.object({
-    email: vine.string().email().normalizeEmail(),
-  })
-)
+// ========================================
+// FORGOT PASSWORD
+// ========================================
+export const forgotPasswordSchema = z.object({
+  email: z.string().email().toLowerCase().trim(),
+})
+export type ForgotPasswordDto = z.infer<typeof forgotPasswordSchema>
 
-/**
- * Validator for password reset
- */
-export const resetPasswordValidator = vine.compile(
-  vine.object({
-    token: vine.string().minLength(64).maxLength(64),
-    password: vine.string().minLength(8).maxLength(100),
-  })
-)
+// ========================================
+// RESET PASSWORD
+// ========================================
+export const resetPasswordSchema = z.object({
+  token: z.string().length(64),
+  password: z.string().min(8).max(100),
+})
+export type ResetPasswordDto = z.infer<typeof resetPasswordSchema>
 
-/**
- * Validator for email verification
- */
-export const verifyEmailValidator = vine.compile(
-  vine.object({
-    token: vine.string().minLength(64).maxLength(64),
-  })
-)
+// ========================================
+// VERIFY EMAIL
+// ========================================
+export const verifyEmailSchema = z.object({
+  token: z.string().length(64),
+})
+export type VerifyEmailDto = z.infer<typeof verifyEmailSchema>
 
-/**
- * Validator for password change (authenticated user)
- */
-export const changePasswordValidator = vine.compile(
-  vine.object({
-    currentPassword: vine.string().minLength(1),
-    newPassword: vine.string().minLength(8).maxLength(100),
-  })
-)
+// ========================================
+// CHANGE PASSWORD
+// ========================================
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1),
+  newPassword: z.string().min(8).max(100),
+})
+export type ChangePasswordDto = z.infer<typeof changePasswordSchema>
 
-/**
- * Validator for setting password (OAuth user adding password)
- */
-export const setPasswordValidator = vine.compile(
-  vine.object({
-    password: vine.string().minLength(8).maxLength(100),
-  })
-)
+// ========================================
+// SET PASSWORD
+// ========================================
+export const setPasswordSchema = z.object({
+  password: z.string().min(8).max(100),
+})
+export type SetPasswordDto = z.infer<typeof setPasswordSchema>

@@ -1,5 +1,5 @@
 <template>
-  <div ref="menuRef" class="relative">
+  <div ref="menuRef" class="relative flex items-center">
     <!-- Avatar utilisateur avec badge de notification -->
     <button
       @click="isOpen = !isOpen"
@@ -43,7 +43,7 @@
     >
       <div
         v-if="isOpen"
-        class="absolute right-0 mt-2 w-64 origin-top-right rounded-xl bg-elevated border border-default shadow-lg focus:outline-none z-50"
+        class="absolute top-full right-0 mt-2 w-64 origin-top-right rounded-xl bg-elevated border border-default shadow-lg focus:outline-none z-50"
       >
         <div class="p-1">
           <!-- Header avec infos utilisateur -->

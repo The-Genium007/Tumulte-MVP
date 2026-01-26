@@ -2,8 +2,8 @@ import { test } from '@japa/runner'
 import {
   createCampaignSchema,
   updateCampaignSchema,
-} from '#validators/campaigns/create_campaign_validator'
-import { inviteStreamerSchema } from '#validators/campaigns/invite_streamer_validator'
+  inviteStreamerSchema,
+} from '#validators/campaigns/campaign_validators'
 
 test.group('CreateCampaignValidator', () => {
   test('should accept valid campaign data', ({ assert }) => {

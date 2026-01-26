@@ -36,14 +36,14 @@
         <div class="space-y-4">
           <!-- Avatar et infos -->
           <div class="flex items-center gap-4">
-            <UAvatar
-              :src="user?.avatarUrl ?? undefined"
-              :alt="user?.displayName"
+            <TwitchAvatar
+              :image-url="user?.streamer?.profileImageUrl"
+              :display-name="user?.streamer?.twitchDisplayName || user?.displayName || 'User'"
               size="xl"
               class="ring-2 ring-primary/20"
             />
             <div>
-              <p class="font-semibold text-lg text-primary">{{ user?.displayName }}</p>
+              <p class="font-heading text-lg text-primary uppercase">{{ user?.streamer?.twitchDisplayName || user?.displayName }}</p>
               <p class="text-sm text-muted">{{ user?.email || 'Non renseigné' }}</p>
               <UBadge
                 v-if="user?.tier"
