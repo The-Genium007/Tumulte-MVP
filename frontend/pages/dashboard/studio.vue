@@ -62,6 +62,11 @@
       <div class="toolbar-center" />
 
       <div class="toolbar-right">
+        <!-- Nom de la configuration chargée -->
+        <span v-if="currentConfigName" class="config-name-display" :title="currentConfigName">
+          {{ currentConfigName }}
+        </span>
+
         <UPopover v-model:open="showConfigDropdown" :ui="{ content: 'w-80' }">
           <UButton
             color="neutral"
@@ -822,15 +827,21 @@ const activateConfigItem = async (id: string) => {
   }
 }
 
-// Charger la liste des configurations au démarrage et charger la config active
+// Charger la liste des configurations au démarrage et charger la dernière modifiée
 const loadConfigs = async () => {
   try {
     const configs = await api.fetchConfigs()
 
-    // Charger automatiquement la configuration active
-    const activeConfig = configs.find((c) => c.isActive)
-    if (activeConfig) {
-      const fullConfig = await api.fetchConfig(activeConfig.id)
+    if (configs.length === 0) return
+
+    // Trouver la dernière configuration modifiée (par updatedAt)
+    const sortedConfigs = [...configs].sort(
+      (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+    )
+    const lastModifiedConfig = sortedConfigs[0]
+
+    if (lastModifiedConfig) {
+      const fullConfig = await api.fetchConfig(lastModifiedConfig.id)
       store.loadConfig(fullConfig.config)
       currentConfigId.value = fullConfig.id
       currentConfigName.value = fullConfig.name
@@ -989,6 +1000,21 @@ onUnmounted(() => {
   margin-left: 0.5rem;
   padding-left: 0.75rem;
   border-left: 1px solid var(--color-neutral-200);
+}
+
+/* Configuration name display */
+.config-name-display {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0.25rem 0.5rem;
+  background: var(--color-neutral-100);
+  border-radius: 6px;
+  border: 1px solid var(--color-neutral-200);
 }
 
 /* Main */
