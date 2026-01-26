@@ -176,7 +176,7 @@ test.group('VttSyncService - syncCampaignsFromWebSocket', (group) => {
     })
 
     // Create existing campaign with description
-    const existingCampaign = await createTestCampaign({
+    await createTestCampaign({
       ownerId: user.id,
       vttConnectionId: connection.id,
       vttCampaignId: 'vtt-campaign-123',

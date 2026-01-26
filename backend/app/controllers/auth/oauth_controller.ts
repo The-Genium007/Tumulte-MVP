@@ -130,7 +130,8 @@ export default class OAuthController {
       session.forget('oauth_link_user_id')
 
       // Find the existing user to link to
-      const User = (await import('#models/user')).default
+      const userModule = await import('#models/user')
+      const User = userModule.default
       const existingUser = await User.find(linkUserId)
 
       if (!existingUser) {

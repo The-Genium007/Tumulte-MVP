@@ -87,8 +87,10 @@ const { track } = useAnalytics()
  */
 function trackCtaClick(ctaText: string, ctaPosition: string) {
   track('cta_clicked', {
+    /* eslint-disable camelcase */
     cta_text: ctaText,
     cta_position: ctaPosition,
+    /* eslint-enable camelcase */
   })
 }
 </script>

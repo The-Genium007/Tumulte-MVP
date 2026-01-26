@@ -50,8 +50,8 @@ const COMMON_PASSWORDS = new Set([
  * - Enforce minimum length (8 chars with MFA context)
  */
 class PasswordSecurityService {
-  private readonly HIBP_API_URL = 'https://api.pwnedpasswords.com/range/'
-  private readonly HIBP_TIMEOUT_MS = 3000
+  private readonly hibpApiUrl = 'https://api.pwnedpasswords.com/range/'
+  private readonly hibpTimeoutMs = 3000
 
   /**
    * Check if a password has been compromised using HaveIBeenPwned API
@@ -66,9 +66,9 @@ class PasswordSecurityService {
       const suffix = sha1Hash.substring(5)
 
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), this.HIBP_TIMEOUT_MS)
+      const timeoutId = setTimeout(() => controller.abort(), this.hibpTimeoutMs)
 
-      const response = await fetch(`${this.HIBP_API_URL}${prefix}`, {
+      const response = await fetch(`${this.hibpApiUrl}${prefix}`, {
         headers: {
           'User-Agent': 'Tumulte-PasswordCheck',
           'Add': 'padding', // Request padding to prevent response size analysis

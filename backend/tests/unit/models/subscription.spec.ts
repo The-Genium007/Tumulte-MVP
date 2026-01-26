@@ -2,8 +2,6 @@ import { test } from '@japa/runner'
 import { DateTime } from 'luxon'
 import testUtils from '#tests/helpers/database'
 
-/* eslint-disable @typescript-eslint/naming-convention */
-
 test.group('Subscription Model - isActive', (group) => {
   group.each.setup(() => testUtils.db().withGlobalTransaction())
 

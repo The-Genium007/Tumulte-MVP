@@ -30,6 +30,7 @@ export const useAuthStore = defineStore('auth', () => {
    * Links anonymous events to identified user for funnel tracking.
    */
   function identifyUserInAnalytics(userData: User): void {
+    /* eslint-disable camelcase */
     identify(userData.id, {
       email: userData.email,
       display_name: userData.displayName,
@@ -45,6 +46,7 @@ export const useAuthStore = defineStore('auth', () => {
       is_premium: userData.isPremium,
       is_admin: userData.isAdmin,
     })
+    /* eslint-enable camelcase */
   }
 
   /**
@@ -163,7 +165,7 @@ export const useAuthStore = defineStore('auth', () => {
       identifyUserInAnalytics(result.user)
 
       return { success: true }
-    } catch (error) {
+    } catch {
       const err = { error: 'Une erreur est survenue. Veuillez réessayer.' }
       authError.value = err
       track('auth_error', { action: 'register', error: 'network_error' })
@@ -204,7 +206,7 @@ export const useAuthStore = defineStore('auth', () => {
       identifyUserInAnalytics(result.user)
 
       return { success: true, emailVerified: result.emailVerified }
-    } catch (error) {
+    } catch {
       const err = { error: 'Une erreur est survenue. Veuillez réessayer.' }
       authError.value = err
       track('auth_error', { action: 'login', error: 'network_error' })

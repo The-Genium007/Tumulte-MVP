@@ -21,21 +21,21 @@ export default class RequestIdMiddleware {
   /**
    * Header name for request ID
    */
-  private readonly HEADER_NAME = 'X-Request-ID'
+  private readonly headerName = 'X-Request-ID'
 
   async handle(ctx: HttpContext, next: NextFn) {
     const { request, response } = ctx
 
     // Use existing request ID from header (e.g., from load balancer)
     // or generate a new one
-    const requestId = request.header(this.HEADER_NAME) || randomUUID()
+    const requestId = request.header(this.headerName) || randomUUID()
 
     // Store request ID in the context for access in controllers/services
     // Type augmentation is defined at the bottom of this file
     ctx.requestId = requestId
 
     // Add request ID to response headers
-    response.header(this.HEADER_NAME, requestId)
+    response.header(this.headerName, requestId)
 
     // Continue with the request
     await next()

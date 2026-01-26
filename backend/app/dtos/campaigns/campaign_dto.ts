@@ -62,7 +62,7 @@ export class CampaignDto {
 
 export class CampaignDetailDto extends CampaignDto {
   members!: CampaignMemberDto[]
-  vttConnection!: VttConnectionStatusDto | null
+  declare vttConnection: VttConnectionStatusDto | null
 
   static override fromModel(campaign: Campaign): CampaignDetailDto {
     const base = CampaignDto.fromModel(campaign)

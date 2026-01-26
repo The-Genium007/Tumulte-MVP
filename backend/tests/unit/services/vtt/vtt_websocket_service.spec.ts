@@ -122,8 +122,6 @@ test.group('VttWebSocketService - JWT Token Validation Logic', (group) => {
   })
 
   test('should detect revoked tokens via TokenRevocationList', async ({ assert }) => {
-    const secret = env.get('APP_KEY')
-
     const user = await createTestUser()
     const provider = await createTestVttProvider()
     const connection = await createTestVttConnection({

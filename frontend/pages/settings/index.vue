@@ -504,7 +504,7 @@ useHead({
 const route = useRoute()
 const router = useRouter()
 const { user, logout, resendVerificationEmail } = useAuth()
-const { revokeTwitchAccess, deleteAccount } = useSettings()
+const { deleteAccount } = useSettings()
 const toast = useToast()
 const config = useRuntimeConfig()
 

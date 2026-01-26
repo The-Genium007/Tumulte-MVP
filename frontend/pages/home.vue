@@ -30,6 +30,7 @@ const route = useRoute()
 const { track } = useAnalytics()
 
 onMounted(() => {
+  /* eslint-disable camelcase */
   track('landing_page_viewed', {
     source: route.query.ref || 'direct',
     utm_source: route.query.utm_source || null,
@@ -37,6 +38,7 @@ onMounted(() => {
     utm_campaign: route.query.utm_campaign || null,
     utm_content: route.query.utm_content || null,
   })
+  /* eslint-enable camelcase */
 })
 
 // SEO - Meta tags complets pour referencement et partage social

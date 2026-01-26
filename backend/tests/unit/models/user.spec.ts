@@ -2,8 +2,6 @@ import { test } from '@japa/runner'
 import { DateTime } from 'luxon'
 import testUtils from '#tests/helpers/database'
 
-/* eslint-disable @typescript-eslint/naming-convention */
-
 test.group('User Model - Computed Properties', (group) => {
   group.each.setup(() => testUtils.db().withGlobalTransaction())
 
@@ -32,12 +30,12 @@ test.group('User Model - Computed Properties', (group) => {
     const userWithCreds = new User()
     userWithCreds.$attributes['pas' + 'sword'] = 'hashed_auth_value'
     ;(userWithCreds as unknown as Record<string, unknown>)['pas' + 'sword'] = 'hashed_auth_value'
-    assert.isTrue(userWithCreds['hasPas' + 'sword'])
+    assert.isTrue((userWithCreds as unknown as Record<string, boolean>)['hasPas' + 'sword'])
 
     // User without credentials
     const userNoCreds = new User()
     ;(userNoCreds as unknown as Record<string, unknown>)['pas' + 'sword'] = null
-    assert.isFalse(userNoCreds['hasPas' + 'sword'])
+    assert.isFalse((userNoCreds as unknown as Record<string, boolean>)['hasPas' + 'sword'])
   })
 })
 

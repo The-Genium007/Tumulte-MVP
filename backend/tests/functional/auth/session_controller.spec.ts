@@ -2,8 +2,6 @@ import { test } from '@japa/runner'
 import testUtils from '#tests/helpers/database'
 import { createAuthenticatedUser } from '#tests/helpers/test_utils'
 
-/* eslint-disable @typescript-eslint/naming-convention */
-
 test.group('SessionController - logout', (group) => {
   group.each.setup(() => testUtils.db().withGlobalTransaction())
 

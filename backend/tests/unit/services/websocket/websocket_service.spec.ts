@@ -1,7 +1,5 @@
 import { test } from '@japa/runner'
 
-/* eslint-disable @typescript-eslint/naming-convention */
-
 test.group('WebSocketService - makeSerializable', () => {
   test('should convert record to serializable format', async ({ assert }) => {
     const { webSocketService: WebSocketService } =
@@ -25,7 +23,7 @@ test.group('WebSocketService - makeSerializable', () => {
     const service = new WebSocketService()
     const makeSerializable = (service as any).makeSerializable.bind(service)
 
-    const input = { '0': NaN, '1': 20 }
+    const input = { '0': Number.NaN, '1': 20 }
     const result = makeSerializable(input)
 
     assert.equal(result['0'], 0)

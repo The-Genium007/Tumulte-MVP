@@ -3,8 +3,6 @@ import testUtils from '#tests/helpers/database'
 import { createTestUser } from '#tests/helpers/test_utils'
 import { streamer as Streamer } from '#models/streamer'
 
-/* eslint-disable @typescript-eslint/naming-convention */
-
 test.group('OverlayConfig Model - Static Methods', () => {
   test('getDefaultConfig should return valid default structure', async ({ assert }) => {
     const { overlayConfig: OverlayConfig } = await import('#models/overlay_config')

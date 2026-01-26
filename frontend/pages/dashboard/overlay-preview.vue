@@ -162,8 +162,11 @@ import PreviewControls from '@/overlay-studio/components/PreviewControls.vue'
 import DiceRollOverlay from '@/components/overlay/DiceRollOverlay.vue'
 import { useOverlayStudioStore } from '@/overlay-studio/stores/overlayStudio'
 import { useOverlayStudioApi } from '@/overlay-studio/composables/useOverlayStudioApi'
-import { getDiceConfigFromElement, getDiceHudStyleFromElement } from '@/composables/useOverlayElement'
-import type { PollProperties, DiceProperties, DiceRollEvent, OverlayElement } from '@/overlay-studio/types'
+import {
+  getDiceConfigFromElement,
+  getDiceHudStyleFromElement,
+} from '@/composables/useOverlayElement'
+import type { PollProperties, DiceRollEvent, OverlayElement } from '@/overlay-studio/types'
 import type { AnimationState } from '@/overlay-studio/composables/useAnimationController'
 
 definePageMeta({

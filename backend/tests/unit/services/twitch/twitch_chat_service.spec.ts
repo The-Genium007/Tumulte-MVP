@@ -1,16 +1,14 @@
 import { test } from '@japa/runner'
 
-/* eslint-disable @typescript-eslint/naming-convention */
-
 test.group('TwitchChatService - parseVote', () => {
   test('should parse valid vote format !1', async ({ assert }) => {
     // Test via reflection since parseVote is private
     // We test the behavior through the public interface instead
     const { twitchChatService: TwitchChatService } =
       await import('#services/twitch/twitch_chat_service')
-    const { redisService } = await import('#services/cache/redis_service')
+    const { redisService: RedisService } = await import('#services/cache/redis_service')
 
-    const service = new TwitchChatService(redisService)
+    const service = new TwitchChatService(new RedisService())
 
     // Access private method via prototype for testing
     const parseVote = (service as any).parseVote.bind(service)
@@ -23,9 +21,9 @@ test.group('TwitchChatService - parseVote', () => {
   test('should parse vote without exclamation mark', async ({ assert }) => {
     const { twitchChatService: TwitchChatService } =
       await import('#services/twitch/twitch_chat_service')
-    const { redisService } = await import('#services/cache/redis_service')
+    const { redisService: RedisService } = await import('#services/cache/redis_service')
 
-    const service = new TwitchChatService(redisService)
+    const service = new TwitchChatService(new RedisService())
     const parseVote = (service as any).parseVote.bind(service)
 
     assert.equal(parseVote('1', 5), 0)
@@ -36,9 +34,9 @@ test.group('TwitchChatService - parseVote', () => {
   test('should return null for invalid vote', async ({ assert }) => {
     const { twitchChatService: TwitchChatService } =
       await import('#services/twitch/twitch_chat_service')
-    const { redisService } = await import('#services/cache/redis_service')
+    const { redisService: RedisService } = await import('#services/cache/redis_service')
 
-    const service = new TwitchChatService(redisService)
+    const service = new TwitchChatService(new RedisService())
     const parseVote = (service as any).parseVote.bind(service)
 
     assert.isNull(parseVote('hello', 5))
@@ -50,9 +48,9 @@ test.group('TwitchChatService - parseVote', () => {
   test('should return null for out of range vote', async ({ assert }) => {
     const { twitchChatService: TwitchChatService } =
       await import('#services/twitch/twitch_chat_service')
-    const { redisService } = await import('#services/cache/redis_service')
+    const { redisService: RedisService } = await import('#services/cache/redis_service')
 
-    const service = new TwitchChatService(redisService)
+    const service = new TwitchChatService(new RedisService())
     const parseVote = (service as any).parseVote.bind(service)
 
     assert.isNull(parseVote('!0', 5)) // 0 is not valid (1-indexed)
@@ -63,9 +61,9 @@ test.group('TwitchChatService - parseVote', () => {
   test('should handle whitespace in vote', async ({ assert }) => {
     const { twitchChatService: TwitchChatService } =
       await import('#services/twitch/twitch_chat_service')
-    const { redisService } = await import('#services/cache/redis_service')
+    const { redisService: RedisService } = await import('#services/cache/redis_service')
 
-    const service = new TwitchChatService(redisService)
+    const service = new TwitchChatService(new RedisService())
     const parseVote = (service as any).parseVote.bind(service)
 
     assert.equal(parseVote('  !1  ', 5), 0)
@@ -178,9 +176,9 @@ test.group('TwitchChatService - client management', () => {
   test('should track active clients', async ({ assert }) => {
     const { twitchChatService: TwitchChatService } =
       await import('#services/twitch/twitch_chat_service')
-    const { redisService } = await import('#services/cache/redis_service')
+    const { redisService: RedisService } = await import('#services/cache/redis_service')
 
-    const service = new TwitchChatService(redisService)
+    const service = new TwitchChatService(new RedisService())
 
     // Initially no clients
     const clients = (service as any).clients as Map<string, unknown>

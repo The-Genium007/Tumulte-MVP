@@ -228,7 +228,7 @@ describe('UserMenu Component', () => {
     await wrapper.find("button[aria-label='Menu utilisateur']").trigger('click')
     await wrapper.vm.$nextTick()
 
-    expect(wrapper.text()).toContain('Réglages')
+    expect(wrapper.text()).toContain('Mon compte')
     const settingsLink = wrapper.find("a[href='/settings']")
     expect(settingsLink.exists()).toBe(true)
   })

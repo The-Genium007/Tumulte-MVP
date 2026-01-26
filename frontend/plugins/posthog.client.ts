@@ -45,6 +45,7 @@ export default defineNuxtPlugin(() => {
   }
 
   // Initialiser PostHog en mode restrictif (opt-out par defaut)
+  /* eslint-disable camelcase */
   posthog.init(posthogKey, {
     api_host: posthogHost,
 
@@ -122,6 +123,7 @@ export default defineNuxtPlugin(() => {
       }
     },
   })
+  /* eslint-enable camelcase */
 
   // Exposer l'instance PostHog globalement pour le composable
   return {

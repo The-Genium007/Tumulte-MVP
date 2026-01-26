@@ -37,6 +37,10 @@ g.useRoute = vi.fn(() => ({
 
 g.navigateTo = vi.fn()
 
+g.useNuxtApp = vi.fn(() => ({
+  $posthog: undefined,
+}))
+
 // Mock localStorage
 const localStorageMock = {
   getItem: vi.fn(),

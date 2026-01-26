@@ -134,6 +134,7 @@ export default class MetricsService {
    * Record an HTTP request
    */
   recordHttpRequest(method: string, route: string, statusCode: number, durationMs: number): void {
+    // eslint-disable-next-line camelcase
     const labels = { method, route, status_code: String(statusCode) }
     this.httpRequestsTotal.inc(labels)
     this.httpRequestDuration.observe(labels, durationMs / 1000)
@@ -186,6 +187,7 @@ export default class MetricsService {
    * Record cache hit
    */
   recordCacheHit(cacheType: string): void {
+    // eslint-disable-next-line camelcase
     this.cacheHitsTotal.inc({ cache_type: cacheType })
   }
 
@@ -193,6 +195,7 @@ export default class MetricsService {
    * Record cache miss
    */
   recordCacheMiss(cacheType: string): void {
+    // eslint-disable-next-line camelcase
     this.cacheMissesTotal.inc({ cache_type: cacheType })
   }
 

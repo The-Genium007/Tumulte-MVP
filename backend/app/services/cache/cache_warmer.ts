@@ -10,8 +10,8 @@ import { DateTime } from 'luxon'
  * and improve response times for the first requests.
  */
 export default class CacheWarmer {
-  private readonly CAMPAIGN_TTL = 3600 // 1 hour
-  private readonly STREAMER_TTL = 3600 // 1 hour
+  private readonly campaignTtl = 3600 // 1 hour
+  private readonly streamerTtl = 3600 // 1 hour
 
   /**
    * Run all warmup tasks.
@@ -70,7 +70,7 @@ export default class CacheWarmer {
           cachedAt: new Date().toISOString(),
         }
 
-        await redis.set(cacheKey, JSON.stringify(cacheData), 'EX', this.CAMPAIGN_TTL)
+        await redis.set(cacheKey, JSON.stringify(cacheData), 'EX', this.campaignTtl)
         warmedCount++
       } catch (error) {
         logger.debug({ campaignId: campaign.id, error }, '[CacheWarmer] Failed to cache campaign')
@@ -105,7 +105,7 @@ export default class CacheWarmer {
           cachedAt: new Date().toISOString(),
         }
 
-        await redis.set(cacheKey, JSON.stringify(cacheData), 'EX', this.STREAMER_TTL)
+        await redis.set(cacheKey, JSON.stringify(cacheData), 'EX', this.streamerTtl)
         warmedCount++
       } catch (error) {
         logger.debug({ streamerId: streamer.id, error }, '[CacheWarmer] Failed to cache streamer')

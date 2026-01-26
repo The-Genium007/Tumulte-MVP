@@ -5,8 +5,6 @@ import {
   mockUserInfo,
 } from '#tests/mocks/twitch_api_mock'
 
-/* eslint-disable @typescript-eslint/naming-convention */
-
 test.group('TwitchAuthService - getAuthorizationUrl', () => {
   test('should generate valid authorization URL', async ({ assert }) => {
     const { TwitchAuthService } = await import('#services/auth/twitch_auth_service')

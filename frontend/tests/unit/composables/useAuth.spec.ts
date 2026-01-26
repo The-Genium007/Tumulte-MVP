@@ -51,11 +51,12 @@ describe('useAuth Composable', () => {
 
     expect(auth.user.value).toBeNull()
 
-    // Update store
-    store.user = createMockUser()
+    // Update store with a specific mock user
+    const mockUser = createMockUser()
+    store.user = mockUser
 
-    // Composable should reflect the change
-    expect(auth.user.value).toEqual(createMockUser())
+    // Composable should reflect the change (same reference)
+    expect(auth.user.value).toEqual(mockUser)
   })
 
   test('isAuthenticated should be reactive with store', () => {

@@ -1,6 +1,6 @@
 import { test } from '@japa/runner'
 
-/* eslint-disable @typescript-eslint/naming-convention */
+/* eslint-disable camelcase */
 
 test.group('HealthCheckService - result structure', () => {
   test('should have correct HealthCheckResult structure', async ({ assert }) => {

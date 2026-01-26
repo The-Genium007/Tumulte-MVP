@@ -262,7 +262,7 @@ describe('HTTP Client', () => {
       } as AxiosError
 
       await expect(errorCallback(error)).rejects.toEqual(error)
-      expect(consoleErrorSpy).toHaveBeenCalledWith('Erreur serveur')
+      expect(consoleErrorSpy).toHaveBeenCalledWith('Erreur serveur:', error)
     }
 
     consoleErrorSpy.mockRestore()
@@ -283,7 +283,7 @@ describe('HTTP Client', () => {
       } as AxiosError
 
       await expect(errorCallback(error)).rejects.toEqual(error)
-      expect(consoleErrorSpy).toHaveBeenCalledWith('Aucune réponse du serveur')
+      expect(consoleErrorSpy).toHaveBeenCalledWith('Aucune réponse du serveur:', error)
     }
 
     consoleErrorSpy.mockRestore()

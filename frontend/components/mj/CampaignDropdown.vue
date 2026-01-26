@@ -127,7 +127,10 @@ onUnmounted(() => {
             {{ selectedCampaign.name }}
           </h3>
           <!-- VTT info if connected, otherwise player count -->
-          <p v-if="selectedCampaign.vttConnection" class="text-sm text-muted flex items-center gap-2">
+          <p
+            v-if="selectedCampaign.vttConnection"
+            class="text-sm text-muted flex items-center gap-2"
+          >
             <span>Foundry VTT</span>
             <span class="text-neutral-300">•</span>
             <span class="flex items-center gap-1.5">
