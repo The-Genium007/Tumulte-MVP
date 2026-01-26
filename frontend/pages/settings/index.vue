@@ -43,7 +43,9 @@
               class="ring-2 ring-primary/20"
             />
             <div>
-              <p class="font-heading text-lg text-primary uppercase">{{ user?.streamer?.twitchDisplayName || user?.displayName }}</p>
+              <p class="font-heading text-lg text-primary uppercase">
+                {{ user?.streamer?.twitchDisplayName || user?.displayName }}
+              </p>
               <p class="text-sm text-muted">{{ user?.email || 'Non renseigné' }}</p>
               <UBadge
                 v-if="user?.tier"
@@ -68,7 +70,12 @@
               <p class="mb-2">
                 Veuillez vérifier votre adresse email pour accéder à toutes les fonctionnalités.
               </p>
-              <UButton size="xs" variant="outline" @click="handleResendVerification" :loading="resending">
+              <UButton
+                size="xs"
+                variant="outline"
+                @click="handleResendVerification"
+                :loading="resending"
+              >
                 Renvoyer l'email
               </UButton>
             </template>
@@ -629,7 +636,9 @@ const goBackToDashboard = () => {
 
 // Password methods
 const isPasswordFormValid = computed(() => {
-  const hasCurrentIfNeeded = user.value?.hasPassword ? passwordForm.currentPassword.length > 0 : true
+  const hasCurrentIfNeeded = user.value?.hasPassword
+    ? passwordForm.currentPassword.length > 0
+    : true
   return (
     hasCurrentIfNeeded &&
     passwordForm.password.length >= 8 &&

@@ -219,6 +219,10 @@ router
       '#controllers/mj/vtt_connections_controller.syncCampaigns'
     )
     router.post('/vtt-connections/:id/revoke', '#controllers/mj/vtt_connections_controller.revoke')
+    router.post(
+      '/vtt-connections/:id/reauthorize',
+      '#controllers/mj/vtt_connections_controller.reauthorize'
+    )
 
     // Streamers (recherche Twitch)
     router.get('/streamers', '#controllers/mj/streamers_controller.index')
@@ -581,6 +585,12 @@ router
     router.get(
       '/connection-health',
       '#controllers/webhooks/foundry_webhook_controller.connectionHealth'
+    )
+
+    // Reauthorization status (module polls this after revocation)
+    router.get(
+      '/reauthorization-status',
+      '#controllers/webhooks/foundry_webhook_controller.reauthorizationStatus'
     )
   })
   .prefix('/webhooks/foundry')

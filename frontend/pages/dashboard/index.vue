@@ -259,9 +259,7 @@
         <template #header>
           <div class="flex items-center justify-between gap-4">
             <div class="flex items-center gap-3 min-w-0">
-              <h2 class="heading-card truncate">
-                Ajouter l'overlay dans OBS
-              </h2>
+              <h2 class="heading-card truncate">Ajouter l'overlay dans OBS</h2>
             </div>
             <button
               class="flex items-center justify-center size-8 rounded-full hover:bg-neutral-200 transition-colors shrink-0"

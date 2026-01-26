@@ -70,7 +70,7 @@ const steps = [
   {
     title: 'Déchaîner',
     description:
-      'Lancez votre sondage. En un instant, tous les royaumes reçoivent l\'appel. Les communautés unies tremblent d\'anticipation.',
+      "Lancez votre sondage. En un instant, tous les royaumes reçoivent l'appel. Les communautés unies tremblent d'anticipation.",
     icon: 'i-lucide-send',
     imageLabel: 'Lancement sondage',
     image: '/images/landing/step-2.webp',
@@ -78,7 +78,7 @@ const steps = [
   {
     title: 'Révéler',
     description:
-      'Les voix convergent depuis chaque royaume. Le verdict tombe, forgé par des centaines de volontés. L\'histoire s\'écrit.',
+      "Les voix convergent depuis chaque royaume. Le verdict tombe, forgé par des centaines de volontés. L'histoire s'écrit.",
     icon: 'i-lucide-bar-chart-3',
     imageLabel: 'Résultats agrégés',
     image: '/images/landing/step-3.webp',

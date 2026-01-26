@@ -89,12 +89,7 @@
           />
         </UFormField>
 
-        <UAlert
-          v-if="errorMessage"
-          color="error"
-          variant="subtle"
-          icon="i-lucide-alert-circle"
-        >
+        <UAlert v-if="errorMessage" color="error" variant="subtle" icon="i-lucide-alert-circle">
           <template #title>
             <span class="font-semibold">{{ errorMessage }}</span>
           </template>
@@ -166,9 +161,7 @@ const form = reactive({
 const isFormValid = computed(() => {
   const hasCurrentIfNeeded = user.value?.hasPassword ? form.currentPassword.length > 0 : true
   return (
-    hasCurrentIfNeeded &&
-    form.password.length >= 8 &&
-    form.password === form.passwordConfirmation
+    hasCurrentIfNeeded && form.password.length >= 8 && form.password === form.passwordConfirmation
   )
 })
 

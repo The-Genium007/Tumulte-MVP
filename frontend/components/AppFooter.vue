@@ -1,5 +1,7 @@
 <template>
-  <footer class="mt-auto container mx-auto px-4 sm:px-6 lg:px-8 pb-24 lg:pb-6 max-w-7xl safe-area-bottom">
+  <footer
+    class="mt-auto container mx-auto px-4 sm:px-6 lg:px-8 pb-24 lg:pb-6 max-w-7xl safe-area-bottom"
+  >
     <div class="bg-muted rounded-4xl px-8 py-6 text-center space-y-2">
       <!-- Version -->
       <p class="text-sm text-primary-500">v{{ version }}</p>

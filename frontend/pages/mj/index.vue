@@ -37,8 +37,8 @@
             color="primary"
             size="lg"
             icon="i-lucide-plus"
-            label="Ajouter une campagne"
-            @click="router.push('/mj/campaigns/import')"
+            label="Connecter un VTT"
+            @click="router.push('/mj/vtt-connections/create')"
           />
         </div>
       </UCard>

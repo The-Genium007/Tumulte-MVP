@@ -12,7 +12,7 @@ import { DateTime } from 'luxon'
 test.group('VttSyncService - fetchCampaignsFromVtt', (group) => {
   group.each.setup(() => testUtils.db().withGlobalTransaction())
 
-  test('should return mock campaigns for test connection', async ({ assert }) => {
+  test('should return empty array (campaigns are created via pairing flow)', async ({ assert }) => {
     const { default: VttSyncService } = await import('#services/vtt/vtt_sync_service')
     const service = new VttSyncService()
 
@@ -25,59 +25,9 @@ test.group('VttSyncService - fetchCampaignsFromVtt', (group) => {
 
     const campaigns = await service.fetchCampaignsFromVtt(connection)
 
-    // Should return mock campaigns
+    // Should return empty array - campaigns are now created via pairWithCode()
     assert.isArray(campaigns)
-    assert.isTrue(campaigns.length > 0)
-
-    // Each campaign should have required fields
-    for (const campaign of campaigns) {
-      assert.exists(campaign.id)
-      assert.exists(campaign.name)
-      assert.isArray(campaign.characters)
-    }
-  })
-
-  test('should include provider ID in campaign IDs', async ({ assert }) => {
-    const { default: VttSyncService } = await import('#services/vtt/vtt_sync_service')
-    const service = new VttSyncService()
-
-    const user = await createTestUser()
-    const provider = await createTestVttProvider({ name: 'foundry' })
-    const connection = await createTestVttConnection({
-      userId: user.id,
-      vttProviderId: provider.id,
-    })
-
-    const campaigns = await service.fetchCampaignsFromVtt(connection)
-
-    // Campaign IDs should include the provider ID
-    for (const campaign of campaigns) {
-      assert.include(campaign.id, provider.id)
-    }
-  })
-
-  test('should return character data with campaigns', async ({ assert }) => {
-    const { default: VttSyncService } = await import('#services/vtt/vtt_sync_service')
-    const service = new VttSyncService()
-
-    const user = await createTestUser()
-    const provider = await createTestVttProvider()
-    const connection = await createTestVttConnection({
-      userId: user.id,
-      vttProviderId: provider.id,
-    })
-
-    const campaigns = await service.fetchCampaignsFromVtt(connection)
-    const campaignWithCharacters = campaigns.find((c) => c.characters && c.characters.length > 0)
-
-    assert.exists(campaignWithCharacters)
-    assert.isArray(campaignWithCharacters!.characters)
-
-    // Check character structure
-    const character = campaignWithCharacters!.characters![0]
-    assert.exists(character.id)
-    assert.exists(character.name)
-    assert.include(['pc', 'npc'], character.type)
+    assert.lengthOf(campaigns, 0)
   })
 })
 

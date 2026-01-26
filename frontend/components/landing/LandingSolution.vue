@@ -27,8 +27,8 @@
               <span class="text-secondary-500">Tous les Mondes Unis</span>
             </h2>
             <p class="text-lg text-muted">
-              Tumulte est le grimoire qui unit les royaumes. Vos viewers deviennent une
-              seule force capable de bouleverser l'aventure.
+              Tumulte est le grimoire qui unit les royaumes. Vos viewers deviennent une seule force
+              capable de bouleverser l'aventure.
             </p>
           </div>
 
@@ -63,12 +63,14 @@ const benefits = [
   {
     icon: 'i-lucide-vote',
     title: 'Sondages multi-streams',
-    description: 'Lancez des votes synchronisés sur toutes les chaînes. Résultats agrégés en temps réel.',
+    description:
+      'Lancez des votes synchronisés sur toutes les chaînes. Résultats agrégés en temps réel.',
   },
   {
     icon: 'i-lucide-swords',
     title: 'Interactions en jeu',
-    description: 'Vos viewers influencent directement l\'aventure : choix narratifs, actions des personnages.',
+    description:
+      "Vos viewers influencent directement l'aventure : choix narratifs, actions des personnages.",
   },
   {
     icon: 'i-lucide-user-plus',

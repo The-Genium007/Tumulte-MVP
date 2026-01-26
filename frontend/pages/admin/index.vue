@@ -191,7 +191,9 @@
               >
                 <span class="capitalize">{{ type || 'Standard' }}</span>
                 <UBadge
-                  :color="type === 'partner' ? 'primary' : type === 'affiliate' ? 'success' : 'neutral'"
+                  :color="
+                    type === 'partner' ? 'primary' : type === 'affiliate' ? 'success' : 'neutral'
+                  "
                   variant="subtle"
                 >
                   {{ count }}
@@ -223,9 +225,7 @@
       </div>
 
       <!-- Generated timestamp -->
-      <p class="text-sm text-muted text-center">
-        Généré le {{ formatDate(metrics.generatedAt) }}
-      </p>
+      <p class="text-sm text-muted text-center">Généré le {{ formatDate(metrics.generatedAt) }}</p>
     </template>
   </div>
 </template>

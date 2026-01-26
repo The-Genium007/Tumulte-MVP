@@ -122,7 +122,14 @@ const handleSubmit = async () => {
       <UCard class="mb-8">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-4">
-            <UButton color="neutral" variant="soft" size="xl" square class="group shrink-0" @click="goBack">
+            <UButton
+              color="neutral"
+              variant="soft"
+              size="xl"
+              square
+              class="group shrink-0"
+              @click="goBack"
+            >
               <template #leading>
                 <UIcon
                   name="i-lucide-arrow-left"
@@ -132,7 +139,9 @@ const handleSubmit = async () => {
             </UButton>
             <div>
               <h1 class="text-xl sm:text-3xl font-bold text-primary">Créer un sondage</h1>
-              <p class="text-sm sm:text-base text-neutral-400">Ajoutez un nouveau sondage à votre campagne</p>
+              <p class="text-sm sm:text-base text-neutral-400">
+                Ajoutez un nouveau sondage à votre campagne
+              </p>
             </div>
           </div>
         </div>

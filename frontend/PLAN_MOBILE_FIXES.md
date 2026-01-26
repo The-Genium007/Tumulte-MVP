@@ -9,10 +9,8 @@ Corriger les problèmes mineurs de compatibilité mobile identifiés lors de l'a
 
 ## Phase 1 : Headers non responsive (Priorité haute) ✅
 
-### 1.1 pages/mj/campaigns/import.vue ✅
-- [x] Réduire l'icône du bouton retour sur mobile : `size-6 sm:size-12`
-- [x] Adapter le titre : `text-xl sm:text-3xl`
-- [x] Adapter le sous-titre : `text-sm sm:text-base`
+### 1.1 pages/mj/campaigns/import.vue ✅ (SUPPRIMÉE)
+- Page supprimée - fonctionnalités intégrées dans le dropdown de campagne
 
 ### 1.2 pages/dashboard/campaigns/[id]/character.vue ✅
 - [x] Réduire l'icône du bouton retour sur mobile : `size-6 sm:size-12`

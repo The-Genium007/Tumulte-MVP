@@ -55,9 +55,7 @@
         />
 
         <div class="space-y-3">
-          <UButton block size="lg" variant="outline" to="/verify-email">
-            Renvoyer l'email
-          </UButton>
+          <UButton block size="lg" variant="outline" to="/verify-email"> Renvoyer l'email </UButton>
 
           <UButton block size="lg" variant="ghost" to="/login"> Retour à la connexion </UButton>
         </div>

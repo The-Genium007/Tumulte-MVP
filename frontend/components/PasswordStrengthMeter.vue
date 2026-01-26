@@ -72,13 +72,21 @@ watch(
 )
 
 // Emit score and strength changes (immediate: true to sync initial state)
-watch(score, (newScore) => {
-  emit('update:score', newScore)
-}, { immediate: true })
+watch(
+  score,
+  (newScore) => {
+    emit('update:score', newScore)
+  },
+  { immediate: true }
+)
 
-watch(isStrong, (newIsStrong) => {
-  emit('update:isStrong', newIsStrong)
-}, { immediate: true })
+watch(
+  isStrong,
+  (newIsStrong) => {
+    emit('update:isStrong', newIsStrong)
+  },
+  { immediate: true }
+)
 
 function getBarClass(index: number): string {
   const filled = index <= score.value + 1

@@ -12,12 +12,7 @@
 
     <div class="space-y-6">
       <!-- Message d'erreur global (bien visible en haut) -->
-      <UAlert
-        v-if="errorMessage"
-        color="error"
-        variant="soft"
-        icon="i-lucide-alert-circle"
-      >
+      <UAlert v-if="errorMessage" color="error" variant="soft" icon="i-lucide-alert-circle">
         <template #title>
           <span class="font-semibold">Erreur</span>
         </template>
@@ -29,9 +24,7 @@
       <!-- Formulaire email/password -->
       <form @submit.prevent="handleEmailLogin" class="space-y-4">
         <div>
-          <label class="block text-sm font-bold text-secondary ml-2 uppercase mb-2">
-            Email
-          </label>
+          <label class="block text-sm font-bold text-secondary ml-2 uppercase mb-2"> Email </label>
           <UInput
             v-model="email"
             type="email"
@@ -72,13 +65,7 @@
           </NuxtLink>
         </div>
 
-        <UButton
-          type="submit"
-          block
-          size="xl"
-          :loading="loading"
-          :disabled="!email || !password"
-        >
+        <UButton type="submit" block size="xl" :loading="loading" :disabled="!email || !password">
           Se connecter
         </UButton>
       </form>

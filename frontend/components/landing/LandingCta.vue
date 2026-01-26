@@ -11,12 +11,7 @@
             <div class="absolute inset-0 opacity-5 pointer-events-none">
               <svg class="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
                 <defs>
-                  <pattern
-                    id="cta-pattern"
-                    width="20"
-                    height="20"
-                    patternUnits="userSpaceOnUse"
-                  >
+                  <pattern id="cta-pattern" width="20" height="20" patternUnits="userSpaceOnUse">
                     <circle cx="10" cy="10" r="1" fill="currentColor" />
                   </pattern>
                 </defs>
@@ -25,9 +20,7 @@
             </div>
 
             <!-- Contenu -->
-            <div
-              class="relative grid grid-cols-1 lg:grid-cols-2 gap-8 items-center py-4"
-            >
+            <div class="relative grid grid-cols-1 lg:grid-cols-2 gap-8 items-center py-4">
               <!-- Image - Format cinématique 16:9, focalisé sur le cavalier en bas -->
               <div class="order-2 lg:order-1">
                 <div class="relative aspect-video overflow-hidden rounded-2xl shadow-lg">
@@ -47,8 +40,8 @@
                     <span class="text-secondary-500">Vous Attend</span>
                   </h2>
                   <p class="text-lg text-muted max-w-lg mx-auto lg:mx-0">
-                    Rejoignez les Maîtres du Jeu qui transforment leurs sessions en
-                    épopées interactives où chaque viewer compte.
+                    Rejoignez les Maîtres du Jeu qui transforment leurs sessions en épopées
+                    interactives où chaque viewer compte.
                   </p>
                 </div>
 

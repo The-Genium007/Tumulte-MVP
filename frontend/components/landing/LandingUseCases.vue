@@ -50,10 +50,7 @@
                   :key="index"
                   class="flex items-start gap-2"
                 >
-                  <UIcon
-                    name="i-lucide-check"
-                    class="size-5 text-success-500 mt-0.5 shrink-0"
-                  />
+                  <UIcon name="i-lucide-check" class="size-5 text-success-500 mt-0.5 shrink-0" />
                   <span class="text-muted">{{ feature }}</span>
                 </li>
               </ul>
@@ -80,16 +77,11 @@
                     <div
                       class="size-10 rounded-xl bg-[#9146FF]/10 flex items-center justify-center"
                     >
-                      <UIcon
-                        name="i-simple-icons-twitch"
-                        class="size-5 text-[#9146FF]"
-                      />
+                      <UIcon name="i-simple-icons-twitch" class="size-5 text-[#9146FF]" />
                     </div>
                     <h3 class="text-xl font-semibold">Aventuriers Streamers</h3>
                   </div>
-                  <p class="text-sm text-muted">
-                    Offrez à votre communauté le pouvoir d'agir
-                  </p>
+                  <p class="text-sm text-muted">Offrez à votre communauté le pouvoir d'agir</p>
                 </div>
               </div>
 
@@ -100,10 +92,7 @@
                   :key="index"
                   class="flex items-start gap-2"
                 >
-                  <UIcon
-                    name="i-lucide-check"
-                    class="size-5 text-success-500 mt-0.5 shrink-0"
-                  />
+                  <UIcon name="i-lucide-check" class="size-5 text-success-500 mt-0.5 shrink-0" />
                   <span class="text-muted">{{ feature }}</span>
                 </li>
               </ul>
@@ -119,13 +108,13 @@
 const gmFeatures = [
   'Forgez des campagnes multi-streams en quelques incantations',
   'Préparez des sondages qui bouleversent le destin des héros',
-  'Observez l\'engagement de toutes les communautés en temps réel',
+  "Observez l'engagement de toutes les communautés en temps réel",
   'Orchestrez vos interventions comme un stratège légendaire',
-  'Offrez à chaque viewer un rôle clé dans l\'épopée',
+  "Offrez à chaque viewer un rôle clé dans l'épopée",
 ]
 
 const streamerFeatures = [
-  'Ralliez votre chaîne à une campagne d\'un simple clic',
+  "Ralliez votre chaîne à une campagne d'un simple clic",
   'Embarquez votre communauté dans une quête collective',
   'Offrez à chaque viewer un rôle clé dans la légende',
   'Overlay enchanteur pour une immersion totale',

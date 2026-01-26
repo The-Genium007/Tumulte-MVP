@@ -407,9 +407,41 @@
             description="Le tunnel n'est pas actif. Lancez votre VTT pour établir la connexion."
           />
 
-          <!-- Revoke Connection -->
+          <!-- Revoked Status Alert with Reauthorize button -->
           <div
-            v-if="campaign.vttConnection.status !== 'revoked'"
+            v-if="campaign.vttConnection.status === 'revoked'"
+            class="pt-4 border-t border-neutral-200"
+          >
+            <UAlert
+              color="warning"
+              variant="soft"
+              icon="i-lucide-shield-off"
+              title="Connexion révoquée"
+              description="L'accès à Foundry VTT a été révoqué. Les données sont conservées. Vous pouvez réautoriser l'accès pour reconnecter le module sans refaire l'appairage."
+            />
+            <div class="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h3 class="font-semibold text-primary">Réautoriser l'accès</h3>
+                <p class="text-sm text-muted">
+                  Réactive la connexion Foundry. Le module récupérera automatiquement les nouveaux
+                  tokens.
+                </p>
+              </div>
+              <UButton
+                color="success"
+                variant="soft"
+                label="Réautoriser"
+                icon="i-lucide-shield-check"
+                :loading="reauthorizingVtt"
+                class="w-full sm:w-auto"
+                @click="handleReauthorizeVtt"
+              />
+            </div>
+          </div>
+
+          <!-- Revoke Connection (only if not already revoked) -->
+          <div
+            v-else
             class="pt-4 border-t border-neutral-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
           >
             <div>
@@ -700,6 +732,7 @@ const showInviteModal = ref(false)
 const showDeleteModal = ref(false)
 const showRemoveMemberModal = ref(false)
 const revokingVtt = ref(false)
+const reauthorizingVtt = ref(false)
 const memberToRemove = ref<{ id: string; name: string } | null>(null)
 const searchQuery = ref('')
 const searchResults = ref<StreamerSearchResult[]>([])
@@ -1022,6 +1055,35 @@ const handleRevokeVtt = async () => {
     console.error('Failed to revoke VTT connection:', error)
   } finally {
     revokingVtt.value = false
+  }
+}
+
+// Handle reauthorize VTT connection
+const handleReauthorizeVtt = async () => {
+  if (!campaign.value?.vttConnection) return
+
+  reauthorizingVtt.value = true
+  try {
+    const response = await fetch(
+      `${config.public.apiBase}/mj/vtt-connections/${campaign.value.vttConnection.id}/reauthorize`,
+      {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+      }
+    )
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Échec de la réautorisation')
+    }
+
+    // Reload campaign data to reflect the change
+    await loadMembers()
+  } catch (error) {
+    console.error('Failed to reauthorize VTT connection:', error)
+  } finally {
+    reauthorizingVtt.value = false
   }
 }
 

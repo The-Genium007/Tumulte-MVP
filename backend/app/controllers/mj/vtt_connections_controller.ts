@@ -260,6 +260,87 @@ export default class VttConnectionsController {
   }
 
   /**
+   * Reauthorize a revoked VTT connection
+   * POST /mj/vtt-connections/:id/reauthorize
+   *
+   * This allows re-enabling a revoked connection without going through the full pairing process.
+   * The connection data (worldId, apiKey, campaign) are preserved.
+   */
+  async reauthorize({ auth, params, response }: HttpContext) {
+    const user = auth.user!
+
+    const connection = await VttConnection.query()
+      .where('id', params.id)
+      .where('user_id', user.id)
+      .preload('provider')
+      .firstOrFail()
+
+    // Only allow reauthorization of revoked connections
+    if (connection.status !== 'revoked') {
+      return response.badRequest({
+        error: 'Only revoked connections can be reauthorized',
+        currentStatus: connection.status,
+      })
+    }
+
+    // Generate fingerprint for security validation
+    const fingerprint = this.vttPairingService.generateFingerprint(
+      connection.worldId || '',
+      connection.moduleVersion || '2.0.0'
+    )
+
+    // Reactivate connection
+    connection.status = 'active'
+    connection.tunnelStatus = 'connecting'
+    connection.lastHeartbeatAt = DateTime.now()
+    connection.tokenVersion = (connection.tokenVersion || 1) + 1 // Invalidate old tokens
+    connection.connectionFingerprint = fingerprint
+    await connection.save()
+
+    // Generate new session tokens
+    const tokens = await this.vttPairingService.generateSessionTokensForConnection(
+      connection.id,
+      user.id,
+      connection.tokenVersion,
+      fingerprint
+    )
+
+    // Build API URL
+    const apiUrl = env.get('API_URL') || `http://${env.get('HOST')}:${env.get('PORT')}`
+
+    // Store reauthorization data for the module to pick up
+    const reauthorizedData = {
+      connectionId: connection.id,
+      apiKey: connection.apiKey,
+      sessionToken: tokens.sessionToken,
+      refreshToken: tokens.refreshToken,
+      expiresIn: tokens.expiresIn,
+      serverUrl: apiUrl,
+      fingerprint,
+      reauthorizedAt: DateTime.now().toISO(),
+    }
+
+    await redis.setex(
+      `pairing:reauthorized:${connection.worldId}`,
+      300, // 5 minutes for module to pick up
+      JSON.stringify(reauthorizedData)
+    )
+
+    return response.ok({
+      success: true,
+      message: 'Connection reauthorized successfully',
+      connection: {
+        id: connection.id,
+        name: connection.name,
+        worldId: connection.worldId,
+        worldName: connection.worldName,
+        status: connection.status,
+        tunnelStatus: connection.tunnelStatus,
+      },
+    })
+  }
+
+  /**
    * Refresh session token
    * POST /mj/vtt-connections/refresh-token
    *

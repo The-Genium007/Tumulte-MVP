@@ -19,8 +19,8 @@
       </p>
 
       <p class="text-center text-sm text-muted">
-        Cliquez sur le lien dans l'email pour activer votre compte. Si vous ne trouvez pas
-        l'email, vérifiez vos spams.
+        Cliquez sur le lien dans l'email pour activer votre compte. Si vous ne trouvez pas l'email,
+        vérifiez vos spams.
       </p>
 
       <UAlert

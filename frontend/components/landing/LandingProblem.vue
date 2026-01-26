@@ -10,8 +10,8 @@
               <span class="text-secondary-500">Divisés</span>
             </h2>
             <p class="text-lg text-muted">
-              Quand plusieurs streamers partagent une table de JDR, leurs communautés
-              devraient partager le pouvoir de changer le destin.
+              Quand plusieurs streamers partagent une table de JDR, leurs communautés devraient
+              partager le pouvoir de changer le destin.
             </p>
           </div>
 
@@ -56,7 +56,8 @@ const painPoints = [
   {
     icon: 'i-lucide-split',
     title: 'Communautés fragmentées',
-    description: 'Vos viewers votent chacun de leur côté, sans impact réel sur l\'aventure collective.',
+    description:
+      "Vos viewers votent chacun de leur côté, sans impact réel sur l'aventure collective.",
   },
   {
     icon: 'i-lucide-chart-scatter',

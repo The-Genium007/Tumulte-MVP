@@ -24,7 +24,9 @@
           </div>
           <div>
             <h1 class="text-xl sm:text-3xl font-bold text-primary">Mon personnage</h1>
-            <p class="text-sm sm:text-base text-muted mt-1">Choisissez votre personnage pour cette campagne</p>
+            <p class="text-sm sm:text-base text-muted mt-1">
+              Choisissez votre personnage pour cette campagne
+            </p>
           </div>
         </div>
       </UCard>

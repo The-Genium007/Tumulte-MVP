@@ -16,9 +16,7 @@
       <!-- Formulaire -->
       <form v-if="!emailSent" @submit.prevent="handleSubmit" class="space-y-4">
         <div>
-          <label class="block text-sm font-bold text-secondary ml-2 uppercase mb-2">
-            Email
-          </label>
+          <label class="block text-sm font-bold text-secondary ml-2 uppercase mb-2"> Email </label>
           <UInput
             v-model="email"
             type="email"
@@ -59,7 +57,6 @@
         :title="errorMessage"
         icon="i-lucide-alert-circle"
       />
-
     </div>
   </UCard>
 </template>

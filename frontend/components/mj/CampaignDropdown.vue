@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Campaign } from '~/types'
+import type { Campaign, VttConnectionStatus } from '~/types'
 
 const props = defineProps<{
   campaigns: readonly Campaign[]
@@ -20,6 +20,37 @@ const dropdownStyle = ref<{ top: string; left: string; width: string }>({
 })
 
 const selectedCampaign = computed(() => props.campaigns.find((c) => c.id === modelValue.value))
+
+// VTT Status helpers
+const getVttStatusColor = (vttConnection: VttConnectionStatus | null | undefined) => {
+  if (!vttConnection) return ''
+  if (vttConnection.status === 'revoked') return 'bg-error-500'
+  switch (vttConnection.tunnelStatus) {
+    case 'connected':
+      return 'bg-success-500'
+    case 'connecting':
+      return 'bg-warning-500'
+    case 'error':
+      return 'bg-error-500'
+    default:
+      return 'bg-neutral-400'
+  }
+}
+
+const getVttStatusLabel = (vttConnection: VttConnectionStatus | null | undefined) => {
+  if (!vttConnection) return ''
+  if (vttConnection.status === 'revoked') return 'Révoqué'
+  switch (vttConnection.tunnelStatus) {
+    case 'connected':
+      return 'Connecté'
+    case 'connecting':
+      return 'Connexion...'
+    case 'error':
+      return 'Erreur'
+    default:
+      return 'Déconnecté'
+  }
+}
 
 const updateDropdownPosition = () => {
   if (!triggerRef.value) return
@@ -95,7 +126,19 @@ onUnmounted(() => {
           <h3 class="font-semibold text-primary text-lg">
             {{ selectedCampaign.name }}
           </h3>
-          <p class="text-sm text-muted">
+          <!-- VTT info if connected, otherwise player count -->
+          <p v-if="selectedCampaign.vttConnection" class="text-sm text-muted flex items-center gap-2">
+            <span>Foundry VTT</span>
+            <span class="text-neutral-300">•</span>
+            <span class="flex items-center gap-1.5">
+              <span
+                class="w-2 h-2 rounded-full"
+                :class="getVttStatusColor(selectedCampaign.vttConnection)"
+              />
+              {{ getVttStatusLabel(selectedCampaign.vttConnection) }}
+            </span>
+          </p>
+          <p v-else class="text-sm text-muted">
             {{ selectedCampaign.activeMemberCount }} joueur(s) actif(s)
           </p>
         </div>
@@ -157,7 +200,21 @@ onUnmounted(() => {
             <h4 class="font-medium text-primary truncate">
               {{ campaign.name }}
             </h4>
-            <p class="text-xs text-muted">{{ campaign.activeMemberCount }} joueur(s) actif(s)</p>
+            <!-- VTT info if connected, otherwise player count -->
+            <p v-if="campaign.vttConnection" class="text-xs text-muted flex items-center gap-1.5">
+              <span>Foundry VTT</span>
+              <span class="text-neutral-300">•</span>
+              <span class="flex items-center gap-1">
+                <span
+                  class="w-1.5 h-1.5 rounded-full"
+                  :class="getVttStatusColor(campaign.vttConnection)"
+                />
+                {{ getVttStatusLabel(campaign.vttConnection) }}
+              </span>
+            </p>
+            <p v-else class="text-xs text-muted">
+              {{ campaign.activeMemberCount }} joueur(s) actif(s)
+            </p>
           </div>
           <UIcon
             v-if="campaign.id === modelValue"

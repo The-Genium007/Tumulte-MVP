@@ -68,13 +68,7 @@
             />
           </UFormField>
 
-          <UButton
-            type="submit"
-            block
-            size="lg"
-            :loading="loading"
-            :disabled="!isFormValid"
-          >
+          <UButton type="submit" block size="lg" :loading="loading" :disabled="!isFormValid">
             Réinitialiser le mot de passe
           </UButton>
         </form>

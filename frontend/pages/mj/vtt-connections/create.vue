@@ -12,7 +12,7 @@
               size="xl"
               square
               class="group"
-              @click="_router.push('/mj/campaigns/import')"
+              @click="_router.push('/mj')"
             >
               <template #leading>
                 <UIcon
@@ -187,7 +187,7 @@
               label="Continuer vers l'import de campagne"
               icon="i-lucide-arrow-right"
               trailing
-              @click="_router.push('/mj/campaigns/import')"
+              @click="_router.push('/mj')"
             />
           </div>
         </template>

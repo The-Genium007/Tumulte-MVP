@@ -5,9 +5,7 @@
       class="absolute inset-0 bg-gradient-to-b from-secondary-100/30 via-transparent to-transparent pointer-events-none"
     />
 
-    <div
-      class="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl py-12 lg:py-20 relative"
-    >
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl py-12 lg:py-20 relative">
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
         <!-- Image (mobile: first, desktop: left) -->
         <div v-motion-fade-left :delay="200" class="order-1 lg:order-1">
@@ -40,8 +38,8 @@
               avec vos Communautés
             </h1>
             <p class="text-lg sm:text-xl text-muted max-w-lg">
-              Transformez vos viewers en acteurs de l'aventure. Sondages synchronisés,
-              décisions collectives, chaos mémorable.
+              Transformez vos viewers en acteurs de l'aventure. Sondages synchronisés, décisions
+              collectives, chaos mémorable.
             </p>
           </div>
 
