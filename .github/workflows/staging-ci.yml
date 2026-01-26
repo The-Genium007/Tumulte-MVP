@@ -27,7 +27,7 @@ jobs:
 
       - name: Install backend dependencies
         working-directory: ./backend
-        run: npm ci
+        run: npm install
 
       - name: TypeCheck backend
         working-directory: ./backend
@@ -117,7 +117,7 @@ jobs:
 
       - name: Install backend dependencies
         working-directory: ./backend
-        run: npm ci
+        run: npm install
 
       - name: Run backend unit tests with coverage
         working-directory: ./backend
@@ -216,7 +216,7 @@ jobs:
       # Backend Build
       - name: Install backend dependencies
         working-directory: ./backend
-        run: npm ci
+        run: npm install
 
       - name: Build backend
         working-directory: ./backend
@@ -289,7 +289,7 @@ jobs:
 
       - name: Install backend dependencies
         working-directory: ./backend
-        run: npm ci
+        run: npm install
 
       - name: Run database migrations
         working-directory: ./backend
