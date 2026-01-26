@@ -10,11 +10,7 @@
       <div class="flex flex-col items-center justify-center min-h-screen py-12 space-y-8">
         <!-- Image du gobelin animé -->
         <div class="goblin-container">
-          <img
-            src="/images/gobelin.gif"
-            alt="Gobelin perdu"
-            class="goblin-image"
-          />
+          <img src="/images/gobelin.gif" alt="Gobelin perdu" class="goblin-image" />
 
           <!-- Effet glow derrière le gobelin -->
           <div
@@ -33,9 +29,7 @@
 
         <!-- Message -->
         <div class="text-center space-y-3">
-          <h1 class="error-title">
-            Chemin Introuvable
-          </h1>
+          <h1 class="error-title">Chemin Introuvable</h1>
           <p class="error-description">
             {{ errorMessage }}
           </p>

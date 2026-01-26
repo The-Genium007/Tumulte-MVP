@@ -3,9 +3,7 @@
     <div class="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
       <div v-motion-scale-up class="relative">
         <!-- Background card -->
-        <UCard
-          class="overflow-hidden bg-(--theme-card-bg) border-(--theme-border)"
-        >
+        <UCard class="overflow-hidden bg-(--theme-card-bg) border-(--theme-border)">
           <div class="relative">
             <!-- Pattern décoratif -->
             <div class="absolute inset-0 opacity-5 pointer-events-none">

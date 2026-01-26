@@ -65,7 +65,9 @@
 
               <div class="space-y-3">
                 <!-- Cookies essentiels -->
-                <div class="flex items-center justify-between p-3 bg-(--theme-bg-elevated) rounded-lg">
+                <div
+                  class="flex items-center justify-between p-3 bg-(--theme-bg-elevated) rounded-lg"
+                >
                   <div class="flex-1 min-w-0 pr-4">
                     <p class="font-medium text-primary">Cookies essentiels</p>
                     <p class="text-xs text-muted">
@@ -76,7 +78,9 @@
                 </div>
 
                 <!-- Cookies analytiques -->
-                <div class="flex items-center justify-between p-3 bg-(--theme-bg-elevated) rounded-lg">
+                <div
+                  class="flex items-center justify-between p-3 bg-(--theme-bg-elevated) rounded-lg"
+                >
                   <div class="flex-1 min-w-0 pr-4">
                     <p class="font-medium text-primary">Cookies analytiques</p>
                     <p class="text-xs text-muted">
@@ -87,7 +91,9 @@
                 </div>
 
                 <!-- Cookies marketing -->
-                <div class="flex items-center justify-between p-3 bg-(--theme-bg-elevated) rounded-lg">
+                <div
+                  class="flex items-center justify-between p-3 bg-(--theme-bg-elevated) rounded-lg"
+                >
                   <div class="flex-1 min-w-0 pr-4">
                     <p class="font-medium text-primary">Cookies marketing</p>
                     <p class="text-xs text-muted">
