@@ -43,11 +43,11 @@
     >
       <div
         v-if="isOpen"
-        class="absolute top-full right-0 mt-2 w-64 origin-top-right rounded-xl bg-elevated border border-default shadow-lg focus:outline-none z-50"
+        class="absolute top-full right-0 mt-2 w-64 origin-top-right rounded-xl bg-(--theme-card-bg) border border-(--theme-border) shadow-lg focus:outline-none z-50"
       >
         <div class="p-1">
           <!-- Header avec infos utilisateur -->
-          <div class="px-4 py-3 border-b border-default">
+          <div class="px-4 py-3 border-b border-(--theme-border)">
             <div class="flex items-center gap-3">
               <TwitchAvatar
                 :image-url="user?.streamer?.profileImageUrl"
@@ -68,7 +68,7 @@
             <NuxtLink
               to="/dashboard"
               @click="isOpen = false"
-              class="flex items-center gap-3 px-4 py-2 text-sm text-primary-500 hover:bg-neutral-100 rounded-lg transition-colors"
+              class="flex items-center gap-3 px-4 py-2 text-sm text-(--theme-text-secondary) hover:bg-(--theme-card-bg-hover) rounded-lg transition-colors"
             >
               <UIcon name="i-lucide-home" class="size-4" />
               <span>Accueil</span>
@@ -78,7 +78,7 @@
             <NuxtLink
               to="/dashboard/campaigns"
               @click="isOpen = false"
-              class="flex items-center justify-between px-4 py-2 text-sm text-primary-500 hover:bg-neutral-100 rounded-lg transition-colors"
+              class="flex items-center justify-between px-4 py-2 text-sm text-(--theme-text-secondary) hover:bg-(--theme-card-bg-hover) rounded-lg transition-colors"
             >
               <div class="flex items-center gap-3">
                 <UIcon name="i-lucide-folder-kanban" class="size-4" />
@@ -93,7 +93,7 @@
             <button
               v-if="canInstall"
               @click="handleInstallPwa"
-              class="w-full flex items-center gap-3 px-4 py-2 text-sm text-primary-500 hover:bg-neutral-100 rounded-lg transition-colors"
+              class="w-full flex items-center gap-3 px-4 py-2 text-sm text-(--theme-text-secondary) hover:bg-(--theme-card-bg-hover) rounded-lg transition-colors"
             >
               <UIcon name="i-lucide-download" class="size-4" />
               <span>Installer l'application</span>
@@ -103,21 +103,21 @@
             <NuxtLink
               to="/mj"
               @click="isOpen = false"
-              class="flex items-center gap-3 px-4 py-2 text-sm text-primary-500 hover:bg-neutral-100 rounded-lg transition-colors"
+              class="flex items-center gap-3 px-4 py-2 text-sm text-(--theme-text-secondary) hover:bg-(--theme-card-bg-hover) rounded-lg transition-colors"
             >
               <UIcon name="i-lucide-crown" class="size-4" />
               <span>Tableau de bord MJ</span>
             </NuxtLink>
 
             <!-- Divider -->
-            <div class="my-1 border-t border-default"></div>
+            <div class="my-1 border-t border-(--theme-border)"></div>
 
             <!-- Administration (admin only) -->
             <NuxtLink
               v-if="isAdmin"
               to="/admin"
               @click="isOpen = false"
-              class="flex items-center gap-3 px-4 py-2 text-sm text-error-500 hover:bg-error-100 rounded-lg transition-colors"
+              class="flex items-center gap-3 px-4 py-2 text-sm text-(--theme-error-text) hover:bg-(--theme-error-bg) rounded-lg transition-colors"
             >
               <UIcon name="i-lucide-shield" class="size-4" />
               <span>Administration</span>
@@ -127,7 +127,7 @@
             <NuxtLink
               to="/settings"
               @click="isOpen = false"
-              class="flex items-center gap-3 px-4 py-2 text-sm text-primary-500 hover:bg-neutral-100 rounded-lg transition-colors"
+              class="flex items-center gap-3 px-4 py-2 text-sm text-(--theme-text-secondary) hover:bg-(--theme-card-bg-hover) rounded-lg transition-colors"
             >
               <UIcon name="i-lucide-user" class="size-4" />
               <span>Mon compte</span>
@@ -136,19 +136,19 @@
             <!-- Support -->
             <button
               @click="handleOpenSupport"
-              class="w-full flex items-center gap-3 px-4 py-2 text-sm text-primary-500 hover:bg-neutral-100 rounded-lg transition-colors"
+              class="w-full flex items-center gap-3 px-4 py-2 text-sm text-(--theme-text-secondary) hover:bg-(--theme-card-bg-hover) rounded-lg transition-colors"
             >
               <UIcon name="i-lucide-life-buoy" class="size-4" />
               <span>Support</span>
             </button>
 
             <!-- Divider -->
-            <div class="my-1 border-t border-default"></div>
+            <div class="my-1 border-t border-(--theme-border)"></div>
 
             <!-- Déconnexion -->
             <button
               @click="handleLogout"
-              class="w-full flex items-center gap-3 px-4 py-2 text-sm text-error-500 hover:bg-error-100 rounded-lg transition-colors"
+              class="w-full flex items-center gap-3 px-4 py-2 text-sm text-(--theme-error-text) hover:bg-(--theme-error-bg) rounded-lg transition-colors"
             >
               <UIcon name="i-lucide-log-out" class="size-4" />
               <span>Déconnexion</span>

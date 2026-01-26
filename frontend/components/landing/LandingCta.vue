@@ -4,7 +4,7 @@
       <div v-motion-scale-up class="relative">
         <!-- Background card -->
         <UCard
-          class="overflow-hidden bg-gradient-to-br from-primary-50 via-secondary-50 to-primary-100 border-secondary-200"
+          class="overflow-hidden bg-(--theme-card-bg) border-(--theme-border)"
         >
           <div class="relative">
             <!-- Pattern décoratif -->

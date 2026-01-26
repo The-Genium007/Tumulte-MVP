@@ -8,13 +8,13 @@
     <!-- Contenu principal centré -->
     <div class="container mx-auto px-4 max-w-2xl relative z-10">
       <div class="flex flex-col items-center justify-center min-h-screen py-12 space-y-8">
-        <!-- Image du gobelin - Placeholder 500x500 -->
+        <!-- Image du gobelin animé -->
         <div class="goblin-container">
-          <div class="goblin-placeholder">
-            <UIcon name="i-lucide-cone" class="size-24 text-secondary-400" />
-            <span class="text-sm text-muted mt-3">Gobelin animé ici</span>
-            <span class="text-xs text-muted/70">500x500px</span>
-          </div>
+          <img
+            src="/images/gobelin.gif"
+            alt="Gobelin perdu"
+            class="goblin-image"
+          />
 
           <!-- Effet glow derrière le gobelin -->
           <div
@@ -103,27 +103,18 @@ const handleGoHome = () => {
   margin-bottom: 1rem;
 }
 
-/* Placeholder du gobelin */
-.goblin-placeholder {
-  width: 500px;
-  height: 500px;
+/* Image du gobelin */
+.goblin-image {
+  width: 400px;
+  height: 400px;
   max-width: 90vw;
   max-height: 50vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  border: 3px dashed var(--color-secondary-300);
+  object-fit: contain;
   border-radius: 1rem;
-  background: linear-gradient(
-    135deg,
-    rgba(216, 183, 144, 0.05) 0%,
-    rgba(216, 183, 144, 0.1) 100%
-  );
   transition: transform 0.3s ease;
 }
 
-.goblin-placeholder:hover {
+.goblin-image:hover {
   transform: scale(1.02);
 }
 
@@ -160,7 +151,7 @@ const handleGoHome = () => {
 
 /* Responsive adjustments */
 @media (max-width: 640px) {
-  .goblin-placeholder {
+  .goblin-image {
     width: 300px;
     height: 300px;
   }

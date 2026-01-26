@@ -8,7 +8,7 @@
     leave-to-class="translate-y-full opacity-0"
   >
     <div v-if="bannerVisible" class="fixed bottom-0 inset-x-0 z-50 safe-area-bottom">
-      <div class="bg-white border-t border-neutral-200 shadow-lg">
+      <div class="bg-(--theme-card-bg) border-t border-(--theme-border) shadow-lg">
         <div class="container mx-auto px-4 py-4 max-w-4xl">
           <!-- Mode simple (vue initiale) -->
           <template v-if="!showDetails">
@@ -65,7 +65,7 @@
 
               <div class="space-y-3">
                 <!-- Cookies essentiels -->
-                <div class="flex items-center justify-between p-3 bg-neutral-50 rounded-lg">
+                <div class="flex items-center justify-between p-3 bg-(--theme-bg-elevated) rounded-lg">
                   <div class="flex-1 min-w-0 pr-4">
                     <p class="font-medium text-primary">Cookies essentiels</p>
                     <p class="text-xs text-muted">
@@ -76,7 +76,7 @@
                 </div>
 
                 <!-- Cookies analytiques -->
-                <div class="flex items-center justify-between p-3 bg-neutral-50 rounded-lg">
+                <div class="flex items-center justify-between p-3 bg-(--theme-bg-elevated) rounded-lg">
                   <div class="flex-1 min-w-0 pr-4">
                     <p class="font-medium text-primary">Cookies analytiques</p>
                     <p class="text-xs text-muted">
@@ -87,7 +87,7 @@
                 </div>
 
                 <!-- Cookies marketing -->
-                <div class="flex items-center justify-between p-3 bg-neutral-50 rounded-lg">
+                <div class="flex items-center justify-between p-3 bg-(--theme-bg-elevated) rounded-lg">
                   <div class="flex-1 min-w-0 pr-4">
                     <p class="font-medium text-primary">Cookies marketing</p>
                     <p class="text-xs text-muted">

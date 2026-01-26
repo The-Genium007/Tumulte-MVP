@@ -16,7 +16,7 @@
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
         <!-- Card MJ -->
         <div v-motion-fade-left class="card-hover">
-          <UCard class="h-full">
+          <UCard class="h-full bg-(--theme-card-bg) border-(--theme-border)">
             <div class="space-y-6">
               <!-- Header avec image -->
               <div class="flex flex-col sm:flex-row gap-4 items-start">
@@ -60,7 +60,7 @@
 
         <!-- Card Streamers -->
         <div v-motion-fade-right :delay="100" class="card-hover">
-          <UCard class="h-full">
+          <UCard class="h-full bg-(--theme-card-bg) border-(--theme-border)">
             <div class="space-y-6">
               <!-- Header avec image -->
               <div class="flex flex-col sm:flex-row gap-4 items-start">

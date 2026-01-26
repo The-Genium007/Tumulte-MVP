@@ -1,5 +1,5 @@
 <template>
-  <section id="features" class="py-16 lg:py-24 bg-white/50">
+  <section id="features" class="py-16 lg:py-24 bg-(--theme-bg-elevated)/50">
     <div class="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
       <!-- Header -->
       <div v-motion-fade-up class="text-center space-y-4 mb-12 lg:mb-16">

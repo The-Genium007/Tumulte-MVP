@@ -81,43 +81,43 @@ export default defineAppConfig({
     input: {
       slots: {
         root: 'ring-0 border-0 rounded-lg overflow-hidden w-full',
-        base: 'px-3.5 py-2.5 bg-primary-100 text-primary-500 placeholder:text-primary-400 rounded-lg',
+        base: 'px-3.5 py-2.5 bg-[var(--theme-input-bg)] text-[var(--theme-input-text)] placeholder:text-[var(--theme-input-placeholder)] rounded-lg',
       },
     },
     select: {
       slots: {
-        base: 'ring-0 border-0 px-3.5 py-2.5 bg-primary-100 text-primary-500 rounded-lg',
+        base: 'ring-0 border-0 px-3.5 py-2.5 bg-[var(--theme-input-bg)] text-[var(--theme-input-text)] rounded-lg',
       },
     },
     textarea: {
       slots: {
         root: 'ring-0 border-0 rounded-lg overflow-hidden w-full',
-        base: 'px-3.5 py-2.5 bg-primary-100 text-primary-500 placeholder:text-primary-400 rounded-lg',
+        base: 'px-3.5 py-2.5 bg-[var(--theme-input-bg)] text-[var(--theme-input-text)] placeholder:text-[var(--theme-input-placeholder)] rounded-lg',
       },
     },
     checkbox: {
       slots: {
         root: 'ring-0',
-        base: 'ring-0 border-0 bg-primary-100 data-[state=checked]:bg-primary-500',
+        base: 'ring-0 border-0 bg-[var(--theme-input-bg)] data-[state=checked]:bg-[var(--color-dark-accent)]',
       },
     },
     radioGroup: {
       slots: {
         root: 'ring-0',
-        base: 'ring-0 border-0 bg-primary-100 data-[state=checked]:bg-primary-500',
+        base: 'ring-0 border-0 bg-[var(--theme-input-bg)] data-[state=checked]:bg-[var(--color-dark-accent)]',
       },
     },
     switch: {
       slots: {
-        root: 'ring-0 border-0 bg-primary-100 data-[state=checked]:bg-primary-500 rounded-full overflow-hidden',
-        thumb: 'bg-white ring-0 shadow-sm rounded-full',
+        root: 'ring-0 border-0 bg-[var(--theme-input-bg)] data-[state=checked]:bg-[var(--color-dark-accent)] rounded-full overflow-hidden',
+        thumb: 'bg-[var(--ui-bg-inverted)] ring-0 shadow-sm rounded-full',
       },
     },
     selectMenu: {
       slots: {
-        base: 'ring-0 border-0 bg-primary-100 text-primary-400 rounded-lg',
-        content: 'ring-0 border-0 bg-white rounded-lg shadow-lg',
-        item: 'hover:bg-primary-50',
+        base: 'ring-0 border-0 bg-[var(--theme-input-bg)] text-[var(--theme-input-placeholder)] rounded-lg',
+        content: 'ring-0 border-0 bg-[var(--theme-card-bg)] rounded-lg shadow-lg',
+        item: 'hover:bg-[var(--color-dark-bg-hover)]',
       },
     },
     modal: {

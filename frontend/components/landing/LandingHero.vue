@@ -2,7 +2,7 @@
   <section class="relative overflow-hidden">
     <!-- Background gradient subtil -->
     <div
-      class="absolute inset-0 bg-gradient-to-b from-secondary-100/30 via-transparent to-transparent pointer-events-none"
+      class="absolute inset-0 bg-gradient-to-b from-secondary-500/10 via-transparent to-transparent pointer-events-none"
     />
 
     <div class="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl py-12 lg:py-20 relative">

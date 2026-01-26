@@ -1,5 +1,5 @@
 <template>
-  <UCard class="w-full max-w-md">
+  <UCard class="w-full max-w-md bg-(--theme-card-bg) border border-(--theme-border)">
     <template #header>
       <div class="text-center space-y-3">
         <div class="flex justify-center">

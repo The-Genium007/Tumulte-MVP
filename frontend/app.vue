@@ -8,9 +8,7 @@
 </template>
 
 <script setup lang="ts">
-// Force light mode - no dark mode allowed
-const colorMode = useColorMode()
-colorMode.preference = 'light'
+// Color mode is auto-detected from system preference (see nuxt.config.ts)
 
 const { isLoading, init } = useLoadingScreen()
 init()

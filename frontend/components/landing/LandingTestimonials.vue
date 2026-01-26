@@ -1,5 +1,5 @@
 <template>
-  <section class="py-16 lg:py-24 bg-white/50">
+  <section class="py-16 lg:py-24 bg-(--theme-bg-elevated)/50">
     <div class="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
       <!-- Header -->
       <div v-motion-fade-up class="text-center space-y-4 mb-12">
@@ -19,7 +19,7 @@
           :key="testimonial.name"
           v-motion-fade-up
           :delay="index * 100"
-          class="card-hover"
+          class="card-hover bg-(--theme-card-bg) border-(--theme-border)"
         >
           <div class="space-y-4">
             <!-- Quote icon -->
@@ -39,7 +39,7 @@
             <p class="text-muted leading-relaxed">{{ testimonial.quote }}</p>
 
             <!-- Author -->
-            <div class="flex items-center gap-3 pt-2 border-t border-primary-100">
+            <div class="flex items-center gap-3 pt-2 border-t border-(--theme-border)">
               <div
                 class="size-10 rounded-full bg-linear-to-br from-secondary-400 to-secondary-600 flex items-center justify-center text-white font-bold text-sm"
               >

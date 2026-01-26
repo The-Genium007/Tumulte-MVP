@@ -64,10 +64,10 @@ export default defineNuxtConfig({
     },
   },
 
-  // Force light theme only - no dark mode
+  // Auto-detect system theme (dark/light)
   colorMode: {
-    preference: 'light',
-    fallback: 'light',
+    preference: 'system',
+    fallback: 'dark',
   },
 
   // Google Fonts configuration

@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-subtle flex flex-col">
+  <div class="min-h-screen bg-(--theme-auth-bg) flex flex-col">
     <main class="flex-1 flex items-center justify-center px-4 py-8">
       <div class="w-full max-w-md">
         <!-- Lien retour accueil - aligne a gauche au-dessus de la carte -->
