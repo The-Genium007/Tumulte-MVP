@@ -72,8 +72,12 @@ class EmailVerificationService {
 
       logger.info({ userId: user.id, email: user.email }, 'Verification email sent')
     } catch (error) {
+      const errorDetails =
+        error instanceof Error
+          ? { message: error.message, stack: error.stack, name: error.name }
+          : error
       logger.error(
-        { userId: user.id, email: user.email, error },
+        { userId: user.id, email: user.email, error: errorDetails },
         'Failed to send verification email'
       )
       throw new Error('Failed to send verification email')
