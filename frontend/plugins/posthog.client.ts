@@ -20,7 +20,7 @@ import { useCookieConsentStore } from '@/stores/cookieConsent'
  * Tous les events incluent une propriete 'environment' ('development' ou 'production')
  * pour filtrer dans le dashboard PostHog (projet unique, tier gratuit).
  */
-export default defineNuxtPlugin(() => {
+export default defineNuxtPlugin((nuxtApp) => {
   const config = useRuntimeConfig()
   const posthogKey = config.public.posthogKey as string
   const posthogHost = config.public.posthogHost as string
@@ -36,15 +36,9 @@ export default defineNuxtPlugin(() => {
     return
   }
 
-  // Initialiser le store de consentement
-  const consentStore = useCookieConsentStore()
-
-  // S'assurer que le store est initialise
-  if (!consentStore.initialized) {
-    consentStore.initialize()
-  }
-
   // Initialiser PostHog en mode restrictif (opt-out par defaut)
+  // L'initialisation se fait immediatement, mais le watcher sur le consentement
+  // est configure apres que l'app soit montee pour eviter les erreurs inject()
   /* eslint-disable camelcase */
   posthog.init(posthogKey, {
     api_host: posthogHost,
@@ -82,48 +76,63 @@ export default defineNuxtPlugin(() => {
         app_version: config.public.appVersion || 'unknown',
       })
 
-      // Reagir aux changements de consentement
-      watch(
-        () => consentStore.analyticsAllowed,
-        (allowed) => {
-          if (allowed) {
-            // Activer le tracking complet
-            ph.opt_in_capturing()
-
-            // Capturer la page view initiale
-            ph.capture('$pageview')
-
-            // Activer session recording
-            ph.startSessionRecording()
-
-            if (import.meta.env.DEV) {
-              console.info('[PostHog] Analytics ENABLED - full tracking active')
-            }
-          } else {
-            // Desactiver le tracking
-            ph.opt_out_capturing()
-
-            // Arreter session recording
-            ph.stopSessionRecording()
-
-            if (import.meta.env.DEV) {
-              console.info('[PostHog] Analytics DISABLED - consent not given')
-            }
-          }
-        },
-        { immediate: true }
-      )
-
       // Debug mode en developpement
       if (import.meta.env.DEV) {
         ph.debug()
-        console.info(
-          `[PostHog] Initialized (environment: ${environment}, consent: ${consentStore.analyticsAllowed ? 'granted' : 'pending'})`
-        )
       }
     },
   })
   /* eslint-enable camelcase */
+
+  // Attendre que l'app soit montee pour acceder au store Pinia
+  // Cela evite les erreurs "inject() can only be used inside setup()"
+  nuxtApp.hook('app:mounted', () => {
+    // Initialiser le store de consentement dans le bon contexte
+    const consentStore = useCookieConsentStore()
+
+    // S'assurer que le store est initialise
+    if (!consentStore.initialized) {
+      consentStore.initialize()
+    }
+
+    // Reagir aux changements de consentement
+    watch(
+      () => consentStore.analyticsAllowed,
+      (allowed) => {
+        if (allowed) {
+          // Activer le tracking complet
+          posthog.opt_in_capturing()
+
+          // Capturer la page view initiale
+          posthog.capture('$pageview')
+
+          // Activer session recording
+          posthog.startSessionRecording()
+
+          if (import.meta.env.DEV) {
+            console.info('[PostHog] Analytics ENABLED - full tracking active')
+          }
+        } else {
+          // Desactiver le tracking
+          posthog.opt_out_capturing()
+
+          // Arreter session recording
+          posthog.stopSessionRecording()
+
+          if (import.meta.env.DEV) {
+            console.info('[PostHog] Analytics DISABLED - consent not given')
+          }
+        }
+      },
+      { immediate: true }
+    )
+
+    if (import.meta.env.DEV) {
+      console.info(
+        `[PostHog] Initialized (environment: ${environment}, consent: ${consentStore.analyticsAllowed ? 'granted' : 'pending'})`
+      )
+    }
+  })
 
   // Exposer l'instance PostHog globalement pour le composable
   return {

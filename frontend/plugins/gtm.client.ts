@@ -12,7 +12,7 @@ import { useCookieConsentStore } from '@/stores/cookieConsent'
  * - Le script est injecte dynamiquement apres consentement marketing
  * - Sans consentement, les appels a push() sont ignores
  */
-export default defineNuxtPlugin(() => {
+export default defineNuxtPlugin((nuxtApp) => {
   const config = useRuntimeConfig()
   const gtmId = config.public.gtmId as string
 
@@ -26,14 +26,6 @@ export default defineNuxtPlugin(() => {
         gtm: createGtmApi(false),
       },
     }
-  }
-
-  // Initialiser le store de consentement
-  const consentStore = useCookieConsentStore()
-
-  // S'assurer que le store est initialise
-  if (!consentStore.initialized) {
-    consentStore.initialize()
   }
 
   // Tracker si GTM a ete charge
@@ -75,20 +67,39 @@ export default defineNuxtPlugin(() => {
     }
   }
 
-  // Reagir aux changements de consentement marketing
-  watch(
-    () => consentStore.marketingAllowed,
-    (allowed) => {
-      if (allowed && !gtmLoaded) {
-        loadGtm()
-      }
-    },
-    { immediate: true }
-  )
+  // Attendre que l'app soit montee pour acceder au store Pinia
+  // Cela evite les erreurs "inject() can only be used inside setup()"
+  nuxtApp.hook('app:mounted', () => {
+    const consentStore = useCookieConsentStore()
+
+    // S'assurer que le store est initialise
+    if (!consentStore.initialized) {
+      consentStore.initialize()
+    }
+
+    // Reagir aux changements de consentement marketing
+    watch(
+      () => consentStore.marketingAllowed,
+      (allowed) => {
+        if (allowed && !gtmLoaded) {
+          loadGtm()
+        }
+      },
+      { immediate: true }
+    )
+  })
 
   return {
     provide: {
-      gtm: createGtmApi(true, () => consentStore.marketingAllowed),
+      gtm: createGtmApi(true, () => {
+        // Cette fonction sera appelee dans un contexte ou le store est accessible
+        try {
+          const store = useCookieConsentStore()
+          return store.marketingAllowed
+        } catch {
+          return false
+        }
+      }),
     },
   }
 })
