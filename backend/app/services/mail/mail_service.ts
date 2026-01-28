@@ -32,13 +32,18 @@ class MailService {
 
   constructor() {
     const apiKey = env.get('RESEND_API_KEY', '')
-    this.resend = new Resend(apiKey)
-    this.fromAddress = env.get('MAIL_FROM_ADDRESS', 'noreply@tumulte.app')
-    this.fromName = env.get('MAIL_FROM_NAME', 'Tumulte')
-    this.frontendUrl = env.get('FRONTEND_URL', 'http://localhost:3000')
 
     // Check if API key appears valid (not empty or fake)
     this.isConfigured = Boolean(apiKey) && !apiKey.startsWith('re_fake')
+
+    // Resend constructor throws if API key is empty string
+    // Use a dummy value when not configured to allow initialization in test/CI
+    const dummyKey = 're_' + 'disabled_in_test_environment'
+    this.resend = new Resend(this.isConfigured ? apiKey : dummyKey)
+
+    this.fromAddress = env.get('MAIL_FROM_ADDRESS', 'noreply@tumulte.app')
+    this.fromName = env.get('MAIL_FROM_NAME', 'Tumulte')
+    this.frontendUrl = env.get('FRONTEND_URL', 'http://localhost:3000')
 
     if (!this.isConfigured) {
       logger.warn(
