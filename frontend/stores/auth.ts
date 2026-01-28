@@ -23,7 +23,7 @@ export const useAuthStore = defineStore('auth', () => {
   const isAuthenticated = computed(() => user.value !== null)
   const isAdmin = computed(() => user.value?.isAdmin ?? false)
   const isPremium = computed(() => user.value?.isPremium ?? false)
-  const isEmailVerified = computed(() => user.value?.emailVerifiedAt !== null)
+  const isEmailVerified = computed(() => !!user.value?.emailVerifiedAt)
 
   /**
    * Identify user in PostHog analytics.

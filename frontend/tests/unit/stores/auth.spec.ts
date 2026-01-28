@@ -8,6 +8,30 @@ vi.mock('vue-router', () => ({
   useRouter: vi.fn(),
 }))
 
+// Mock offline-storage utilities
+vi.mock('@/utils/offline-storage', () => ({
+  storeUser: vi.fn(),
+  getStoredUser: vi.fn(),
+  clearUserData: vi.fn(),
+}))
+
+// Mock useAnalytics composable
+vi.mock('@/composables/useAnalytics', () => ({
+  useAnalytics: vi.fn(() => ({
+    identify: vi.fn(),
+    reset: vi.fn(),
+    setUserProperties: vi.fn(),
+    track: vi.fn(),
+  })),
+}))
+
+// Mock usePushNotificationsStore
+vi.mock('@/stores/pushNotifications', () => ({
+  usePushNotificationsStore: vi.fn(() => ({
+    reset: vi.fn(),
+  })),
+}))
+
 // Mock fetch globally
 global.fetch = vi.fn()
 
