@@ -51,7 +51,7 @@ export class MembershipService {
           title: 'Invitation à une campagne',
           body: `${membership.campaign.owner?.displayName || 'Un MJ'} vous invite à rejoindre "${membership.campaign.name}"`,
           data: {
-            url: '/streamer/campaigns/invitations',
+            url: '/dashboard/campaigns',
             campaignId: membership.campaignId,
           },
           actions: [{ action: 'view', title: "Voir l'invitation" }],
@@ -223,6 +223,17 @@ export class MembershipService {
 
     if (!character) {
       throw new Error('Character not found or not available for this campaign')
+    }
+
+    // Vérifier que le personnage n'est pas déjà assigné à un autre streamer
+    const existingAssignment = await CharacterAssignment.query()
+      .where('characterId', characterId)
+      .where('campaignId', membership.campaignId)
+      .whereNot('streamerId', streamerId)
+      .first()
+
+    if (existingAssignment) {
+      throw new Error('Ce personnage est déjà assigné à un autre joueur')
     }
 
     // Transaction atomique : accepter l'invitation ET assigner le personnage
