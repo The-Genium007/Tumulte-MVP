@@ -97,7 +97,10 @@ watch(
 </script>
 
 <template>
-  <div class="flex flex-col" :style="{ maxHeight: maxHeight || 'none' }">
+  <div
+    class="flex flex-col bg-subtle border border-default rounded-lg p-4"
+    :style="{ maxHeight: maxHeight || 'none' }"
+  >
     <!-- Header -->
     <div class="mb-4">
       <h3 class="text-lg font-semibold text-primary">Événements récents</h3>

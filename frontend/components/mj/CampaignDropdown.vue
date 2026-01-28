@@ -109,8 +109,8 @@ onUnmounted(() => {
 <template>
   <div
     ref="triggerRef"
-    class="relative w-full bg-muted rounded-lg cursor-pointer transition-all"
-    :class="{ 'rounded-b-none': isOpen }"
+    class="relative w-full bg-muted border border-default rounded-lg cursor-pointer transition-all"
+    :class="{ 'rounded-b-none border-b-0': isOpen }"
     :style="{ minHeight: height || '70px' }"
   >
     <!-- Zone cliquable principale -->
@@ -189,9 +189,9 @@ onUnmounted(() => {
           v-for="campaign in campaigns"
           v-else
           :key="campaign.id"
-          class="flex items-center gap-4 px-5 py-4 hover:bg-muted cursor-pointer transition-colors border-t border-default first:border-t-0"
+          class="flex items-center gap-4 px-5 py-4 hover:bg-brand-100 dark:hover:bg-dark-bg-hover cursor-pointer transition-colors border-t border-default first:border-t-0"
           :class="{
-            'bg-brand-50': campaign.id === modelValue,
+            'bg-brand-100 dark:bg-dark-bg-hover': campaign.id === modelValue,
           }"
           @click.stop="selectCampaign(campaign.id)"
         >

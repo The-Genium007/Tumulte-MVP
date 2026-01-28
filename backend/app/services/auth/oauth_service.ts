@@ -3,6 +3,7 @@ import logger from '@adonisjs/core/services/logger'
 import User from '#models/user'
 import AuthProvider, { type AuthProviderType } from '#models/auth_provider'
 import { streamer as Streamer } from '#models/streamer'
+import { overlayConfig as OverlayConfig } from '#models/overlay_config'
 import { TwitchAuthService } from './twitch_auth_service.js'
 import welcomeEmailService from '#services/mail/welcome_email_service'
 
@@ -306,6 +307,15 @@ class OAuthService {
       streamer.tokenExpiresAt = tokenExpiresAt
       streamer.lastTokenRefreshAt = DateTime.now()
       await streamer.save()
+
+      // Créer la configuration overlay par défaut "Tumulte Défaut" pour le nouveau streamer
+      await OverlayConfig.create({
+        streamerId: streamer.id,
+        name: 'Tumulte Défaut',
+        config: OverlayConfig.getDefaultConfigWithPoll(),
+        isActive: true,
+      })
+      logger.info({ streamerId: streamer.id }, 'Default overlay config created for new streamer')
     }
 
     return { user, isNew, streamer }

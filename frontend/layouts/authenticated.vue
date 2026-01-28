@@ -34,10 +34,8 @@
           </UAlert>
         </div>
 
-        <!-- Banner de permission notifications push -->
-        <div class="pb-2">
-          <NotificationsPushPermissionBanner />
-        </div>
+        <!-- Banner de permission notifications push (persistant jusqu'à activation) -->
+        <NotificationsPushPermissionBanner class="mb-2" />
 
         <!-- Page Content -->
         <slot />

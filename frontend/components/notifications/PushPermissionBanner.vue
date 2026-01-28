@@ -10,13 +10,7 @@
         <UButton color="primary" variant="solid" size="sm" :loading="loading" @click="handleEnable">
           Activer
         </UButton>
-        <UButton
-          v-if="!persistent"
-          color="neutral"
-          variant="ghost"
-          size="sm"
-          @click="handleDismiss"
-        >
+        <UButton color="neutral" variant="ghost" size="sm" @click="handleDismiss">
           Plus tard
         </UButton>
       </div>
@@ -28,7 +22,12 @@
 import { ref, computed, onMounted } from 'vue'
 import { usePushNotifications } from '@/composables/usePushNotifications'
 
-const props = defineProps<{
+defineProps<{
+  /**
+   * Mode persistent : le banner réapparaît à chaque refresh/visite
+   * tant que l'utilisateur n'a pas accepté les notifications.
+   * Le bouton "Plus tard" masque temporairement (session seulement).
+   */
   persistent?: boolean
 }>()
 
@@ -39,27 +38,27 @@ const {
   isCurrentBrowserSubscribed,
   isPermissionDenied,
   subscribe,
-  shouldShowBanner,
-  dismissPermissionBanner,
   initialize,
 } = usePushNotifications()
 
-// En mode persistent : afficher tant que le navigateur n'est pas inscrit
-// En mode normal : utiliser la logique existante (dismissable)
+// État local pour masquer temporairement le banner pendant la session
+// Se réinitialise à chaque refresh de page
+const sessionDismissed = ref(false)
+
+// Le banner s'affiche si :
+// - Le navigateur supporte les notifications push
+// - Le navigateur actuel n'est pas déjà inscrit
+// - L'utilisateur n'a pas refusé les permissions
+// - L'utilisateur n'a pas cliqué "Plus tard" pendant cette session
 const showBanner = computed(() => {
-  if (props.persistent) {
-    // Mode persistent : visible si supporté, non inscrit et permission non refusée
-    return isSupported.value && !isCurrentBrowserSubscribed.value && !isPermissionDenied.value
-  }
-  return shouldShowBanner.value
+  if (sessionDismissed.value) return false
+  return isSupported.value && !isCurrentBrowserSubscribed.value && !isPermissionDenied.value
 })
 
-// S'assurer que l'état du navigateur est à jour en mode persistent
+// S'assurer que l'état du navigateur est à jour
 onMounted(async () => {
-  if (props.persistent) {
-    // initialize() charge subscriptions + browserEndpoint en parallèle
-    await initialize()
-  }
+  // initialize() charge subscriptions + browserEndpoint en parallèle
+  await initialize()
 })
 
 const showDeniedModal = ref(false)
@@ -71,16 +70,13 @@ const handleEnable = async () => {
     // L'utilisateur a refusé, afficher la modale explicative
     showDeniedModal.value = true
   }
-
-  // En mode non-persistent, on dismiss simplement le banner
-  if (!props.persistent) {
-    dismissPermissionBanner()
-  }
-  // En mode persistent, isCurrentBrowserSubscribed est mis à jour automatiquement
+  // isCurrentBrowserSubscribed est mis à jour automatiquement
   // par subscribe() qui met à jour browserEndpoint
 }
 
 const handleDismiss = () => {
-  dismissPermissionBanner()
+  // Masquer temporairement pour cette session uniquement
+  // Le banner réapparaîtra au prochain refresh/visite
+  sessionDismissed.value = true
 }
 </script>

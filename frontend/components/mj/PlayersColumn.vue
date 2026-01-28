@@ -30,7 +30,10 @@ const formatAuthTime = (seconds: number | null): string => {
 </script>
 
 <template>
-  <div class="bg-subtle rounded-lg p-4 flex flex-col" :style="{ maxHeight: maxHeight || 'none' }">
+  <div
+    class="bg-subtle border border-default rounded-lg p-4 flex flex-col"
+    :style="{ maxHeight: maxHeight || 'none' }"
+  >
     <!-- Header -->
     <div class="flex items-center justify-between mb-4">
       <div>

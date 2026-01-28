@@ -8,6 +8,7 @@ import {
   OverlayConfigDetailDto,
   OverlayActiveConfigDto,
 } from '#dtos/overlay-studio/overlay_studio_dto'
+import { overlayConfig as OverlayConfig } from '#models/overlay_config'
 import {
   createOverlayConfigSchema,
   updateOverlayConfigSchema,
@@ -192,8 +193,15 @@ export default class OverlayStudioController {
       config = await this.overlayService.getActiveConfigForStreamer(params.streamerId)
     }
 
+    // Fallback ultime: configuration par défaut système "Tumulte Défaut"
     if (!config) {
-      return response.notFound({ error: 'No active configuration found' })
+      const defaultConfig = OverlayConfig.getDefaultConfigWithPoll()
+      return response.ok({
+        data: {
+          id: 'default',
+          config: defaultConfig,
+        },
+      })
     }
 
     return response.ok({
