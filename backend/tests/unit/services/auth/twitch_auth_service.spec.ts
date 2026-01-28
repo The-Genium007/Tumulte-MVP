@@ -86,12 +86,10 @@ test.group('TwitchAuthService - hasAllRequiredScopes', () => {
     const { TwitchAuthService } = await import('#services/auth/twitch_auth_service')
     const service = new TwitchAuthService()
 
+    // Use all required scopes from the service
+    const requiredScopes = service.getRequiredScopes()
     const userScopes = [
-      'channel:manage:polls',
-      'channel:read:polls',
-      'user:read:email',
-      'chat:read',
-      'chat:edit',
+      ...requiredScopes,
       'some:extra:scope', // Extra scopes are fine
     ]
 

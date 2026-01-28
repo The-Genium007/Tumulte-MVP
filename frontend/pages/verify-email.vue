@@ -20,8 +20,8 @@
       </p>
 
       <p class="text-center text-sm text-muted">
-        Cliquez sur le lien dans l'email pour activer votre compte. Si vous ne trouvez pas
-        l'email, vérifiez vos spams.
+        Cliquez sur le lien dans l'email pour activer votre compte. Si vous ne trouvez pas l'email,
+        vérifiez vos spams.
       </p>
 
       <!-- Info sur la redirection après vérification -->
@@ -42,12 +42,7 @@
         icon="i-lucide-check-circle"
       />
 
-      <UAlert
-        v-if="errorMessage"
-        color="error"
-        variant="soft"
-        icon="i-lucide-alert-circle"
-      >
+      <UAlert v-if="errorMessage" color="error" variant="soft" icon="i-lucide-alert-circle">
         <template #title>{{ errorMessage }}</template>
         <template v-if="isSessionExpired" #description>
           <NuxtLink to="/login" class="underline hover:no-underline">

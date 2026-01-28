@@ -76,7 +76,8 @@ describe('Auth Store', () => {
 
     const store = useAuthStore()
 
-    await expect(store.fetchMe()).rejects.toThrow('Failed to fetch user')
+    // 401 now throws "Session expired" to clearly indicate authentication failure
+    await expect(store.fetchMe()).rejects.toThrow('Session expired')
     expect(store.user).toBeNull()
     expect(store.isAuthenticated).toBe(false)
     expect(store.loading).toBe(false)

@@ -7,9 +7,9 @@ import { Edge } from 'edge.js'
 import { migrate } from 'edge.js/plugins/migrate'
 
 // Calculate views path relative to this file
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
-const viewsPath = join(__dirname, '..', '..', '..', 'resources', 'views')
+const currentFilePath = fileURLToPath(import.meta.url)
+const currentDirPath = dirname(currentFilePath)
+const viewsPath = join(currentDirPath, '..', '..', '..', 'resources', 'views')
 
 /**
  * Simple mail service using Resend directly
