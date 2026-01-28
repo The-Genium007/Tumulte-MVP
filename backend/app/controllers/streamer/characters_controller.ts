@@ -8,18 +8,20 @@ export default class CharactersController {
   /**
    * Récupère les personnages disponibles pour une campagne
    * GET /streamer/campaigns/:campaignId/characters
-   * Accessible aux membres actifs ET aux propriétaires de la campagne
+   * Accessible aux membres actifs, invités (PENDING) ET aux propriétaires de la campagne
+   * Note: Les membres PENDING ont besoin de voir les personnages pour accepter l'invitation
    */
   async index({ auth, params, response }: HttpContext) {
     const user = auth.user!
 
     const streamer = await Streamer.query().where('user_id', user.id).firstOrFail()
 
-    // Vérifier que le streamer est membre actif OU propriétaire de la campagne
+    // Vérifier que le streamer est membre (actif ou invité) OU propriétaire de la campagne
+    // Les membres PENDING peuvent voir les personnages pour choisir lors de l'acceptation
     const campaignAsMember = await Campaign.query()
       .where('id', params.campaignId)
       .whereHas('memberships', (query) => {
-        query.where('streamer_id', streamer.id).where('status', 'ACTIVE')
+        query.where('streamer_id', streamer.id).whereIn('status', ['ACTIVE', 'PENDING'])
       })
       .first()
 
