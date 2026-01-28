@@ -80,7 +80,7 @@
           <div
             v-for="sub in subscriptions"
             :key="sub.id"
-            class="flex items-center justify-between p-3 bg-muted rounded-lg"
+            class="flex items-center justify-between p-3 bg-muted rounded-lg border border-default"
           >
             <div class="flex items-center gap-3">
               <UIcon name="i-lucide-smartphone" class="size-5 text-muted" />
