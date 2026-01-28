@@ -168,7 +168,6 @@ const setElementRef = (id: string, el: any) => {
 // État du poll actif
 const activePoll = ref<
   | (PollStartEvent & {
-      // eslint-disable-next-line @typescript-eslint/naming-convention
       campaign_id?: string
       totalDuration: number
     })

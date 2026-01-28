@@ -241,7 +241,7 @@ export interface LiveStatus {
   title?: string
   // eslint-disable-next-line @typescript-eslint/naming-convention
   viewer_count?: number
-  // eslint-disable-next-line @typescript-eslint/naming-convention
+
   started_at?: string
 }
 

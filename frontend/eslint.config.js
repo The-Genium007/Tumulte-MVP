@@ -210,6 +210,16 @@ export default [
             match: true,
           },
         },
+        {
+          // Allow snake_case for API response type properties
+          selector: 'typeProperty',
+          format: null,
+          filter: {
+            regex:
+              '^(access_token|refresh_token|token_type|expires_in|client_id|client_secret|grant_type|redirect_uri|response_type|force_verify|twitch_user_id|twitch_login|twitch_display_name|profile_image_url|broadcaster_type|is_active|is_authorized|is_poll_authorized|campaign_id|user_id|streamer_id|membership_id|poll_id|session_id|template_id|instance_id|invited_at|accepted_at|started_at|ended_at|expires_at|granted_at|created_at|updated_at|deleted_at|remaining_seconds|default_duration_seconds|polls_count)$',
+            match: true,
+          },
+        },
       ],
 
       // Allow single-word component names for UI components and pages

@@ -180,16 +180,15 @@ export const useCampaigns = () => {
    */
   const inviteStreamer = async (
     campaignId: string,
-    payload: // eslint-disable-next-line @typescript-eslint/naming-convention
+    payload:
       | { streamer_id: string }
       | {
-          // eslint-disable-next-line @typescript-eslint/naming-convention
           twitch_user_id: string
-          // eslint-disable-next-line @typescript-eslint/naming-convention
+
           twitch_login: string
-          // eslint-disable-next-line @typescript-eslint/naming-convention
+
           twitch_display_name: string
-          // eslint-disable-next-line @typescript-eslint/naming-convention
+
           profile_image_url?: string
         }
   ): Promise<void> => {
@@ -338,7 +337,6 @@ export const useCampaigns = () => {
    */
   const grantAuthorization = async (
     campaignId: string
-    // eslint-disable-next-line @typescript-eslint/naming-convention
   ): Promise<{ expires_at: string; remaining_seconds: number }> => {
     try {
       const response = await fetch(`${API_URL}/dashboard/campaigns/${campaignId}/authorize`, {
@@ -392,17 +390,16 @@ export const useCampaigns = () => {
    */
   const getAuthorizationStatus = async (): Promise<
     {
-      // eslint-disable-next-line @typescript-eslint/naming-convention
       campaign_id: string
       // eslint-disable-next-line @typescript-eslint/naming-convention
       campaign_name: string
       // eslint-disable-next-line @typescript-eslint/naming-convention
       is_owner: boolean
-      // eslint-disable-next-line @typescript-eslint/naming-convention
+
       is_authorized: boolean
-      // eslint-disable-next-line @typescript-eslint/naming-convention
+
       expires_at: string | null
-      // eslint-disable-next-line @typescript-eslint/naming-convention
+
       remaining_seconds: number | null
     }[]
   > => {

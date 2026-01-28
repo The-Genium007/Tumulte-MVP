@@ -273,11 +273,18 @@ const handleOverlayCancel = () => {
             <div
               class="flex items-center gap-3 p-3 rounded-lg bg-emerald-100 dark:bg-emerald-950 border border-emerald-400 dark:border-emerald-700"
             >
-              <div class="flex items-center justify-center size-10 rounded-full bg-emerald-200 dark:bg-emerald-900">
-                <UIcon name="i-lucide-check-circle" class="size-5 text-emerald-700 dark:text-emerald-400" />
+              <div
+                class="flex items-center justify-center size-10 rounded-full bg-emerald-200 dark:bg-emerald-900"
+              >
+                <UIcon
+                  name="i-lucide-check-circle"
+                  class="size-5 text-emerald-700 dark:text-emerald-400"
+                />
               </div>
               <div class="flex-1">
-                <p class="text-xs font-medium text-emerald-800 dark:text-emerald-300 uppercase tracking-wide">
+                <p
+                  class="text-xs font-medium text-emerald-800 dark:text-emerald-300 uppercase tracking-wide"
+                >
                   Thème actif
                 </p>
                 <p class="text-sm font-semibold text-emerald-900 dark:text-emerald-100">
@@ -301,7 +308,7 @@ const handleOverlayCancel = () => {
                 class="w-full"
                 :ui="{
                   base: 'bg-primary-100 dark:bg-primary-900 text-primary-600 dark:text-primary-300 border-primary-300 dark:border-primary-600',
-                  trailingIcon: 'text-primary-500 dark:text-primary-400'
+                  trailingIcon: 'text-primary-500 dark:text-primary-400',
                 }"
               />
 
