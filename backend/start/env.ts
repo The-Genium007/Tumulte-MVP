@@ -131,12 +131,4 @@ export default await Env.create(new URL('../', import.meta.url), {
   RESEND_API_KEY: Env.schema.string.optional(),
   MAIL_FROM_ADDRESS: Env.schema.string.optional(),
   MAIL_FROM_NAME: Env.schema.string.optional(),
-
-  /*
-  |----------------------------------------------------------
-  | SMTP (development fallback - Mailhog, etc.)
-  |----------------------------------------------------------
-  */
-  SMTP_HOST: Env.schema.string.optional(),
-  SMTP_PORT: Env.schema.string.optional(),
 })

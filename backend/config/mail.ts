@@ -10,7 +10,7 @@ import { defineConfig, transports } from '@adonisjs/mail'
  * - Transactional emails
  */
 const mailConfig = defineConfig({
-  default: env.get('NODE_ENV') === 'production' ? 'resend' : 'smtp',
+  default: 'resend',
 
   /**
    * Email sender defaults
@@ -25,21 +25,12 @@ const mailConfig = defineConfig({
    */
   mailers: {
     /**
-     * Resend mailer (production)
+     * Resend mailer
      * https://resend.com
      */
     resend: transports.resend({
       key: env.get('RESEND_API_KEY', ''),
       baseUrl: 'https://api.resend.com',
-    }),
-
-    /**
-     * SMTP mailer (fallback/development)
-     * Can be used with services like Mailhog for local testing
-     */
-    smtp: transports.smtp({
-      host: env.get('SMTP_HOST', 'localhost'),
-      port: env.get('SMTP_PORT', '1025'),
     }),
   },
 })

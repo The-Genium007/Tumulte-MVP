@@ -1243,6 +1243,37 @@ h6 {
 }
 
 /* ============================================================================
+   INPUT TEXT - GLOBAL DARK MODE FIX
+   Fix for input text color in dark mode across all browsers
+   ============================================================================ */
+
+/* Base input styles for dark mode */
+.dark input,
+.dark textarea,
+.dark select {
+  color: var(--color-dark-text-primary) !important;
+  background-color: var(--color-dark-bg-elevated) !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: var(--color-dark-text-muted) !important;
+}
+
+/* Autofill styles for dark mode - WebKit browsers */
+.dark input:-webkit-autofill,
+.dark input:-webkit-autofill:hover,
+.dark input:-webkit-autofill:focus,
+.dark input:-webkit-autofill:active,
+.dark textarea:-webkit-autofill,
+.dark select:-webkit-autofill {
+  -webkit-text-fill-color: var(--color-dark-text-primary) !important;
+  -webkit-box-shadow: 0 0 0 1000px var(--color-dark-bg-elevated) inset !important;
+  box-shadow: 0 0 0 1000px var(--color-dark-bg-elevated) inset !important;
+  caret-color: var(--color-dark-text-primary) !important;
+}
+
+/* ============================================================================
    INPUT RANGE / SLIDER
    ============================================================================ */
 
