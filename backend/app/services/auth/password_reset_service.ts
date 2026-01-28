@@ -4,6 +4,7 @@ import env from '#start/env'
 import User from '#models/user'
 import logger from '@adonisjs/core/services/logger'
 import passwordSecurityService from './password_security_service.js'
+import mailService from '#services/mail/mail_service'
 
 /**
  * Service for handling password reset
@@ -73,36 +74,20 @@ class PasswordResetService {
 
     const resetUrl = this.buildResetUrl(token)
 
-    // In development, log the reset URL to console instead of sending email
-    if (env.get('NODE_ENV') === 'development') {
-      logger.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-      logger.info('🔑 [DEV] Password reset link:')
-      logger.info(`   ${resetUrl}`)
-      logger.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-      return
-    }
+    const sent = await mailService.send({
+      to: user.email!,
+      subject: 'Réinitialisation de mot de passe - Tumulte',
+      template: 'emails/reset_password',
+      data: {
+        displayName: user.displayName,
+        resetUrl,
+      },
+    })
 
-    try {
-      // Dynamic import to avoid loading mail service before app is booted
-      const mail = await import('@adonisjs/mail/services/main')
-      await mail.default.send((message) => {
-        message
-          .to(user.email!)
-          .subject('Réinitialisation de mot de passe - Tumulte')
-          .htmlView('emails/reset_password', {
-            displayName: user.displayName,
-            resetUrl,
-          })
-      })
-
+    if (sent) {
       logger.info({ userId: user.id, email: user.email }, 'Password reset email sent')
-    } catch (error) {
-      logger.error(
-        { userId: user.id, email: user.email, error },
-        'Failed to send password reset email'
-      )
-      // Don't throw - we don't want to reveal if the email exists
     }
+    // Don't throw on failure - we don't want to reveal if the email exists
   }
 
   /**

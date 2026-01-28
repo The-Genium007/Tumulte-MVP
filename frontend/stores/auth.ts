@@ -77,6 +77,15 @@ export const useAuthStore = defineStore('auth', () => {
         credentials: 'include',
       })
 
+      // Handle 401 Unauthorized - session expired or invalid
+      // CRITICAL: Always clear offline data on 401 to prevent "ghost account" state
+      if (response.status === 401) {
+        user.value = null
+        isOfflineData.value = false
+        await clearUserData()
+        throw new Error('Session expired')
+      }
+
       if (!response.ok) {
         throw new Error('Failed to fetch user')
       }
@@ -93,7 +102,8 @@ export const useAuthStore = defineStore('auth', () => {
       // Identify user in PostHog analytics
       identifyUserInAnalytics(freshUser)
     } catch (error) {
-      // If we have offline data, don't clear the user
+      // On network error (offline), keep offline data if available
+      // But if we explicitly got a 401, user is already cleared above
       if (!isOfflineData.value) {
         user.value = null
       }
@@ -286,12 +296,26 @@ export const useAuthStore = defineStore('auth', () => {
   /**
    * Resend verification email
    */
-  async function resendVerificationEmail(): Promise<{ success: boolean; error?: AuthError }> {
+  async function resendVerificationEmail(): Promise<{
+    success: boolean
+    error?: AuthError
+    isUnauthorized?: boolean
+  }> {
     try {
       const response = await fetch(`${API_URL}/auth/resend-verification`, {
         method: 'POST',
         credentials: 'include',
       })
+
+      // Détection explicite de l'erreur 401 (session expirée)
+      if (response.status === 401) {
+        user.value = null
+        return {
+          success: false,
+          error: { error: 'Votre session a expiré. Veuillez vous reconnecter.' },
+          isUnauthorized: true,
+        }
+      }
 
       const result = await response.json()
 

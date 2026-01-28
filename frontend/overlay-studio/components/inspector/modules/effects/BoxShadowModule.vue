@@ -229,7 +229,7 @@ const applyPreset = (preset: ShadowPreset) => {
 
 .field label {
   font-size: 0.75rem;
-  color: var(--color-text-muted);
+  color: var(--ui-text-muted);
 }
 
 .inline-field {
@@ -241,7 +241,7 @@ const applyPreset = (preset: ShadowPreset) => {
 
 .inline-field label {
   font-size: 0.75rem;
-  color: var(--color-text-muted);
+  color: var(--ui-text-muted);
 }
 
 .slider-field {
@@ -258,12 +258,12 @@ const applyPreset = (preset: ShadowPreset) => {
 
 .slider-header label {
   font-size: 0.75rem;
-  color: var(--color-text-muted);
+  color: var(--ui-text-muted);
 }
 
 .slider-value {
   font-size: 0.75rem;
-  color: var(--color-text-primary);
+  color: var(--ui-text);
   font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
@@ -271,7 +271,7 @@ const applyPreset = (preset: ShadowPreset) => {
 .button-group {
   display: flex;
   gap: 0.25rem;
-  background: var(--color-neutral-100);
+  background: var(--ui-bg-elevated);
   border-radius: 6px;
   padding: 0.25rem;
 }
@@ -284,17 +284,17 @@ const applyPreset = (preset: ShadowPreset) => {
   border-radius: 4px;
   cursor: pointer;
   font-size: 0.75rem;
-  color: var(--color-text-muted);
+  color: var(--ui-text-muted);
   transition: all 0.15s ease;
 }
 
 .toggle-button:hover {
-  color: var(--color-text-primary);
+  color: var(--ui-text);
 }
 
 .toggle-button.active {
-  background: white;
-  color: var(--color-text-primary);
+  background: var(--ui-bg);
+  color: var(--ui-text);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
@@ -302,14 +302,14 @@ const applyPreset = (preset: ShadowPreset) => {
   display: flex;
   justify-content: center;
   padding: 1.5rem;
-  background: var(--color-neutral-100);
+  background: var(--ui-bg-elevated);
   border-radius: 8px;
 }
 
 .preview-box {
   width: 80px;
   height: 50px;
-  background: white;
+  background: var(--ui-bg);
   border-radius: 8px;
 }
 
@@ -325,27 +325,27 @@ const applyPreset = (preset: ShadowPreset) => {
   align-items: center;
   gap: 0.25rem;
   padding: 0.5rem;
-  border: 1px solid var(--color-neutral-200);
-  background: var(--color-neutral-50);
+  border: 1px solid var(--ui-border);
+  background: var(--ui-bg-elevated);
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .preset-button:hover {
-  border-color: var(--color-primary-300);
-  background: var(--color-primary-50);
+  border-color: var(--ui-primary);
+  background: var(--ui-bg-accented);
 }
 
 .preset-preview {
   width: 32px;
   height: 20px;
-  background: white;
+  background: var(--ui-bg);
   border-radius: 4px;
 }
 
 .preset-button span {
   font-size: 0.625rem;
-  color: var(--color-text-muted);
+  color: var(--ui-text-muted);
 }
 </style>

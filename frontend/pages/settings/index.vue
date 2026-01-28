@@ -194,20 +194,23 @@
             </div>
           </div>
 
-          <div class="p-4 rounded-lg bg-neutral-100 border border-default opacity-60">
+          <button
+            class="w-full p-4 rounded-lg bg-neutral-100 dark:bg-neutral-800 border border-default hover:border-primary hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors cursor-pointer text-left"
+            @click="showFoundrySlideover = true"
+          >
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-3">
                 <div class="p-2">
-                  <UIcon name="i-lucide-castle" class="size-6 text-neutral-500" />
+                  <UIcon name="i-lucide-castle" class="size-6 text-primary" />
                 </div>
                 <div>
                   <h3 class="font-semibold text-primary">Foundry VTT</h3>
-                  <p class="text-sm text-muted">Synchronisation Foundry</p>
+                  <p class="text-sm text-muted">Gérer les connexions</p>
                 </div>
               </div>
-              <UBadge label="Bientôt" color="info" variant="solid" />
+              <UIcon name="i-lucide-chevron-right" class="size-5 text-muted" />
             </div>
-          </div>
+          </button>
 
           <div class="p-4 rounded-lg bg-neutral-100 border border-default opacity-60">
             <div class="flex items-center justify-between">
@@ -297,6 +300,9 @@
       </UCard>
     </div>
   </div>
+
+  <!-- Slideover Foundry VTT -->
+  <SettingsFoundryConnectionsSlideover v-model="showFoundrySlideover" />
 
   <!-- Modal de mot de passe -->
   <UModal v-model:open="showPasswordModal" class="w-full max-w-2xl mx-4">
@@ -509,6 +515,7 @@ const toast = useToast()
 const config = useRuntimeConfig()
 
 // États
+const showFoundrySlideover = ref(false)
 const showDeleteModal = ref(false)
 const deleteConfirmation = ref('')
 const deleteLoading = ref(false)

@@ -12,12 +12,12 @@
             alt="Tumulte"
             class="size-10 sm:size-12 transition-transform group-hover:scale-105"
           />
-          <h1 class="text-lg sm:text-2xl font-bold text-primary hidden sm:block">Tumulte</h1>
+          <h1 class="text-lg sm:text-2xl font-bold text-primary">Tumulte</h1>
         </NuxtLink>
 
-        <!-- Affichage conditionnel : UserMenu si connecté, CTA sinon -->
-        <!-- Pendant le chargement, ne rien afficher pour éviter le flash -->
-        <UserMenu v-if="!isCheckingAuth && user" />
+        <!-- Affichage conditionnel : UserMenu si connecté (desktop only), CTA sinon -->
+        <!-- Sur mobile, le menu est dans BottomNavigation -->
+        <UserMenu v-if="!isCheckingAuth && user" class="hidden lg:block" />
         <div v-else-if="!isCheckingAuth" class="flex items-center gap-3">
           <UButton variant="ghost" to="/login" size="sm" class="hidden sm:inline-flex">
             Connexion

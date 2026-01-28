@@ -379,7 +379,7 @@ const getStateColor = (
 
 .controls-header {
   padding-bottom: 0.75rem;
-  border-bottom: 1px solid var(--color-neutral-200);
+  border-bottom: 1px solid var(--ui-border);
 }
 
 .controls-title {
@@ -416,20 +416,20 @@ const getStateColor = (
   gap: 0.75rem;
   padding: 0.5rem 0.75rem;
   border-radius: 8px;
-  background: var(--color-bg-page);
-  border: 1px solid var(--color-neutral-200);
+  background: var(--ui-bg);
+  border: 1px solid var(--ui-border);
   cursor: pointer;
   transition: all 0.15s;
 }
 
 .element-item:hover {
-  background: var(--color-neutral-100);
-  border-color: var(--color-primary-400);
+  background: var(--ui-bg-elevated);
+  border-color: var(--ui-border-hover);
 }
 
 .element-item.selected {
-  background: var(--color-primary-100);
-  border-color: var(--color-primary-400);
+  background: var(--ui-bg-accented);
+  border-color: var(--ui-primary);
 }
 
 .element-name {
@@ -537,9 +537,9 @@ const getStateColor = (
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 0.75rem;
-  background: var(--color-bg-page);
+  background: var(--ui-bg);
   border-radius: 8px;
-  border: 1px solid var(--color-neutral-200);
+  border: 1px solid var(--ui-border);
 }
 
 .state-label {

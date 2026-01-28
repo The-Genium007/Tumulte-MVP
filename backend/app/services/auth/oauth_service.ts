@@ -4,6 +4,7 @@ import User from '#models/user'
 import AuthProvider, { type AuthProviderType } from '#models/auth_provider'
 import { streamer as Streamer } from '#models/streamer'
 import { TwitchAuthService } from './twitch_auth_service.js'
+import welcomeEmailService from '#services/mail/welcome_email_service'
 
 /**
  * Unified OAuth service for handling multiple providers
@@ -122,6 +123,15 @@ class OAuthService {
 
       isNew = true
       logger.info({ userId: user.id, provider: data.provider }, 'New user created via OAuth')
+
+      // Send welcome email for new users (non-blocking)
+      const newUser = user
+      welcomeEmailService.sendWelcomeEmail(newUser).catch((error) => {
+        logger.error(
+          { userId: newUser.id, error },
+          'Failed to send welcome email on OAuth registration'
+        )
+      })
     }
 
     return { user, isNew, authProvider }

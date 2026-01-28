@@ -35,6 +35,9 @@ const AuthFinder = withAuthFinder(() => hash.use('scrypt'), {
  * - Admin status is determined by ADMIN_EMAILS env variable
  */
 class User extends compose(BaseModel, AuthFinder) {
+  // Note: Password hashing is handled automatically by the AuthFinder mixin
+  // Do NOT add a @beforeSave hook for password hashing - it would cause double hashing
+
   @column({ isPrimary: true })
   declare id: string
 

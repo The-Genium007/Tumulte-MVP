@@ -58,6 +58,7 @@
           :model-value="modelValue.animation || 'none'"
           :items="animationOptions"
           size="xs"
+          :ui="selectUi"
           @update:model-value="(v: string) => updateField('animation', v)"
         />
       </div>
@@ -147,6 +148,13 @@ const animationOptions = [
   { label: 'Clignotement', value: 'blink' },
 ]
 
+// UI customization for selects
+const selectUi = {
+  base: 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300',
+  content: 'bg-white dark:bg-neutral-800',
+  item: 'text-neutral-700 dark:text-neutral-200 data-highlighted:bg-neutral-100 dark:data-highlighted:bg-neutral-700',
+}
+
 const previewStyle = computed(() => {
   const { color, intensity, spread } = props.modelValue
   const glowSize = spread * intensity
@@ -184,7 +192,7 @@ const updateField = <K extends keyof GlowConfig>(field: K, value: GlowConfig[K])
 
 .field label {
   font-size: 0.75rem;
-  color: var(--color-text-muted);
+  color: var(--ui-text-muted);
 }
 
 .inline-field {
@@ -196,7 +204,7 @@ const updateField = <K extends keyof GlowConfig>(field: K, value: GlowConfig[K])
 
 .inline-field label {
   font-size: 0.75rem;
-  color: var(--color-text-muted);
+  color: var(--ui-text-muted);
 }
 
 .slider-field {
@@ -213,12 +221,12 @@ const updateField = <K extends keyof GlowConfig>(field: K, value: GlowConfig[K])
 
 .slider-header label {
   font-size: 0.75rem;
-  color: var(--color-text-muted);
+  color: var(--ui-text-muted);
 }
 
 .slider-value {
   font-size: 0.75rem;
-  color: var(--color-text-primary);
+  color: var(--ui-text);
   font-weight: 500;
   font-variant-numeric: tabular-nums;
 }

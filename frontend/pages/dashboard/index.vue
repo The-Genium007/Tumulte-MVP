@@ -221,10 +221,8 @@
           <div class="pt-4 border-t border-default space-y-4">
             <!-- Présentation de l'Overlay Studio -->
             <div class="flex items-start gap-4">
-              <div
-                class="shrink-0 size-12 rounded-xl bg-linear-to-br from-primary-500 to-primary-600 flex items-center justify-center shadow-md"
-              >
-                <UIcon name="i-lucide-palette" class="size-6 text-white" />
+              <div class="shrink-0 size-12 flex items-center justify-center">
+                <UIcon name="i-lucide-palette" class="size-8 text-primary-400" />
               </div>
               <div class="flex-1 min-w-0">
                 <h3 class="text-lg font-semibold text-primary mb-1">Overlay Studio</h3>

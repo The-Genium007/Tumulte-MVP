@@ -163,7 +163,9 @@ export default class OAuthController {
         `${env.get('FRONTEND_URL')}/auth/callback?redirect=${encodeURIComponent('/dashboard')}`
       )
     } catch (error) {
-      logger.error({ error }, 'Twitch OAuth callback failed')
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      const errorStack = error instanceof Error ? error.stack : undefined
+      logger.error({ error: errorMessage, stack: errorStack }, 'Twitch OAuth callback failed')
       return response.redirect(`${env.get('FRONTEND_URL')}/login?error=oauth_failed`)
     }
   }

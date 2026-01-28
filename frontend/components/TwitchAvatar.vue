@@ -13,7 +13,7 @@
         sizeClasses,
       ]"
     >
-      <UIcon name="i-lucide-user" :class="iconSizeClasses" class="text-purple-500" />
+      <UIcon name="i-lucide-user" :class="iconSizeClasses" class="text-(--theme-text-secondary)" />
     </div>
   </div>
 </template>

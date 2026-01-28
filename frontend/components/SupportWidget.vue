@@ -59,8 +59,9 @@
               :items="tabs"
               class="w-full"
               :ui="{
+                list: 'bg-[var(--theme-input-bg)]',
                 trigger:
-                  'data-[state=inactive]:bg-primary-100 data-[state=inactive]:text-primary-500',
+                  'data-[state=inactive]:bg-transparent data-[state=inactive]:text-[var(--theme-text-muted)]',
               }"
             />
 
@@ -74,10 +75,6 @@
                   v-model="bugTitle"
                   placeholder="Ex: Impossible de lancer un sondage"
                   class="w-full"
-                  :ui="{
-                    root: 'ring-0 border-0 rounded-lg overflow-hidden',
-                    base: 'px-3.5 py-2.5 bg-primary-100 text-primary-500 placeholder:text-primary-400 rounded-lg',
-                  }"
                 />
               </div>
 
@@ -90,10 +87,6 @@
                   :rows="4"
                   placeholder="Ce qui s'est passé, étapes pour reproduire..."
                   class="w-full"
-                  :ui="{
-                    root: 'ring-0 border-0 rounded-lg overflow-hidden',
-                    base: 'px-3.5 py-2.5 bg-primary-100 text-primary-500 placeholder:text-primary-400 rounded-lg',
-                  }"
                 />
               </div>
 
@@ -126,10 +119,6 @@
                   v-model="suggestionTitle"
                   placeholder="Ex: Ajouter un mode sombre"
                   class="w-full"
-                  :ui="{
-                    root: 'ring-0 border-0 rounded-lg overflow-hidden',
-                    base: 'px-3.5 py-2.5 bg-primary-100 text-primary-500 placeholder:text-primary-400 rounded-lg',
-                  }"
                 />
               </div>
 
@@ -142,10 +131,6 @@
                   :rows="4"
                   placeholder="Décris ton idée en détail..."
                   class="w-full"
-                  :ui="{
-                    root: 'ring-0 border-0 rounded-lg overflow-hidden',
-                    base: 'px-3.5 py-2.5 bg-primary-100 text-primary-500 placeholder:text-primary-400 rounded-lg',
-                  }"
                 />
               </div>
 

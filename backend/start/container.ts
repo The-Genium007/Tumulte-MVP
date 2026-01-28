@@ -4,6 +4,41 @@
  */
 
 import app from '@adonisjs/core/services/app'
+import { HttpContext } from '@adonisjs/core/http'
+import { configProvider } from '@adonisjs/core'
+
+/*
+|--------------------------------------------------------------------------
+| Ally Provider Manual Boot
+|--------------------------------------------------------------------------
+| The Ally provider doesn't seem to boot automatically in some cases.
+| This ensures the ally getter is added to HttpContext.
+*/
+app.booted(async () => {
+  const existingDescriptor = Object.getOwnPropertyDescriptor(HttpContext.prototype, 'ally')
+  if (!existingDescriptor) {
+    try {
+      const { AllyManager } = await import('@adonisjs/ally')
+      const allyConfigProvider = app.config.get<any>('ally')
+
+      if (allyConfigProvider) {
+        const config = await configProvider.resolve<any>(app, allyConfigProvider)
+        if (config) {
+          HttpContext.getter(
+            'ally',
+            function (this: HttpContext) {
+              return new AllyManager(config, this) as any
+            },
+            true
+          )
+          console.log('[Container] Ally initialized successfully')
+        }
+      }
+    } catch (error) {
+      console.error('[Container] Failed to initialize ally:', error)
+    }
+  }
+})
 
 /*
 |--------------------------------------------------------------------------

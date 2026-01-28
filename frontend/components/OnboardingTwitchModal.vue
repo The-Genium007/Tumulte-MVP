@@ -18,7 +18,10 @@ const connectTwitch = () => {
       <UCard>
         <template #header>
           <div class="flex items-center gap-3">
-            <UIcon name="i-lucide-party-popper" class="size-8 text-primary-500" />
+            <UIcon
+              name="i-lucide-party-popper"
+              class="size-8 text-secondary-600 dark:text-secondary-400"
+            />
             <div>
               <h3 class="text-lg font-semibold text-primary">Bienvenue sur Tumulte !</h3>
               <p class="text-sm text-muted">Une dernière étape avant de commencer</p>
@@ -35,18 +38,24 @@ const connectTwitch = () => {
             <p class="text-sm font-medium text-primary">Cela nous permet de :</p>
             <ul class="space-y-2">
               <li class="flex items-start gap-2 text-sm text-muted">
-                <UIcon name="i-lucide-vote" class="size-4 text-primary-500 mt-0.5 shrink-0" />
+                <UIcon
+                  name="i-lucide-vote"
+                  class="size-4 text-secondary-600 dark:text-secondary-400 mt-0.5 shrink-0"
+                />
                 <span>Créer et gérer des sondages sur votre chaîne</span>
               </li>
               <li class="flex items-start gap-2 text-sm text-muted">
                 <UIcon
                   name="i-lucide-monitor-play"
-                  class="size-4 text-primary-500 mt-0.5 shrink-0"
+                  class="size-4 text-secondary-600 dark:text-secondary-400 mt-0.5 shrink-0"
                 />
                 <span>Afficher l'overlay de sondage dans votre stream</span>
               </li>
               <li class="flex items-start gap-2 text-sm text-muted">
-                <UIcon name="i-lucide-zap" class="size-4 text-primary-500 mt-0.5 shrink-0" />
+                <UIcon
+                  name="i-lucide-zap"
+                  class="size-4 text-secondary-600 dark:text-secondary-400 mt-0.5 shrink-0"
+                />
                 <span>Synchroniser les résultats en temps réel</span>
               </li>
             </ul>

@@ -87,6 +87,8 @@ export default defineAppConfig({
     select: {
       slots: {
         base: 'ring-0 border-0 px-3.5 py-2.5 bg-[var(--theme-input-bg)] text-[var(--theme-input-text)] rounded-lg',
+        content: 'bg-[var(--theme-card-bg)] ring-0 border-0 rounded-lg shadow-lg',
+        item: 'text-[var(--theme-text-primary)] data-highlighted:bg-[var(--theme-card-bg-hover)]',
       },
     },
     textarea: {

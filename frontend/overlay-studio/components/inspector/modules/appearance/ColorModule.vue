@@ -503,7 +503,7 @@ watch(
 
 .module-label {
   font-size: 0.75rem;
-  color: var(--color-neutral-400);
+  color: var(--ui-text-muted);
   font-weight: 500;
 }
 
@@ -518,7 +518,7 @@ watch(
   width: 32px;
   height: 32px;
   border-radius: 6px;
-  border: 1px solid var(--color-neutral-300);
+  border: 1px solid var(--ui-border);
   cursor: pointer;
   flex-shrink: 0;
   position: relative;
@@ -527,7 +527,7 @@ watch(
     border-color 0.15s ease,
     box-shadow 0.15s ease;
   /* Checkerboard background for transparency */
-  background-image: repeating-conic-gradient(var(--color-neutral-200) 0% 25%, white 0% 50%);
+  background-image: repeating-conic-gradient(var(--ui-bg-accented) 0% 25%, var(--ui-bg) 0% 50%);
   background-size: 8px 8px;
 }
 
@@ -538,12 +538,12 @@ watch(
 }
 
 .color-swatch-button:hover {
-  border-color: var(--color-primary-400);
+  border-color: var(--ui-primary);
 }
 
 .color-swatch-button:focus {
   outline: none;
-  box-shadow: 0 0 0 2px var(--color-primary-200);
+  box-shadow: 0 0 0 2px var(--ui-primary);
 }
 
 .color-text {
@@ -558,7 +558,7 @@ watch(
   display: flex;
   flex-direction: column;
   gap: 12px;
-  background: var(--color-bg-muted);
+  background: var(--ui-bg);
   border-radius: 8px;
 }
 
@@ -607,7 +607,7 @@ watch(
 .picker-label {
   font-size: 0.625rem;
   font-weight: 600;
-  color: var(--color-neutral-400);
+  color: var(--ui-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   width: 50px;
@@ -661,7 +661,8 @@ watch(
 .alpha-checkerboard {
   position: absolute;
   inset: 0;
-  background: repeating-conic-gradient(var(--color-neutral-200) 0% 25%, white 0% 50%) 50% / 8px 8px;
+  background: repeating-conic-gradient(var(--ui-bg-accented) 0% 25%, var(--ui-bg) 0% 50%) 50% / 8px
+    8px;
   border-radius: 6px;
 }
 
@@ -688,7 +689,7 @@ watch(
 
 .alpha-value {
   font-size: 0.75rem;
-  color: var(--color-neutral-500);
+  color: var(--ui-text-muted);
   font-variant-numeric: tabular-nums;
   width: 36px;
   text-align: right;
@@ -705,8 +706,8 @@ watch(
   padding: 6px 10px;
   font-size: 0.75rem;
   font-family: ui-monospace, monospace;
-  color: var(--color-text-primary);
-  background: var(--color-neutral-100);
+  color: var(--ui-text);
+  background: var(--ui-bg-elevated);
   border: none;
   border-radius: 6px;
   outline: none;
@@ -714,7 +715,7 @@ watch(
 }
 
 .picker-input:focus {
-  box-shadow: 0 0 0 2px var(--color-primary-200);
+  box-shadow: 0 0 0 2px var(--ui-primary);
 }
 
 /* Presets */
@@ -723,7 +724,7 @@ watch(
   flex-wrap: wrap;
   gap: 6px;
   padding-top: 8px;
-  border-top: 1px solid var(--color-neutral-200);
+  border-top: 1px solid var(--ui-border);
 }
 
 .preset-color {
@@ -740,8 +741,8 @@ watch(
 }
 
 .preset-color.active {
-  border-color: var(--color-primary-500);
-  box-shadow: 0 0 0 2px var(--color-primary-200);
+  border-color: var(--ui-primary);
+  box-shadow: 0 0 0 2px var(--ui-primary);
 }
 
 .sr-only {

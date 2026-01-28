@@ -44,11 +44,26 @@ class TwitchAuthService {
   private readonly clientSecret: string
   private readonly redirectUri: string
   private readonly scopes = [
+    // Core - Sondages
     'channel:manage:polls',
     'channel:read:polls',
+    // Core - Utilisateur
     'user:read:email',
+    // Core - Chat IRC
     'chat:read',
     'chat:edit',
+    // Channel Points (récompenses personnalisées)
+    'channel:read:redemptions',
+    'channel:manage:redemptions',
+    // Monétisation
+    'bits:read',
+    'channel:read:subscriptions',
+    // Événements & Engagement
+    'channel:read:hype_train',
+    'channel:read:goals',
+    // Statistiques viewers
+    'moderator:read:chatters',
+    'moderator:read:followers',
   ]
 
   constructor() {
@@ -90,6 +105,13 @@ class TwitchAuthService {
    */
   hasAllRequiredScopes(userScopes: string[]): boolean {
     return this.scopes.every((scope) => userScopes.includes(scope))
+  }
+
+  /**
+   * Retourne la liste des scopes manquants pour un utilisateur
+   */
+  getMissingScopes(userScopes: string[]): string[] {
+    return this.scopes.filter((scope) => !userScopes.includes(scope))
   }
 
   /**

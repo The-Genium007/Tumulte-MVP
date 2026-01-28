@@ -2,6 +2,7 @@ import type { HttpContext } from '@adonisjs/core/http'
 import { verifyEmailSchema, type VerifyEmailDto } from '#validators/auth/auth_validators'
 import { validateRequest } from '#middleware/validate_middleware'
 import emailVerificationService from '#services/auth/email_verification_service'
+import authAuditService from '#services/auth/auth_audit_service'
 
 /**
  * Controller for email verification
@@ -10,7 +11,8 @@ export default class VerificationController {
   /**
    * Verify email with token
    */
-  async verify({ request, response }: HttpContext) {
+  async verify(ctx: HttpContext) {
+    const { request, response } = ctx
     await validateRequest(verifyEmailSchema)({ request, response } as HttpContext, async () => {})
     const data = request.all() as VerifyEmailDto
 
@@ -21,6 +23,9 @@ export default class VerificationController {
         error: 'Le lien de vérification est invalide ou a expiré.',
       })
     }
+
+    // Audit log email verified
+    authAuditService.emailVerified(user.id, user.email || '', ctx)
 
     return response.ok({
       message: 'Email vérifié avec succès. Vous pouvez maintenant vous connecter.',

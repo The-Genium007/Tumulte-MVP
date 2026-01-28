@@ -68,10 +68,23 @@ router
       .use(middleware.rateLimit({ maxRequests: 10, windowSeconds: 60, keyPrefix: 'auth_login' }))
 
     // ---- Email Verification ----
-    router.post('/verify-email', [verificationController, 'verify'])
+    router.post('/verify-email', [verificationController, 'verify']).use(
+      middleware.rateLimit({
+        maxRequests: 5,
+        windowSeconds: 60,
+        keyPrefix: 'auth_verify_email',
+      })
+    )
     router
       .post('/resend-verification', [verificationController, 'resend'])
       .use(middleware.auth({ guards: ['web', 'api'] }))
+      .use(
+        middleware.rateLimit({
+          maxRequests: 3,
+          windowSeconds: 60,
+          keyPrefix: 'auth_resend_verification',
+        })
+      )
 
     // ---- Password Reset ----
     router.post('/forgot-password', [passwordController, 'forgotPassword']).use(

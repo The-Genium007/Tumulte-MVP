@@ -12,6 +12,7 @@ import {
 import { validateRequest } from '#middleware/validate_middleware'
 import passwordResetService from '#services/auth/password_reset_service'
 import emailAuthService from '#services/auth/email_auth_service'
+import authAuditService from '#services/auth/auth_audit_service'
 
 /**
  * Controller for password management
@@ -20,7 +21,8 @@ export default class PasswordController {
   /**
    * Request password reset email
    */
-  async forgotPassword({ request, response }: HttpContext) {
+  async forgotPassword(ctx: HttpContext) {
+    const { request, response } = ctx
     await validateRequest(forgotPasswordSchema)(
       { request, response } as HttpContext,
       async () => {}
@@ -29,6 +31,9 @@ export default class PasswordController {
 
     // Always send same response to prevent email enumeration
     await passwordResetService.sendResetEmail(data.email)
+
+    // Audit log password reset request
+    authAuditService.passwordResetRequested(data.email, ctx)
 
     return response.ok({
       message: 'Si un compte existe avec cet email, vous recevrez un lien de réinitialisation.',
@@ -53,7 +58,8 @@ export default class PasswordController {
   /**
    * Reset password with token
    */
-  async resetPassword({ request, response }: HttpContext) {
+  async resetPassword(ctx: HttpContext) {
+    const { request, response } = ctx
     await validateRequest(resetPasswordSchema)({ request, response } as HttpContext, async () => {})
     const data = request.all() as ResetPasswordDto
 
@@ -73,6 +79,11 @@ export default class PasswordController {
       })
     }
 
+    // Audit log password reset completed
+    if (result.user) {
+      authAuditService.passwordResetCompleted(result.user.id, ctx)
+    }
+
     return response.ok({
       message: 'Mot de passe réinitialisé avec succès. Vous pouvez maintenant vous connecter.',
     })
@@ -81,7 +92,8 @@ export default class PasswordController {
   /**
    * Change password (authenticated user)
    */
-  async changePassword({ request, response, auth }: HttpContext) {
+  async changePassword(ctx: HttpContext) {
+    const { request, response, auth } = ctx
     const user = auth.user!
     await validateRequest(changePasswordSchema)(
       { request, response } as HttpContext,
@@ -98,6 +110,9 @@ export default class PasswordController {
     if (!result.success) {
       return response.badRequest({ error: result.error })
     }
+
+    // Audit log password changed
+    authAuditService.passwordChanged(user.id, ctx)
 
     return response.ok({
       message: 'Mot de passe modifié avec succès.',

@@ -14,6 +14,7 @@ export function useAuth() {
     isAdmin,
     isPremium,
     isEmailVerified,
+    isOfflineData,
     authError,
     hasFetchedUser,
   } = storeToRefs(authStore)
@@ -26,6 +27,7 @@ export function useAuth() {
     isAdmin,
     isPremium,
     isEmailVerified,
+    isOfflineData,
     authError,
     hasFetchedUser,
 

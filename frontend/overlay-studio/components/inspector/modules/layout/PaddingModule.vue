@@ -161,7 +161,7 @@ const updateSide = (side: keyof PaddingConfig, value: number) => {
   display: flex;
   gap: 0.25rem;
   padding: 0.25rem;
-  background: var(--color-neutral-100);
+  background: var(--ui-bg-elevated);
   border-radius: 8px;
 }
 
@@ -177,17 +177,17 @@ const updateSide = (side: keyof PaddingConfig, value: number) => {
   border-radius: 6px;
   cursor: pointer;
   font-size: 0.75rem;
-  color: var(--color-neutral-400);
+  color: var(--ui-text-muted);
   transition: all 0.15s ease;
 }
 
 .mode-button:hover {
-  color: var(--color-text-primary);
+  color: var(--ui-text);
 }
 
 .mode-button.active {
-  background: white;
-  color: var(--color-text-primary);
+  background: var(--ui-bg);
+  color: var(--ui-text);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
@@ -200,7 +200,7 @@ const updateSide = (side: keyof PaddingConfig, value: number) => {
 
 .inline-field label {
   font-size: 0.75rem;
-  color: var(--color-neutral-400);
+  color: var(--ui-text-muted);
 }
 
 .input-with-unit {
@@ -211,7 +211,7 @@ const updateSide = (side: keyof PaddingConfig, value: number) => {
 
 .unit {
   font-size: 0.75rem;
-  color: var(--color-neutral-400);
+  color: var(--ui-text-muted);
 }
 
 .sides-grid {
@@ -227,7 +227,7 @@ const updateSide = (side: keyof PaddingConfig, value: number) => {
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  color: var(--color-neutral-400);
+  color: var(--ui-text-muted);
 }
 
 .side-field.top {
@@ -261,7 +261,7 @@ const updateSide = (side: keyof PaddingConfig, value: number) => {
 .preview-box {
   width: 40px;
   height: 28px;
-  background: var(--color-neutral-200);
+  background: var(--ui-bg-accented);
   border-radius: 4px;
   display: flex;
   align-items: center;
@@ -272,7 +272,7 @@ const updateSide = (side: keyof PaddingConfig, value: number) => {
 .preview-content {
   width: 100%;
   height: 100%;
-  background: var(--color-primary-500);
+  background: var(--ui-primary);
   border-radius: 2px;
 }
 </style>

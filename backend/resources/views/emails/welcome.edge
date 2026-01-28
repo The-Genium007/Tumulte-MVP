@@ -1,0 +1,160 @@
+@layout('emails/layouts/base')
+@set('title', 'Bienvenue dans l\'Aventure')
+@set('preheader', 'Votre epopee commence maintenant - Forgez des legendes avec Tumulte')
+
+@section('content')
+
+<!-- Epic welcome header -->
+<h1 style="margin: 0 0 8px 0; font-size: 28px; font-weight: 700; color: #1a1612; line-height: 1.3; text-align: center;">
+  L'Aventure Commence !
+</h1>
+
+<p style="margin: 0 0 24px 0; font-size: 15px; color: #c9a227; text-align: center; font-style: italic;">
+  Bienvenue dans la guilde, {{ displayName }}
+</p>
+
+<!-- Decorative divider -->
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom: 24px;">
+  <tr>
+    <td align="center">
+      <div style="width: 60px; height: 2px; background-color: #c9a227;"></div>
+    </td>
+  </tr>
+</table>
+
+<!-- Welcome message -->
+<p style="margin: 0 0 20px 0; font-size: 16px; line-height: 1.7; color: #3d3228; text-align: center;">
+  Vous venez de rejoindre <strong style="color: #1a1612;">Tumulte</strong>, la forge ou streamers et communautes ecrivent ensemble des recits memorables.
+</p>
+
+<!-- Two paths section -->
+<h2 style="margin: 28px 0 16px 0; font-size: 17px; font-weight: 600; color: #1a1612;">
+  Votre quete peut emprunter deux chemins :
+</h2>
+
+<!-- GM Card -->
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom: 12px;">
+  <tr>
+    <td style="background-color: #faf6f0; border-radius: 12px; border-left: 4px solid #c9a227;">
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+        <tr>
+          <td style="padding: 18px 20px;">
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+              <tr>
+                <td valign="top" style="width: 44px; padding-right: 14px;">
+                  <div style="width: 36px; height: 36px; background-color: #fef3c7; border-radius: 8px; text-align: center; line-height: 36px; font-size: 18px;">
+                    &#128081;
+                  </div>
+                </td>
+                <td valign="top">
+                  <h3 style="margin: 0 0 6px 0; font-size: 15px; font-weight: 600; color: #1a1612;">
+                    Maitre du Jeu
+                  </h3>
+                  <p style="margin: 0; font-size: 13px; line-height: 1.5; color: #5c4a3a;">
+                    Orchestrez le chaos depuis votre grimoire. Creez des campagnes, lancez des sondages epiques et observez vos communautes forger le destin.
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+<!-- Streamer Card -->
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom: 28px;">
+  <tr>
+    <td style="background-color: #faf6f0; border-radius: 12px; border-left: 4px solid #9146FF;">
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+        <tr>
+          <td style="padding: 18px 20px;">
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+              <tr>
+                <td valign="top" style="width: 44px; padding-right: 14px;">
+                  <div style="width: 36px; height: 36px; background-color: #ede9fe; border-radius: 8px; text-align: center; line-height: 36px; font-size: 18px;">
+                    &#127918;
+                  </div>
+                </td>
+                <td valign="top">
+                  <h3 style="margin: 0 0 6px 0; font-size: 15px; font-weight: 600; color: #1a1612;">
+                    Aventurier Streamer
+                  </h3>
+                  <p style="margin: 0; font-size: 13px; line-height: 1.5; color: #5c4a3a;">
+                    Embarquez votre communaute dans une quete collective. Rejoignez des campagnes et offrez a chaque viewer un role dans l'epopee.
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+<!-- CTA Button -->
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+  <tr>
+    <td align="center" style="padding: 8px 0 8px 0;">
+      @component('emails/partials/button', { url: dashboardUrl, text: 'Commencer l\'Aventure', variant: 'primary' })
+      @end
+    </td>
+  </tr>
+</table>
+
+<!-- Divider -->
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-top: 32px;">
+  <tr>
+    <td style="border-top: 1px solid #e0d8cc;"></td>
+  </tr>
+</table>
+
+<!-- Features list -->
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-top: 24px;">
+  <tr>
+    <td>
+      <p style="margin: 0 0 14px 0; font-size: 14px; font-weight: 600; color: #1a1612;">
+        Ce qui vous attend :
+      </p>
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+        <tr>
+          <td style="padding-bottom: 8px; font-size: 13px; color: #5c4a3a;">
+            <span style="color: #22c55e; margin-right: 8px;">&#10003;</span>
+            Sondages synchronises sur plusieurs chaines Twitch
+          </td>
+        </tr>
+        <tr>
+          <td style="padding-bottom: 8px; font-size: 13px; color: #5c4a3a;">
+            <span style="color: #22c55e; margin-right: 8px;">&#10003;</span>
+            Resultats agreges en temps reel
+          </td>
+        </tr>
+        <tr>
+          <td style="padding-bottom: 8px; font-size: 13px; color: #5c4a3a;">
+            <span style="color: #22c55e; margin-right: 8px;">&#10003;</span>
+            Overlays personnalisables pour l'immersion
+          </td>
+        </tr>
+        <tr>
+          <td style="font-size: 13px; color: #5c4a3a;">
+            <span style="color: #22c55e; margin-right: 8px;">&#10003;</span>
+            Gratuit et sans limite de chaines
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+<!-- Closing -->
+<p style="margin: 28px 0 0 0; font-size: 15px; line-height: 1.6; color: #3d3228; text-align: center;">
+  Que les des roulent en votre faveur ! &#127922;
+</p>
+
+<p style="margin: 8px 0 0 0; font-size: 14px; color: #706050; text-align: center;">
+  L'equipe Tumulte
+</p>
+
+@end

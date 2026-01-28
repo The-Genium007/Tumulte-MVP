@@ -2,6 +2,7 @@ import type { HttpContext } from '@adonisjs/core/http'
 import { registerSchema, type RegisterDto } from '#validators/auth/auth_validators'
 import { validateRequest } from '#middleware/validate_middleware'
 import emailAuthService from '#services/auth/email_auth_service'
+import authAuditService from '#services/auth/auth_audit_service'
 
 /**
  * Controller for user registration
@@ -10,7 +11,8 @@ export default class RegisterController {
   /**
    * Register a new user with email and password
    */
-  async handle({ request, response }: HttpContext) {
+  async handle(ctx: HttpContext) {
+    const { request, response } = ctx
     await validateRequest(registerSchema)({ request, response } as HttpContext, async () => {})
     const data = request.all() as RegisterDto
 
@@ -25,6 +27,9 @@ export default class RegisterController {
     }
 
     const user = result.user
+
+    // Audit log registration
+    authAuditService.register(user.id, data.email, ctx)
 
     return response.created({
       message: 'Compte créé avec succès. Vérifiez votre email pour activer votre compte.',
