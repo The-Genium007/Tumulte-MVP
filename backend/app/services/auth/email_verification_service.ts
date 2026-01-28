@@ -3,6 +3,7 @@ import { DateTime } from 'luxon'
 import env from '#start/env'
 import User from '#models/user'
 import logger from '@adonisjs/core/services/logger'
+import mailService from '#services/mail/mail_service'
 
 /**
  * Service for handling email verification
@@ -48,40 +49,21 @@ class EmailVerificationService {
 
     const verificationUrl = this.buildVerificationUrl(token)
 
-    // In development, log the verification URL to console instead of sending email
-    if (env.get('NODE_ENV') === 'development') {
-      logger.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-      logger.info('📧 [DEV] Email verification link:')
-      logger.info(`   ${verificationUrl}`)
-      logger.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-      return
-    }
+    const sent = await mailService.send({
+      to: user.email!,
+      subject: 'Vérifiez votre email - Tumulte',
+      template: 'emails/verify_email',
+      data: {
+        displayName: user.displayName,
+        verificationUrl,
+      },
+    })
 
-    try {
-      // Dynamic import to avoid loading mail service before app is booted
-      const mail = await import('@adonisjs/mail/services/main')
-      await mail.default.send((message) => {
-        message
-          .to(user.email!)
-          .subject('Vérifiez votre email - Tumulte')
-          .htmlView('emails/verify_email', {
-            displayName: user.displayName,
-            verificationUrl,
-          })
-      })
-
-      logger.info({ userId: user.id, email: user.email }, 'Verification email sent')
-    } catch (error) {
-      const errorDetails =
-        error instanceof Error
-          ? { message: error.message, stack: error.stack, name: error.name }
-          : error
-      logger.error(
-        { userId: user.id, email: user.email, error: errorDetails },
-        'Failed to send verification email'
-      )
+    if (!sent) {
       throw new Error('Failed to send verification email')
     }
+
+    logger.info({ userId: user.id, email: user.email }, 'Verification email sent')
   }
 
   /**

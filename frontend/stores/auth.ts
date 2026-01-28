@@ -286,12 +286,26 @@ export const useAuthStore = defineStore('auth', () => {
   /**
    * Resend verification email
    */
-  async function resendVerificationEmail(): Promise<{ success: boolean; error?: AuthError }> {
+  async function resendVerificationEmail(): Promise<{
+    success: boolean
+    error?: AuthError
+    isUnauthorized?: boolean
+  }> {
     try {
       const response = await fetch(`${API_URL}/auth/resend-verification`, {
         method: 'POST',
         credentials: 'include',
       })
+
+      // Détection explicite de l'erreur 401 (session expirée)
+      if (response.status === 401) {
+        user.value = null
+        return {
+          success: false,
+          error: { error: 'Votre session a expiré. Veuillez vous reconnecter.' },
+          isUnauthorized: true,
+        }
+      }
 
       const result = await response.json()
 
