@@ -16,6 +16,13 @@ export function createMockUser(overrides: Partial<User> = {}): User {
     id: 'user-123',
     displayName: 'Test User',
     email: 'test@example.com',
+    emailVerifiedAt: new Date().toISOString(),
+    tier: 'free',
+    avatarUrl: null,
+    isAdmin: false,
+    isPremium: false,
+    hasPassword: false,
+    authProviders: [],
     streamer: {
       id: 'streamer-123',
       userId: 'user-123',
@@ -27,6 +34,7 @@ export function createMockUser(overrides: Partial<User> = {}): User {
       isActive: true,
       broadcasterType: 'affiliate',
     },
+    createdAt: new Date().toISOString(),
     ...overrides,
   }
 }
@@ -87,7 +95,7 @@ export function createMockCampaignMembership(
       twitchUsername: 'teststreamer',
       twitchDisplayName: 'Test Streamer',
       twitchLogin: 'teststreamer',
-      profileImageUrl: 'https://example.com/streamer.png',
+      profileImageUrl: 'https://example.com/dashboard.png',
       isActive: true,
       broadcasterType: 'affiliate',
     },

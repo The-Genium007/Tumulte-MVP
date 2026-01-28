@@ -525,7 +525,10 @@
             v-model="previewDiceType"
             :items="diceTypeOptions"
             size="xs"
-            :ui="{ base: 'w-24 bg-neutral-100', trailingIcon: 'text-primary-700' }"
+            :ui="{
+              base: 'w-24 bg-(--ui-bg-elevated) border border-(--ui-border)',
+              trailingIcon: 'text-(--ui-primary)',
+            }"
           />
         </div>
 
@@ -697,8 +700,10 @@ const diceTypeOptions: { label: string; value: DiceType; maxValue: number }[] = 
 
 // Configuration UI pour les selects (fond neutre comme les inputs, chevron coloré)
 const selectUiConfig = {
-  base: 'bg-neutral-100',
-  trailingIcon: 'text-primary-700',
+  base: 'bg-(--ui-bg-elevated) text-(--ui-text) border border-(--ui-border)',
+  trailingIcon: 'text-(--ui-primary)',
+  content: 'bg-(--ui-bg-elevated) border border-(--ui-border)',
+  item: 'text-(--ui-text) data-highlighted:bg-(--ui-bg-accented)',
 }
 
 // ===== DiceBox Updates =====
@@ -998,7 +1003,7 @@ function updateTotalResult(newTotal: number) {
 }
 
 .inspector-section {
-  border-bottom: 1px solid var(--color-neutral-200);
+  border-bottom: 1px solid var(--ui-border);
 }
 
 .section-header {
@@ -1009,7 +1014,7 @@ function updateTotalResult(newTotal: number) {
   padding: 0.75rem 1rem;
   font-size: 0.875rem;
   font-weight: 500;
-  color: var(--color-text-primary);
+  color: var(--ui-text);
   background: transparent;
   border: none;
   cursor: pointer;
@@ -1017,7 +1022,7 @@ function updateTotalResult(newTotal: number) {
 }
 
 .section-header:hover {
-  background: var(--color-neutral-100);
+  background: var(--ui-bg-elevated);
 }
 
 .section-content {
@@ -1029,7 +1034,7 @@ function updateTotalResult(newTotal: number) {
 
 /* Sub-sections (collapsible) */
 .sub-section {
-  border-bottom: 1px solid var(--color-neutral-200);
+  border-bottom: 1px solid var(--ui-border);
 }
 
 .sub-section:last-child {
@@ -1047,14 +1052,14 @@ function updateTotalResult(newTotal: number) {
   cursor: pointer;
   font-size: 0.75rem;
   font-weight: 600;
-  color: var(--color-neutral-500);
+  color: var(--ui-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   transition: color 0.15s ease;
 }
 
 .sub-section-header:hover {
-  color: var(--color-text-primary);
+  color: var(--ui-text);
 }
 
 .sub-section-content {
@@ -1074,7 +1079,7 @@ function updateTotalResult(newTotal: number) {
 .group-label {
   font-size: 0.75rem;
   font-weight: 600;
-  color: var(--color-neutral-500);
+  color: var(--ui-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-bottom: 0.25rem;
@@ -1090,7 +1095,7 @@ function updateTotalResult(newTotal: number) {
 
 .inline-field label {
   font-size: 0.75rem;
-  color: var(--color-neutral-400);
+  color: var(--ui-text-muted);
 }
 
 .input-with-unit {
@@ -1101,7 +1106,7 @@ function updateTotalResult(newTotal: number) {
 
 .unit {
   font-size: 0.75rem;
-  color: var(--color-neutral-400);
+  color: var(--ui-text-muted);
 }
 
 /* Outline control */
@@ -1124,7 +1129,7 @@ function updateTotalResult(newTotal: number) {
 
 .result-range-hint {
   font-size: 0.625rem;
-  color: var(--color-neutral-400);
+  color: var(--ui-text-muted);
   font-variant-numeric: tabular-nums;
 }
 
@@ -1133,7 +1138,7 @@ function updateTotalResult(newTotal: number) {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: var(--color-neutral-100);
+  background: var(--ui-bg-elevated);
   border-radius: 6px;
   padding: 0.5rem 0.75rem;
   margin-top: 0.5rem;
@@ -1143,7 +1148,7 @@ function updateTotalResult(newTotal: number) {
   font-family: ui-monospace, monospace;
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--color-text-primary);
+  color: var(--ui-text);
 }
 
 .critical-badge {

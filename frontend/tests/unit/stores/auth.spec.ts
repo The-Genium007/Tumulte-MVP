@@ -8,6 +8,30 @@ vi.mock('vue-router', () => ({
   useRouter: vi.fn(),
 }))
 
+// Mock offline-storage utilities
+vi.mock('@/utils/offline-storage', () => ({
+  storeUser: vi.fn(),
+  getStoredUser: vi.fn(),
+  clearUserData: vi.fn(),
+}))
+
+// Mock useAnalytics composable
+vi.mock('@/composables/useAnalytics', () => ({
+  useAnalytics: vi.fn(() => ({
+    identify: vi.fn(),
+    reset: vi.fn(),
+    setUserProperties: vi.fn(),
+    track: vi.fn(),
+  })),
+}))
+
+// Mock usePushNotificationsStore
+vi.mock('@/stores/pushNotifications', () => ({
+  usePushNotificationsStore: vi.fn(() => ({
+    reset: vi.fn(),
+  })),
+}))
+
 // Mock fetch globally
 global.fetch = vi.fn()
 
@@ -76,7 +100,8 @@ describe('Auth Store', () => {
 
     const store = useAuthStore()
 
-    await expect(store.fetchMe()).rejects.toThrow('Failed to fetch user')
+    // 401 now throws "Session expired" to clearly indicate authentication failure
+    await expect(store.fetchMe()).rejects.toThrow('Session expired')
     expect(store.user).toBeNull()
     expect(store.isAuthenticated).toBe(false)
     expect(store.loading).toBe(false)

@@ -1,12 +1,10 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { useSupportTrigger } from '@/composables/useSupportTrigger'
 import type { Poll, PollInstance } from '~/types'
 
 export const usePollsStore = defineStore('polls', () => {
   const config = useRuntimeConfig()
   const API_URL = config.public.apiBase
-  const { triggerSupportForError } = useSupportTrigger()
 
   // State
   const polls = ref<Poll[]>([])
@@ -43,7 +41,6 @@ export const usePollsStore = defineStore('polls', () => {
       activePollInstance.value = data.activePollInstance || null
     } catch (err) {
       console.error('Failed to fetch polls:', err)
-      triggerSupportForError('polls_fetch', err)
       error.value = 'Impossible de charger les sondages'
       polls.value = []
     } finally {
@@ -82,7 +79,6 @@ export const usePollsStore = defineStore('polls', () => {
       return data.data
     } catch (err) {
       console.error('Failed to create poll:', err)
-      triggerSupportForError('poll_create', err)
       throw err
     }
   }
@@ -124,7 +120,6 @@ export const usePollsStore = defineStore('polls', () => {
       return data.data
     } catch (err) {
       console.error('Failed to update poll:', err)
-      triggerSupportForError('poll_update', err)
       throw err
     }
   }
@@ -148,7 +143,6 @@ export const usePollsStore = defineStore('polls', () => {
       polls.value = polls.value.filter((p) => p.id !== pollId)
     } catch (err) {
       console.error('Failed to delete poll:', err)
-      triggerSupportForError('poll_delete', err)
       throw err
     }
   }
@@ -203,7 +197,6 @@ export const usePollsStore = defineStore('polls', () => {
       return { pollInstance: data.data, pollId: data.pollId || pollId }
     } catch (err) {
       console.error('Failed to launch poll:', err)
-      triggerSupportForError('poll_launch', err)
       throw err
     } finally {
       launching.value = false
@@ -228,7 +221,6 @@ export const usePollsStore = defineStore('polls', () => {
       activePollInstance.value = null
     } catch (err) {
       console.error('Failed to cancel poll:', err)
-      triggerSupportForError('poll_cancel', err)
       throw err
     }
   }

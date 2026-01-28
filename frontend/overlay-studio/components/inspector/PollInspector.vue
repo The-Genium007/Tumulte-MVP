@@ -636,12 +636,14 @@ const positionOptions = [
 
 // UI customization for selects
 const selectUi = {
-  base: 'bg-neutral-100 text-neutral-600',
+  base: 'bg-(--ui-bg-elevated) text-(--ui-text) border border-(--ui-border)',
+  content: 'bg-(--ui-bg-elevated) border border-(--ui-border)',
+  item: 'text-(--ui-text) data-highlighted:bg-(--ui-bg-accented)',
 }
 
 // UI customization for text inputs
 const inputUi = {
-  base: 'bg-neutral-100 text-neutral-600 placeholder:text-neutral-400',
+  base: 'bg-(--ui-bg-elevated) text-(--ui-text) border border-(--ui-border) placeholder:text-(--ui-text-muted)',
 }
 
 // Conversions pour TextModule
@@ -1004,7 +1006,7 @@ const updateMockData = (key: keyof PollMockData, value: string | number | string
 }
 
 .inspector-section {
-  border-bottom: 1px solid var(--color-neutral-200);
+  border-bottom: 1px solid var(--ui-border);
 }
 
 .section-header {
@@ -1015,7 +1017,7 @@ const updateMockData = (key: keyof PollMockData, value: string | number | string
   padding: 0.75rem 1rem;
   font-size: 0.875rem;
   font-weight: 500;
-  color: var(--color-text-primary);
+  color: var(--ui-text);
   background: transparent;
   border: none;
   cursor: pointer;
@@ -1023,7 +1025,7 @@ const updateMockData = (key: keyof PollMockData, value: string | number | string
 }
 
 .section-header:hover {
-  background: var(--color-neutral-100);
+  background: var(--ui-bg-elevated);
 }
 
 .section-content {
@@ -1035,7 +1037,7 @@ const updateMockData = (key: keyof PollMockData, value: string | number | string
 
 /* Sub-sections (collapsible) */
 .sub-section {
-  border-bottom: 1px solid var(--color-neutral-200);
+  border-bottom: 1px solid var(--ui-border);
 }
 
 .sub-section:last-child {
@@ -1053,14 +1055,14 @@ const updateMockData = (key: keyof PollMockData, value: string | number | string
   cursor: pointer;
   font-size: 0.75rem;
   font-weight: 600;
-  color: var(--color-neutral-500);
+  color: var(--ui-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   transition: color 0.15s ease;
 }
 
 .sub-section-header:hover {
-  color: var(--color-text-primary);
+  color: var(--ui-text);
 }
 
 .sub-section-content {
@@ -1080,7 +1082,7 @@ const updateMockData = (key: keyof PollMockData, value: string | number | string
 .group-label {
   font-size: 0.75rem;
   font-weight: 600;
-  color: var(--color-neutral-500);
+  color: var(--ui-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-bottom: 0.25rem;
@@ -1101,12 +1103,12 @@ const updateMockData = (key: keyof PollMockData, value: string | number | string
 
 .slider-header label {
   font-size: 0.75rem;
-  color: var(--color-neutral-400);
+  color: var(--ui-text-muted);
 }
 
 .slider-value {
   font-size: 0.75rem;
-  color: var(--color-text-primary);
+  color: var(--ui-text);
   font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
@@ -1121,7 +1123,7 @@ const updateMockData = (key: keyof PollMockData, value: string | number | string
 
 .inline-field label {
   font-size: 0.75rem;
-  color: var(--color-neutral-400);
+  color: var(--ui-text-muted);
 }
 
 .input-with-unit {
@@ -1132,7 +1134,7 @@ const updateMockData = (key: keyof PollMockData, value: string | number | string
 
 .unit {
   font-size: 0.75rem;
-  color: var(--color-neutral-400);
+  color: var(--ui-text-muted);
 }
 
 /* Checkbox fields */
@@ -1149,6 +1151,6 @@ const updateMockData = (key: keyof PollMockData, value: string | number | string
 
 .field label {
   font-size: 0.75rem;
-  color: var(--color-neutral-400);
+  color: var(--ui-text-muted);
 }
 </style>

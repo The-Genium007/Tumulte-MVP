@@ -118,9 +118,9 @@ const variantClasses = computed(() => {
     case 'selected':
       return 'bg-brand-100 border border-brand-200'
     case 'muted':
-      return 'bg-neutral-50 hover:bg-neutral-100'
+      return 'bg-muted hover:bg-muted/75'
     default:
-      return 'bg-neutral-100 hover:bg-neutral-200'
+      return 'bg-muted hover:bg-muted/75'
   }
 })
 
@@ -168,8 +168,8 @@ const getActionClasses = (action: ActionRowAction): string => {
     },
     neutral: {
       solid: 'bg-neutral-500 text-white hover:bg-neutral-600 border-neutral-600',
-      soft: 'bg-neutral-200 text-neutral-700 hover:bg-neutral-300 border-neutral-300',
-      ghost: 'text-neutral-600 hover:bg-neutral-100 border-transparent',
+      soft: 'bg-muted text-primary hover:bg-muted/75 border-default',
+      ghost: 'text-muted hover:bg-muted border-transparent',
     },
     success: {
       solid: 'bg-success-500 text-white hover:bg-success-600 border-success-600',

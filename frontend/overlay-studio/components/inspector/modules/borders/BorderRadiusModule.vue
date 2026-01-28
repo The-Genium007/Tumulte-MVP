@@ -215,7 +215,7 @@ const applyPreset = (preset: RadiusPreset) => {
   display: flex;
   gap: 0.25rem;
   padding: 0.25rem;
-  background: var(--color-neutral-100);
+  background: var(--ui-bg-elevated);
   border-radius: 8px;
 }
 
@@ -226,22 +226,24 @@ const applyPreset = (preset: RadiusPreset) => {
   justify-content: center;
   gap: 0.375rem;
   padding: 0.5rem;
-  border: none;
-  background: transparent;
+  border: 1px solid var(--ui-border);
+  background: var(--ui-bg);
   border-radius: 6px;
   cursor: pointer;
   font-size: 0.75rem;
-  color: var(--color-neutral-400);
+  color: var(--ui-text-muted);
   transition: all 0.15s ease;
 }
 
 .mode-button:hover {
-  color: var(--color-text-primary);
+  color: var(--ui-text);
+  border-color: var(--ui-border);
 }
 
 .mode-button.active {
-  background: white;
-  color: var(--color-text-primary);
+  background: var(--ui-bg);
+  color: var(--ui-text);
+  border-color: var(--ui-primary);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
@@ -254,7 +256,7 @@ const applyPreset = (preset: RadiusPreset) => {
 
 .inline-field label {
   font-size: 0.75rem;
-  color: var(--color-neutral-400);
+  color: var(--ui-text-muted);
 }
 
 .input-with-unit {
@@ -265,7 +267,7 @@ const applyPreset = (preset: RadiusPreset) => {
 
 .unit {
   font-size: 0.75rem;
-  color: var(--color-neutral-400);
+  color: var(--ui-text-muted);
 }
 
 .corners-grid {
@@ -306,7 +308,7 @@ const applyPreset = (preset: RadiusPreset) => {
 .preview-box {
   width: 48px;
   height: 32px;
-  background: var(--color-primary-500);
+  background: var(--ui-primary);
   transition: border-radius 0.15s ease;
 }
 
@@ -322,7 +324,7 @@ const applyPreset = (preset: RadiusPreset) => {
   align-items: center;
   gap: 0.25rem;
   padding: 0.5rem;
-  border: 1px solid var(--color-neutral-200);
+  border: 1px solid var(--ui-border);
   background: transparent;
   border-radius: 6px;
   cursor: pointer;
@@ -330,27 +332,27 @@ const applyPreset = (preset: RadiusPreset) => {
 }
 
 .preset-button:hover {
-  border-color: var(--color-neutral-300);
-  background: var(--color-neutral-50);
+  border-color: var(--ui-border-hover);
+  background: var(--ui-bg-elevated);
 }
 
 .preset-button.active {
-  border-color: var(--color-primary-500);
-  background: var(--color-primary-50);
+  border-color: var(--ui-primary);
+  background: var(--ui-bg-accented);
 }
 
 .preset-preview {
   width: 24px;
   height: 16px;
-  background: var(--color-neutral-400);
+  background: var(--ui-text-muted);
 }
 
 .preset-button span {
   font-size: 0.625rem;
-  color: var(--color-neutral-400);
+  color: var(--ui-text-muted);
 }
 
 .preset-button.active span {
-  color: var(--color-primary-600);
+  color: var(--ui-primary);
 }
 </style>

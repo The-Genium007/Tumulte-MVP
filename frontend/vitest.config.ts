@@ -48,7 +48,7 @@ export default defineConfig({
         'composables/useActionButton.ts', // UI animation specific
         'composables/useAppVersion.ts', // Simple env access
         'composables/usePushNotifications.ts', // Service Worker + Push API
-        'composables/useSupportWidget.ts', // Simple wrapper over useSupportTrigger
+        'composables/useSupportWidget.ts', // Simple Pinia store wrapper
         'api/repositories/**', // Thin wrappers over HTTP client
         'utils/offline-storage.ts', // IndexedDB specific
         'utils/supportTelemetry.ts', // Console interception

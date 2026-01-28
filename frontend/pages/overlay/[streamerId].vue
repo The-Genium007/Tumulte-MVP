@@ -26,8 +26,12 @@
       >
         <DiceBox
           :notation="currentDiceNotation"
-          :sounds="true"
-          :volume="50"
+          :custom-colorset="diceBoxConfig?.customColorset"
+          :texture="diceBoxConfig?.texture"
+          :material="diceBoxConfig?.material"
+          :light-intensity="diceBoxConfig?.lightIntensity"
+          :sounds="diceAudioConfig?.rollSound.enabled ?? true"
+          :volume="(diceAudioConfig?.rollSound.volume ?? 0.7) * 100"
           @roll-complete="handleDiceRollComplete"
         />
       </div>
@@ -82,7 +86,7 @@ const streamerId = computed(() => route.params.streamerId as string)
 const _isPreviewMode = computed(() => route.query.preview === 'true')
 
 // Charger la configuration de l'overlay
-const { visibleElements, fetchConfig } = useOverlayConfig(streamerId)
+const { visibleElements, fetchConfig, setActiveCampaign } = useOverlayConfig(streamerId)
 
 // Récupérer l'élément dice pour extraire les configs HUD
 const diceElement = computed(() => visibleElements.value.find((el) => el.type === 'dice'))
@@ -97,6 +101,28 @@ const diceHudConfig = computed(() => {
 const diceCriticalColors = computed(() => {
   if (!diceElement.value) return undefined
   return (diceElement.value.properties as DiceProperties).colors
+})
+
+// Config DiceBox (couleurs, texture, matériau) depuis l'élément dice
+const diceBoxConfig = computed(() => {
+  if (!diceElement.value) return undefined
+  const props = diceElement.value.properties as DiceProperties
+  return {
+    customColorset: {
+      foreground: props.diceBox.colors.foreground,
+      background: props.diceBox.colors.background,
+      outline: props.diceBox.colors.outline,
+    },
+    texture: props.diceBox.texture,
+    material: props.diceBox.material,
+    lightIntensity: props.diceBox.lightIntensity,
+  }
+})
+
+// Config audio depuis l'élément dice
+const diceAudioConfig = computed(() => {
+  if (!diceElement.value) return undefined
+  return (diceElement.value.properties as DiceProperties).audio
 })
 
 // Style de positionnement du HUD basé sur hudTransform
@@ -142,7 +168,6 @@ const setElementRef = (id: string, el: any) => {
 // État du poll actif
 const activePoll = ref<
   | (PollStartEvent & {
-      // eslint-disable-next-line @typescript-eslint/naming-convention
       campaign_id?: string
       totalDuration: number
     })
@@ -381,7 +406,13 @@ const setupWebSocketSubscription = () => {
   }
 
   unsubscribe = subscribeToStreamerPolls(streamerId.value, {
-    onPollStart: (data) => {
+    onPollStart: async (data) => {
+      // Si un campaign_id est présent, recharger la config spécifique à cette campagne
+      if (data.campaign_id) {
+        console.log('[Overlay] Poll started with campaign:', data.campaign_id)
+        await setActiveCampaign(data.campaign_id)
+      }
+
       const totalDuration = data.durationSeconds || 60
       activePoll.value = { ...data, totalDuration }
       isEnding.value = false
@@ -464,15 +495,24 @@ const setupWebSocketSubscription = () => {
     },
 
     // VTT Integration - Dice Rolls
-    onDiceRoll: (data) => {
+    onDiceRoll: async (data) => {
+      // Recharger la config spécifique à la campagne si nécessaire
+      if (data.campaignId) {
+        await setActiveCampaign(data.campaignId)
+      }
       handleDiceRoll(data)
     },
 
-    onDiceRollCritical: (data) => {
+    onDiceRollCritical: async (data) => {
       // SECURITY: Never display hidden rolls on overlay (GM secret rolls)
       if (data.isHidden) {
         console.log('[Overlay] Ignoring hidden critical roll (GM secret)')
         return
+      }
+
+      // Recharger la config spécifique à la campagne si nécessaire
+      if (data.campaignId) {
+        await setActiveCampaign(data.campaignId)
       }
 
       // Les rolls critiques passent devant la queue

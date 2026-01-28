@@ -48,9 +48,7 @@
           <div class="space-y-4">
             <header>
               <h2 class="text-xl font-semibold">Support & Feedback</h2>
-              <p class="text-sm text-neutral-400 mt-1">
-                Signalez un bug ou proposez une amélioration.
-              </p>
+              <p class="text-sm text-muted mt-1">Signalez un bug ou proposez une amélioration.</p>
             </header>
 
             <!-- Tabs -->
@@ -59,8 +57,9 @@
               :items="tabs"
               class="w-full"
               :ui="{
+                list: 'bg-[var(--theme-input-bg)] border border-[var(--theme-border)]',
                 trigger:
-                  'data-[state=inactive]:bg-primary-100 data-[state=inactive]:text-primary-500',
+                  'data-[state=inactive]:bg-transparent data-[state=inactive]:text-[var(--theme-text-muted)] data-[state=inactive]:hover:bg-[var(--theme-card-bg-hover)] transition-colors',
               }"
             />
 
@@ -73,11 +72,7 @@
                 <UInput
                   v-model="bugTitle"
                   placeholder="Ex: Impossible de lancer un sondage"
-                  class="w-full"
-                  :ui="{
-                    root: 'ring-0 border-0 rounded-lg overflow-hidden',
-                    base: 'px-3.5 py-2.5 bg-primary-100 text-primary-500 placeholder:text-primary-400 rounded-lg',
-                  }"
+                  class="support-input"
                 />
               </div>
 
@@ -89,11 +84,7 @@
                   v-model="bugDescription"
                   :rows="4"
                   placeholder="Ce qui s'est passé, étapes pour reproduire..."
-                  class="w-full"
-                  :ui="{
-                    root: 'ring-0 border-0 rounded-lg overflow-hidden',
-                    base: 'px-3.5 py-2.5 bg-primary-100 text-primary-500 placeholder:text-primary-400 rounded-lg',
-                  }"
+                  class="support-input"
                 />
               </div>
 
@@ -102,7 +93,7 @@
                   v-model="includeDiagnostics"
                   label="Joindre les données techniques (logs, session)"
                 />
-                <p class="text-xs text-neutral-400 pl-8">
+                <p class="text-xs text-muted pl-8">
                   Aide à diagnostiquer le problème plus rapidement.
                 </p>
               </div>
@@ -112,7 +103,7 @@
                   <UIcon name="i-lucide-link" class="text-brand-500 size-4" />
                   <p class="text-sm font-medium">Session ID pour corrélation Sentry</p>
                 </div>
-                <code class="text-xs text-neutral-400 block truncate">{{ sessionId }}</code>
+                <code class="text-xs text-muted block truncate">{{ sessionId }}</code>
               </div>
             </div>
 
@@ -125,11 +116,7 @@
                 <UInput
                   v-model="suggestionTitle"
                   placeholder="Ex: Ajouter un mode sombre"
-                  class="w-full"
-                  :ui="{
-                    root: 'ring-0 border-0 rounded-lg overflow-hidden',
-                    base: 'px-3.5 py-2.5 bg-primary-100 text-primary-500 placeholder:text-primary-400 rounded-lg',
-                  }"
+                  class="support-input"
                 />
               </div>
 
@@ -141,11 +128,7 @@
                   v-model="suggestionDescription"
                   :rows="4"
                   placeholder="Décris ton idée en détail..."
-                  class="w-full"
-                  :ui="{
-                    root: 'ring-0 border-0 rounded-lg overflow-hidden',
-                    base: 'px-3.5 py-2.5 bg-primary-100 text-primary-500 placeholder:text-primary-400 rounded-lg',
-                  }"
+                  class="support-input"
                 />
               </div>
 
@@ -160,7 +143,7 @@
             </div>
 
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-2">
-              <span class="text-xs text-neutral-400 order-2 sm:order-1 text-center sm:text-left">
+              <span class="text-xs text-muted order-2 sm:order-1 text-center sm:text-left">
                 Les tokens/mots de passe ne sont jamais inclus.
               </span>
               <div class="flex gap-2 order-1 sm:order-2">
@@ -294,3 +277,18 @@ const handleSend = async () => {
   }
 }
 </script>
+
+<style scoped>
+/* Bordures visibles pour les inputs en dark mode */
+:deep(.support-input input),
+:deep(.support-input textarea) {
+  border: 1px solid var(--theme-border) !important;
+  border-radius: 0.5rem;
+}
+
+:deep(.support-input input:focus),
+:deep(.support-input textarea:focus) {
+  border-color: var(--color-dark-accent, var(--color-secondary-400)) !important;
+  outline: none;
+}
+</style>

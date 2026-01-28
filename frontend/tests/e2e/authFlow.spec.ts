@@ -1,14 +1,14 @@
 import { test, expect } from '@playwright/test'
 
 test.describe('Authentication Flow', () => {
-  test('should redirect to login page when not authenticated', async ({ page }) => {
+  test('should redirect to home page when not authenticated', async ({ page }) => {
     await page.goto('/')
 
-    // Wait for redirect to login page
-    await page.waitForURL(/\/login/, { timeout: 10000 })
+    // Wait for redirect to home page (landing page for non-authenticated users)
+    await page.waitForURL(/\/home/, { timeout: 10000 })
 
-    // Verify we're on the login page
-    await expect(page).toHaveURL(/\/login/)
+    // Verify we're on the home page
+    await expect(page).toHaveURL(/\/home/)
   })
 
   test('should display login page with Twitch button', async ({ page }) => {
@@ -61,7 +61,7 @@ test.describe('Authentication Flow', () => {
 
   test('should protect streamer routes when not authenticated', async ({ page }) => {
     // Try to access protected route without authentication
-    await page.goto('/streamer')
+    await page.goto('/dashboard')
 
     // Should redirect to login
     await page.waitForURL(/\/login/, { timeout: 10000 })

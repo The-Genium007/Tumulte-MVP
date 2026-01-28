@@ -18,6 +18,22 @@ export default defineConfig({
 
   /*
   |--------------------------------------------------------------------------
+  | Meta files
+  |--------------------------------------------------------------------------
+  |
+  | A collection of files to copy to the build folder when running
+  | the build command via "node ace build"
+  |
+  */
+  metaFiles: [
+    {
+      pattern: 'resources/views/**/*.edge',
+      reloadServer: false,
+    },
+  ],
+
+  /*
+  |--------------------------------------------------------------------------
   | Commands
   |--------------------------------------------------------------------------
   |
@@ -54,6 +70,8 @@ export default defineConfig({
     () => import('@adonisjs/session/session_provider'),
     () => import('@adonisjs/auth/auth_provider'),
     () => import('@adonisjs/transmit/transmit_provider'),
+    () => import('@adonisjs/ally/ally_provider'),
+    () => import('@adonisjs/mail/mail_provider'),
   ],
 
   /*

@@ -22,7 +22,7 @@ test.group('ReadinessService - getCampaignReadiness', (group) => {
   group.each.setup(() => {
     membershipRepository = new CampaignMembershipRepository()
     service = new ReadinessService(membershipRepository)
-    return testUtils.db().truncate()
+    return testUtils.db().withGlobalTransaction()
   })
 
   test('should return allReady=true when all streamers have valid tokens and authorization', async ({

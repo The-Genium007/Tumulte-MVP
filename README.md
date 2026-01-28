@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/The-Genium007/tumulte/releases"><img src="https://img.shields.io/badge/version-0.5.0-blue.svg" alt="Version"></a>
+  <a href="https://github.com/The-Genium007/tumulte/releases"><img src="https://img.shields.io/badge/version-0.6.0-blue.svg" alt="Version"></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT"></a>
   <br>
   <img src="https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white" alt="TypeScript">
@@ -226,12 +226,8 @@ docker compose exec backend node ace migration:status
 > **Full roadmap**: [GitHub Project Board](https://github.com/users/The-Genium007/projects/4)
 
 - **v0.4.0** - Visual Identity ✅
-- **v0.5.0** - VTT Integrations 🎲 (In Progress)
-  - Backend API & WebSocket ✅
-  - Foundry VTT Module ✅
-  - Frontend GM Pages 📋
-  - Overlay Components 📋
-- **v0.6.0** - Gamification
+- **v0.5.0** - VTT Integrations 🎲 ✅
+- **v0.6.0** - Gamification (In Progress)
 - **v0.7.0** - Gamification Advanced
 - **v0.8.0** - Advanced Overlay
 - **v0.9.0** - Multi-Platform

@@ -61,7 +61,7 @@
         <div v-else class="bg-info-100 px-4 sm:px-6 py-3 rounded-lg text-center sm:text-left">
           <p class="text-xs text-muted mb-1">Temps restant</p>
           <p class="text-2xl sm:text-3xl font-bold text-info-500 tabular-nums">
-            {{ formatTime(displaySeconds) }}
+            {{ formatDuration(displaySeconds) }}
           </p>
         </div>
       </div>
@@ -143,18 +143,14 @@ let countdownInterval: ReturnType<typeof setInterval> | null = null
 // Modal state
 const showRevokeModal = ref(false)
 
+const { formatDuration } = useTimeFormat()
+
 const cardClass = computed(() => {
   if (props.isAuthorized) {
     return 'bg-success-100'
   }
   return 'bg-warning-100'
 })
-
-const formatTime = (seconds: number): string => {
-  const mins = Math.floor(seconds / 60)
-  const secs = seconds % 60
-  return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
-}
 
 const startCountdown = () => {
   if (countdownInterval) clearInterval(countdownInterval)

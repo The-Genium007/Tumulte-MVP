@@ -238,7 +238,9 @@ const textAlignOptions = [
 
 // UI customization for selects to make them more visible
 const selectUi = {
-  base: 'bg-neutral-100 text-neutral-600',
+  base: 'bg-(--ui-bg-elevated) text-(--ui-text) border border-(--ui-border)',
+  content: 'bg-(--ui-bg-elevated) border border-(--ui-border)',
+  item: 'text-(--ui-text) data-highlighted:bg-(--ui-bg-accented)',
 }
 
 const updateField = <K extends keyof TextStyleConfig>(field: K, value: TextStyleConfig[K]) => {
@@ -274,7 +276,7 @@ const toggleTextDecoration = (decoration: 'underline' | 'line-through') => {
 
 .field label {
   font-size: 0.75rem;
-  color: var(--color-neutral-400);
+  color: var(--ui-text-muted);
 }
 
 .inline-field {
@@ -286,7 +288,7 @@ const toggleTextDecoration = (decoration: 'underline' | 'line-through') => {
 
 .inline-field label {
   font-size: 0.75rem;
-  color: var(--color-neutral-400);
+  color: var(--ui-text-muted);
 }
 
 .input-with-unit {
@@ -297,13 +299,13 @@ const toggleTextDecoration = (decoration: 'underline' | 'line-through') => {
 
 .unit {
   font-size: 0.75rem;
-  color: var(--color-neutral-400);
+  color: var(--ui-text-muted);
 }
 
 .button-group {
   display: flex;
   gap: 0.25rem;
-  background: var(--color-neutral-100);
+  background: var(--ui-bg-elevated);
   border-radius: 6px;
   padding: 0.25rem;
 }
@@ -314,21 +316,23 @@ const toggleTextDecoration = (decoration: 'underline' | 'line-through') => {
   justify-content: center;
   width: 28px;
   height: 28px;
-  border: none;
-  background: transparent;
+  border: 1px solid var(--ui-border);
+  background: var(--ui-bg);
   border-radius: 6px;
   cursor: pointer;
-  color: var(--color-neutral-400);
+  color: var(--ui-text-muted);
   transition: all 0.15s ease;
 }
 
 .toggle-button:hover {
-  background: var(--color-neutral-200);
-  color: var(--color-text-primary);
+  background: var(--ui-bg-accented);
+  color: var(--ui-text);
+  border-color: var(--ui-border);
 }
 
 .toggle-button.active {
-  background: var(--color-primary-500);
+  background: var(--ui-primary);
   color: white;
+  border-color: var(--ui-primary);
 }
 </style>

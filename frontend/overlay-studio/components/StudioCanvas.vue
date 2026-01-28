@@ -316,10 +316,14 @@ onUnmounted(() => {
   }
 })
 
+// Détection du thème pour adapter la couleur du canvas Three.js
+const colorMode = useColorMode()
+const isDark = computed(() => colorMode.value === 'dark')
+
 // Props du canvas
 const canvasProps = computed(() => ({
   alpha: true,
-  clearColor: '#b5aa99', // Couleur neutre du thème clair (neutral-300)
+  clearColor: isDark.value ? '#1e1e1e' : '#b5aa99', // Adapté au thème
   shadows: false,
   windowSize: false,
 }))
@@ -816,17 +820,17 @@ const handleTransformEnd = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--color-neutral-300);
+  background: var(--ui-bg-muted);
 }
 
 .canvas-wrapper {
   position: relative;
-  background: var(--color-bg-muted);
+  background: var(--ui-bg);
   border-radius: 8px;
   overflow: visible; /* Important pour le gizmo */
   box-shadow:
-    0 0 0 1px var(--color-neutral-200),
-    0 4px 24px rgba(0, 0, 0, 0.1);
+    0 0 0 1px var(--ui-border),
+    0 4px 24px rgba(0, 0, 0, 0.15);
 }
 
 .canvas-info {
@@ -836,15 +840,15 @@ const handleTransformEnd = () => {
   display: flex;
   gap: 12px;
   font-size: 12px;
-  color: var(--color-text-muted);
+  color: var(--ui-text-muted);
   z-index: 10;
 }
 
 .info-item {
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--ui-bg);
   padding: 4px 8px;
   border-radius: 4px;
-  border: 1px solid var(--color-neutral-200);
+  border: 1px solid var(--ui-border);
 }
 
 /* Snap guides */
@@ -878,7 +882,7 @@ const handleTransformEnd = () => {
   display: flex;
   gap: 8px;
   font-size: 12px;
-  color: var(--color-text-muted);
+  color: var(--ui-text-muted);
   z-index: 10;
   align-items: center;
 }
@@ -887,20 +891,20 @@ const handleTransformEnd = () => {
   display: flex;
   align-items: center;
   gap: 4px;
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--ui-bg);
   padding: 4px 8px;
   border-radius: 4px;
-  border: 1px solid var(--color-neutral-200);
+  border: 1px solid var(--ui-border);
 }
 
 .property-label {
-  color: var(--color-text-disabled);
+  color: var(--ui-text-muted);
   font-weight: 500;
   min-width: 12px;
 }
 
 .property-value {
-  color: var(--color-text-secondary);
+  color: var(--ui-text);
   cursor: pointer;
   min-width: 40px;
   text-align: right;
@@ -910,16 +914,16 @@ const handleTransformEnd = () => {
 }
 
 .property-value:hover {
-  background: var(--color-primary-100);
-  color: var(--color-text-primary);
+  background: var(--ui-bg-accented);
+  color: var(--ui-text);
 }
 
 .property-input {
   width: 50px;
-  background: var(--color-primary-50);
-  border: 1px solid var(--color-primary-300);
+  background: var(--ui-bg-elevated);
+  border: 1px solid var(--ui-primary);
   border-radius: 2px;
-  color: var(--color-text-primary);
+  color: var(--ui-text);
   font-size: 12px;
   padding: 2px 4px;
   text-align: right;
@@ -927,14 +931,14 @@ const handleTransformEnd = () => {
 }
 
 .property-input:focus {
-  background: var(--color-primary-100);
-  border-color: var(--color-primary-400);
+  background: var(--ui-bg-accented);
+  border-color: var(--ui-primary);
 }
 
 .property-separator {
   width: 1px;
   height: 16px;
-  background: var(--color-neutral-300);
+  background: var(--ui-border);
 }
 </style>
 

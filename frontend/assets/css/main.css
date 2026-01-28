@@ -155,8 +155,10 @@
   --color-bg-muted: #ffffff;
   --color-bg-elevated: #ffffff;
   --color-bg-inverse: #0f172a;
-  --color-bg-brand-light: #f5f3ff;
-  --color-bg-primary-light: #f5f3ff;
+  --color-bg-brand-light: #f5f3f0;
+  --color-bg-primary-light: #f5f3f0;
+  --color-bg-brand-medium: #e8e4dd;
+  --color-bg-primary-medium: #e8e4dd;
   --color-bg-success-light: #f0fdf4;
   --color-bg-error-light: #fef2f2;
   --color-bg-warning-light: #fffbeb;
@@ -172,19 +174,24 @@
   --color-text-inverse: #ffffff;
 
   /* ==========================================================================
-     DARK UI (Studio / Overlay Editor)
-     Teintes marron/beige sombres cohérentes avec le thème principal
+     DARK UI - "Grimoire Ancien" Theme
+     Teintes cuir vieilli/marron sombre pour le dark mode global
      ========================================================================== */
-  --color-dark-bg-base: #0f0d0a;
-  --color-dark-bg-surface: #1a1714;
-  --color-dark-bg-elevated: #2a2520;
-  --color-dark-bg-hover: #3a332c;
-  --color-dark-bg-deepest: #0a0908;
-  --color-dark-border: #2a2520;
-  --color-dark-text-primary: #f5f3f0;
+  --color-dark-bg-base: #1a1410;
+  --color-dark-bg-surface: #2a221a;
+  --color-dark-bg-elevated: #352a20;
+  --color-dark-bg-hover: #453828;
+  --color-dark-bg-deepest: #120e0a;
+  --color-dark-border: #4a3d30;
+  --color-dark-text-primary: #f5efe8;
   --color-dark-text-secondary: #d8cfc4;
   --color-dark-text-muted: #a89888;
   --color-dark-text-subtle: #786858;
+
+  /* Accent doré pour le dark mode */
+  --color-dark-accent: #d8b790;
+  --color-dark-accent-hover: #e8c9a0;
+  --color-dark-accent-muted: #b89870;
 
   /* ==========================================================================
      OVERLAY / POLL CARD
@@ -220,34 +227,247 @@
 }
 
 /* ============================================================================
-   THÈME CLAIR PERMANENT
+   GRADIENT UTILITIES - Classes utilitaires cross-browser
+   Compatible: Chrome 89+, Firefox 83+, Safari 15+, Edge 89+
    ============================================================================ */
 
+/* Gradient Brand - Dégradé principal marron/doré */
+.gradient-brand {
+  background: linear-gradient(135deg, var(--color-gradient-brand-start), var(--color-gradient-brand-end));
+}
+
+.gradient-brand-vertical {
+  background: linear-gradient(180deg, var(--color-gradient-brand-start), var(--color-gradient-brand-end));
+}
+
+.gradient-brand-horizontal {
+  background: linear-gradient(90deg, var(--color-gradient-brand-start), var(--color-gradient-brand-end));
+}
+
+/* Gradient avec 3 couleurs */
+.gradient-brand-full {
+  background: linear-gradient(
+    135deg,
+    var(--color-gradient-brand-start) 0%,
+    var(--color-gradient-brand-middle) 50%,
+    var(--color-gradient-brand-end) 100%
+  );
+}
+
+/* Gradient Secondary - Pour les accents */
+.gradient-secondary {
+  background: linear-gradient(135deg, var(--color-secondary-400), var(--color-secondary-600));
+}
+
+/* Gradient Text - Texte avec dégradé */
+.gradient-text-brand {
+  background: linear-gradient(135deg, var(--color-secondary-600), var(--color-secondary-400));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Gradient Page Background - Pour les pages sombres */
+.gradient-page-dark {
+  background: linear-gradient(135deg, var(--color-brand-950), var(--color-secondary-950), var(--color-brand-950));
+}
+
+/* Gradient Glow - Effet lumineux derrière les éléments */
+.gradient-glow {
+  background: linear-gradient(135deg, var(--color-secondary-300), var(--color-secondary-500));
+  filter: blur(40px);
+  opacity: 0.3;
+}
+
+/* ============================================================================
+   THEMING SYSTEM - Light/Dark Mode Support
+   ============================================================================
+
+   Variables sémantiques qui s'adaptent au thème.
+   Pour activer le dark mode :
+   1. Retirer colorMode.preference: 'light' dans nuxt.config.ts
+   2. Les variables ci-dessous s'adapteront automatiquement
+
+   ============================================================================ */
+
+/* === LIGHT THEME (Default) === */
 :root {
   color-scheme: light;
+
+  /* Semantic Colors - These change based on theme */
+  --theme-bg: var(--color-bg-page);
+  --theme-bg-subtle: var(--color-bg-subtle);
+  --theme-bg-muted: var(--color-bg-muted);
+  --theme-bg-elevated: var(--color-bg-elevated);
+  --theme-bg-inverse: var(--color-bg-inverse);
+
+  --theme-text: var(--color-text-primary);
+  --theme-text-secondary: var(--color-text-secondary);
+  --theme-text-muted: var(--color-text-muted);
+  --theme-text-disabled: var(--color-text-disabled);
+  --theme-text-inverse: var(--color-text-inverse);
+
+  --theme-border: var(--color-neutral-200);
+  --theme-border-muted: var(--color-neutral-100);
+  --theme-border-strong: var(--color-neutral-300);
+
+  /* Card & Surface */
+  --theme-card-bg: #ffffff;
+  --theme-card-bg-hover: #f9fafb;
+  --theme-card-border: var(--color-neutral-200);
+  --theme-card-shadow: rgba(0, 0, 0, 0.05);
+
+  /* Auth pages background (needs contrast with cards) */
+  --theme-auth-bg: var(--color-bg-subtle);
+
+  /* Input */
+  --theme-input-bg: var(--color-primary-100);
+  --theme-input-border: var(--color-primary-200);
+  --theme-input-text: var(--color-primary-500);
+  --theme-input-placeholder: var(--color-primary-400);
+
+  /* State Colors - Success */
+  --theme-success-bg: #d1fae5;
+  --theme-success-bg-hover: #a7f3d0;
+  --theme-success-border: #6ee7b7;
+  --theme-success-text: #065f46;
+
+  /* State Colors - Error */
+  --theme-error-bg: #fee2e2;
+  --theme-error-bg-hover: #fecaca;
+  --theme-error-border: #fca5a5;
+  --theme-error-text: #991b1b;
+
+  /* State Colors - Warning */
+  --theme-warning-bg: #fef3c7;
+  --theme-warning-bg-hover: #fde68a;
+  --theme-warning-border: #fcd34d;
+  --theme-warning-text: #92400e;
+
+  /* State Colors - Info */
+  --theme-info-bg: #dbeafe;
+  --theme-info-bg-hover: #bfdbfe;
+  --theme-info-border: #93c5fd;
+  --theme-info-text: #1e40af;
+
+  /* State Colors - Neutral (for inactive states) */
+  --theme-neutral-bg: #f5f5f5;
+  --theme-neutral-bg-hover: #e5e5e5;
+  --theme-neutral-border: #d4d4d4;
+  --theme-neutral-text: #525252;
 }
 
+/* === DARK THEME - "Grimoire Ancien" === */
+/* Theme cuir vieilli sombre avec accents dorés */
 html.dark {
-  color-scheme: light;
+  color-scheme: dark;
+
+  /* Dark semantic colors - Cuir de grimoire */
+  --theme-bg: var(--color-dark-bg-base);
+  --theme-bg-subtle: var(--color-dark-bg-surface);
+  --theme-bg-muted: var(--color-dark-bg-surface);
+  --theme-bg-elevated: var(--color-dark-bg-elevated);
+  --theme-bg-inverse: var(--color-bg-page);
+
+  --theme-text: var(--color-dark-text-primary);
+  --theme-text-secondary: var(--color-dark-text-secondary);
+  --theme-text-muted: var(--color-dark-text-muted);
+  --theme-text-disabled: var(--color-dark-text-subtle);
+  --theme-text-inverse: var(--color-text-primary);
+
+  --theme-border: var(--color-dark-border);
+  --theme-border-muted: rgba(74, 61, 48, 0.5);
+  --theme-border-strong: rgba(90, 75, 58, 1);
+
+  /* Card & Surface - Chocolat profond */
+  --theme-card-bg: var(--color-dark-bg-surface);
+  --theme-card-border: var(--color-dark-border);
+  --theme-card-shadow: rgba(0, 0, 0, 0.4);
+
+  /* Auth pages background - Plus sombre que les cartes pour contraste */
+  --theme-auth-bg: var(--color-dark-bg-base);
+
+  /* Input - Légèrement plus clair que la carte */
+  --theme-input-bg: var(--color-dark-bg-elevated);
+  --theme-input-border: var(--color-dark-border);
+  --theme-input-text: var(--color-dark-text-primary);
+  --theme-input-placeholder: var(--color-dark-text-muted);
+
+  /* Accent doré antique */
+  --theme-accent: var(--color-dark-accent);
+  --theme-accent-hover: var(--color-dark-accent-hover);
+
+  /* Card hover for dark mode */
+  --theme-card-bg-hover: var(--color-dark-bg-hover);
+
+  /* State Colors - Success (dark mode) */
+  --theme-success-bg: rgba(6, 95, 70, 0.25);
+  --theme-success-bg-hover: rgba(6, 95, 70, 0.35);
+  --theme-success-border: rgba(110, 231, 183, 0.4);
+  --theme-success-text: #6ee7b7;
+
+  /* State Colors - Error (dark mode) */
+  --theme-error-bg: rgba(153, 27, 27, 0.25);
+  --theme-error-bg-hover: rgba(153, 27, 27, 0.35);
+  --theme-error-border: rgba(252, 165, 165, 0.4);
+  --theme-error-text: #fca5a5;
+
+  /* State Colors - Warning (dark mode) */
+  --theme-warning-bg: rgba(146, 64, 14, 0.25);
+  --theme-warning-bg-hover: rgba(146, 64, 14, 0.35);
+  --theme-warning-border: rgba(252, 211, 77, 0.4);
+  --theme-warning-text: #fcd34d;
+
+  /* State Colors - Info (dark mode) */
+  --theme-info-bg: rgba(30, 64, 175, 0.25);
+  --theme-info-bg-hover: rgba(30, 64, 175, 0.35);
+  --theme-info-border: rgba(147, 197, 253, 0.4);
+  --theme-info-text: #93c5fd;
+
+  /* State Colors - Neutral (dark mode) */
+  --theme-neutral-bg: var(--color-dark-bg-elevated);
+  --theme-neutral-bg-hover: var(--color-dark-bg-hover);
+  --theme-neutral-border: var(--color-dark-border);
+  --theme-neutral-text: var(--color-dark-text-secondary);
+
+  /* Override des couleurs de page pour le dark mode */
+  --color-bg-page: var(--color-dark-bg-base);
+  --color-bg-subtle: var(--color-dark-bg-base);
+  --color-bg-muted: var(--color-dark-bg-surface);
+  --color-bg-elevated: var(--color-dark-bg-elevated);
+  --color-text-primary: var(--color-dark-text-primary);
+  --color-text-secondary: var(--color-dark-text-secondary);
+  --color-text-muted: var(--color-dark-text-muted);
 }
 
+/* Nuxt UI Dark Mode Override - "Grimoire Ancien" */
 .dark {
-  --ui-text-dimmed: var(--ui-color-neutral-400);
-  --ui-text-muted: var(--ui-color-neutral-500);
-  --ui-text-toned: var(--ui-color-neutral-600);
-  --ui-text: var(--ui-color-neutral-700);
-  --ui-text-highlighted: var(--ui-color-neutral-900);
-  --ui-text-inverted: var(--color-white);
-  --ui-bg: var(--color-white);
-  --ui-bg-muted: var(--ui-color-neutral-50);
-  --ui-bg-elevated: var(--ui-color-neutral-100);
-  --ui-bg-accented: var(--ui-color-neutral-200);
-  --ui-bg-inverted: var(--ui-color-neutral-900);
-  --ui-border: var(--ui-color-neutral-200);
-  --ui-border-muted: var(--ui-color-neutral-200);
-  --ui-border-accented: var(--ui-color-neutral-300);
-  --ui-border-inverted: var(--ui-color-neutral-900);
+  /* Textes - Parchemin clair sur cuir sombre */
+  --ui-text-dimmed: var(--color-dark-text-subtle);
+  --ui-text-muted: var(--color-dark-text-muted);
+  --ui-text-toned: var(--color-dark-text-secondary);
+  --ui-text: var(--color-dark-text-primary);
+  --ui-text-highlighted: var(--color-dark-text-primary);
+  --ui-text-inverted: #1a1410;
+
+  /* Backgrounds - Cuir vieilli */
+  --ui-bg: var(--color-dark-bg-surface);
+  --ui-bg-muted: var(--color-dark-bg-base);
+  --ui-bg-elevated: var(--color-dark-bg-elevated);
+  --ui-bg-accented: var(--color-dark-bg-hover);
+  --ui-bg-inverted: #f5efe8;
+
+  /* Bordures - Coutures cuir */
+  --ui-border: var(--color-dark-border);
+  --ui-border-muted: rgba(74, 61, 48, 0.5);
+  --ui-border-accented: var(--color-dark-bg-hover);
+  --ui-border-inverted: #f5efe8;
+
+  /* Primary color override pour boutons dorés */
+  --ui-primary: var(--color-dark-accent);
 }
+
+/* Dark mode now active - "Grimoire Ancien" theme enabled */
 
 /* ============================================================================
    CURSEUR POINTER POUR ÉLÉMENTS INTERACTIFS
@@ -292,7 +512,247 @@ h6 {
 }
 
 /* ============================================================================
-   CLASSES UTILITAIRES
+   DESIGN SYSTEM - CLASSES UTILITAIRES COMPOSÉES
+   ============================================================================
+   Ces classes combinent plusieurs propriétés pour garantir
+   la cohérence visuelle dans tout le projet.
+
+   Note: On utilise du CSS standard car @apply dans @layer components
+   ne fonctionne pas correctement avec Nuxt UI v3 / Tailwind v4.
+
+   Référence: frontend/design-system/index.ts
+   ============================================================================ */
+
+/* ==========================================================================
+   CONTAINERS
+   ========================================================================== */
+
+/** Container de page standard - max-width 1280px avec padding responsive */
+.container-page {
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem; /* px-4 */
+  padding-right: 1rem;
+  max-width: 80rem; /* max-w-7xl = 1280px */
+}
+
+@media (min-width: 640px) {
+  .container-page {
+    padding-left: 1.5rem; /* sm:px-6 */
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container-page {
+    padding-left: 2rem; /* lg:px-8 */
+    padding-right: 2rem;
+  }
+}
+
+/** Container étroit - max-width 768px pour formulaires, articles */
+.container-narrow {
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  max-width: 48rem; /* max-w-3xl = 768px */
+}
+
+@media (min-width: 640px) {
+  .container-narrow {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+/** Container très étroit - max-width 448px pour auth, modals */
+.container-xs {
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  max-width: 28rem; /* max-w-md = 448px */
+}
+
+/* ==========================================================================
+   TYPOGRAPHY - HEADINGS
+   ========================================================================== */
+
+/** Titre de page principal (H1) */
+.heading-page {
+  font-size: 1.5rem; /* text-2xl */
+  line-height: 2rem;
+  font-weight: 700; /* font-bold */
+  color: var(--color-text-primary);
+}
+
+@media (min-width: 640px) {
+  .heading-page {
+    font-size: 1.875rem; /* sm:text-3xl */
+    line-height: 2.25rem;
+  }
+}
+
+/** Titre de section (H2) */
+.heading-section {
+  font-size: 1.25rem; /* text-xl */
+  line-height: 1.75rem;
+  font-weight: 600; /* font-semibold */
+  color: var(--color-text-primary);
+}
+
+@media (min-width: 640px) {
+  .heading-section {
+    font-size: 1.5rem; /* sm:text-2xl */
+    line-height: 2rem;
+  }
+}
+
+/** Titre de card (H3) */
+.heading-card {
+  font-size: 1.125rem; /* text-lg */
+  line-height: 1.75rem;
+  font-weight: 600; /* font-semibold */
+  color: var(--color-text-primary);
+}
+
+@media (min-width: 640px) {
+  .heading-card {
+    font-size: 1.25rem; /* sm:text-xl */
+    line-height: 1.75rem;
+  }
+}
+
+/** Titre de sous-section (H4) */
+.heading-subsection {
+  font-size: 1rem; /* text-base */
+  line-height: 1.5rem;
+  font-weight: 500; /* font-medium */
+  color: var(--color-text-primary);
+}
+
+@media (min-width: 640px) {
+  .heading-subsection {
+    font-size: 1.125rem; /* sm:text-lg */
+    line-height: 1.75rem;
+  }
+}
+
+/** Label important */
+.heading-label {
+  font-size: 0.875rem; /* text-sm */
+  line-height: 1.25rem;
+  font-weight: 600; /* font-semibold */
+  color: var(--color-text-primary);
+}
+
+/* ==========================================================================
+   TYPOGRAPHY - BODY TEXT
+   ========================================================================== */
+
+/** Texte principal */
+.text-body {
+  font-size: 1rem; /* text-base */
+  line-height: 1.5rem;
+  color: var(--color-text-secondary);
+}
+
+/** Texte principal petit */
+.text-body-sm {
+  font-size: 0.875rem; /* text-sm */
+  line-height: 1.25rem;
+  color: var(--color-text-secondary);
+}
+
+/** Caption / légende */
+.text-caption {
+  font-size: 0.75rem; /* text-xs */
+  line-height: 1rem;
+  color: var(--color-text-muted);
+}
+
+/* ==========================================================================
+   SPACING - PRESETS
+   ========================================================================== */
+
+/** Espacement entre sections (space-y-6 = 24px) */
+.section-spacing > * + * {
+  margin-top: 1.5rem;
+}
+
+/** Espacement de contenu (space-y-4 = 16px) */
+.content-spacing > * + * {
+  margin-top: 1rem;
+}
+
+/** Gap inline - éléments proches (gap-2 = 8px) */
+.inline-spacing {
+  gap: 0.5rem;
+}
+
+/** Gap de groupe (gap-4 = 16px) */
+.group-spacing {
+  gap: 1rem;
+}
+
+/* ==========================================================================
+   SECTIONS - PADDING VERTICAL
+   ========================================================================== */
+
+/** Padding vertical de section standard */
+.section-py {
+  padding-top: 2rem; /* py-8 */
+  padding-bottom: 2rem;
+}
+
+@media (min-width: 1024px) {
+  .section-py {
+    padding-top: 3rem; /* lg:py-12 */
+    padding-bottom: 3rem;
+  }
+}
+
+/** Padding vertical de section large (hero) */
+.section-py-lg {
+  padding-top: 3rem; /* py-12 */
+  padding-bottom: 3rem;
+}
+
+@media (min-width: 1024px) {
+  .section-py-lg {
+    padding-top: 5rem; /* lg:py-20 */
+    padding-bottom: 5rem;
+  }
+}
+
+/* ==========================================================================
+   CARDS - PADDING
+   ========================================================================== */
+
+/** Padding standard de card (24px) */
+.card-padding {
+  padding: 1.5rem;
+}
+
+/** Padding compact de card (16px) */
+.card-padding-sm {
+  padding: 1rem;
+}
+
+/** Padding responsive de card */
+.card-padding-responsive {
+  padding: 1rem;
+}
+
+@media (min-width: 640px) {
+  .card-padding-responsive {
+    padding: 1.5rem;
+  }
+}
+
+/* ============================================================================
+   CLASSES UTILITAIRES - COULEURS ET BACKGROUNDS
    ============================================================================ */
 
 /* Backgrounds */
@@ -326,6 +786,43 @@ h6 {
 .bg-warning-light {
   background-color: var(--color-bg-warning-light);
 }
+.bg-warning-medium {
+  background-color: var(--color-warning-200);
+}
+.bg-brand-medium {
+  background-color: var(--color-bg-brand-medium);
+}
+.bg-primary-medium {
+  background-color: var(--color-bg-primary-medium);
+}
+
+/* Borders sémantiques */
+.border-brand-light {
+  border-color: var(--color-brand-200);
+}
+.border-primary-light {
+  border-color: var(--color-primary-200);
+}
+.border-warning-light {
+  border-color: var(--color-warning-200);
+}
+.border-success-light {
+  border-color: var(--color-success-200);
+}
+.border-error-light {
+  border-color: var(--color-error-200);
+}
+.border-info-light {
+  border-color: var(--color-info-200);
+}
+
+/* Rings sémantiques */
+.ring-brand-light {
+  --tw-ring-color: var(--color-brand-200);
+}
+.ring-primary-light {
+  --tw-ring-color: var(--color-primary-200);
+}
 .bg-info-light {
   background-color: var(--color-bg-info-light);
 }
@@ -334,6 +831,80 @@ h6 {
 }
 .bg-disabled {
   background-color: var(--color-neutral-100);
+}
+
+/* ==========================================================================
+   STATE UTILITIES - Theme-aware state colors
+   ========================================================================== */
+
+/* Success state */
+.state-success-bg {
+  background-color: var(--theme-success-bg);
+}
+.state-success-bg-hover:hover {
+  background-color: var(--theme-success-bg-hover);
+}
+.state-success-border {
+  border-color: var(--theme-success-border);
+}
+.state-success-text {
+  color: var(--theme-success-text);
+}
+
+/* Error state */
+.state-error-bg {
+  background-color: var(--theme-error-bg);
+}
+.state-error-bg-hover:hover {
+  background-color: var(--theme-error-bg-hover);
+}
+.state-error-border {
+  border-color: var(--theme-error-border);
+}
+.state-error-text {
+  color: var(--theme-error-text);
+}
+
+/* Warning state */
+.state-warning-bg {
+  background-color: var(--theme-warning-bg);
+}
+.state-warning-bg-hover:hover {
+  background-color: var(--theme-warning-bg-hover);
+}
+.state-warning-border {
+  border-color: var(--theme-warning-border);
+}
+.state-warning-text {
+  color: var(--theme-warning-text);
+}
+
+/* Info state */
+.state-info-bg {
+  background-color: var(--theme-info-bg);
+}
+.state-info-bg-hover:hover {
+  background-color: var(--theme-info-bg-hover);
+}
+.state-info-border {
+  border-color: var(--theme-info-border);
+}
+.state-info-text {
+  color: var(--theme-info-text);
+}
+
+/* Neutral state */
+.state-neutral-bg {
+  background-color: var(--theme-neutral-bg);
+}
+.state-neutral-bg-hover:hover {
+  background-color: var(--theme-neutral-bg-hover);
+}
+.state-neutral-border {
+  border-color: var(--theme-neutral-border);
+}
+.state-neutral-text {
+  color: var(--theme-neutral-text);
 }
 
 /* Textes */
@@ -383,6 +954,199 @@ h6 {
 }
 .dark-text-subtle {
   color: var(--color-dark-text-subtle);
+}
+
+/* ==========================================================================
+   DARK MODE OVERRIDES - "Grimoire Ancien"
+   Override des classes Tailwind pour s'adapter automatiquement au dark mode
+   ========================================================================== */
+
+/* Backgrounds blancs → cuir surface */
+.dark .bg-white,
+.dark .bg-white\/50,
+.dark .bg-white\/80,
+.dark .bg-white\/90 {
+  background-color: var(--color-dark-bg-surface) !important;
+}
+
+/* Backgrounds clairs → cuir élevé */
+.dark .bg-primary-50,
+.dark .bg-primary-100,
+.dark .bg-secondary-50,
+.dark .bg-secondary-100,
+.dark .bg-neutral-50,
+.dark .bg-neutral-100 {
+  background-color: var(--color-dark-bg-elevated) !important;
+}
+
+/* Semantic backgrounds pour dark mode */
+.dark .bg-error-100 {
+  background-color: rgba(220, 38, 38, 0.15) !important;
+}
+.dark .bg-success-100 {
+  background-color: rgba(34, 197, 94, 0.15) !important;
+}
+.dark .bg-warning-100 {
+  background-color: rgba(245, 158, 11, 0.15) !important;
+}
+.dark .bg-info-100 {
+  background-color: rgba(59, 130, 246, 0.15) !important;
+}
+
+/* Textes foncés → clairs (parchemin) */
+.dark .text-primary-600,
+.dark .text-primary-700,
+.dark .text-primary-800,
+.dark .text-primary-900 {
+  color: var(--color-dark-text-primary) !important;
+}
+
+.dark .text-secondary-600,
+.dark .text-secondary-700,
+.dark .text-secondary-800 {
+  color: var(--color-dark-accent) !important;
+}
+
+/* Gradient backgrounds pour sections alternées */
+.dark .from-secondary-100\/30 {
+  --tw-gradient-from: rgba(42, 34, 26, 0.3) !important;
+}
+
+.dark .bg-secondary-200\/30 {
+  background-color: rgba(74, 61, 48, 0.3) !important;
+}
+
+/* Cards avec border */
+.dark .border-neutral-100,
+.dark .border-neutral-200,
+.dark .border-neutral-300 {
+  border-color: var(--color-dark-border) !important;
+}
+
+/* Shadows pour dark mode - plus prononcées */
+.dark .shadow-lg {
+  --tw-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.3) !important;
+  box-shadow: var(--tw-shadow) !important;
+}
+
+.dark .shadow-xl {
+  --tw-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.3) !important;
+  box-shadow: var(--tw-shadow) !important;
+}
+
+/* Hover states */
+.dark .hover\:bg-primary-50:hover,
+.dark .hover\:bg-gray-50:hover {
+  background-color: var(--color-dark-bg-hover) !important;
+}
+
+/* Gray/Neutral backgrounds → dark equivalents */
+.dark .bg-gray-50,
+.dark .bg-gray-100,
+.dark .bg-neutral-50,
+.dark .bg-neutral-100 {
+  background-color: var(--color-dark-bg-elevated) !important;
+}
+
+.dark .bg-gray-200,
+.dark .bg-neutral-200 {
+  background-color: var(--color-dark-bg-hover) !important;
+}
+
+/* Neutral hover in dark mode */
+.dark .hover\:bg-neutral-100:hover,
+.dark .hover\:bg-neutral-200:hover {
+  background-color: var(--color-dark-bg-hover) !important;
+}
+
+/* Gray borders → dark equivalents */
+.dark .border-gray-100,
+.dark .border-gray-200,
+.dark .border-gray-300 {
+  border-color: var(--color-dark-border) !important;
+}
+
+/* Neutral text in dark mode */
+.dark .text-neutral-400,
+.dark .text-neutral-500,
+.dark .text-gray-400,
+.dark .text-gray-500 {
+  color: var(--color-dark-text-muted) !important;
+}
+
+.dark .text-neutral-600,
+.dark .text-neutral-700,
+.dark .text-gray-600,
+.dark .text-gray-700 {
+  color: var(--color-dark-text-secondary) !important;
+}
+
+/* Gradient text - ajusté pour meilleure lisibilité en dark */
+.dark .bg-gradient-to-r.from-secondary-600.to-secondary-400 {
+  --tw-gradient-from: var(--color-dark-accent-hover) !important;
+  --tw-gradient-to: var(--color-dark-accent) !important;
+}
+
+/* Error/Success hover states in dark mode */
+.dark .bg-error-200,
+.dark .hover\:bg-error-200:hover {
+  background-color: rgba(153, 27, 27, 0.35) !important;
+}
+
+.dark .bg-success-200,
+.dark .hover\:bg-success-200:hover {
+  background-color: rgba(6, 95, 70, 0.35) !important;
+}
+
+/* Text colors for states in dark mode */
+.dark .text-error-600,
+.dark .text-error-700 {
+  color: #fca5a5 !important;
+}
+
+.dark .text-success-600,
+.dark .text-success-700 {
+  color: #6ee7b7 !important;
+}
+
+.dark .text-warning-600,
+.dark .text-warning-700 {
+  color: #fcd34d !important;
+}
+
+.dark .text-info-600,
+.dark .text-info-700 {
+  color: #93c5fd !important;
+}
+
+/* Utility classes with light backgrounds in dark mode */
+.dark .bg-brand-light,
+.dark .bg-primary-light {
+  background-color: var(--color-dark-bg-elevated) !important;
+}
+
+.dark .bg-brand-medium,
+.dark .bg-primary-medium {
+  background-color: var(--color-dark-bg-hover) !important;
+}
+
+.dark .border-brand-light,
+.dark .border-primary-light {
+  border-color: var(--color-dark-border) !important;
+}
+
+/* Light state backgrounds in dark mode */
+.dark .bg-success-light,
+.dark .bg-error-light,
+.dark .bg-warning-light,
+.dark .bg-info-light {
+  background-color: var(--color-dark-bg-elevated) !important;
+}
+
+/* Ring colors in dark mode */
+.dark .ring-brand-light,
+.dark .ring-primary-light {
+  --tw-ring-color: var(--color-dark-border) !important;
 }
 
 /* ============================================================================
@@ -476,6 +1240,37 @@ h6 {
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--color-primary-300) var(--color-neutral-100);
+}
+
+/* ============================================================================
+   INPUT TEXT - GLOBAL DARK MODE FIX
+   Fix for input text color in dark mode across all browsers
+   ============================================================================ */
+
+/* Base input styles for dark mode */
+.dark input,
+.dark textarea,
+.dark select {
+  color: var(--color-dark-text-primary) !important;
+  background-color: var(--color-dark-bg-elevated) !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: var(--color-dark-text-muted) !important;
+}
+
+/* Autofill styles for dark mode - WebKit browsers */
+.dark input:-webkit-autofill,
+.dark input:-webkit-autofill:hover,
+.dark input:-webkit-autofill:focus,
+.dark input:-webkit-autofill:active,
+.dark textarea:-webkit-autofill,
+.dark select:-webkit-autofill {
+  -webkit-text-fill-color: var(--color-dark-text-primary) !important;
+  -webkit-box-shadow: 0 0 0 1000px var(--color-dark-bg-elevated) inset !important;
+  box-shadow: 0 0 0 1000px var(--color-dark-bg-elevated) inset !important;
+  caret-color: var(--color-dark-text-primary) !important;
 }
 
 /* ============================================================================
@@ -684,4 +1479,139 @@ input[type='number']::-webkit-outer-spin-button {
 /* Gizmo de transformation - toujours au-dessus */
 .transform-gizmo {
   z-index: 1000 !important;
+}
+
+/* ============================================================================
+   LANDING PAGE - MICRO-INTERACTIONS
+   ============================================================================ */
+
+/* Bouton CTA avec glow doré */
+.cta-glow {
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.cta-glow::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background: linear-gradient(135deg, var(--color-secondary-400), var(--color-secondary-600));
+  border-radius: inherit;
+  opacity: 0;
+  z-index: -1;
+  filter: blur(12px);
+  transition: opacity 0.3s ease;
+}
+
+.cta-glow:hover {
+  transform: translateY(-2px);
+}
+
+.cta-glow:hover::before {
+  opacity: 0.6;
+}
+
+.cta-glow:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* Card avec élévation et glow */
+.card-hover {
+  transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(216, 183, 144, 0.15);
+}
+
+/* Image avec zoom subtil */
+.img-zoom {
+  transition: transform 0.5s ease;
+  overflow: hidden;
+}
+
+.img-zoom:hover {
+  transform: scale(1.03);
+}
+
+/* Lien avec underline animé */
+.link-animated {
+  position: relative;
+}
+
+.link-animated::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--color-secondary-500);
+  transition: width 0.3s ease;
+}
+
+.link-animated:hover::after {
+  width: 100%;
+}
+
+/* Icône avec pulse au hover */
+.icon-pulse:hover {
+  animation: pulse-gold 0.6s ease;
+}
+
+@keyframes pulse-gold {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.15);
+  }
+}
+
+/* Shimmer effect pour CTA premium */
+.shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+/* ============================================================================
+   ACCESSIBILITÉ - Réduire les animations si demandé
+   ============================================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .cta-glow:hover,
+  .card-hover:hover,
+  .img-zoom:hover {
+    transform: none;
+  }
 }

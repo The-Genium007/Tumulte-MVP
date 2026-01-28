@@ -214,7 +214,7 @@ onMounted(() => {
         <form class="space-y-8" @submit.prevent="handleSubmit">
           <!-- Question -->
           <div class="space-y-3">
-            <label class="block text-sm font-medium text-secondary uppercase"> Question </label>
+            <label class="block text-sm font-medium text-primary uppercase"> Question </label>
             <UInput
               v-model="form.question"
               placeholder="Ex: Quelle direction prendre ?"
@@ -222,7 +222,7 @@ onMounted(() => {
               maxlength="45"
               :ui="{
                 root: 'ring-0 border-0 rounded-lg overflow-hidden',
-                base: 'px-3.5 py-2.5 bg-primary-100 text-primary-500 placeholder:text-primary-400 rounded-lg',
+                base: 'px-3.5 py-2.5 bg-(--theme-input-bg) text-(--theme-input-text) placeholder:text-(--theme-input-placeholder) rounded-lg',
               }"
             />
             <p class="text-xs text-muted">{{ questionLength }}/45 caractères</p>
@@ -230,13 +230,13 @@ onMounted(() => {
 
           <!-- Options -->
           <div class="space-y-3">
-            <label class="block text-sm font-medium text-secondary uppercase">
+            <label class="block text-sm font-medium text-primary uppercase">
               Réponses (2-5 max)
             </label>
             <div class="space-y-3">
               <div v-for="(_, idx) in options" :key="idx" class="flex items-center gap-3">
                 <span
-                  class="flex items-center justify-center size-10 rounded-full bg-neutral-100 text-sm font-medium text-muted shrink-0"
+                  class="flex items-center justify-center size-10 rounded-full bg-elevated text-sm font-medium text-primary shrink-0"
                 >
                   {{ idx + 1 }}
                 </span>
@@ -248,7 +248,7 @@ onMounted(() => {
                   class="flex-1"
                   :ui="{
                     root: 'ring-0 border-0 rounded-lg overflow-hidden',
-                    base: 'px-3.5 py-2.5 bg-primary-100 text-primary-500 placeholder:text-primary-400 rounded-lg',
+                    base: 'px-3.5 py-2.5 bg-(--theme-input-bg) text-(--theme-input-text) placeholder:text-(--theme-input-placeholder) rounded-lg',
                   }"
                 />
                 <UButton
@@ -276,7 +276,7 @@ onMounted(() => {
 
           <!-- Duration -->
           <div class="space-y-3">
-            <label class="block text-sm font-medium text-secondary uppercase"> Durée </label>
+            <label class="block text-sm font-medium text-primary uppercase"> Durée </label>
             <div class="flex flex-wrap items-center gap-3">
               <!-- Presets - 2 par ligne sur mobile, 5 sur desktop -->
               <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3 w-full sm:w-auto">
@@ -288,7 +288,7 @@ onMounted(() => {
                   :class="
                     !useCustomDuration && form.durationSeconds === preset.value
                       ? 'bg-primary text-white'
-                      : 'bg-neutral-100 text-secondary hover:bg-neutral-200'
+                      : 'bg-elevated text-primary border border-muted hover:bg-accented'
                   "
                   @click="selectDuration(preset.value)"
                 >
@@ -304,7 +304,7 @@ onMounted(() => {
                   :class="
                     useCustomDuration
                       ? 'bg-primary text-white'
-                      : 'bg-neutral-100 text-secondary hover:bg-neutral-200'
+                      : 'bg-elevated text-primary border border-muted hover:bg-accented'
                   "
                   @click="enableCustomDuration"
                 >
@@ -326,7 +326,7 @@ onMounted(() => {
                   class="w-24 flex-1 sm:flex-none"
                   :ui="{
                     root: 'ring-0 border-0 rounded-lg overflow-hidden',
-                    base: 'px-3.5 py-2.5 bg-primary-100 text-primary-500 placeholder:text-primary-400 rounded-lg',
+                    base: 'px-3.5 py-2.5 bg-(--theme-input-bg) text-(--theme-input-text) placeholder:text-(--theme-input-placeholder) rounded-lg',
                   }"
                 />
                 <span class="text-muted text-sm sm:text-base">secondes</span>

@@ -9,7 +9,7 @@ import { createTestUser } from '#tests/helpers/test_utils'
  */
 
 test.group('CampaignRepository', (group) => {
-  group.each.setup(() => testUtils.db().truncate())
+  group.each.setup(() => testUtils.db().withGlobalTransaction())
 
   test('create should create a new campaign', async ({ assert }) => {
     const user = await createTestUser()

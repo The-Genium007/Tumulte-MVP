@@ -56,6 +56,11 @@ export default class VttConnection extends BaseModel {
   @column()
   declare tokenVersion: number
 
+  // Connection fingerprint for security validation
+  // Hash of worldId + initial moduleVersion, validated on token refresh
+  @column()
+  declare connectionFingerprint: string | null
+
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
 

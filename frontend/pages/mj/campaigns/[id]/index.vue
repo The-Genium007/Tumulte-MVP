@@ -13,6 +13,7 @@
               square
               class="group shrink-0"
               to="/mj"
+              aria-label="Retour aux campagnes"
             >
               <template #leading>
                 <UIcon
@@ -44,22 +45,10 @@
               color="primary"
               variant="soft"
               class="w-full sm:w-auto"
-              :to="`/streamer/campaigns/${campaignId}/settings`"
+              :to="`/dashboard/campaigns/${campaignId}/settings`"
             >
               <span class="sm:hidden">Mon personnage</span>
               <span class="hidden sm:inline">Mon personnage</span>
-            </UButton>
-
-            <!-- Bouton supprimer -->
-            <UButton
-              icon="i-lucide-trash-2"
-              color="error"
-              variant="solid"
-              class="w-full sm:w-auto"
-              @click="handleDeleteCampaign"
-            >
-              <span class="sm:hidden">Supprimer la campagne</span>
-              <span class="hidden sm:inline">Supprimer</span>
             </UButton>
           </div>
         </div>
@@ -74,10 +63,10 @@
               <div
                 class="bg-primary-light size-10 rounded-lg flex items-center justify-center shrink-0"
               >
-                <UIcon name="i-lucide-users" class="size-5 text-primary-500" />
+                <UIcon name="i-lucide-users" class="size-5 text-primary" />
               </div>
               <div>
-                <p class="text-xs text-primary-500 font-medium">Total</p>
+                <p class="text-xs text-primary font-medium">Total</p>
                 <p class="text-lg font-bold text-primary">{{ members.length }}</p>
               </div>
             </div>
@@ -90,7 +79,7 @@
                 <UIcon name="i-lucide-radio" class="size-5 text-error-500" />
               </div>
               <div>
-                <p class="text-xs text-primary-500 font-medium">En Live</p>
+                <p class="text-xs text-primary font-medium">En Live</p>
                 <p class="text-lg font-bold text-primary">{{ liveMembersCount }}</p>
               </div>
             </div>
@@ -103,7 +92,7 @@
                 <UIcon name="i-lucide-user-check" class="size-5 text-success-500" />
               </div>
               <div>
-                <p class="text-xs text-primary-500 font-medium">Actifs</p>
+                <p class="text-xs text-primary font-medium">Actifs</p>
                 <p class="text-lg font-bold text-primary">{{ activeMembersCount }}</p>
               </div>
             </div>
@@ -116,7 +105,7 @@
                 <UIcon name="i-lucide-shield-check" class="size-5 text-info-500" />
               </div>
               <div>
-                <p class="text-xs text-primary-500 font-medium">Autorisés</p>
+                <p class="text-xs text-primary font-medium">Autorisés</p>
                 <p class="text-lg font-bold text-primary">{{ authorizedMembersCount }}</p>
               </div>
             </div>
@@ -129,7 +118,7 @@
                 <UIcon name="i-lucide-user-plus" class="size-5 text-warning-500" />
               </div>
               <div>
-                <p class="text-xs text-primary-500 font-medium">En Attente</p>
+                <p class="text-xs text-primary font-medium">En Attente</p>
                 <p class="text-lg font-bold text-primary">{{ pendingMembersCount }}</p>
               </div>
             </div>
@@ -145,9 +134,9 @@
         <div
           class="size-32 bg-primary-light rounded-3xl flex flex-col items-center justify-center text-center gap-2"
         >
-          <UIcon name="i-lucide-users" class="size-7 text-primary-500" />
+          <UIcon name="i-lucide-users" class="size-7 text-primary" />
           <div>
-            <p class="text-xs text-primary-500 font-medium">Total Membres</p>
+            <p class="text-xs text-primary font-medium">Total Membres</p>
             <p class="text-xl font-bold text-primary">{{ members.length }}</p>
           </div>
         </div>
@@ -157,7 +146,7 @@
         >
           <UIcon name="i-lucide-radio" class="size-7 text-error-500" />
           <div>
-            <p class="text-xs text-primary-500 font-medium">En Live</p>
+            <p class="text-xs text-primary font-medium">En Live</p>
             <p class="text-xl font-bold text-primary">{{ liveMembersCount }}</p>
           </div>
         </div>
@@ -167,7 +156,7 @@
         >
           <UIcon name="i-lucide-user-check" class="size-7 text-success-500" />
           <div>
-            <p class="text-xs text-primary-500 font-medium">Actifs</p>
+            <p class="text-xs text-primary font-medium">Actifs</p>
             <p class="text-xl font-bold text-primary">{{ activeMembersCount }}</p>
           </div>
         </div>
@@ -177,7 +166,7 @@
         >
           <UIcon name="i-lucide-shield-check" class="size-7 text-info-500" />
           <div>
-            <p class="text-xs text-primary-500 font-medium">Autorisés</p>
+            <p class="text-xs text-primary font-medium">Autorisés</p>
             <p class="text-xl font-bold text-primary">{{ authorizedMembersCount }}</p>
           </div>
         </div>
@@ -187,7 +176,7 @@
         >
           <UIcon name="i-lucide-user-plus" class="size-7 text-warning-500" />
           <div>
-            <p class="text-xs text-primary-500 font-medium">En Attente</p>
+            <p class="text-xs text-primary font-medium">En Attente</p>
             <p class="text-xl font-bold text-primary">{{ pendingMembersCount }}</p>
           </div>
         </div>
@@ -223,9 +212,9 @@
           v-else-if="members.length === 0"
           class="flex flex-col items-center justify-center text-center py-12"
         >
-          <UIcon name="i-lucide-users" class="size-12 text-neutral-400 mb-4" />
-          <p class="text-base font-normal text-neutral-400">Aucun membre</p>
-          <p class="text-sm text-neutral-400 mt-1 mb-6">
+          <UIcon name="i-lucide-users" class="size-12 text-muted mb-4" />
+          <p class="text-base font-normal text-muted">Aucun membre</p>
+          <p class="text-sm text-muted mt-1 mb-6">
             Commencez par inviter des streamers à rejoindre cette campagne
           </p>
           <UButton
@@ -242,7 +231,7 @@
           <div
             v-for="member in sortedMembers"
             :key="member.id"
-            class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 p-3 sm:p-4 bg-neutral-100 rounded-lg hover:bg-neutral-200 transition-colors"
+            class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 p-3 sm:p-4 bg-elevated rounded-lg hover:bg-accented border border-muted transition-colors"
           >
             <div class="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
               <!-- Avatar with Live Badge -->
@@ -345,6 +334,184 @@
           </div>
         </div>
       </UCard>
+
+      <!-- VTT Connection Section -->
+      <UCard v-if="campaign?.vttConnection" class="mt-8">
+        <template #header>
+          <div class="flex items-center justify-between">
+            <h2 class="text-xl font-bold text-primary">Connexion Foundry VTT</h2>
+            <UBadge :color="getTunnelStatusColor(campaign.vttConnection.tunnelStatus)" size="lg">
+              {{ getTunnelStatusLabel(campaign.vttConnection.tunnelStatus) }}
+            </UBadge>
+          </div>
+        </template>
+
+        <div class="space-y-4">
+          <!-- World Information -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-sm font-bold text-primary ml-4 uppercase mb-2">
+                Monde VTT
+              </label>
+              <p class="text-primary ml-4">
+                {{ campaign.vttConnection.worldName || 'Non configuré' }}
+              </p>
+            </div>
+            <div v-if="campaign.vttConnection.moduleVersion">
+              <label class="block text-sm font-bold text-primary ml-4 uppercase mb-2">
+                Version du Module
+              </label>
+              <p class="text-muted ml-4">v{{ campaign.vttConnection.moduleVersion }}</p>
+            </div>
+            <div v-if="campaign.vttConnection.lastHeartbeatAt">
+              <label class="block text-sm font-bold text-primary ml-4 uppercase mb-2">
+                Dernière activité
+              </label>
+              <p class="text-muted ml-4">
+                {{ formatRelativeTime(campaign.vttConnection.lastHeartbeatAt) }}
+              </p>
+            </div>
+          </div>
+
+          <!-- Connection Status Alert -->
+          <UAlert
+            v-if="campaign.vttConnection.tunnelStatus === 'connected'"
+            color="success"
+            variant="soft"
+            icon="i-lucide-check-circle"
+            title="Connexion active"
+            description="La connexion avec votre VTT est établie et fonctionnelle."
+          />
+          <UAlert
+            v-else-if="campaign.vttConnection.tunnelStatus === 'connecting'"
+            color="warning"
+            variant="soft"
+            icon="i-lucide-loader-circle"
+            title="Connexion en cours"
+            description="Le tunnel est en cours d'établissement avec votre VTT."
+          />
+          <UAlert
+            v-else-if="campaign.vttConnection.tunnelStatus === 'error'"
+            color="error"
+            variant="soft"
+            icon="i-lucide-alert-circle"
+            title="Erreur de connexion"
+            description="Le tunnel a rencontré une erreur. Vérifiez que votre VTT est bien en ligne."
+          />
+          <UAlert
+            v-else
+            color="neutral"
+            variant="soft"
+            icon="i-lucide-unplug"
+            title="Déconnecté"
+            description="Le tunnel n'est pas actif. Lancez votre VTT pour établir la connexion."
+          />
+
+          <!-- Revoked Status Alert with Reauthorize button -->
+          <div
+            v-if="campaign.vttConnection.status === 'revoked'"
+            class="pt-4 border-t border-neutral-200"
+          >
+            <UAlert
+              color="warning"
+              variant="soft"
+              icon="i-lucide-shield-off"
+              title="Connexion révoquée"
+              description="L'accès à Foundry VTT a été révoqué. Les données sont conservées. Vous pouvez réautoriser l'accès pour reconnecter le module sans refaire l'appairage."
+            />
+            <div class="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h3 class="font-semibold text-primary">Réautoriser l'accès</h3>
+                <p class="text-sm text-muted">
+                  Réactive la connexion Foundry. Le module récupérera automatiquement les nouveaux
+                  tokens.
+                </p>
+              </div>
+              <UButton
+                color="success"
+                variant="soft"
+                label="Réautoriser"
+                icon="i-lucide-shield-check"
+                :loading="reauthorizingVtt"
+                class="w-full sm:w-auto"
+                @click="handleReauthorizeVtt"
+              />
+            </div>
+          </div>
+
+          <!-- Revoke Connection (only if not already revoked) -->
+          <div
+            v-else
+            class="pt-4 border-t border-neutral-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+          >
+            <div>
+              <h3 class="font-semibold text-primary">Révoquer la connexion</h3>
+              <p class="text-sm text-muted">
+                Déconnecte le VTT et invalide les tokens d'authentification.
+              </p>
+            </div>
+            <UButton
+              color="warning"
+              variant="soft"
+              label="Révoquer"
+              icon="i-lucide-shield-off"
+              :loading="revokingVtt"
+              class="w-full sm:w-auto"
+              @click="handleRevokeVtt"
+            />
+          </div>
+        </div>
+      </UCard>
+
+      <!-- No VTT Connection - Invite to connect -->
+      <UCard v-else class="mt-8">
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div class="flex items-center gap-4">
+            <div class="bg-info-light p-3 rounded-lg">
+              <UIcon name="i-lucide-plug-zap" class="size-6 text-info-500" />
+            </div>
+            <div>
+              <h3 class="font-semibold text-primary">Connecter Foundry VTT</h3>
+              <p class="text-sm text-muted">
+                Synchronisez vos jets de dés et vos personnages avec Tumulte.
+              </p>
+            </div>
+          </div>
+          <UButton
+            color="primary"
+            variant="soft"
+            label="Connecter"
+            icon="i-lucide-link"
+            to="/mj/vtt-connections/create"
+            class="w-full sm:w-auto"
+          />
+        </div>
+      </UCard>
+
+      <!-- Danger Zone -->
+      <UCard class="mt-8">
+        <template #header>
+          <h2 class="text-xl font-semibold text-error-500">Zone de danger</h2>
+        </template>
+
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <h3 class="font-semibold text-primary">Supprimer la campagne</h3>
+            <p class="text-sm text-muted">
+              Cette action est irréversible. Tous les templates, sondages et membres seront
+              supprimés.
+            </p>
+          </div>
+          <UButton
+            color="error"
+            variant="soft"
+            label="Supprimer"
+            icon="i-lucide-trash-2"
+            class="w-full sm:w-auto"
+            @click="handleDeleteCampaign"
+          />
+        </div>
+      </UCard>
     </div>
   </div>
 
@@ -361,7 +528,7 @@
 
     <template #body>
       <div class="space-y-4">
-        <p class="text-secondary">
+        <p class="text-primary">
           Êtes-vous sûr de vouloir supprimer la campagne
           <strong class="text-primary">{{ campaign?.name }}</strong> ?
         </p>
@@ -400,7 +567,7 @@
 
     <template #body>
       <div class="space-y-4">
-        <p class="text-secondary">
+        <p class="text-primary">
           Êtes-vous sûr de vouloir révoquer l'accès de
           <strong class="text-primary">{{ memberToRemove?.name }}</strong> ?
         </p>
@@ -440,7 +607,7 @@
     <template #body>
       <div class="space-y-4">
         <div>
-          <label class="block text-sm font-medium text-primary-500 pl-2 mb-0">
+          <label class="block text-sm font-medium text-primary pl-2 mb-0">
             Rechercher un streamer
           </label>
           <UInput
@@ -450,10 +617,10 @@
             size="lg"
             :ui="{
               root: 'ring-0 border-0 rounded-lg overflow-hidden',
-              base: 'px-3.5 py-2.5 bg-primary-100 text-primary-500 placeholder:text-primary-400 rounded-lg [&>span:first-child]:text-primary-500',
+              base: 'px-3.5 py-2.5 bg-(--theme-input-bg) text-(--theme-input-text) placeholder:text-(--theme-input-placeholder) rounded-lg [&>span:first-child]:text-(--theme-input-text)',
             }"
           />
-          <p class="text-xs text-neutral-400 mt-1">Tapez au moins 2 caractères</p>
+          <p class="text-xs text-muted mt-1">Tapez au moins 2 caractères</p>
         </div>
 
         <!-- Loading -->
@@ -472,7 +639,7 @@
           <div
             v-for="streamer in filteredSearchResults"
             :key="streamer.id"
-            class="flex items-center justify-between p-3 bg-neutral-100 rounded-lg hover:bg-neutral-200 transition-colors"
+            class="flex items-center justify-between p-3 bg-elevated rounded-lg hover:bg-accented border border-muted transition-colors"
           >
             <div class="flex items-center gap-3">
               <img
@@ -507,8 +674,8 @@
           v-else-if="searchQuery.length >= 2"
           class="flex flex-col items-center justify-center text-center py-8"
         >
-          <UIcon name="i-lucide-search-x" class="size-12 text-neutral-400 mb-4" />
-          <p class="text-base font-normal text-neutral-400">
+          <UIcon name="i-lucide-search-x" class="size-12 text-muted mb-4" />
+          <p class="text-base font-normal text-muted">
             {{
               searchResults.length > 0
                 ? 'Tous les streamers trouvés sont déjà invités'
@@ -519,8 +686,8 @@
 
         <!-- Initial State -->
         <div v-else class="flex flex-col items-center justify-center text-center py-8">
-          <UIcon name="i-lucide-search" class="size-12 text-neutral-400 mb-4" />
-          <p class="text-sm text-neutral-400">Tapez au moins 2 caractères pour rechercher</p>
+          <UIcon name="i-lucide-search" class="size-12 text-muted mb-4" />
+          <p class="text-sm text-muted">Tapez au moins 2 caractères pour rechercher</p>
         </div>
       </div>
     </template>
@@ -564,6 +731,8 @@ const loadingMembers = ref(false)
 const showInviteModal = ref(false)
 const showDeleteModal = ref(false)
 const showRemoveMemberModal = ref(false)
+const revokingVtt = ref(false)
+const reauthorizingVtt = ref(false)
 const memberToRemove = ref<{ id: string; name: string } | null>(null)
 const searchQuery = ref('')
 const searchResults = ref<StreamerSearchResult[]>([])
@@ -806,6 +975,115 @@ const confirmDeleteCampaign = async () => {
     _router.push({ path: '/mj' })
   } catch (error) {
     console.error('Error deleting campaign:', error)
+  }
+}
+
+// VTT Connection helpers
+const config = useRuntimeConfig()
+
+const getTunnelStatusColor = (status?: string): 'success' | 'warning' | 'error' | 'neutral' => {
+  switch (status) {
+    case 'connected':
+      return 'success'
+    case 'connecting':
+      return 'warning'
+    case 'error':
+      return 'error'
+    case 'disconnected':
+    default:
+      return 'neutral'
+  }
+}
+
+const getTunnelStatusLabel = (status?: string): string => {
+  switch (status) {
+    case 'connected':
+      return 'Connecté'
+    case 'connecting':
+      return 'Connexion...'
+    case 'error':
+      return 'Erreur'
+    case 'disconnected':
+      return 'Déconnecté'
+    default:
+      return status || 'Inconnu'
+  }
+}
+
+const formatRelativeTime = (dateString: string) => {
+  const date = new Date(dateString)
+  const now = new Date()
+  const diffMs = now.getTime() - date.getTime()
+  const diffSeconds = Math.floor(diffMs / 1000)
+  const diffMinutes = Math.floor(diffSeconds / 60)
+  const diffHours = Math.floor(diffMinutes / 60)
+  const diffDays = Math.floor(diffHours / 24)
+
+  if (diffSeconds < 60) return "À l'instant"
+  if (diffMinutes < 60) return `Il y a ${diffMinutes} min`
+  if (diffHours < 24) return `Il y a ${diffHours}h`
+  if (diffDays < 7) return `Il y a ${diffDays} jour${diffDays > 1 ? 's' : ''}`
+  return date.toLocaleDateString()
+}
+
+// Handle revoke VTT connection
+const handleRevokeVtt = async () => {
+  if (!campaign.value?.vttConnection) return
+
+  revokingVtt.value = true
+  try {
+    const response = await fetch(
+      `${config.public.apiBase}/mj/vtt-connections/${campaign.value.vttConnection.id}/revoke`,
+      {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          reason: "Révoqué par l'utilisateur depuis l'interface Tumulte",
+        }),
+      }
+    )
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Échec de la révocation')
+    }
+
+    // Reload campaign data to reflect the change
+    await loadMembers()
+  } catch (error) {
+    console.error('Failed to revoke VTT connection:', error)
+  } finally {
+    revokingVtt.value = false
+  }
+}
+
+// Handle reauthorize VTT connection
+const handleReauthorizeVtt = async () => {
+  if (!campaign.value?.vttConnection) return
+
+  reauthorizingVtt.value = true
+  try {
+    const response = await fetch(
+      `${config.public.apiBase}/mj/vtt-connections/${campaign.value.vttConnection.id}/reauthorize`,
+      {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+      }
+    )
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Échec de la réautorisation')
+    }
+
+    // Reload campaign data to reflect the change
+    await loadMembers()
+  } catch (error) {
+    console.error('Failed to reauthorize VTT connection:', error)
+  } finally {
+    reauthorizingVtt.value = false
   }
 }
 

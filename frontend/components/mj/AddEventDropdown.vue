@@ -10,14 +10,14 @@ const items = computed(() => [
       label: 'Sondage',
       icon: 'i-lucide-bar-chart-2',
       to: `/mj/campaigns/${props.campaignId}/polls/create`,
-      class: 'text-primary-500',
+      class: 'text-primary',
     },
   ],
 ])
 </script>
 
 <template>
-  <UDropdownMenu :items="items" :ui="{ content: 'bg-white shadow-lg border border-neutral-200' }">
+  <UDropdownMenu :items="items" :ui="{ content: 'bg-elevated shadow-lg border border-default' }">
     <UButton color="primary" variant="solid" icon="i-lucide-plus">
       <span class="hidden sm:inline">Ajouter</span>
     </UButton>

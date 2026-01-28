@@ -5,17 +5,6 @@ import type { AxiosError } from 'axios'
 // Mock axios
 vi.mock('axios')
 
-// Mock useSupportTrigger
-vi.mock('@/composables/useSupportTrigger', () => ({
-  useSupportTrigger: () => ({
-    triggerSupportForError: vi.fn(),
-    canAutoOpen: () => true,
-    getRemainingCooldown: () => 0,
-    resetRateLimit: vi.fn(),
-    RATE_LIMIT_MS: 60000,
-  }),
-}))
-
 // Mock window.location
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ;(window as any).location = { href: '' }
@@ -273,7 +262,7 @@ describe('HTTP Client', () => {
       } as AxiosError
 
       await expect(errorCallback(error)).rejects.toEqual(error)
-      expect(consoleErrorSpy).toHaveBeenCalledWith('Erreur serveur')
+      expect(consoleErrorSpy).toHaveBeenCalledWith('Erreur serveur:', error)
     }
 
     consoleErrorSpy.mockRestore()
@@ -294,7 +283,7 @@ describe('HTTP Client', () => {
       } as AxiosError
 
       await expect(errorCallback(error)).rejects.toEqual(error)
-      expect(consoleErrorSpy).toHaveBeenCalledWith('Aucune réponse du serveur')
+      expect(consoleErrorSpy).toHaveBeenCalledWith('Aucune réponse du serveur:', error)
     }
 
     consoleErrorSpy.mockRestore()

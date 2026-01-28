@@ -243,7 +243,9 @@ const toggleSection = (section: keyof typeof expandedSections) => {
 
 // UI customization for selects
 const selectUi = {
-  base: 'bg-neutral-100 text-neutral-600',
+  base: 'bg-(--ui-bg-elevated) text-(--ui-text) border border-(--ui-border)',
+  content: 'bg-(--ui-bg-elevated) border border-(--ui-border)',
+  item: 'text-(--ui-text) data-highlighted:bg-(--ui-bg-accented)',
 }
 
 const updateEntry = (key: string, value: string | number) => {
@@ -278,16 +280,19 @@ const updateExit = (key: string, value: string | number) => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.5rem 0;
-  border: none;
+  padding: 0.5rem;
+  border: 1px solid transparent;
   background: transparent;
+  border-radius: 6px;
   cursor: pointer;
-  color: var(--color-neutral-500);
-  transition: color 0.15s ease;
+  color: var(--ui-text-muted);
+  transition: all 0.15s ease;
 }
 
 .sub-section-header:hover {
-  color: var(--color-text-primary);
+  color: var(--ui-text);
+  border-color: var(--ui-border);
+  background: var(--ui-bg-elevated);
 }
 
 .sub-section-header .header-left {
@@ -306,7 +311,7 @@ const updateExit = (key: string, value: string | number) => {
   gap: 0.5rem;
   padding-left: 0.5rem;
   padding-bottom: 0.5rem;
-  border-left: 2px solid var(--color-neutral-200);
+  border-left: 2px solid var(--ui-border);
   margin-left: 0.5rem;
 }
 
@@ -318,7 +323,7 @@ const updateExit = (key: string, value: string | number) => {
 
 .field label {
   font-size: 0.75rem;
-  color: var(--color-neutral-400);
+  color: var(--ui-text-muted);
 }
 
 .inline-field {
@@ -330,7 +335,7 @@ const updateExit = (key: string, value: string | number) => {
 
 .inline-field label {
   font-size: 0.75rem;
-  color: var(--color-neutral-400);
+  color: var(--ui-text-muted);
 }
 
 .input-with-unit {
@@ -341,6 +346,6 @@ const updateExit = (key: string, value: string | number) => {
 
 .unit {
   font-size: 0.75rem;
-  color: var(--color-neutral-400);
+  color: var(--ui-text-muted);
 }
 </style>

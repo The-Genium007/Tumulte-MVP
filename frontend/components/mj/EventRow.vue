@@ -29,9 +29,9 @@ const formatDuration = (seconds: number): string => {
  * Row background class based on state
  */
 const rowClass = computed(() => {
-  if (props.isActive) return 'bg-brand-50 border-brand-200'
-  if (props.isLastLaunched) return 'bg-neutral-100 border-neutral-200'
-  return 'bg-white border-neutral-100'
+  if (props.isActive) return 'bg-brand-light border-brand-light'
+  if (props.isLastLaunched) return 'bg-elevated border-default'
+  return 'bg-(--theme-card-bg) border-(--theme-border-muted)'
 })
 </script>
 
@@ -45,6 +45,7 @@ const rowClass = computed(() => {
       v-if="isActive"
       class="flex items-center justify-center w-12 sm:w-14 bg-error-500 hover:bg-error-600 text-white transition-colors shrink-0 disabled:opacity-70 disabled:cursor-not-allowed"
       :disabled="cancelling"
+      aria-label="Annuler le sondage"
       @click="emit('cancel')"
     >
       <UIcon
@@ -58,6 +59,7 @@ const rowClass = computed(() => {
       v-else
       class="flex items-center justify-center w-12 sm:w-14 bg-primary hover:bg-primary-600 text-white transition-colors shrink-0"
       :disabled="launching"
+      aria-label="Lancer le sondage"
       @click="emit('launch', poll.id)"
     >
       <UIcon
@@ -77,7 +79,7 @@ const rowClass = computed(() => {
         >
           {{ poll.question }}
         </p>
-        <div class="flex items-center gap-2 text-xs text-muted shrink-0">
+        <div class="flex items-center gap-2 text-caption shrink-0">
           <span class="shrink-0">{{ formatDuration(poll.durationSeconds) }}</span>
           <span v-if="poll.channelPointsEnabled" class="flex items-center gap-1 shrink-0">
             <UIcon name="i-lucide-coins" class="size-3" />
@@ -99,7 +101,7 @@ const rowClass = computed(() => {
 
     <!-- Actions button - full height square -->
     <div
-      class="flex items-center justify-center w-12 sm:w-14 bg-neutral-100 hover:bg-neutral-200 transition-colors shrink-0"
+      class="flex items-center justify-center w-12 sm:w-14 bg-elevated hover:bg-muted transition-colors shrink-0"
       :class="{ 'opacity-50': isActive }"
     >
       <MjEventActionsDropdown

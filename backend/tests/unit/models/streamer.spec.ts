@@ -4,7 +4,7 @@ import { streamer as Streamer } from '#models/streamer'
 import { createTestUser } from '#tests/helpers/test_utils'
 
 test.group('Streamer Model - Token Encryption', (group) => {
-  group.each.setup(() => testUtils.db().truncate())
+  group.each.setup(() => testUtils.db().withGlobalTransaction())
 
   test('should encrypt access token when creating streamer with encrypted tokens', async ({
     assert,
@@ -266,7 +266,7 @@ test.group('Streamer Model - Token Encryption', (group) => {
 })
 
 test.group('Streamer Model - Scopes Management', (group) => {
-  group.each.setup(() => testUtils.db().truncate())
+  group.each.setup(() => testUtils.db().withGlobalTransaction())
 
   test('should store scopes as JSON array', async ({ assert }) => {
     const user = await createTestUser()
@@ -327,7 +327,7 @@ test.group('Streamer Model - Scopes Management', (group) => {
 })
 
 test.group('Streamer Model - Batch Operations', (group) => {
-  group.each.setup(() => testUtils.db().truncate())
+  group.each.setup(() => testUtils.db().withGlobalTransaction())
 
   test('should decrypt tokens for multiple streamers efficiently', async ({ assert }) => {
     const user = await createTestUser()
@@ -433,7 +433,7 @@ test.group('Streamer Model - Batch Operations', (group) => {
 })
 
 test.group('Streamer Model - Default Values', (group) => {
-  group.each.setup(() => testUtils.db().truncate())
+  group.each.setup(() => testUtils.db().withGlobalTransaction())
 
   test('should default isActive to true when not specified', async ({ assert }) => {
     const user = await createTestUser()

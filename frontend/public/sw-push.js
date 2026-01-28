@@ -57,7 +57,7 @@ self.addEventListener('push', (event) => {
         ]
         // Deep link vers les invitations
         if (!options.data.url) {
-          options.data.url = '/streamer/invitations'
+          options.data.url = '/dashboard/invitations'
         }
         break
       case 'poll:started':
@@ -109,11 +109,11 @@ self.addEventListener('notificationclick', (event) => {
 
   // Action "accept" pour les invitations - rediriger vers les invitations
   if (event.action === 'accept' && notificationType === 'campaign:invitation') {
-    url = '/streamer/invitations'
+    url = '/dashboard/invitations'
   } else if (data.url) {
     url = validateUrl(data.url) || '/'
   } else if (data.invitationId) {
-    url = '/streamer/invitations'
+    url = '/dashboard/invitations'
   } else if (data.campaignId) {
     url = `/mj/campaigns/${data.campaignId}`
   } else if (data.pollInstanceId) {

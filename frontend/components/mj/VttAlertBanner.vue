@@ -22,7 +22,7 @@ const bannerConfig = computed(() => {
         title: 'Connexion Foundry révoquée',
         message: 'La connexion avec Foundry VTT a été révoquée. Veuillez reconnecter votre module.',
         actionLabel: 'Reconnecter',
-        actionTo: '/mj/campaigns/import',
+        actionTo: `/mj/campaigns/${props.campaignId}`,
       }
     case 'error':
       return {
@@ -31,8 +31,8 @@ const bannerConfig = computed(() => {
         title: 'Erreur de connexion Foundry',
         message:
           "Une erreur s'est produite avec la connexion Foundry. Vérifiez votre configuration.",
-        actionLabel: 'Voir les connexions',
-        actionTo: '/mj/campaigns/import',
+        actionLabel: 'Voir la campagne',
+        actionTo: `/mj/campaigns/${props.campaignId}`,
       }
     case 'campaign_deleted':
       return {

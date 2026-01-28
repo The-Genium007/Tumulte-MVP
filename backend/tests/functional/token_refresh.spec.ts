@@ -12,7 +12,7 @@ import {
 } from '#tests/helpers/test_utils'
 
 test.group('Token Refresh - Authorization Grant Integration', (group) => {
-  group.each.setup(() => testUtils.db().truncate())
+  group.each.setup(() => testUtils.db().withGlobalTransaction())
 
   test('grantPollAuthorization should set pollAuthorizationExpiresAt correctly', async ({
     assert,
@@ -134,7 +134,7 @@ test.group('Token Refresh - Authorization Grant Integration', (group) => {
 })
 
 test.group('Token Refresh - Streamer Token Tracking', (group) => {
-  group.each.setup(() => testUtils.db().truncate())
+  group.each.setup(() => testUtils.db().withGlobalTransaction())
 
   test('updateTokens should update encrypted tokens', async ({ assert }) => {
     const streamer = await createTestStreamer({
@@ -199,7 +199,7 @@ test.group('Token Refresh - Streamer Token Tracking', (group) => {
 })
 
 test.group('Token Refresh - Service Integration', (group) => {
-  group.each.setup(() => testUtils.db().truncate())
+  group.each.setup(() => testUtils.db().withGlobalTransaction())
 
   test('TokenRefreshService should find streamers with active authorization', async ({
     assert,
@@ -307,7 +307,7 @@ test.group('Token Refresh - Service Integration', (group) => {
 })
 
 test.group('Token Refresh - Edge Cases', (group) => {
-  group.each.setup(() => testUtils.db().truncate())
+  group.each.setup(() => testUtils.db().withGlobalTransaction())
 
   test('streamer in multiple campaigns should be processed once', async ({ assert }) => {
     const { TokenRefreshService } = await import('#services/auth/token_refresh_service')

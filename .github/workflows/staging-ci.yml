@@ -27,7 +27,7 @@ jobs:
 
       - name: Install backend dependencies
         working-directory: ./backend
-        run: npm ci
+        run: npm install
 
       - name: TypeCheck backend
         working-directory: ./backend
@@ -57,7 +57,7 @@ jobs:
         run: |
           rm -rf node_modules
           npm cache clean --force
-          npm ci
+          npm install
 
       - name: Prepare Nuxt (generate .nuxt types)
         working-directory: ./frontend
@@ -117,7 +117,7 @@ jobs:
 
       - name: Install backend dependencies
         working-directory: ./backend
-        run: npm ci
+        run: npm install
 
       - name: Run backend unit tests with coverage
         working-directory: ./backend
@@ -164,7 +164,7 @@ jobs:
         run: |
           rm -rf node_modules
           npm cache clean --force
-          npm ci
+          npm install
 
       - name: Prepare Nuxt (generate .nuxt types)
         working-directory: ./frontend
@@ -216,7 +216,7 @@ jobs:
       # Backend Build
       - name: Install backend dependencies
         working-directory: ./backend
-        run: npm ci
+        run: npm install
 
       - name: Build backend
         working-directory: ./backend
@@ -230,7 +230,7 @@ jobs:
         run: |
           rm -rf node_modules
           npm cache clean --force
-          npm ci
+          npm install
 
       - name: Build frontend
         working-directory: ./frontend
@@ -289,7 +289,7 @@ jobs:
 
       - name: Install backend dependencies
         working-directory: ./backend
-        run: npm ci
+        run: npm install
 
       - name: Run database migrations
         working-directory: ./backend

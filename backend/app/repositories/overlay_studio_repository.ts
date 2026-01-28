@@ -1,5 +1,6 @@
 import { overlayConfig as OverlayConfig } from '#models/overlay_config'
 import type { OverlayConfigData } from '#models/overlay_config'
+import { campaignMembership as CampaignMembership } from '#models/campaign_membership'
 import { inject } from '@adonisjs/core'
 
 /**
@@ -97,5 +98,25 @@ export class OverlayStudioRepository {
   async countByStreamerId(streamerId: string): Promise<number> {
     const result = await OverlayConfig.query().where('streamerId', streamerId).count('* as total')
     return Number(result[0]?.$extras?.total || 0)
+  }
+
+  /**
+   * Trouver la configuration overlay associée à un membership de campagne
+   * Cherche dans campaign_memberships.overlay_config_id
+   */
+  async findByCampaignMembership(
+    streamerId: string,
+    campaignId: string
+  ): Promise<OverlayConfig | null> {
+    // Chercher le membership avec son overlay_config_id
+    const membership = await CampaignMembership.query()
+      .where('streamerId', streamerId)
+      .where('campaignId', campaignId)
+      .where('status', 'ACTIVE')
+      .whereNotNull('overlayConfigId')
+      .preload('overlayConfig')
+      .first()
+
+    return membership?.overlayConfig ?? null
   }
 }

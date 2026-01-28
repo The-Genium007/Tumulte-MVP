@@ -1,13 +1,5 @@
 import { describe, test, expect, beforeEach, vi } from 'vitest'
 
-// Mock useSupportTrigger
-const mockTriggerSupportForError = vi.fn()
-vi.mock('@/composables/useSupportTrigger', () => ({
-  useSupportTrigger: () => ({
-    triggerSupportForError: mockTriggerSupportForError,
-  }),
-}))
-
 // Mock $fetch globally
 const mockFetch = vi.fn()
 vi.stubGlobal('$fetch', mockFetch)
@@ -26,7 +18,7 @@ describe('useSettings Composable', () => {
   })
 
   describe('revokeTwitchAccess', () => {
-    test('should call POST /streamer/revoke with correct options', async () => {
+    test('should call POST /dashboard/revoke with correct options', async () => {
       mockFetch.mockResolvedValueOnce({ success: true })
 
       const { useSettings } = await import('~/composables/useSettings')
@@ -34,7 +26,7 @@ describe('useSettings Composable', () => {
 
       const result = await revokeTwitchAccess()
 
-      expect(mockFetch).toHaveBeenCalledWith('/streamer/revoke', {
+      expect(mockFetch).toHaveBeenCalledWith('/dashboard/revoke', {
         method: 'POST',
         baseURL: 'http://localhost:3333/api/v2',
         credentials: 'include',
@@ -42,7 +34,7 @@ describe('useSettings Composable', () => {
       expect(result).toEqual({ success: true })
     })
 
-    test('should trigger support and throw error on failure', async () => {
+    test('should throw error with message from response', async () => {
       const errorResponse = { data: { error: 'Token invalide' } }
       mockFetch.mockRejectedValueOnce(errorResponse)
 
@@ -50,7 +42,6 @@ describe('useSettings Composable', () => {
       const { revokeTwitchAccess } = useSettings()
 
       await expect(revokeTwitchAccess()).rejects.toThrow('Token invalide')
-      expect(mockTriggerSupportForError).toHaveBeenCalledWith('twitch_revoke_all', errorResponse)
     })
 
     test('should throw default error message when no error data', async () => {
@@ -80,7 +71,7 @@ describe('useSettings Composable', () => {
       expect(result).toEqual({ success: true })
     })
 
-    test('should trigger support and throw error on failure', async () => {
+    test('should throw error with message from response', async () => {
       const errorResponse = { data: { error: 'Compte introuvable' } }
       mockFetch.mockRejectedValueOnce(errorResponse)
 
@@ -88,7 +79,6 @@ describe('useSettings Composable', () => {
       const { deleteAccount } = useSettings()
 
       await expect(deleteAccount()).rejects.toThrow('Compte introuvable')
-      expect(mockTriggerSupportForError).toHaveBeenCalledWith('account_delete', errorResponse)
     })
 
     test('should throw default error message when no error data', async () => {

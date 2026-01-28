@@ -16,7 +16,7 @@
       :class="urgencyClass"
     >
       <UIcon name="i-lucide-shield-check" class="size-3.5" />
-      <span class="tabular-nums">{{ formatTime(displaySeconds) }}</span>
+      <span class="tabular-nums">{{ formatDurationCompact(displaySeconds) }}</span>
     </div>
 
     <!-- Not authorized (solid neutral) -->
@@ -56,6 +56,8 @@ const emit = defineEmits<{
 const displaySeconds = ref(props.remainingSeconds || 0)
 let countdownInterval: ReturnType<typeof setInterval> | null = null
 
+const { formatDurationCompact } = useTimeFormat()
+
 // Dynamic class based on urgency (solid variant)
 const urgencyClass = computed(() => {
   if (displaySeconds.value <= 300) {
@@ -69,17 +71,6 @@ const urgencyClass = computed(() => {
     return 'bg-success-500 text-white'
   }
 })
-
-const formatTime = (seconds: number): string => {
-  if (seconds >= 3600) {
-    const hours = Math.floor(seconds / 3600)
-    const mins = Math.floor((seconds % 3600) / 60)
-    return `${hours}h${String(mins).padStart(2, '0')}`
-  }
-  const mins = Math.floor(seconds / 60)
-  const secs = seconds % 60
-  return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
-}
 
 const startCountdown = () => {
   if (countdownInterval) clearInterval(countdownInterval)

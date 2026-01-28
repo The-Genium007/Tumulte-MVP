@@ -170,9 +170,7 @@ watch(isOpen, (open) => {
             v-for="option in poll.options"
             :key="option"
             class="p-4 rounded-lg transition-colors"
-            :class="
-              isWinner(option) ? 'bg-success-light border border-success-200' : 'bg-neutral-50'
-            "
+            :class="isWinner(option) ? 'bg-success-light border border-success-200' : 'bg-muted'"
           >
             <div class="flex justify-between items-center mb-2">
               <div class="flex items-center gap-2">
@@ -199,7 +197,7 @@ watch(isOpen, (open) => {
             </div>
 
             <!-- Barre de progression -->
-            <div class="w-full bg-neutral-200 rounded-full h-2 overflow-hidden">
+            <div class="w-full bg-muted rounded-full h-2 overflow-hidden">
               <div
                 class="h-2 rounded-full transition-all duration-500"
                 :class="isWinner(option) ? 'bg-success-500' : 'bg-brand-500'"
@@ -219,7 +217,7 @@ watch(isOpen, (open) => {
             <div
               v-for="channel in results.channels"
               :key="channel.streamerId"
-              class="flex items-center justify-between text-sm p-2 bg-neutral-50 rounded"
+              class="flex items-center justify-between text-sm p-2 bg-muted rounded"
             >
               <span class="font-medium text-primary">{{ channel.streamerName }}</span>
               <span class="text-muted">{{ channel.totalVotes }} vote(s)</span>

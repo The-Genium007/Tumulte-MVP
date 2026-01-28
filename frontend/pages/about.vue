@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-linear-to-br from-gray-950 via-purple-950/20 to-gray-950 py-12">
+  <div class="min-h-screen bg-linear-to-br from-brand-950 via-secondary-950/20 to-brand-950 py-12">
     <div class="container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl">
       <UCard>
         <template #header>
@@ -101,6 +101,6 @@
 
 <script setup lang="ts">
 definePageMeta({
-  layout: 'default' as const,
+  layout: 'landing' as const,
 })
 </script>

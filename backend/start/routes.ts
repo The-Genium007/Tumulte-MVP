@@ -11,8 +11,17 @@
 import router from '@adonisjs/core/services/router'
 import { middleware } from '#start/kernel'
 
-const authController = () => import('#controllers/auth_controller')
 const supportController = () => import('#controllers/support_controller')
+const sessionController = () => import('#controllers/auth/session_controller')
+const healthController = () => import('#controllers/health_controller')
+const metricsController = () => import('#controllers/metrics_controller')
+
+// New auth controllers
+const registerController = () => import('#controllers/auth/register_controller')
+const loginController = () => import('#controllers/auth/login_controller')
+const verificationController = () => import('#controllers/auth/verification_controller')
+const passwordController = () => import('#controllers/auth/password_controller')
+const oauthController = () => import('#controllers/auth/oauth_controller')
 
 // ==========================================
 // Health check & API Info
@@ -25,28 +34,111 @@ router.get('/', async () => {
   }
 })
 
-router.get('/health', async ({ response }) => {
-  return response.ok({
-    status: 'healthy',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-  })
-})
+// Simple health check for Docker/Kubernetes probes
+router.get('/health', [healthController, 'simple'])
+
+// Detailed health check with service status (protected)
+router
+  .get('/health/details', [healthController, 'details'])
+  .use(middleware.auth({ guards: ['web', 'api'] }))
+
+// Readiness probe - checks if app can serve traffic
+router.get('/health/ready', [healthController, 'ready'])
+
+// Liveness probe - checks if app is running
+router.get('/health/live', [healthController, 'live'])
+
+// Prometheus metrics endpoint (protected - admin only in production)
+router
+  .get('/metrics', [metricsController, 'index'])
+  .use(middleware.auth({ guards: ['web', 'api'] }))
 
 // ==========================================
 // Routes d'authentification
 // ==========================================
 router
   .group(() => {
-    router.get('/twitch/redirect', [authController, 'redirect'])
-    // Rate limit OAuth callback to prevent brute force attacks on state
+    // ---- Email/Password Auth ----
     router
-      .get('/twitch/callback', [authController, 'callback'])
-      .use(middleware.rateLimit({ maxRequests: 10, windowSeconds: 60, keyPrefix: 'auth_callback' }))
+      .post('/register', [registerController, 'handle'])
+      .use(middleware.rateLimit({ maxRequests: 5, windowSeconds: 60, keyPrefix: 'auth_register' }))
     router
-      .post('/logout', [authController, 'logout'])
+      .post('/login', [loginController, 'handle'])
+      .use(middleware.authLockout())
+      .use(middleware.rateLimit({ maxRequests: 10, windowSeconds: 60, keyPrefix: 'auth_login' }))
+
+    // ---- Email Verification ----
+    router.post('/verify-email', [verificationController, 'verify']).use(
+      middleware.rateLimit({
+        maxRequests: 5,
+        windowSeconds: 60,
+        keyPrefix: 'auth_verify_email',
+      })
+    )
+    router
+      .post('/resend-verification', [verificationController, 'resend'])
       .use(middleware.auth({ guards: ['web', 'api'] }))
-    router.get('/me', [authController, 'me']).use(middleware.auth({ guards: ['web', 'api'] }))
+      .use(
+        middleware.rateLimit({
+          maxRequests: 3,
+          windowSeconds: 60,
+          keyPrefix: 'auth_resend_verification',
+        })
+      )
+
+    // ---- Password Reset ----
+    router.post('/forgot-password', [passwordController, 'forgotPassword']).use(
+      middleware.rateLimit({
+        maxRequests: 3,
+        windowSeconds: 60,
+        keyPrefix: 'auth_forgot_password',
+      })
+    )
+    router.get('/validate-reset-token', [passwordController, 'validateResetToken'])
+    router.post('/reset-password', [passwordController, 'resetPassword'])
+
+    // ---- Password Management (authenticated) ----
+    router
+      .post('/change-password', [passwordController, 'changePassword'])
+      .use(middleware.auth({ guards: ['web', 'api'] }))
+    router
+      .post('/set-password', [passwordController, 'setPassword'])
+      .use(middleware.auth({ guards: ['web', 'api'] }))
+
+    // ---- OAuth: Google ----
+    router.get('/google/redirect', [oauthController, 'googleRedirect'])
+    router
+      .get('/google/callback', [oauthController, 'googleCallback'])
+      .use(middleware.rateLimit({ maxRequests: 10, windowSeconds: 60, keyPrefix: 'auth_callback' }))
+
+    // ---- OAuth: Twitch (new unified controller) ----
+    router.get('/twitch/redirect', [oauthController, 'twitchRedirect'])
+    router
+      .get('/twitch/callback', [oauthController, 'twitchCallback'])
+      .use(middleware.rateLimit({ maxRequests: 10, windowSeconds: 60, keyPrefix: 'auth_callback' }))
+
+    // ---- OAuth: Link/Unlink providers (authenticated) ----
+    router
+      .get('/link/google', [oauthController, 'linkGoogle'])
+      .use(middleware.auth({ guards: ['web', 'api'] }))
+    router
+      .get('/link/google/callback', [oauthController, 'linkGoogleCallback'])
+      .use(middleware.auth({ guards: ['web', 'api'] }))
+    router
+      .get('/link/twitch', [oauthController, 'linkTwitch'])
+      .use(middleware.auth({ guards: ['web', 'api'] }))
+    router
+      .get('/link/twitch/callback', [oauthController, 'linkTwitchCallback'])
+      .use(middleware.auth({ guards: ['web', 'api'] }))
+    router
+      .post('/unlink', [oauthController, 'unlinkProvider'])
+      .use(middleware.auth({ guards: ['web', 'api'] }))
+
+    // ---- Session management ----
+    router
+      .post('/logout', [sessionController, 'logout'])
+      .use(middleware.auth({ guards: ['web', 'api'] }))
+    router.get('/me', [sessionController, 'me']).use(middleware.auth({ guards: ['web', 'api'] }))
   })
   .prefix('/auth')
 
@@ -140,10 +232,16 @@ router
       '#controllers/mj/vtt_connections_controller.syncCampaigns'
     )
     router.post('/vtt-connections/:id/revoke', '#controllers/mj/vtt_connections_controller.revoke')
+    router.post(
+      '/vtt-connections/:id/reauthorize',
+      '#controllers/mj/vtt_connections_controller.reauthorize'
+    )
 
     // Streamers (recherche Twitch)
     router.get('/streamers', '#controllers/mj/streamers_controller.index')
     router.get('/streamers/search', '#controllers/mj/streamers_controller.search')
+    // Alias pour compatibilité frontend
+    router.get('/dashboards/search', '#controllers/mj/streamers_controller.search')
   })
   .prefix('/mj')
   .use(middleware.auth({ guards: ['web', 'api'] }))
@@ -153,10 +251,18 @@ router
 // Routes VTT Publiques (sans authentification utilisateur)
 // Ces routes utilisent leur propre validation JWT via refresh token
 // ==========================================
-router.post(
-  '/mj/vtt-connections/refresh-token',
-  '#controllers/mj/vtt_connections_controller.refreshToken'
-)
+router
+  .post(
+    '/mj/vtt-connections/refresh-token',
+    '#controllers/mj/vtt_connections_controller.refreshToken'
+  )
+  .use(
+    middleware.rateLimit({
+      maxRequests: 30, // 30 refreshes per minute max (normal usage: ~1/hour)
+      windowSeconds: 60,
+      keyPrefix: 'vtt_refresh_token',
+    })
+  )
 
 // ==========================================
 // Routes Streamer - Architecture modulaire
@@ -274,6 +380,121 @@ router
   .use(middleware.validateUuid())
 
 // ==========================================
+// Routes Dashboard - Nouvelle destination (remplace /streamer/)
+// ==========================================
+router
+  .group(() => {
+    // Campaigns & Invitations
+    router.get('/campaigns/invitations', '#controllers/streamer/campaigns_controller.invitations')
+    router.post(
+      '/campaigns/invitations/:id/accept',
+      '#controllers/streamer/campaigns_controller.acceptInvitation'
+    )
+    router.post(
+      '/campaigns/invitations/:id/decline',
+      '#controllers/streamer/campaigns_controller.declineInvitation'
+    )
+    router.get('/campaigns', '#controllers/streamer/campaigns_controller.index')
+    router.post('/campaigns/:id/leave', '#controllers/streamer/campaigns_controller.leave')
+
+    // Authorization (double validation system)
+    router.get(
+      '/campaigns/authorization-status',
+      '#controllers/streamer/authorization_controller.status'
+    )
+    router.post(
+      '/campaigns/:campaignId/authorize',
+      '#controllers/streamer/authorization_controller.grant'
+    )
+    router.delete(
+      '/campaigns/:campaignId/authorize',
+      '#controllers/streamer/authorization_controller.revoke'
+    )
+
+    // Revoke Twitch access
+    router.post('/revoke', '#controllers/streamer/authorization_controller.revokeAccess')
+
+    // Overlay URL
+    router.get('/overlay-url', '#controllers/streamer/campaigns_controller.getOverlayUrl')
+
+    // Characters (VTT Integration)
+    router.get(
+      '/campaigns/:campaignId/characters',
+      '#controllers/streamer/characters_controller.index'
+    )
+    router.post(
+      '/campaigns/:campaignId/characters/:characterId/assign',
+      '#controllers/streamer/characters_controller.assign'
+    )
+    router.delete(
+      '/campaigns/:campaignId/characters/unassign',
+      '#controllers/streamer/characters_controller.unassign'
+    )
+
+    // Campaign Settings (Character Assignment & Overlay)
+    router.get(
+      '/campaigns/:campaignId/settings',
+      '#controllers/streamer/campaigns_controller.getSettings'
+    )
+    router.put(
+      '/campaigns/:campaignId/character',
+      '#controllers/streamer/campaigns_controller.updateCharacter'
+    )
+    router.put(
+      '/campaigns/:campaignId/overlay',
+      '#controllers/streamer/campaigns_controller.updateOverlay'
+    )
+    router.get(
+      '/campaigns/:campaignId/available-overlays',
+      '#controllers/streamer/campaigns_controller.getAvailableOverlays'
+    )
+
+    // Overlay Studio - Configurations (avec rate limiting sur les mutations)
+    router.get(
+      '/overlay-studio/configs',
+      '#controllers/overlay-studio/overlay_studio_controller.index'
+    )
+    router
+      .post(
+        '/overlay-studio/configs',
+        '#controllers/overlay-studio/overlay_studio_controller.store'
+      )
+      .use(middleware.rateLimit())
+    router.get(
+      '/overlay-studio/configs/:id',
+      '#controllers/overlay-studio/overlay_studio_controller.show'
+    )
+    router
+      .put(
+        '/overlay-studio/configs/:id',
+        '#controllers/overlay-studio/overlay_studio_controller.update'
+      )
+      .use(middleware.rateLimit())
+    router
+      .delete(
+        '/overlay-studio/configs/:id',
+        '#controllers/overlay-studio/overlay_studio_controller.destroy'
+      )
+      .use(middleware.rateLimit())
+    router
+      .post(
+        '/overlay-studio/configs/:id/activate',
+        '#controllers/overlay-studio/overlay_studio_controller.activate'
+      )
+      .use(middleware.rateLimit())
+    // Preview command - synchronisation overlay OBS (rate limited)
+    router
+      .post(
+        '/overlay-studio/preview-command',
+        '#controllers/overlay-studio/overlay_studio_controller.sendPreviewCommand'
+      )
+      .use(middleware.rateLimit())
+  })
+  .prefix('/dashboard')
+  .use(middleware.auth({ guards: ['web', 'api'] }))
+  .use(middleware.validateUuid())
+
+// ==========================================
 // Routes Overlay (publiques, sans authentification)
 // ==========================================
 router
@@ -303,6 +524,19 @@ router
   })
   .prefix('/account')
   .use(middleware.auth({ guards: ['web', 'api'] }))
+
+// ==========================================
+// Routes Admin (réservées aux administrateurs)
+// ==========================================
+router
+  .group(() => {
+    router.get('/metrics', '#controllers/admin/metrics_controller.overview')
+    router.get('/metrics/growth', '#controllers/admin/metrics_controller.growth')
+    router.get('/metrics/subscriptions', '#controllers/admin/metrics_controller.subscriptions')
+  })
+  .prefix('/admin')
+  .use(middleware.auth({ guards: ['web', 'api'] }))
+  .use(middleware.admin())
 
 // ==========================================
 // Routes Support (accessible à tous les rôles authentifiés)
@@ -366,6 +600,12 @@ router
     router.get(
       '/connection-health',
       '#controllers/webhooks/foundry_webhook_controller.connectionHealth'
+    )
+
+    // Reauthorization status (module polls this after revocation)
+    router.get(
+      '/reauthorization-status',
+      '#controllers/webhooks/foundry_webhook_controller.reauthorizationStatus'
     )
   })
   .prefix('/webhooks/foundry')

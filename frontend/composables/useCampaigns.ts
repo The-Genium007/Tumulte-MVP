@@ -6,7 +6,6 @@ import type {
   StreamerSearchResult,
   LiveStatusMap,
 } from '@/types'
-import { useSupportTrigger } from '@/composables/useSupportTrigger'
 
 export interface CampaignMember {
   id: string
@@ -31,7 +30,6 @@ export interface CampaignMember {
 export const useCampaigns = () => {
   const config = useRuntimeConfig()
   const API_URL = config.public.apiBase
-  const { triggerSupportForError } = useSupportTrigger()
 
   const campaigns = ref<Campaign[]>([])
   const selectedCampaign = ref<Campaign | null>(null)
@@ -53,7 +51,6 @@ export const useCampaigns = () => {
       campaigns.value = data.data
     } catch (error) {
       console.error('Failed to fetch campaigns:', error)
-      triggerSupportForError('campaign_fetch', error)
       throw error
     } finally {
       loading.value = false
@@ -79,7 +76,7 @@ export const useCampaigns = () => {
       campaigns.value.unshift(result.data)
       return result.data
     } catch (error) {
-      triggerSupportForError('campaign_create', error)
+      console.error('Failed to create campaign:', error)
       throw error
     }
   }
@@ -106,7 +103,7 @@ export const useCampaigns = () => {
       }
       return result.data
     } catch (error) {
-      triggerSupportForError('campaign_update', error)
+      console.error('Failed to update campaign:', error)
       throw error
     }
   }
@@ -126,7 +123,7 @@ export const useCampaigns = () => {
         selectedCampaign.value = null
       }
     } catch (error) {
-      triggerSupportForError('campaign_delete', error)
+      console.error('Failed to delete campaign:', error)
       throw error
     }
   }
@@ -143,7 +140,7 @@ export const useCampaigns = () => {
       const data = await response.json()
       return data.data.members
     } catch (error) {
-      triggerSupportForError('campaign_members_fetch', error)
+      console.error('Failed to fetch campaign members:', error)
       throw error
     }
   }
@@ -173,7 +170,7 @@ export const useCampaigns = () => {
         members: data.data.members,
       }
     } catch (error) {
-      triggerSupportForError('campaign_fetch_detail', error)
+      console.error('Failed to fetch campaign details:', error)
       throw error
     }
   }
@@ -183,16 +180,15 @@ export const useCampaigns = () => {
    */
   const inviteStreamer = async (
     campaignId: string,
-    payload: // eslint-disable-next-line @typescript-eslint/naming-convention
+    payload:
       | { streamer_id: string }
       | {
-          // eslint-disable-next-line @typescript-eslint/naming-convention
           twitch_user_id: string
-          // eslint-disable-next-line @typescript-eslint/naming-convention
+
           twitch_login: string
-          // eslint-disable-next-line @typescript-eslint/naming-convention
+
           twitch_display_name: string
-          // eslint-disable-next-line @typescript-eslint/naming-convention
+
           profile_image_url?: string
         }
   ): Promise<void> => {
@@ -205,7 +201,7 @@ export const useCampaigns = () => {
       })
       if (!response.ok) throw new Error('Failed to invite streamer')
     } catch (error) {
-      triggerSupportForError('campaign_invite', error)
+      console.error('Failed to invite streamer:', error)
       throw error
     }
   }
@@ -221,7 +217,7 @@ export const useCampaigns = () => {
       })
       if (!response.ok) throw new Error('Failed to remove member')
     } catch (error) {
-      triggerSupportForError('campaign_member_remove', error)
+      console.error('Failed to remove member:', error)
       throw error
     }
   }
@@ -230,7 +226,7 @@ export const useCampaigns = () => {
    * Recherche des streamers via Twitch API
    */
   const searchTwitchStreamers = async (query: string): Promise<StreamerSearchResult[]> => {
-    const response = await fetch(`${API_URL}/mj/streamers/search?q=${encodeURIComponent(query)}`, {
+    const response = await fetch(`${API_URL}/mj/dashboards/search?q=${encodeURIComponent(query)}`, {
       credentials: 'include',
     })
     if (!response.ok) throw new Error('Failed to search streamers')
@@ -257,14 +253,14 @@ export const useCampaigns = () => {
    */
   const fetchInvitations = async (): Promise<CampaignInvitation[]> => {
     try {
-      const response = await fetch(`${API_URL}/streamer/campaigns/invitations`, {
+      const response = await fetch(`${API_URL}/dashboard/campaigns/invitations`, {
         credentials: 'include',
       })
       if (!response.ok) throw new Error('Failed to fetch invitations')
       const data = await response.json()
       return data.data
     } catch (error) {
-      triggerSupportForError('streamer_invitations_fetch', error)
+      console.error('Failed to fetch invitations:', error)
       throw error
     }
   }
@@ -274,13 +270,13 @@ export const useCampaigns = () => {
    */
   const acceptInvitation = async (id: string): Promise<void> => {
     try {
-      const response = await fetch(`${API_URL}/streamer/campaigns/invitations/${id}/accept`, {
+      const response = await fetch(`${API_URL}/dashboard/campaigns/invitations/${id}/accept`, {
         method: 'POST',
         credentials: 'include',
       })
       if (!response.ok) throw new Error('Failed to accept invitation')
     } catch (error) {
-      triggerSupportForError('streamer_invitation_accept', error)
+      console.error('Failed to accept invitation:', error)
       throw error
     }
   }
@@ -290,13 +286,13 @@ export const useCampaigns = () => {
    */
   const declineInvitation = async (id: string): Promise<void> => {
     try {
-      const response = await fetch(`${API_URL}/streamer/campaigns/invitations/${id}/decline`, {
+      const response = await fetch(`${API_URL}/dashboard/campaigns/invitations/${id}/decline`, {
         method: 'POST',
         credentials: 'include',
       })
       if (!response.ok) throw new Error('Failed to decline invitation')
     } catch (error) {
-      triggerSupportForError('streamer_invitation_decline', error)
+      console.error('Failed to decline invitation:', error)
       throw error
     }
   }
@@ -306,14 +302,14 @@ export const useCampaigns = () => {
    */
   const fetchActiveCampaigns = async (): Promise<Campaign[]> => {
     try {
-      const response = await fetch(`${API_URL}/streamer/campaigns`, {
+      const response = await fetch(`${API_URL}/dashboard/campaigns`, {
         credentials: 'include',
       })
       if (!response.ok) throw new Error('Failed to fetch active campaigns')
       const data = await response.json()
       return data.data
     } catch (error) {
-      triggerSupportForError('streamer_campaigns_fetch', error)
+      console.error('Failed to fetch active campaigns:', error)
       throw error
     }
   }
@@ -323,13 +319,13 @@ export const useCampaigns = () => {
    */
   const leaveCampaign = async (id: string): Promise<void> => {
     try {
-      const response = await fetch(`${API_URL}/streamer/campaigns/${id}/leave`, {
+      const response = await fetch(`${API_URL}/dashboard/campaigns/${id}/leave`, {
         method: 'POST',
         credentials: 'include',
       })
       if (!response.ok) throw new Error('Failed to leave campaign')
     } catch (error) {
-      triggerSupportForError('streamer_campaign_leave', error)
+      console.error('Failed to leave campaign:', error)
       throw error
     }
   }
@@ -341,10 +337,9 @@ export const useCampaigns = () => {
    */
   const grantAuthorization = async (
     campaignId: string
-    // eslint-disable-next-line @typescript-eslint/naming-convention
   ): Promise<{ expires_at: string; remaining_seconds: number }> => {
     try {
-      const response = await fetch(`${API_URL}/streamer/campaigns/${campaignId}/authorize`, {
+      const response = await fetch(`${API_URL}/dashboard/campaigns/${campaignId}/authorize`, {
         method: 'POST',
         credentials: 'include',
       })
@@ -352,7 +347,7 @@ export const useCampaigns = () => {
       const data = await response.json()
       return data.data
     } catch (error) {
-      triggerSupportForError('authorization_grant', error)
+      console.error('Failed to grant authorization:', error)
       throw error
     }
   }
@@ -362,13 +357,13 @@ export const useCampaigns = () => {
    */
   const revokeAuthorization = async (campaignId: string): Promise<void> => {
     try {
-      const response = await fetch(`${API_URL}/streamer/campaigns/${campaignId}/authorize`, {
+      const response = await fetch(`${API_URL}/dashboard/campaigns/${campaignId}/authorize`, {
         method: 'DELETE',
         credentials: 'include',
       })
       if (!response.ok) throw new Error('Failed to revoke authorization')
     } catch (error) {
-      triggerSupportForError('authorization_revoke', error)
+      console.error('Failed to revoke authorization:', error)
       throw error
     }
   }
@@ -385,7 +380,7 @@ export const useCampaigns = () => {
       const data = await response.json()
       return data.data
     } catch (error) {
-      triggerSupportForError('health_check_twitch', error)
+      console.error('Failed to fetch live status:', error)
       throw error
     }
   }
@@ -395,29 +390,28 @@ export const useCampaigns = () => {
    */
   const getAuthorizationStatus = async (): Promise<
     {
-      // eslint-disable-next-line @typescript-eslint/naming-convention
       campaign_id: string
       // eslint-disable-next-line @typescript-eslint/naming-convention
       campaign_name: string
       // eslint-disable-next-line @typescript-eslint/naming-convention
       is_owner: boolean
-      // eslint-disable-next-line @typescript-eslint/naming-convention
+
       is_authorized: boolean
-      // eslint-disable-next-line @typescript-eslint/naming-convention
+
       expires_at: string | null
-      // eslint-disable-next-line @typescript-eslint/naming-convention
+
       remaining_seconds: number | null
     }[]
   > => {
     try {
-      const response = await fetch(`${API_URL}/streamer/campaigns/authorization-status`, {
+      const response = await fetch(`${API_URL}/dashboard/campaigns/authorization-status`, {
         credentials: 'include',
       })
       if (!response.ok) throw new Error('Failed to fetch authorization status')
       const data = await response.json()
       return data.data
     } catch (error) {
-      triggerSupportForError('authorization_status_fetch', error)
+      console.error('Failed to fetch authorization status:', error)
       throw error
     }
   }

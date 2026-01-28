@@ -1,0 +1,24 @@
+# Tumulte - Robots.txt
+# https://tumulte.app
+
+User-agent: *
+Allow: /
+Allow: /home
+Allow: /login
+Allow: /register
+Allow: /about
+
+# Pages authentifiees - ne pas indexer
+Disallow: /mj/
+Disallow: /dashboard/
+Disallow: /settings/
+Disallow: /overlay/
+
+# Pages techniques
+Disallow: /auth/
+Disallow: /verify-email
+Disallow: /reset-password
+Disallow: /forgot-password
+
+# Sitemap
+Sitemap: https://tumulte.app/sitemap.xml

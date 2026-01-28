@@ -34,10 +34,14 @@ export class CampaignDto {
   description!: string | null
   memberCount!: number
   activeMemberCount!: number
+  vttConnection!: VttConnectionStatusDto | null
   createdAt!: string
   updatedAt!: string
 
   static fromModel(campaign: Campaign): CampaignDto {
+    // Cast to access vttConnection relation (may be preloaded)
+    const campaignWithVtt = campaign as Campaign & { vttConnection?: any }
+
     return {
       id: campaign.id,
       ownerId: campaign.ownerId,
@@ -45,6 +49,7 @@ export class CampaignDto {
       description: campaign.description,
       memberCount: campaign.memberships?.length || 0,
       activeMemberCount: campaign.memberships?.filter((m) => m.status === 'ACTIVE').length || 0,
+      vttConnection: VttConnectionStatusDto.fromModel(campaignWithVtt.vttConnection),
       createdAt: campaign.createdAt.toISO() || '',
       updatedAt: campaign.updatedAt.toISO() || '',
     }
@@ -57,7 +62,7 @@ export class CampaignDto {
 
 export class CampaignDetailDto extends CampaignDto {
   members!: CampaignMemberDto[]
-  vttConnection!: VttConnectionStatusDto | null
+  declare vttConnection: VttConnectionStatusDto | null
 
   static override fromModel(campaign: Campaign): CampaignDetailDto {
     const base = CampaignDto.fromModel(campaign)

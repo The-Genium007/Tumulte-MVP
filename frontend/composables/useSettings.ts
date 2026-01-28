@@ -1,15 +1,12 @@
-import { useSupportTrigger } from '@/composables/useSupportTrigger'
-
 export const useSettings = () => {
   const config = useRuntimeConfig()
-  const { triggerSupportForError } = useSupportTrigger()
 
   /**
    * Révoque l'accès Twitch du streamer
    */
   const revokeTwitchAccess = async () => {
     try {
-      const response = await $fetch('/streamer/revoke', {
+      const response = await $fetch('/dashboard/revoke', {
         method: 'POST',
         baseURL: config.public.apiBase as string,
         credentials: 'include',
@@ -18,7 +15,6 @@ export const useSettings = () => {
       return response
     } catch (error: unknown) {
       console.error('Failed to revoke Twitch access:', error)
-      triggerSupportForError('twitch_revoke_all', error)
       const errorData = error as { data?: { error?: string } }
       throw new Error(errorData.data?.error || 'Erreur lors de la révocation')
     }
@@ -38,7 +34,6 @@ export const useSettings = () => {
       return response
     } catch (error: unknown) {
       console.error('Failed to delete account:', error)
-      triggerSupportForError('account_delete', error)
       const errorData = error as { data?: { error?: string } }
       throw new Error(errorData.data?.error || 'Erreur lors de la suppression du compte')
     }

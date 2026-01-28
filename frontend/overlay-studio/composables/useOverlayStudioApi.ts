@@ -2,7 +2,6 @@ import { ref, readonly } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
 import type { OverlayConfig, OverlayConfigData } from '../types'
 import type { PreviewCommand, PreviewMockData } from '@/types'
-import { useSupportTrigger } from '@/composables/useSupportTrigger'
 import { useOverlayStudioStore } from '../stores/overlayStudio'
 
 /**
@@ -27,7 +26,6 @@ interface OverlayConfigDetailResponse extends OverlayConfigResponse {
 export const useOverlayStudioApi = () => {
   const config = useRuntimeConfig()
   const API_URL = config.public.apiBase
-  const { triggerSupportForError } = useSupportTrigger()
 
   const configs = ref<OverlayConfig[]>([])
   const currentConfig = ref<OverlayConfig | null>(null)
@@ -44,7 +42,7 @@ export const useOverlayStudioApi = () => {
   const fetchConfigs = async (): Promise<OverlayConfig[]> => {
     loading.value = true
     try {
-      const response = await fetch(`${API_URL}/streamer/overlay-studio/configs`, {
+      const response = await fetch(`${API_URL}/dashboard/overlay-studio/configs`, {
         credentials: 'include',
       })
       if (!response.ok) throw new Error('Failed to fetch overlay configs')
@@ -53,7 +51,6 @@ export const useOverlayStudioApi = () => {
       return configs.value
     } catch (error) {
       console.error('Failed to fetch overlay configs:', error)
-      triggerSupportForError('overlay_configs_fetch', error)
       throw error
     } finally {
       loading.value = false
@@ -66,7 +63,7 @@ export const useOverlayStudioApi = () => {
   const fetchConfig = async (id: string): Promise<OverlayConfig> => {
     loading.value = true
     try {
-      const response = await fetch(`${API_URL}/streamer/overlay-studio/configs/${id}`, {
+      const response = await fetch(`${API_URL}/dashboard/overlay-studio/configs/${id}`, {
         credentials: 'include',
       })
       if (!response.ok) throw new Error('Failed to fetch overlay config')
@@ -75,7 +72,6 @@ export const useOverlayStudioApi = () => {
       return currentConfig.value
     } catch (error) {
       console.error('Failed to fetch overlay config:', error)
-      triggerSupportForError('overlay_config_fetch', error)
       throw error
     } finally {
       loading.value = false
@@ -91,7 +87,7 @@ export const useOverlayStudioApi = () => {
   }): Promise<OverlayConfig> => {
     saving.value = true
     try {
-      const response = await fetch(`${API_URL}/streamer/overlay-studio/configs`, {
+      const response = await fetch(`${API_URL}/dashboard/overlay-studio/configs`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -108,7 +104,6 @@ export const useOverlayStudioApi = () => {
       return newConfig
     } catch (error) {
       console.error('Failed to create overlay config:', error)
-      triggerSupportForError('overlay_config_create', error)
       throw error
     } finally {
       saving.value = false
@@ -127,7 +122,7 @@ export const useOverlayStudioApi = () => {
   ): Promise<OverlayConfig> => {
     saving.value = true
     try {
-      const response = await fetch(`${API_URL}/streamer/overlay-studio/configs/${id}`, {
+      const response = await fetch(`${API_URL}/dashboard/overlay-studio/configs/${id}`, {
         method: 'PUT',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -154,7 +149,6 @@ export const useOverlayStudioApi = () => {
       return updatedConfig
     } catch (error) {
       console.error('Failed to update overlay config:', error)
-      triggerSupportForError('overlay_config_update', error)
       throw error
     } finally {
       saving.value = false
@@ -166,7 +160,7 @@ export const useOverlayStudioApi = () => {
    */
   const deleteConfig = async (id: string): Promise<void> => {
     try {
-      const response = await fetch(`${API_URL}/streamer/overlay-studio/configs/${id}`, {
+      const response = await fetch(`${API_URL}/dashboard/overlay-studio/configs/${id}`, {
         method: 'DELETE',
         credentials: 'include',
       })
@@ -178,7 +172,6 @@ export const useOverlayStudioApi = () => {
       }
     } catch (error) {
       console.error('Failed to delete overlay config:', error)
-      triggerSupportForError('overlay_config_delete', error)
       throw error
     }
   }
@@ -189,7 +182,7 @@ export const useOverlayStudioApi = () => {
   const activateConfig = async (id: string): Promise<OverlayConfig> => {
     saving.value = true
     try {
-      const response = await fetch(`${API_URL}/streamer/overlay-studio/configs/${id}/activate`, {
+      const response = await fetch(`${API_URL}/dashboard/overlay-studio/configs/${id}/activate`, {
         method: 'POST',
         credentials: 'include',
       })
@@ -210,7 +203,6 @@ export const useOverlayStudioApi = () => {
       return activatedConfig
     } catch (error) {
       console.error('Failed to activate overlay config:', error)
-      triggerSupportForError('overlay_config_activate', error)
       throw error
     } finally {
       saving.value = false
@@ -245,7 +237,7 @@ export const useOverlayStudioApi = () => {
         payload.mockData = options.mockData
       }
 
-      const response = await fetch(`${API_URL}/streamer/overlay-studio/preview-command`, {
+      const response = await fetch(`${API_URL}/dashboard/overlay-studio/preview-command`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -270,7 +262,7 @@ export const useOverlayStudioApi = () => {
 
     autoSaving.value = true
     try {
-      const response = await fetch(`${API_URL}/streamer/overlay-studio/configs/${id}`, {
+      const response = await fetch(`${API_URL}/dashboard/overlay-studio/configs/${id}`, {
         method: 'PUT',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },

@@ -7,7 +7,6 @@ import type {
   PreviewCommandEvent,
   DiceRollEvent,
 } from '@/types'
-import { useSupportTrigger } from '@/composables/useSupportTrigger'
 import { loggers } from '@/utils/logger'
 
 /**
@@ -430,7 +429,6 @@ class NativeSSEClient {
 export const useWebSocket = () => {
   const config = useRuntimeConfig()
   const API_URL = config.public.apiBase
-  const { triggerSupportForError } = useSupportTrigger()
 
   const connected = ref(false)
   const reconnecting = ref(false)
@@ -531,7 +529,7 @@ export const useWebSocket = () => {
         clientExists: !!client.value,
         channel,
       })
-      triggerSupportForError('websocket_subscribe', error)
+      console.error('WebSocket subscribe error:', error)
       throw error
     }
 
@@ -584,7 +582,7 @@ export const useWebSocket = () => {
       })
       .catch((error: unknown) => {
         loggers.ws.error(`Failed to create subscription for channel ${channel}:`, error)
-        triggerSupportForError('websocket_connect', error)
+        console.error('WebSocket connect error:', error)
       })
 
     // Retourner une fonction de nettoyage asynchrone
@@ -603,9 +601,9 @@ export const useWebSocket = () => {
       onPollStart?: (data: PollStartEvent) => void
       onPollUpdate?: (data: PollUpdateEvent) => void
       onPollEnd?: (data: PollEndEvent) => void
-      // eslint-disable-next-line @typescript-eslint/naming-convention
+
       onJoinedCampaign?: (data: { campaign_id: string }) => void
-      // eslint-disable-next-line @typescript-eslint/naming-convention
+
       onLeftCampaign?: (data: { campaign_id: string }) => void
       onPreviewCommand?: (data: PreviewCommandEvent) => void
       onDiceRoll?: (data: DiceRollEvent) => void
@@ -642,13 +640,11 @@ export const useWebSocket = () => {
           break
         case 'streamer:joined-campaign':
           if (callbacks.onJoinedCampaign) {
-            // eslint-disable-next-line @typescript-eslint/naming-convention
             callbacks.onJoinedCampaign(message.data as { campaign_id: string })
           }
           break
         case 'streamer:left-campaign':
           if (callbacks.onLeftCampaign) {
-            // eslint-disable-next-line @typescript-eslint/naming-convention
             callbacks.onLeftCampaign(message.data as { campaign_id: string })
           }
           break
@@ -679,7 +675,7 @@ export const useWebSocket = () => {
       })
       .catch((error: unknown) => {
         loggers.ws.error(`Failed to create subscription for streamer channel ${channel}:`, error)
-        triggerSupportForError('websocket_subscribe', error)
+        console.error('WebSocket subscribe error:', error)
       })
 
     return async () => {
@@ -734,7 +730,7 @@ export const useWebSocket = () => {
       })
       .catch((error: unknown) => {
         loggers.ws.error(`Failed to create subscription for readiness channel ${channel}:`, error)
-        triggerSupportForError('websocket_subscribe', error)
+        console.error('WebSocket subscribe error:', error)
       })
 
     return async () => {

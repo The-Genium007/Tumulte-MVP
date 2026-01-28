@@ -22,8 +22,13 @@ if [ -n "$REDIS_HOST" ]; then
 fi
 
 # Run database migrations
+# Uses pre-compiled JavaScript if available, otherwise falls back to ts-node
 echo "🔄 Running database migrations..."
-node --loader ts-node-maintained/esm bin/console.ts migration:run --force
+if [ -f "bin/console.js" ]; then
+  node bin/console.js migration:run --force
+else
+  node --loader ts-node-maintained/esm bin/console.ts migration:run --force
+fi
 
 # Check if migrations succeeded
 if [ $? -eq 0 ]; then

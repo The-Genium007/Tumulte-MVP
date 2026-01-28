@@ -1,7 +1,7 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <template>
   <div
-    class="min-h-screen flex items-center justify-center bg-linear-to-br from-gray-950 via-purple-950/20 to-gray-950"
+    class="min-h-screen flex items-center justify-center bg-linear-to-br from-brand-950 via-secondary-950/20 to-brand-950"
   >
     <div class="text-center space-y-8 px-4 max-w-lg">
       <!-- Icon -->

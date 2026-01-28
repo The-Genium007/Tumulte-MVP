@@ -1,6 +1,7 @@
 import { BaseCommand } from '@adonisjs/core/ace'
 import { CommandOptions } from '@adonisjs/core/types/ace'
 import { streamer as Streamer } from '#models/streamer'
+import { TwitchAuthService } from '#services/auth/twitch_auth_service'
 
 export default class CheckScopes extends BaseCommand {
   static commandName = 'check:scopes'
@@ -11,14 +12,8 @@ export default class CheckScopes extends BaseCommand {
   }
 
   async run() {
-    // const authService = new TwitchAuthService()
-    const requiredScopes = [
-      'channel:manage:polls',
-      'channel:read:polls',
-      'user:read:email',
-      'chat:read',
-      'chat:edit',
-    ]
+    const authService = new TwitchAuthService()
+    const requiredScopes = authService.getRequiredScopes()
 
     this.logger.info('Vérification des scopes OAuth pour tous les streamers...\n')
 

@@ -20,6 +20,7 @@
         :model-value="modelValue.soundFile"
         :items="soundOptions"
         size="xs"
+        :ui="selectUi"
         @update:model-value="(v: string) => updateField('soundFile', v)"
       />
     </div>
@@ -89,6 +90,13 @@ const emit = defineEmits<{
   'update:modelValue': [value: AudioConfig]
 }>()
 
+// UI customization for selects
+const selectUi = {
+  base: 'bg-(--ui-bg-elevated) text-(--ui-text) border border-(--ui-border)',
+  content: 'bg-(--ui-bg-elevated) border border-(--ui-border)',
+  item: 'text-(--ui-text) data-highlighted:bg-(--ui-bg-accented)',
+}
+
 const isPlaying = ref(false)
 let audioElement: HTMLAudioElement | null = null
 
@@ -149,7 +157,7 @@ onUnmounted(() => {
   flex-direction: column;
   gap: 0.5rem;
   padding: 0.75rem;
-  background: var(--color-neutral-100);
+  background: var(--ui-bg-elevated);
   border-radius: 8px;
 }
 
@@ -166,7 +174,7 @@ onUnmounted(() => {
   gap: 0.375rem;
   font-size: 0.75rem;
   font-weight: 500;
-  color: var(--color-neutral-500);
+  color: var(--ui-text-muted);
 }
 
 .field {
@@ -177,7 +185,7 @@ onUnmounted(() => {
 
 .field label {
   font-size: 0.75rem;
-  color: var(--color-neutral-400);
+  color: var(--ui-text-muted);
 }
 
 .volume-control {
@@ -192,18 +200,19 @@ onUnmounted(() => {
   justify-content: center;
   width: 28px;
   height: 28px;
-  border: none;
-  background: var(--color-white);
+  border: 1px solid var(--ui-border);
+  background: var(--ui-bg);
   border-radius: 6px;
   cursor: pointer;
-  color: var(--color-neutral-400);
+  color: var(--ui-text-muted);
   transition: all 0.15s ease;
   flex-shrink: 0;
 }
 
 .volume-button:hover:not(:disabled) {
-  background: var(--color-neutral-200);
-  color: var(--color-text-primary);
+  background: var(--ui-bg-accented);
+  color: var(--ui-text);
+  border-color: var(--ui-primary);
 }
 
 .volume-button:disabled {
@@ -219,7 +228,7 @@ onUnmounted(() => {
 .volume-value {
   font-size: 0.75rem;
   font-weight: 500;
-  color: var(--color-text-primary);
+  color: var(--ui-text);
   font-variant-numeric: tabular-nums;
   min-width: 36px;
   text-align: right;

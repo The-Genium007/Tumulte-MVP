@@ -122,17 +122,26 @@ const handleSubmit = async () => {
       <UCard class="mb-8">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-4">
-            <UButton color="neutral" variant="soft" size="xl" square class="group" @click="goBack">
+            <UButton
+              color="neutral"
+              variant="soft"
+              size="xl"
+              square
+              class="group shrink-0"
+              @click="goBack"
+            >
               <template #leading>
                 <UIcon
                   name="i-lucide-arrow-left"
-                  class="size-12 transition-transform duration-200 group-hover:-translate-x-1"
+                  class="size-6 sm:size-12 transition-transform duration-200 group-hover:-translate-x-1"
                 />
               </template>
             </UButton>
             <div>
-              <h1 class="text-3xl font-bold text-primary">Créer un sondage</h1>
-              <p class="text-neutral-400">Ajoutez un nouveau sondage à votre campagne</p>
+              <h1 class="text-xl sm:text-3xl font-bold text-primary">Créer un sondage</h1>
+              <p class="text-sm sm:text-base text-muted">
+                Ajoutez un nouveau sondage à votre campagne
+              </p>
             </div>
           </div>
         </div>
@@ -143,9 +152,7 @@ const handleSubmit = async () => {
         <form class="space-y-8" @submit.prevent="handleSubmit">
           <!-- Question -->
           <div>
-            <label class="block text-sm font-medium text-primary-500 uppercase pl-2">
-              Question
-            </label>
+            <label class="block text-sm font-medium text-primary uppercase pl-2"> Question </label>
             <UInput
               v-model="form.question"
               placeholder="Ex: Quelle direction prendre ?"
@@ -153,21 +160,21 @@ const handleSubmit = async () => {
               maxlength="45"
               :ui="{
                 root: 'ring-0 border-0 rounded-lg overflow-hidden',
-                base: 'px-3.5 py-2.5 bg-primary-100 text-primary-500 placeholder:text-primary-400 rounded-lg',
+                base: 'px-3.5 py-2.5 bg-(--theme-input-bg) text-(--theme-input-text) placeholder:text-(--theme-input-placeholder) rounded-lg',
               }"
             />
-            <p class="text-xs text-neutral-400 pl-2 mt-2">{{ questionLength }}/45 caractères</p>
+            <p class="text-xs text-muted pl-2 mt-2">{{ questionLength }}/45 caractères</p>
           </div>
 
           <!-- Options -->
           <div>
-            <label class="block text-sm font-medium text-primary-500 uppercase pl-15">
+            <label class="block text-sm font-medium text-primary uppercase pl-15">
               Réponses (2-5 max)
             </label>
             <div class="space-y-3 mt-1">
               <div v-for="(_, idx) in options" :key="idx" class="flex items-center gap-3">
                 <span
-                  class="flex items-center justify-center size-10 rounded-full bg-neutral-100 text-sm font-medium text-primary-500 shrink-0"
+                  class="flex items-center justify-center size-10 rounded-full bg-elevated text-sm font-medium text-primary shrink-0"
                 >
                   {{ idx + 1 }}
                 </span>
@@ -179,7 +186,7 @@ const handleSubmit = async () => {
                   class="flex-1"
                   :ui="{
                     root: 'ring-0 border-0 rounded-lg overflow-hidden',
-                    base: 'px-3.5 py-2.5 bg-primary-100 text-primary-500 placeholder:text-primary-400 rounded-lg',
+                    base: 'px-3.5 py-2.5 bg-(--theme-input-bg) text-(--theme-input-text) placeholder:text-(--theme-input-placeholder) rounded-lg',
                   }"
                 />
                 <UButton
@@ -207,7 +214,7 @@ const handleSubmit = async () => {
 
           <!-- Duration -->
           <div>
-            <label class="block text-sm font-medium text-primary-500 uppercase pl-2"> Durée </label>
+            <label class="block text-sm font-medium text-primary uppercase pl-2"> Durée </label>
             <div class="flex flex-wrap items-center gap-3 mt-1">
               <!-- Presets - 2 par ligne sur mobile, 5 sur desktop -->
               <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3 w-full sm:w-auto">
@@ -219,7 +226,7 @@ const handleSubmit = async () => {
                   :class="
                     !useCustomDuration && form.durationSeconds === preset.value
                       ? 'bg-primary text-white'
-                      : 'bg-neutral-100 text-primary-500 hover:bg-neutral-200'
+                      : 'bg-elevated text-primary border border-muted hover:bg-accented'
                   "
                   @click="selectDuration(preset.value)"
                 >
@@ -235,7 +242,7 @@ const handleSubmit = async () => {
                   :class="
                     useCustomDuration
                       ? 'bg-primary text-white'
-                      : 'bg-neutral-100 text-primary-500 hover:bg-neutral-200'
+                      : 'bg-elevated text-primary border border-muted hover:bg-accented'
                   "
                   @click="enableCustomDuration"
                 >
@@ -257,13 +264,13 @@ const handleSubmit = async () => {
                   class="w-24 flex-1 sm:flex-none"
                   :ui="{
                     root: 'ring-0 border-0 rounded-lg overflow-hidden',
-                    base: 'px-3.5 py-2.5 bg-primary-100 text-primary-500 placeholder:text-primary-400 rounded-lg',
+                    base: 'px-3.5 py-2.5 bg-(--theme-input-bg) text-(--theme-input-text) placeholder:text-(--theme-input-placeholder) rounded-lg',
                   }"
                 />
-                <span class="text-neutral-400 text-sm sm:text-base">secondes</span>
+                <span class="text-muted text-sm sm:text-base">secondes</span>
               </div>
             </div>
-            <p class="text-xs text-neutral-400 pl-2 mt-2">
+            <p class="text-xs text-muted pl-2 mt-2">
               Entre 15 secondes et 30 minutes (1800 secondes)
             </p>
           </div>

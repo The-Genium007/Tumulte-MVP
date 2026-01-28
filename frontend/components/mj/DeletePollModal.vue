@@ -46,7 +46,7 @@ const handleCancel = () => {
 
         <div class="space-y-4">
           <p class="text-muted">Vous êtes sur le point de supprimer le sondage :</p>
-          <div v-if="poll" class="p-3 bg-neutral-50 rounded-lg border border-neutral-200">
+          <div v-if="poll" class="p-3 bg-muted rounded-lg border border-default">
             <p class="font-medium text-primary">{{ poll.question }}</p>
             <p class="text-sm text-muted mt-1">{{ poll.options.length }} options</p>
           </div>

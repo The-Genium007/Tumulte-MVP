@@ -170,13 +170,17 @@ export const useOverlayConfig = (streamerId: Ref<string>) => {
   const error = ref<Error | null>(null)
   const hasConfig = computed(() => elements.value.length > 0)
 
+  // ID de la campagne active (mis à jour via WebSocket)
+  const activeCampaignId = ref<string | null>(null)
+
   // Éléments visibles uniquement
   const visibleElements = computed(() => elements.value.filter((el) => el.visible))
 
   /**
    * Charge la configuration depuis l'API
+   * @param campaignId - (optionnel) ID de la campagne pour charger la config spécifique
    */
-  const fetchConfig = async (): Promise<void> => {
+  const fetchConfig = async (campaignId?: string): Promise<void> => {
     if (!streamerId.value) {
       loading.value = false
       return
@@ -187,7 +191,14 @@ export const useOverlayConfig = (streamerId: Ref<string>) => {
 
     try {
       const config = useRuntimeConfig()
-      const response = await fetch(`${config.public.apiBase}/overlay/${streamerId.value}/config`, {
+
+      // Construire l'URL avec le paramètre campaign si fourni
+      let url = `${config.public.apiBase}/overlay/${streamerId.value}/config`
+      if (campaignId) {
+        url += `?campaign=${campaignId}`
+      }
+
+      const response = await fetch(url, {
         credentials: 'include',
       })
 
@@ -213,12 +224,26 @@ export const useOverlayConfig = (streamerId: Ref<string>) => {
     }
   }
 
+  /**
+   * Met à jour la campagne active et recharge la configuration si nécessaire
+   */
+  const setActiveCampaign = async (campaignId: string | null): Promise<void> => {
+    // Ne recharger que si la campagne a changé
+    if (activeCampaignId.value !== campaignId) {
+      activeCampaignId.value = campaignId
+      console.log('[useOverlayConfig] Campaign changed, reloading config for:', campaignId)
+      await fetchConfig(campaignId ?? undefined)
+    }
+  }
+
   return {
     elements,
     visibleElements,
     loading,
     error,
     hasConfig,
+    activeCampaignId,
     fetchConfig,
+    setActiveCampaign,
   }
 }

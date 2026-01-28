@@ -143,14 +143,19 @@ onUnmounted(() => {
   padding-right: 24px;
   font-size: 0.75rem;
   font-weight: 500;
-  color: var(--color-text-primary);
-  background: var(--color-neutral-100);
-  border: none;
+  color: var(--ui-text);
+  background: var(--ui-bg-elevated);
+  border: 1px solid var(--ui-border);
   border-radius: 6px;
   text-align: center;
   font-variant-numeric: tabular-nums;
   -moz-appearance: textfield;
   appearance: textfield;
+  transition: border-color 0.15s ease;
+}
+
+.number-input:hover {
+  border-color: var(--ui-primary);
 }
 
 .number-input::-webkit-inner-spin-button,
@@ -162,20 +167,21 @@ onUnmounted(() => {
 
 .number-input:focus {
   outline: none;
-  box-shadow: 0 0 0 2px var(--color-primary-200);
+  box-shadow: 0 0 0 2px var(--ui-primary);
 }
 
 .spin-buttons {
   position: absolute;
-  right: 0;
-  top: 0;
-  bottom: 0;
+  right: 1px;
+  top: 1px;
+  bottom: 1px;
   display: flex;
   flex-direction: column;
   width: 20px;
-  border-left: 1px solid var(--color-neutral-200);
-  border-radius: 0 6px 6px 0;
+  border-left: 1px solid var(--ui-border);
+  border-radius: 0 5px 5px 0;
   overflow: hidden;
+  background: var(--ui-bg-elevated);
 }
 
 .spin-button {
@@ -183,25 +189,26 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--color-neutral-100);
+  background: var(--ui-bg-elevated);
   border: none;
   cursor: pointer;
-  color: var(--color-neutral-400);
+  color: var(--ui-text-muted);
   padding: 0;
   transition: all 0.15s ease;
 }
 
 .spin-button:hover {
-  background: var(--color-neutral-200);
-  color: var(--color-primary-500);
+  background: var(--ui-bg-accented);
+  color: var(--ui-primary);
+  border-color: var(--ui-primary);
 }
 
 .spin-button:active {
-  background: var(--color-primary-100);
-  color: var(--color-primary-600);
+  background: var(--ui-primary);
+  color: white;
 }
 
 .spin-button-up {
-  border-bottom: 1px solid var(--color-neutral-200);
+  border-bottom: 1px solid var(--ui-border);
 }
 </style>

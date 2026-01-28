@@ -28,13 +28,15 @@ export default await Env.create(new URL('../', import.meta.url), {
   DB_USER: Env.schema.string(),
   DB_PASSWORD: Env.schema.string.optional(),
   DB_DATABASE: Env.schema.string(),
+  DB_POOL_MIN: Env.schema.number.optional(),
+  DB_POOL_MAX: Env.schema.number.optional(),
 
   /*
   |----------------------------------------------------------
   | Variables for configuring session package
   |----------------------------------------------------------
   */
-  SESSION_DRIVER: Env.schema.enum(['cookie', 'memory'] as const),
+  SESSION_DRIVER: Env.schema.enum(['cookie', 'memory', 'redis'] as const),
 
   /*
   |----------------------------------------------------------
@@ -104,4 +106,29 @@ export default await Env.create(new URL('../', import.meta.url), {
   VAPID_PUBLIC_KEY: Env.schema.string.optional(),
   VAPID_PRIVATE_KEY: Env.schema.string.optional(),
   VAPID_SUBJECT: Env.schema.string.optional(),
+
+  /*
+  |----------------------------------------------------------
+  | Admin users (comma-separated list of emails)
+  |----------------------------------------------------------
+  */
+  ADMIN_EMAILS: Env.schema.string.optional(),
+
+  /*
+  |----------------------------------------------------------
+  | Google OAuth
+  |----------------------------------------------------------
+  */
+  GOOGLE_CLIENT_ID: Env.schema.string.optional(),
+  GOOGLE_CLIENT_SECRET: Env.schema.string.optional(),
+  GOOGLE_REDIRECT_URI: Env.schema.string.optional(),
+
+  /*
+  |----------------------------------------------------------
+  | Email service (Resend)
+  |----------------------------------------------------------
+  */
+  RESEND_API_KEY: Env.schema.string.optional(),
+  MAIL_FROM_ADDRESS: Env.schema.string.optional(),
+  MAIL_FROM_NAME: Env.schema.string.optional(),
 })

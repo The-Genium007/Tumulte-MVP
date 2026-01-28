@@ -17,11 +17,19 @@ const corsConfig = defineConfig({
       return true
     }
 
-    // Allow ALL origins for Foundry VTT webhooks
-    // These endpoints use API key authentication, so CORS is not needed for security
+    // Allow ALL origins for Foundry VTT endpoints
+    // These endpoints use their own authentication (API key or JWT)
     // Foundry can run on any host (localhost, cloud, self-hosted, etc.)
     const url = ctx.request.url()
+
+    // Foundry webhooks (API key auth)
     if (url.startsWith('/webhooks/foundry')) {
+      return true
+    }
+
+    // VTT token refresh endpoint (JWT auth with fingerprint validation)
+    // This endpoint is called by the Foundry module to refresh session tokens
+    if (url === '/mj/vtt-connections/refresh-token') {
       return true
     }
 

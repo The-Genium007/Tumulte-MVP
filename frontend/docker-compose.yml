@@ -1,9 +1,68 @@
 services:
-  # Frontend - Nuxt dashboard
+  # Frontend - Nuxt dashboard (SPA mode)
   # ENV_SUFFIX differentiates environments: "prod" or "staging"
   # Cloudflare tunnel uses: tumulte-frontend-prod:3000 or tumulte-frontend-staging:3000
+  #
+  # ============================================================================
+  # DEPLOYMENT MODES
+  # ============================================================================
+  # SWARM MODE: docker stack deploy -c docker-compose.yml tumulte
+  # COMPOSE MODE: docker compose up -d (replicas ignored)
+  #
+  # ============================================================================
+  # SCALING GUIDE (Docker Swarm)
+  # ============================================================================
+  # The frontend is STATELESS (SPA mode) - safe to scale horizontally.
+  # No sticky sessions needed - any replica can serve any request.
+  #
+  # Recommended replicas based on concurrent users:
+  #   - 1,000 users  → 2 replicas (default)
+  #   - 5,000 users  → 3 replicas
+  #   - 10,000 users → 4-5 replicas
+  #   - 20,000+ users → 6+ replicas
+  #
+  # Scale command:
+  #   docker service scale tumulte_frontend=5
+  #
+  # Or update .env:
+  #   FRONTEND_REPLICAS=5
+  #   docker stack deploy -c docker-compose.yml tumulte
+  #
+  # ============================================================================
+  # MONITORING (Prometheus + Grafana)
+  # ============================================================================
+  # Endpoints exposed:
+  #   GET /health       → Liveness probe (Docker healthcheck)
+  #   GET /health/ready → Readiness probe (load balancer)
+  #   GET /health/live  → Minimal liveness (fast polling)
+  #   GET /metrics      → Prometheus metrics
+  #
+  # Add to prometheus.yml scrape_configs:
+  #
+  #   - job_name: 'tumulte-frontend'
+  #     dns_sd_configs:
+  #       - names: ['tasks.tumulte_frontend']
+  #         type: A
+  #         port: 3000
+  #     metrics_path: '/metrics'
+  #     scrape_interval: 15s
+  #
+  # Key metrics for scaling decisions:
+  #   - tumulte_frontend_http_requests_total (rate)
+  #   - tumulte_frontend_http_request_duration_seconds (p95)
+  #   - tumulte_frontend_nodejs_heap_size_used_bytes
+  #   - tumulte_frontend_process_cpu_seconds_total (rate)
+  #
+  # Grafana alert suggestions:
+  #   - CPU > 80% for 5min → Scale up
+  #   - Memory > 800MB → Scale up or investigate leak
+  #   - Request latency p95 > 500ms → Scale up
+  #   - Error rate > 1% → Investigate
+  #
+  # ============================================================================
   frontend:
-    container_name: tumulte-frontend-${ENV_SUFFIX:-prod}
+    # Note: container_name removed - incompatible with replicas
+    # Dokploy manages container naming automatically
     hostname: tumulte-frontend-${ENV_SUFFIX:-prod}
     build:
       context: .
@@ -27,16 +86,36 @@ services:
       SENTRY_ORG: ${SENTRY_ORG}
       SENTRY_PROJECT: ${SENTRY_PROJECT}
       SENTRY_AUTH_TOKEN: ${SENTRY_AUTH_TOKEN}
+
+      # Analytics (PostHog)
+      NUXT_PUBLIC_POSTHOG_KEY: ${NUXT_PUBLIC_POSTHOG_KEY}
+      NUXT_PUBLIC_POSTHOG_HOST: ${NUXT_PUBLIC_POSTHOG_HOST:-https://eu.i.posthog.com}
+
+      # Analytics (GTM - optional)
+      NUXT_PUBLIC_GTM_ID: ${NUXT_PUBLIC_GTM_ID}
     networks:
       - dokploy-network
     restart: unless-stopped
+
+    # Health check using dedicated lightweight endpoint
+    # Returns JSON: {"status":"healthy","timestamp":"..."}
     healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:3000/']
+      test: ['CMD', 'curl', '-f', 'http://localhost:3000/health']
       interval: 30s
-      timeout: 10s
+      timeout: 5s
       retries: 3
       start_period: 15s
+
+    # ========================================================================
+    # SWARM DEPLOYMENT CONFIGURATION
+    # ========================================================================
     deploy:
+      # Number of replicas - adjust based on traffic
+      # Override with FRONTEND_REPLICAS in .env
+      replicas: ${FRONTEND_REPLICAS:-2}
+
+      # Resource limits per replica
+      # Adjust based on monitoring data from /metrics
       resources:
         limits:
           cpus: '1'
@@ -44,10 +123,38 @@ services:
         reservations:
           cpus: '0.5'
           memory: 512M
+
+      # Rolling update: deploy new version without downtime
+      # - parallelism: 1 = update one replica at a time
+      # - order: start-first = new replica starts before old stops
+      # - monitor: 30s = watch new replica for 30s before continuing
       update_config:
         parallelism: 1
         delay: 10s
         failure_action: rollback
+        order: start-first
+        monitor: 30s
+
+      # Automatic rollback on deployment failure
+      rollback_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: pause
+        order: start-first
+
+      # Restart policy for crashed containers
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+
+      # Placement constraints (optional - for multi-node clusters)
+      # Uncomment to restrict frontend to specific nodes
+      # placement:
+      #   constraints:
+      #     - node.role == worker
+      #     - node.labels.type == frontend
 
 # Networks
 networks:

@@ -219,7 +219,7 @@ const applyPreset = (preset: BackdropPreset) => {
 
 .inline-field label {
   font-size: 0.75rem;
-  color: var(--color-text-muted);
+  color: var(--ui-text-muted);
 }
 
 .slider-field {
@@ -236,12 +236,12 @@ const applyPreset = (preset: BackdropPreset) => {
 
 .slider-header label {
   font-size: 0.75rem;
-  color: var(--color-text-muted);
+  color: var(--ui-text-muted);
 }
 
 .slider-value {
   font-size: 0.75rem;
-  color: var(--color-text-primary);
+  color: var(--ui-text);
   font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
@@ -295,23 +295,23 @@ const applyPreset = (preset: BackdropPreset) => {
 
 .preset-button {
   padding: 0.375rem 0.75rem;
-  border: 1px solid var(--color-neutral-200);
+  border: 1px solid var(--ui-border);
   background: transparent;
   border-radius: 6px;
   cursor: pointer;
   font-size: 0.75rem;
-  color: var(--color-text-muted);
+  color: var(--ui-text-muted);
   transition: all 0.15s ease;
 }
 
 .preset-button:hover {
-  border-color: var(--color-neutral-300);
-  background: var(--color-neutral-50);
+  border-color: var(--ui-border-hover);
+  background: var(--ui-bg-elevated);
 }
 
 .preset-button.active {
-  border-color: var(--color-primary-500);
-  background: var(--color-primary-50);
-  color: var(--color-primary-600);
+  border-color: var(--ui-primary);
+  background: var(--ui-bg-accented);
+  color: var(--ui-primary);
 }
 </style>

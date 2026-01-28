@@ -34,7 +34,7 @@ export class CampaignRepository {
   }
 
   /**
-   * Trouver toutes les campagnes d'un propriétaire avec leurs membres
+   * Trouver toutes les campagnes d'un propriétaire avec leurs membres et connexion VTT
    */
   async findByOwnerIdWithMembers(ownerId: string): Promise<Campaign[]> {
     return await Campaign.query()
@@ -42,6 +42,7 @@ export class CampaignRepository {
       .preload('memberships', (query) => {
         query.preload('streamer')
       })
+      .preload('vttConnection')
       .orderBy('created_at', 'desc')
   }
 

@@ -97,7 +97,10 @@ watch(
 </script>
 
 <template>
-  <div class="flex flex-col" :style="{ maxHeight: maxHeight || 'none' }">
+  <div
+    class="flex flex-col bg-subtle border border-default rounded-lg p-4"
+    :style="{ maxHeight: maxHeight || 'none' }"
+  >
     <!-- Header -->
     <div class="mb-4">
       <h3 class="text-lg font-semibold text-primary">Événements récents</h3>
@@ -116,9 +119,9 @@ watch(
       v-else-if="finishedPolls.length === 0"
       class="flex-1 flex flex-col items-center justify-center text-center py-12"
     >
-      <UIcon name="i-lucide-history" class="size-12 text-neutral-400 mb-4" />
-      <p class="text-base font-normal text-neutral-400">Aucun sondage terminé</p>
-      <p class="text-sm text-neutral-400 mt-1">Les résultats de vos sondages apparaîtront ici</p>
+      <UIcon name="i-lucide-history" class="size-12 text-muted mb-4" />
+      <p class="text-base font-normal text-muted">Aucun sondage terminé</p>
+      <p class="text-sm text-muted mt-1">Les résultats de vos sondages apparaîtront ici</p>
     </div>
 
     <!-- Liste des sondages terminés -->
@@ -126,7 +129,7 @@ watch(
       <div
         v-for="poll in finishedPolls"
         :key="poll.id"
-        class="flex items-center gap-3 p-3 bg-neutral-50 rounded-lg cursor-pointer hover:bg-neutral-100 transition-colors group"
+        class="flex items-center gap-3 p-3 bg-muted rounded-lg cursor-pointer hover:bg-muted/75 transition-colors group"
         @click="emit('viewResults', poll)"
       >
         <!-- Icône -->

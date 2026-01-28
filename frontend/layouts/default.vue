@@ -10,6 +10,9 @@
 
     <!-- Widgets globaux -->
     <SupportWidget v-if="showSupportWidget" />
+
+    <!-- Cookie Consent Banner (RGPD) -->
+    <CookieConsentBanner />
   </div>
 </template>
 
@@ -18,6 +21,7 @@ import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import AppFooter from '@/components/AppFooter.vue'
 import SupportWidget from '@/components/SupportWidget.vue'
+import CookieConsentBanner from '@/components/CookieConsentBanner.vue'
 
 const route = useRoute()
 const showSupportWidget = computed(() => route.name !== 'login')

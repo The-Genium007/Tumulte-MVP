@@ -88,7 +88,7 @@ export class CampaignsRepository {
  * Repository pour les campagnes (Streamer)
  */
 export class StreamerCampaignsRepository {
-  private basePath = '/streamer'
+  private basePath = '/dashboard'
 
   /**
    * Liste les invitations en attente

@@ -119,7 +119,9 @@ const borderStyleOptions = [
 
 // UI customization for select to make it more visible
 const selectUi = {
-  base: 'bg-neutral-100 text-neutral-600',
+  base: 'bg-(--ui-bg-elevated) text-(--ui-text) border border-(--ui-border)',
+  content: 'bg-(--ui-bg-elevated) border border-(--ui-border)',
+  item: 'text-(--ui-text) data-highlighted:bg-(--ui-bg-accented)',
 }
 
 const sides = [
@@ -187,7 +189,7 @@ const updateField = <K extends keyof BorderConfig>(field: K, value: BorderConfig
 
 .field label {
   font-size: 0.75rem;
-  color: var(--color-neutral-400);
+  color: var(--ui-text-muted);
 }
 
 .inline-field {
@@ -199,7 +201,7 @@ const updateField = <K extends keyof BorderConfig>(field: K, value: BorderConfig
 
 .inline-field label {
   font-size: 0.75rem;
-  color: var(--color-neutral-400);
+  color: var(--ui-text-muted);
 }
 
 .input-with-unit {
@@ -210,7 +212,7 @@ const updateField = <K extends keyof BorderConfig>(field: K, value: BorderConfig
 
 .unit {
   font-size: 0.75rem;
-  color: var(--color-neutral-400);
+  color: var(--ui-text-muted);
 }
 
 .individual-sides {
@@ -218,7 +220,7 @@ const updateField = <K extends keyof BorderConfig>(field: K, value: BorderConfig
   flex-direction: column;
   gap: 0.5rem;
   padding: 0.5rem;
-  background: var(--color-neutral-100);
+  background: var(--ui-bg-elevated);
   border-radius: 8px;
 }
 
@@ -233,7 +235,7 @@ const updateField = <K extends keyof BorderConfig>(field: K, value: BorderConfig
   align-items: center;
   gap: 0.25rem;
   font-size: 0.625rem;
-  color: var(--color-neutral-400);
+  color: var(--ui-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -242,14 +244,14 @@ const updateField = <K extends keyof BorderConfig>(field: K, value: BorderConfig
   display: flex;
   justify-content: center;
   padding: 1rem;
-  background: var(--color-neutral-100);
+  background: var(--ui-bg-elevated);
   border-radius: 8px;
 }
 
 .preview-box {
   width: 60px;
   height: 40px;
-  background: var(--color-neutral-200);
+  background: var(--ui-bg-accented);
   border-radius: 4px;
 }
 </style>

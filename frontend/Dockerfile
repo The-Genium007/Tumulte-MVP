@@ -56,9 +56,9 @@ USER nodejs
 # Expose application port
 EXPOSE 3000
 
-# Health check endpoint
-HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
-    CMD curl -f http://localhost:3000/ || exit 1
+# Health check using dedicated endpoint (lightweight, no HTML parsing)
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+    CMD curl -f http://localhost:3000/health || exit 1
 
 # Use dumb-init to handle signals properly
 ENTRYPOINT ["dumb-init", "--"]

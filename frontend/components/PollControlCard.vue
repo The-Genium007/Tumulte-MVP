@@ -12,7 +12,7 @@
         />
 
         <!-- Question -->
-        <h3 class="text-lg font-semibold text-primary flex-1">{{ poll?.question }}</h3>
+        <h3 class="heading-card flex-1">{{ poll?.question }}</h3>
 
         <!-- Chrono (si en cours) -->
         <div
@@ -133,8 +133,8 @@
           :class="[
             'p-3 rounded-lg border transition-all duration-300',
             isWinningOption(option)
-              ? 'bg-linear-to-br from-warning-medium to-warning-light border-warning-light shadow-lg shadow-warning-500/20'
-              : 'bg-neutral-100 border-default',
+              ? 'bg-linear-to-br from-warning-400 to-warning-200 border-warning-300 shadow-lg shadow-warning-500/20'
+              : 'bg-muted border-default',
           ]"
         >
           <div class="flex items-center justify-between mb-2">
@@ -187,7 +187,7 @@
           </div>
         </div>
       </div>
-      <p v-if="totalVotes > 0" class="text-muted text-xs text-center mt-3">
+      <p v-if="totalVotes > 0" class="text-caption text-center mt-3">
         Total: {{ totalVotes }} votes
       </p>
     </div>

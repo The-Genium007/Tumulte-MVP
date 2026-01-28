@@ -31,7 +31,7 @@ const formatAuthTime = (seconds: number | null): string => {
 
 <template>
   <div
-    class="bg-neutral-50 rounded-lg p-4 flex flex-col"
+    class="bg-subtle border border-default rounded-lg p-4 flex flex-col"
     :style="{ maxHeight: maxHeight || 'none' }"
   >
     <!-- Header -->
@@ -66,8 +66,8 @@ const formatAuthTime = (seconds: number | null): string => {
       v-else-if="activeMembers.length === 0"
       class="flex flex-col items-center justify-center text-center py-12"
     >
-      <UIcon name="i-lucide-user-plus" class="size-12 text-neutral-400 mb-4" />
-      <p class="text-base font-normal text-neutral-400">Aucun joueur dans cette campagne</p>
+      <UIcon name="i-lucide-user-plus" class="size-12 text-muted mb-4" />
+      <p class="text-base font-normal text-muted">Aucun joueur dans cette campagne</p>
     </div>
 
     <!-- Liste des joueurs -->
@@ -75,7 +75,7 @@ const formatAuthTime = (seconds: number | null): string => {
       <div
         v-for="member in activeMembers"
         :key="member.id"
-        class="flex items-center justify-between p-3 bg-white rounded-lg"
+        class="flex items-center justify-between p-3 bg-(--theme-card-bg) rounded-lg"
       >
         <!-- Avatar + Nom -->
         <div class="flex items-center gap-2 min-w-0 flex-1">

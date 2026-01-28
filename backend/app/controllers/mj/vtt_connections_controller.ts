@@ -260,14 +260,97 @@ export default class VttConnectionsController {
   }
 
   /**
+   * Reauthorize a revoked VTT connection
+   * POST /mj/vtt-connections/:id/reauthorize
+   *
+   * This allows re-enabling a revoked connection without going through the full pairing process.
+   * The connection data (worldId, apiKey, campaign) are preserved.
+   */
+  async reauthorize({ auth, params, response }: HttpContext) {
+    const user = auth.user!
+
+    const connection = await VttConnection.query()
+      .where('id', params.id)
+      .where('user_id', user.id)
+      .preload('provider')
+      .firstOrFail()
+
+    // Only allow reauthorization of revoked connections
+    if (connection.status !== 'revoked') {
+      return response.badRequest({
+        error: 'Only revoked connections can be reauthorized',
+        currentStatus: connection.status,
+      })
+    }
+
+    // Generate fingerprint for security validation
+    const fingerprint = this.vttPairingService.generateFingerprint(
+      connection.worldId || '',
+      connection.moduleVersion || '2.0.0'
+    )
+
+    // Reactivate connection
+    connection.status = 'active'
+    connection.tunnelStatus = 'connecting'
+    connection.lastHeartbeatAt = DateTime.now()
+    connection.tokenVersion = (connection.tokenVersion || 1) + 1 // Invalidate old tokens
+    connection.connectionFingerprint = fingerprint
+    await connection.save()
+
+    // Generate new session tokens
+    const tokens = await this.vttPairingService.generateSessionTokensForConnection(
+      connection.id,
+      user.id,
+      connection.tokenVersion,
+      fingerprint
+    )
+
+    // Build API URL
+    const apiUrl = env.get('API_URL') || `http://${env.get('HOST')}:${env.get('PORT')}`
+
+    // Store reauthorization data for the module to pick up
+    const reauthorizedData = {
+      connectionId: connection.id,
+      apiKey: connection.apiKey,
+      sessionToken: tokens.sessionToken,
+      refreshToken: tokens.refreshToken,
+      expiresIn: tokens.expiresIn,
+      serverUrl: apiUrl,
+      fingerprint,
+      reauthorizedAt: DateTime.now().toISO(),
+    }
+
+    await redis.setex(
+      `pairing:reauthorized:${connection.worldId}`,
+      300, // 5 minutes for module to pick up
+      JSON.stringify(reauthorizedData)
+    )
+
+    return response.ok({
+      success: true,
+      message: 'Connection reauthorized successfully',
+      connection: {
+        id: connection.id,
+        name: connection.name,
+        worldId: connection.worldId,
+        worldName: connection.worldName,
+        status: connection.status,
+        tunnelStatus: connection.tunnelStatus,
+      },
+    })
+  }
+
+  /**
    * Refresh session token
    * POST /mj/vtt-connections/refresh-token
+   *
+   * Security: Validates fingerprint to detect token theft across Foundry instances
    */
   async refreshToken({ request, response }: HttpContext) {
-    const { refreshToken } = request.only(['refreshToken'])
+    const { refreshToken, fingerprint } = request.only(['refreshToken', 'fingerprint'])
 
     try {
-      const tokens = await this.vttPairingService.refreshSessionToken(refreshToken)
+      const tokens = await this.vttPairingService.refreshSessionToken(refreshToken, fingerprint)
 
       return response.ok({
         sessionToken: tokens.sessionToken,
@@ -332,6 +415,12 @@ export default class VttConnectionsController {
         .preload('provider')
         .first()
 
+      // Generate fingerprint for security validation on token refresh
+      const fingerprint = this.vttPairingService.generateFingerprint(
+        pending.worldId,
+        pending.moduleVersion
+      )
+
       if (connection) {
         // Reuse existing connection - update it with new pairing info
         connection.status = 'active'
@@ -340,6 +429,7 @@ export default class VttConnectionsController {
         connection.moduleVersion = pending.moduleVersion
         connection.lastHeartbeatAt = DateTime.now()
         connection.tokenVersion = (connection.tokenVersion || 1) + 1 // Invalidate old tokens
+        connection.connectionFingerprint = fingerprint // Update fingerprint
         await connection.save()
       } else {
         // Get Foundry provider
@@ -364,22 +454,25 @@ export default class VttConnectionsController {
           moduleVersion: pending.moduleVersion,
           lastHeartbeatAt: DateTime.now(),
           tokenVersion: 1,
+          connectionFingerprint: fingerprint,
         })
 
         await connection.load('provider')
       }
 
-      // Generate session tokens
+      // Generate session tokens with fingerprint for security
       const tokens = await this.vttPairingService.generateSessionTokensForConnection(
         connection.id,
         user.id,
-        connection.tokenVersion
+        connection.tokenVersion,
+        fingerprint
       )
 
       // Build API URL - use API_URL env var if set, otherwise construct from HOST:PORT
       const apiUrl = env.get('API_URL') || `http://${env.get('HOST')}:${env.get('PORT')}`
 
       // Store completed pairing for the module to pick up
+      // Include fingerprint so the module can send it back on token refresh
       const completedData = {
         connectionId: connection.id,
         apiKey: connection.apiKey,
@@ -387,6 +480,7 @@ export default class VttConnectionsController {
         refreshToken: tokens.refreshToken,
         expiresIn: tokens.expiresIn,
         serverUrl: apiUrl,
+        fingerprint, // Module should store this and send it on refresh-token calls
       }
 
       await redis.setex(

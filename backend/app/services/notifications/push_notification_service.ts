@@ -172,7 +172,7 @@ export class PushNotificationService {
       title: 'Nouvelle invitation',
       body: `Vous avez été invité à rejoindre la campagne "${campaignName}"`,
       data: {
-        url: '/streamer/invitations',
+        url: '/dashboard/invitations',
         campaignId,
       },
       actions: [
@@ -267,7 +267,7 @@ export class PushNotificationService {
       title: `${campaignName} - Action requise`,
       body: `Pour participer aux sondages : ${body}`,
       data: {
-        url: '/streamer/campaigns',
+        url: '/dashboard/campaigns',
         issues,
         campaignName,
       },

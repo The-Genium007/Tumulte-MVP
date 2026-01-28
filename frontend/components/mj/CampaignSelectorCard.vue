@@ -16,8 +16,8 @@ const modelValue = defineModel<string | null>({ required: true })
         <UButton
           color="primary"
           icon="i-lucide-plus"
-          label="Ajouter une campagne"
-          to="/mj/campaigns/import"
+          label="Connecter un VTT"
+          to="/mj/vtt-connections/create"
         />
       </div>
     </template>

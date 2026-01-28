@@ -1,11 +1,9 @@
 import { ref } from 'vue'
 import type { Character, CampaignSettings } from '@/types'
-import { useSupportTrigger } from '@/composables/useSupportTrigger'
 
 export const useCampaignCharacters = () => {
   const config = useRuntimeConfig()
   const API_URL = config.public.apiBase
-  const { triggerSupportForError } = useSupportTrigger()
 
   const characters = ref<Character[]>([])
   const currentCharacterId = ref<string | null>(null)
@@ -17,7 +15,7 @@ export const useCampaignCharacters = () => {
   const fetchCharacters = async (campaignId: string): Promise<void> => {
     loading.value = true
     try {
-      const response = await fetch(`${API_URL}/streamer/campaigns/${campaignId}/characters`, {
+      const response = await fetch(`${API_URL}/dashboard/campaigns/${campaignId}/characters`, {
         credentials: 'include',
       })
 
@@ -28,7 +26,6 @@ export const useCampaignCharacters = () => {
       currentCharacterId.value = data.currentAssignment?.character?.id || null
     } catch (error) {
       console.error('Failed to fetch characters:', error)
-      triggerSupportForError('characters_fetch', error)
       characters.value = []
       currentCharacterId.value = null
       throw error
@@ -46,7 +43,7 @@ export const useCampaignCharacters = () => {
   ): Promise<void> => {
     try {
       const response = await fetch(
-        `${API_URL}/streamer/campaigns/invitations/${invitationId}/accept`,
+        `${API_URL}/dashboard/campaigns/invitations/${invitationId}/accept`,
         {
           method: 'POST',
           credentials: 'include',
@@ -60,7 +57,7 @@ export const useCampaignCharacters = () => {
         throw new Error(error.error || 'Failed to accept invitation')
       }
     } catch (error) {
-      triggerSupportForError('invitation_accept_character', error)
+      console.error('Failed to accept invitation with character:', error)
       throw error
     }
   }
@@ -70,7 +67,7 @@ export const useCampaignCharacters = () => {
    */
   const getCampaignSettings = async (campaignId: string): Promise<CampaignSettings> => {
     try {
-      const response = await fetch(`${API_URL}/streamer/campaigns/${campaignId}/settings`, {
+      const response = await fetch(`${API_URL}/dashboard/campaigns/${campaignId}/settings`, {
         credentials: 'include',
       })
 
@@ -78,7 +75,7 @@ export const useCampaignCharacters = () => {
 
       return await response.json()
     } catch (error) {
-      triggerSupportForError('campaign_settings_fetch', error)
+      console.error('Failed to fetch campaign settings:', error)
       throw error
     }
   }
@@ -88,7 +85,7 @@ export const useCampaignCharacters = () => {
    */
   const updateCharacter = async (campaignId: string, characterId: string): Promise<void> => {
     try {
-      const response = await fetch(`${API_URL}/streamer/campaigns/${campaignId}/character`, {
+      const response = await fetch(`${API_URL}/dashboard/campaigns/${campaignId}/character`, {
         method: 'PUT',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -100,7 +97,7 @@ export const useCampaignCharacters = () => {
         throw new Error(error.error || 'Failed to update character')
       }
     } catch (error) {
-      triggerSupportForError('character_update', error)
+      console.error('Failed to update character:', error)
       throw error
     }
   }
@@ -114,7 +111,7 @@ export const useCampaignCharacters = () => {
     overlayConfigId: string | null
   ): Promise<void> => {
     try {
-      const response = await fetch(`${API_URL}/streamer/campaigns/${campaignId}/overlay`, {
+      const response = await fetch(`${API_URL}/dashboard/campaigns/${campaignId}/overlay`, {
         method: 'PUT',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -126,7 +123,7 @@ export const useCampaignCharacters = () => {
         throw new Error(error.error || 'Failed to update overlay')
       }
     } catch (error) {
-      triggerSupportForError('overlay_update', error)
+      console.error('Failed to update overlay:', error)
       throw error
     }
   }

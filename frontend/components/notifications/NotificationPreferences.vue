@@ -52,11 +52,11 @@
         <div class="space-y-4">
           <h3 class="text-lg font-medium text-primary">Types de notifications</h3>
 
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div
               v-for="pref in notificationTypes"
               :key="pref.key"
-              class="flex items-center justify-between p-3 bg-neutral-100 rounded-lg"
+              class="flex items-center justify-between gap-3 p-3 bg-muted rounded-lg"
             >
               <div>
                 <p class="font-medium text-primary">{{ pref.label }}</p>
@@ -80,7 +80,7 @@
           <div
             v-for="sub in subscriptions"
             :key="sub.id"
-            class="flex items-center justify-between p-3 bg-neutral-100 rounded-lg"
+            class="flex items-center justify-between p-3 bg-muted rounded-lg border border-default"
           >
             <div class="flex items-center gap-3">
               <UIcon name="i-lucide-smartphone" class="size-5 text-muted" />

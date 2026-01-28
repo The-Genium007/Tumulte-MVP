@@ -4,7 +4,7 @@ import { defineConfig, stores } from '@adonisjs/session'
 
 const sessionConfig = defineConfig({
   enabled: true,
-  cookieName: 'adonis-session',
+  cookieName: 'tumulte-session',
 
   /**
    * When set to true, the session id cookie will be deleted
@@ -33,9 +33,10 @@ const sessionConfig = defineConfig({
   },
 
   /**
-   * The store to use. Make sure to validate the environment
-   * variable in order to infer the store name without any
-   * errors.
+   * The store to use. In production, use Redis for:
+   * - Session sharing across multiple instances (Docker Swarm)
+   * - Ability to revoke sessions (logout global)
+   * - Session visibility and management
    */
   store: env.get('SESSION_DRIVER'),
 
@@ -45,6 +46,11 @@ const sessionConfig = defineConfig({
    */
   stores: {
     cookie: stores.cookie(),
+    redis: stores.redis({
+      connection: 'main',
+      // Prefix for Redis keys to identify sessions
+      // Format: session:{sessionId}
+    }),
   },
 })
 

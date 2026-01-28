@@ -10,16 +10,15 @@ import { PushNotificationService } from '#services/notifications/push_notificati
 import VttImportService from '#services/vtt/vtt_import_service'
 import VttConnection from '#models/vtt_connection'
 import { campaign as Campaign } from '#models/campaign'
-import { CampaignDto } from '#dtos/campaigns/campaign_dto'
-import { CampaignDetailDto } from '#dtos/campaigns/campaign_detail_dto'
-import { CampaignInvitationDto } from '#dtos/campaigns/campaign_invitation_dto'
+import { CampaignDto, CampaignDetailDto, CampaignInvitationDto } from '#dtos/campaigns/campaign_dto'
 import { validateRequest } from '#middleware/validate_middleware'
 import {
   createCampaignSchema,
   updateCampaignSchema,
-} from '#validators/campaigns/create_campaign_validator'
-import { inviteStreamerSchema } from '#validators/campaigns/invite_streamer_validator'
-import { importCampaignValidator } from '#validators/campaigns/import_campaign_validator'
+  inviteStreamerSchema,
+  importCampaignSchema,
+  type ImportCampaignDto,
+} from '#validators/campaigns/campaign_validators'
 
 /**
  * Contrôleur pour la gestion des campagnes (MJ)
@@ -343,7 +342,7 @@ export default class CampaignsController {
         title: 'Session de sondage en attente',
         body: `Le MJ de "${campaign.name}" souhaite lancer une session. Veuillez autoriser votre chaîne.`,
         data: {
-          url: '/streamer',
+          url: '/dashboard',
           campaignId: params.id,
         },
         actions: [
@@ -373,7 +372,11 @@ export default class CampaignsController {
    * POST /api/v2/mj/campaigns/import
    */
   async importFromVtt({ auth, request, response }: HttpContext) {
-    const data = await request.validateUsing(importCampaignValidator)
+    await validateRequest(importCampaignSchema)(
+      { request, response } as HttpContext,
+      async () => {}
+    )
+    const data = request.all() as ImportCampaignDto
 
     const userId = auth.user!.id
 

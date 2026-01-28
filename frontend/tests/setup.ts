@@ -37,6 +37,26 @@ g.useRoute = vi.fn(() => ({
 
 g.navigateTo = vi.fn()
 
+g.useNuxtApp = vi.fn(() => ({
+  $posthog: undefined,
+}))
+
+// Mock useTimeFormat composable (auto-imported by Nuxt)
+g.useTimeFormat = vi.fn(() => ({
+  formatDuration: (seconds: number): string => {
+    if (seconds <= 0) return '00:00'
+    const minutes = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+  },
+  formatDurationCompact: (seconds: number): string => {
+    if (seconds <= 0) return '00:00'
+    const minutes = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+  },
+}))
+
 // Mock localStorage
 const localStorageMock = {
   getItem: vi.fn(),

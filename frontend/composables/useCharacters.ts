@@ -1,5 +1,4 @@
 import { ref, readonly } from 'vue'
-import { useSupportTrigger } from '@/composables/useSupportTrigger'
 
 export interface Character {
   id: string
@@ -33,7 +32,6 @@ export interface CampaignCharacters {
 export const useCharacters = () => {
   const config = useRuntimeConfig()
   const API_URL = config.public.apiBase
-  const { triggerSupportForError } = useSupportTrigger()
 
   const characters = ref<Character[]>([])
   const currentAssignment = ref<CharacterAssignment | null>(null)
@@ -41,12 +39,12 @@ export const useCharacters = () => {
 
   /**
    * Récupère les personnages disponibles pour une campagne
-   * GET /streamer/campaigns/:campaignId/characters
+   * GET /dashboard/campaigns/:campaignId/characters
    */
   const fetchCampaignCharacters = async (campaignId: string): Promise<void> => {
     loading.value = true
     try {
-      const response = await fetch(`${API_URL}/streamer/campaigns/${campaignId}/characters`, {
+      const response = await fetch(`${API_URL}/dashboard/campaigns/${campaignId}/characters`, {
         credentials: 'include',
       })
       if (!response.ok) throw new Error('Failed to fetch characters')
@@ -55,7 +53,6 @@ export const useCharacters = () => {
       currentAssignment.value = data.currentAssignment
     } catch (error) {
       console.error('Failed to fetch characters:', error)
-      triggerSupportForError('characters_fetch', error)
       throw error
     } finally {
       loading.value = false
@@ -64,7 +61,7 @@ export const useCharacters = () => {
 
   /**
    * Assigne un personnage au streamer pour une campagne
-   * POST /streamer/campaigns/:campaignId/characters/:characterId/assign
+   * POST /dashboard/campaigns/:campaignId/characters/:characterId/assign
    */
   const assignCharacter = async (
     campaignId: string,
@@ -72,7 +69,7 @@ export const useCharacters = () => {
   ): Promise<CharacterAssignment> => {
     try {
       const response = await fetch(
-        `${API_URL}/streamer/campaigns/${campaignId}/characters/${characterId}/assign`,
+        `${API_URL}/dashboard/campaigns/${campaignId}/characters/${characterId}/assign`,
         {
           method: 'POST',
           credentials: 'include',
@@ -89,19 +86,19 @@ export const useCharacters = () => {
       currentAssignment.value = data
       return data
     } catch (error) {
-      triggerSupportForError('character_assign', error)
+      console.error('Failed to assign character:', error)
       throw error
     }
   }
 
   /**
    * Retire l'assignment de personnage du streamer
-   * DELETE /streamer/campaigns/:campaignId/characters/unassign
+   * DELETE /dashboard/campaigns/:campaignId/characters/unassign
    */
   const unassignCharacter = async (campaignId: string): Promise<void> => {
     try {
       const response = await fetch(
-        `${API_URL}/streamer/campaigns/${campaignId}/characters/unassign`,
+        `${API_URL}/dashboard/campaigns/${campaignId}/characters/unassign`,
         {
           method: 'DELETE',
           credentials: 'include',
@@ -110,7 +107,7 @@ export const useCharacters = () => {
       if (!response.ok) throw new Error('Failed to unassign character')
       currentAssignment.value = null
     } catch (error) {
-      triggerSupportForError('character_unassign', error)
+      console.error('Failed to unassign character:', error)
       throw error
     }
   }

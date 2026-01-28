@@ -249,6 +249,7 @@ export default class FoundryWebhookController {
           refreshToken: result.refreshToken,
           expiresIn: result.expiresIn,
           serverUrl: result.serverUrl,
+          fingerprint: result.fingerprint, // Module should store this and send it on refresh-token calls
         })
       }
 
@@ -355,7 +356,11 @@ export default class FoundryWebhookController {
         return response.status(401).json({
           status: 'revoked',
           error: 'Connection has been revoked',
+          message:
+            "Accès révoqué sur Tumulte. Demandez au GM de réautoriser l'accès depuis le tableau de bord.",
+          canReauthorize: true, // Indicates data is preserved and reauthorization is possible
           revokedAt: connection.updatedAt?.toISO(),
+          worldId: connection.worldId,
         })
       }
 
@@ -393,6 +398,88 @@ export default class FoundryWebhookController {
       return response.internalServerError({
         status: 'error',
         error: 'Failed to check connection health',
+      })
+    }
+  }
+
+  /**
+   * Check reauthorization status for Foundry VTT module
+   * GET /webhooks/foundry/reauthorization-status
+   *
+   * The module polls this to check if the GM has reauthorized the connection on Tumulte
+   */
+  async reauthorizationStatus({ request, response }: HttpContext) {
+    try {
+      const worldId = request.input('worldId')
+
+      if (!worldId) {
+        return response.badRequest({
+          error: 'Missing required parameter: worldId',
+        })
+      }
+
+      // Check if reauthorization was completed
+      const reauthorizedKey = `pairing:reauthorized:${worldId}`
+      const reauthorizedData = await redis.get(reauthorizedKey)
+
+      if (reauthorizedData) {
+        // Reauthorization was completed! Return the new tokens
+        const result = JSON.parse(reauthorizedData)
+
+        // Clean up Redis key
+        await redis.del(reauthorizedKey)
+
+        logger.info('Foundry reauthorization picked up', {
+          worldId,
+          connectionId: result.connectionId,
+        })
+
+        return response.ok({
+          status: 'reauthorized',
+          connectionId: result.connectionId,
+          apiKey: result.apiKey,
+          sessionToken: result.sessionToken,
+          refreshToken: result.refreshToken,
+          expiresIn: result.expiresIn,
+          serverUrl: result.serverUrl,
+          fingerprint: result.fingerprint,
+          reauthorizedAt: result.reauthorizedAt,
+        })
+      }
+
+      // Check if connection exists and is still revoked
+      const connection = await VttConnection.query().where('world_id', worldId).first()
+
+      if (!connection) {
+        return response.ok({
+          status: 'not_found',
+          message: 'No connection found for this world',
+        })
+      }
+
+      if (connection.status === 'revoked') {
+        return response.ok({
+          status: 'still_revoked',
+          message: "Accès toujours révoqué. Demandez au GM de réautoriser l'accès depuis Tumulte.",
+          revokedAt: connection.updatedAt?.toISO(),
+        })
+      }
+
+      if (connection.status === 'active') {
+        return response.ok({
+          status: 'already_active',
+          message: 'Connection is already active',
+        })
+      }
+
+      return response.ok({
+        status: connection.status,
+        message: `Connection status: ${connection.status}`,
+      })
+    } catch (error) {
+      logger.error('Failed to check reauthorization status', { error })
+      return response.internalServerError({
+        error: 'Failed to check reauthorization status',
       })
     }
   }

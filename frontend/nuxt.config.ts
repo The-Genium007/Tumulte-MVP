@@ -17,7 +17,44 @@ export default defineNuxtConfig({
     '@tresjs/nuxt',
     '@nuxt/fonts',
     '@sentry/nuxt/module',
+    '@vueuse/motion/nuxt',
   ],
+
+  // VueUse Motion - Animation presets (bidirectional: play on scroll up & down)
+  motion: {
+    directives: {
+      // Fade in depuis le bas (sections principales)
+      'fade-up': {
+        initial: { opacity: 0, y: 50 },
+        visible: { opacity: 1, y: 0, transition: { duration: 600, ease: 'easeOut' } },
+        leave: { opacity: 0, y: 50, transition: { duration: 400, ease: 'easeIn' } },
+      },
+      // Fade in depuis la gauche
+      'fade-left': {
+        initial: { opacity: 0, x: -50 },
+        visible: { opacity: 1, x: 0, transition: { duration: 600, ease: 'easeOut' } },
+        leave: { opacity: 0, x: -50, transition: { duration: 400, ease: 'easeIn' } },
+      },
+      // Fade in depuis la droite
+      'fade-right': {
+        initial: { opacity: 0, x: 50 },
+        visible: { opacity: 1, x: 0, transition: { duration: 600, ease: 'easeOut' } },
+        leave: { opacity: 0, x: 50, transition: { duration: 400, ease: 'easeIn' } },
+      },
+      // Scale up (pour les cards)
+      'scale-up': {
+        initial: { opacity: 0, scale: 0.9 },
+        visible: { opacity: 1, scale: 1, transition: { duration: 500, ease: 'easeOut' } },
+        leave: { opacity: 0, scale: 0.9, transition: { duration: 300, ease: 'easeIn' } },
+      },
+      // Pop (pour les icônes/badges) - avec spring
+      'pop': {
+        initial: { opacity: 0, scale: 0.5 },
+        visible: { opacity: 1, scale: 1, transition: { type: 'spring', stiffness: 300, damping: 20 } },
+        leave: { opacity: 0, scale: 0.5, transition: { duration: 200, ease: 'easeIn' } },
+      },
+    },
+  },
 
   sentry: {
     sourceMapsUploadOptions: {
@@ -27,10 +64,10 @@ export default defineNuxtConfig({
     },
   },
 
-  // Force light theme only - no dark mode
+  // Auto-detect system theme (dark/light)
   colorMode: {
-    preference: 'light',
-    fallback: 'light',
+    preference: 'system',
+    fallback: 'dark',
   },
 
   // Google Fonts configuration
@@ -58,6 +95,12 @@ export default defineNuxtConfig({
       apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:3333',
       sentryDsn: process.env.NUXT_PUBLIC_SENTRY_DSN || '',
       envSuffix: process.env.ENV_SUFFIX || 'dev',
+      appVersion: process.env.npm_package_version || '1.0.0',
+      // PostHog Analytics (EU)
+      posthogKey: process.env.NUXT_PUBLIC_POSTHOG_KEY || '',
+      posthogHost: process.env.NUXT_PUBLIC_POSTHOG_HOST || 'https://eu.i.posthog.com',
+      // Google Tag Manager (marketing pixels)
+      gtmId: process.env.NUXT_PUBLIC_GTM_ID || '',
     },
   },
 
@@ -68,8 +111,8 @@ export default defineNuxtConfig({
       name: 'Tumulte - Multi-Stream Polling',
       short_name: 'Tumulte',
       description: 'Gestion de sondages multi-chaînes pour MJ de JDR',
-      theme_color: '#a855f7',
-      background_color: '#ffffff',
+      theme_color: '#0f0b04',
+      background_color: '#f2e4d4',
       display: 'standalone',
       orientation: 'portrait',
       scope: '/',
@@ -101,7 +144,7 @@ export default defineNuxtConfig({
         },
         {
           name: 'Invitations',
-          url: '/streamer/invitations',
+          url: '/dashboard/invitations',
           icons: [{ src: '/favicon-96x96.png', sizes: '96x96' }],
         },
       ],
@@ -168,7 +211,7 @@ export default defineNuxtConfig({
         },
         // Backend API - Streamer routes (7 days cache)
         {
-          urlPattern: /\/streamer\/campaigns(\/.*)?$/,
+          urlPattern: /\/dashboard\/campaigns(\/.*)?$/,
           handler: 'NetworkFirst',
           options: {
             cacheName: 'tumulte-streamer-cache',
@@ -218,23 +261,23 @@ export default defineNuxtConfig({
         { name: 'apple-mobile-web-app-title', content: 'Tumulte' },
         { name: 'mobile-web-app-capable', content: 'yes' },
         { name: 'format-detection', content: 'telephone=no' },
-        // Theme color - Light mode only
-        { name: 'theme-color', content: '#a855f7' },
+        // Theme color - Brand color (marron foncé)
+        { name: 'theme-color', content: '#0f0b04' },
         // Content Security Policy for defense in depth
         {
           'http-equiv': 'Content-Security-Policy',
           content: [
             "default-src 'self'",
-            // Scripts: self + inline (Vue/Nuxt needs it) + Umami analytics
+            // Scripts: self + inline (Vue/Nuxt needs it) + GTM
             // Note: unsafe-eval only needed in dev for HMR, removed in production for security
-            `script-src 'self' 'unsafe-inline' ${process.env.NODE_ENV === 'development' ? "'unsafe-eval'" : ''} https://zerocase-umami-2548df-51-83-45-107.traefik.me`,
+            `script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com ${process.env.NODE_ENV === 'development' ? "'unsafe-eval'" : ''}`,
             // Styles: self + inline (Tailwind/Vue needs it)
             "style-src 'self' 'unsafe-inline'",
             // Images: self + data URIs + Twitch CDN for profile images
             "img-src 'self' data: https: blob:",
-            // Connect: API backend + Twitch API + GitHub API + WebSocket + Iconify
+            // Connect: API backend + Twitch API + GitHub API + WebSocket + Iconify + PostHog + GTM
             // Note: Backend URL is dynamic based on environment
-            `connect-src 'self' ${process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:3333'} https://*.twitch.tv wss://*.twitch.tv https://api.github.com https://api.iconify.design https://zerocase-umami-2548df-51-83-45-107.traefik.me https://*.traefik.me`,
+            `connect-src 'self' ${process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:3333'} https://*.twitch.tv wss://*.twitch.tv https://api.github.com https://api.iconify.design https://*.traefik.me https://eu.i.posthog.com https://eu-assets.i.posthog.com https://www.googletagmanager.com https://www.google-analytics.com https://analytics.google.com`,
             // Fonts: self + data URIs
             "font-src 'self' data:",
             // Workers: self + blob (for PWA service worker)
@@ -340,13 +383,7 @@ export default defineNuxtConfig({
             '(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2)',
         },
       ],
-      script: [
-        {
-          defer: true,
-          src: 'https://zerocase-umami-2548df-51-83-45-107.traefik.me/script.js',
-          'data-website-id': '07e569f4-6e75-445b-9db9-51a821f38d5b',
-        },
-      ],
+      // PostHog is initialized via plugin, no external script needed
     },
   },
 
@@ -360,6 +397,40 @@ export default defineNuxtConfig({
   vite: {
     optimizeDeps: {
       exclude: ['@adonisjs/transmit-client'],
+    },
+  },
+
+  // Nitro server configuration for Docker Swarm scaling
+  nitro: {
+    // Enable compression at build time for static assets
+    compressPublicAssets: {
+      gzip: true,
+      brotli: true,
+    },
+
+    // Route rules for caching (complements middleware)
+    routeRules: {
+      // Health endpoints - no caching
+      '/health/**': {
+        cache: false,
+        headers: { 'Cache-Control': 'no-store' },
+      },
+
+      // Metrics endpoint - no caching
+      '/metrics': {
+        cache: false,
+        headers: { 'Cache-Control': 'no-store' },
+      },
+
+      // Static assets - aggressive caching
+      '/_nuxt/**': {
+        headers: { 'Cache-Control': 'public, max-age=31536000, immutable' },
+      },
+
+      // PWA manifest
+      '/manifest.webmanifest': {
+        headers: { 'Cache-Control': 'public, max-age=86400' },
+      },
     },
   },
 })

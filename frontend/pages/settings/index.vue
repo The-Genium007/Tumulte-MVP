@@ -19,34 +19,156 @@
               />
             </template>
           </UButton>
-          <h1 class="text-xl sm:text-3xl font-bold text-primary">Réglages</h1>
+          <h1 class="text-xl sm:text-3xl font-bold text-primary">Mon compte</h1>
         </div>
       </UCard>
 
-      <!-- Informations de base -->
+      <!-- Informations du compte (enrichi avec avatar + tier) -->
       <UCard>
         <template #header>
           <div class="flex items-center gap-3">
             <div>
-              <h2 class="text-xl font-semibold text-primary">Informations du compte</h2>
+              <h2 class="text-xl font-semibold text-primary">Profil</h2>
             </div>
           </div>
         </template>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div>
-            <p class="text-sm text-muted mb-1">Nom du compte</p>
-            <p class="text-lg font-semibold text-primary">{{ user?.displayName }}</p>
+        <div class="space-y-4">
+          <!-- Avatar et infos -->
+          <div class="flex items-center gap-4">
+            <TwitchAvatar
+              :image-url="user?.streamer?.profileImageUrl"
+              :display-name="user?.streamer?.twitchDisplayName || user?.displayName || 'User'"
+              size="xl"
+              class="ring-2 ring-primary/20"
+            />
+            <div>
+              <p class="font-heading text-lg text-primary uppercase">
+                {{ user?.streamer?.twitchDisplayName || user?.displayName }}
+              </p>
+              <p class="text-sm text-muted">{{ user?.email || 'Non renseigné' }}</p>
+              <UBadge
+                v-if="user?.tier"
+                :color="tierColors[user.tier]"
+                variant="subtle"
+                class="mt-1"
+              >
+                {{ tierLabels[user.tier] }}
+              </UBadge>
+            </div>
           </div>
-          <div>
-            <p class="text-sm text-muted mb-1">Email</p>
-            <p class="text-lg font-semibold text-primary">{{ user?.email || 'Non renseigné' }}</p>
+
+          <!-- Email verification status -->
+          <UAlert
+            v-if="user?.email && !user.emailVerifiedAt"
+            color="warning"
+            variant="soft"
+            icon="i-lucide-alert-triangle"
+          >
+            <template #title>Email non vérifié</template>
+            <template #description>
+              <p class="mb-2">
+                Veuillez vérifier votre adresse email pour accéder à toutes les fonctionnalités.
+              </p>
+              <UButton
+                size="xs"
+                variant="outline"
+                @click="handleResendVerification"
+                :loading="resending"
+              >
+                Renvoyer l'email
+              </UButton>
+            </template>
+          </UAlert>
+        </div>
+      </UCard>
+
+      <!-- Méthodes de connexion -->
+      <UCard>
+        <template #header>
+          <h2 class="text-xl font-semibold text-primary">Méthodes de connexion</h2>
+        </template>
+
+        <div class="space-y-4">
+          <!-- Email/Password -->
+          <div class="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+            <div class="flex items-center gap-3">
+              <div class="size-10 rounded-lg bg-default flex items-center justify-center">
+                <UIcon name="i-lucide-mail" class="size-5" />
+              </div>
+              <div>
+                <p class="font-medium">Email & mot de passe</p>
+                <p class="text-sm text-muted">
+                  {{ user?.email || 'Non configuré' }}
+                </p>
+              </div>
+            </div>
+            <UButton
+              v-if="user?.hasPassword || user?.email"
+              color="primary"
+              variant="soft"
+              size="sm"
+              trailing-icon="i-lucide-chevron-right"
+              @click="openPasswordModal"
+            >
+              Modifier
+            </UButton>
+            <UButton
+              v-else
+              color="primary"
+              variant="solid"
+              size="sm"
+              trailing-icon="i-lucide-plus"
+              @click="openPasswordModal"
+            >
+              Configurer
+            </UButton>
+          </div>
+
+          <!-- OAuth Providers -->
+          <div
+            v-for="provider in oauthProviders"
+            :key="provider.id"
+            class="flex items-center justify-between p-3 rounded-lg bg-muted/50"
+          >
+            <div class="flex items-center gap-3">
+              <div class="size-10 rounded-lg bg-default flex items-center justify-center">
+                <UIcon :name="provider.icon" :class="['size-5', provider.iconColor]" />
+              </div>
+              <div>
+                <p class="font-medium">{{ provider.label }}</p>
+                <p class="text-sm text-muted">
+                  {{ getProviderStatus(provider.id) }}
+                </p>
+              </div>
+            </div>
+            <UButton
+              v-if="isProviderLinked(provider.id)"
+              variant="soft"
+              size="sm"
+              color="error"
+              :disabled="!canUnlinkProvider"
+              trailing-icon="i-lucide-unlink"
+              @click="handleUnlinkProvider(provider.id)"
+            >
+              Délier
+            </UButton>
+            <UButton
+              v-else
+              color="primary"
+              variant="solid"
+              size="sm"
+              trailing-icon="i-lucide-link"
+              @click="handleLinkProvider(provider.id)"
+            >
+              Lier
+            </UButton>
           </div>
         </div>
       </UCard>
 
-      <!-- Services connectés -->
-      <UCard>
+      <!-- Services connectés (Twitch streaming uniquement maintenant) -->
+      <UCard ref="twitchCardRef">
         <template #header>
           <div class="flex items-center gap-3">
             <div>
@@ -56,34 +178,12 @@
         </template>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <!-- Twitch -->
-          <button
-            class="p-4 rounded-lg bg-neutral-100 border border-default text-left transition-all duration-200 hover:ring-2 hover:ring-primary-500 hover:shadow-md cursor-pointer"
-            @click="showTwitchModal = true"
-          >
+          <!-- Services futurs VTT -->
+          <div class="p-4 rounded-lg bg-elevated border border-default opacity-60">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-3">
                 <div class="p-2">
-                  <UIcon name="i-lucide-twitch" class="size-6 text-brand-500" />
-                </div>
-                <div>
-                  <h3 class="font-semibold text-primary">Twitch</h3>
-                  <p class="text-sm text-muted">Streaming et chat en direct</p>
-                </div>
-              </div>
-              <div class="flex items-center gap-2">
-                <UBadge v-if="user?.streamer" label="Connecté" color="success" variant="solid" />
-                <UIcon name="i-lucide-chevron-right" class="size-5 text-muted" />
-              </div>
-            </div>
-          </button>
-
-          <!-- Services futurs -->
-          <div class="p-4 rounded-lg bg-neutral-100 border border-default opacity-60">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-3">
-                <div class="p-2">
-                  <UIcon name="i-lucide-video" class="size-6 text-neutral-500" />
+                  <UIcon name="i-lucide-video" class="size-6 text-muted" />
                 </div>
                 <div>
                   <h3 class="font-semibold text-primary">OBS Studio</h3>
@@ -94,26 +194,29 @@
             </div>
           </div>
 
-          <div class="p-4 rounded-lg bg-neutral-100 border border-default opacity-60">
+          <button
+            class="w-full p-4 rounded-lg bg-elevated border border-default hover:border-primary hover:bg-muted transition-colors cursor-pointer text-left"
+            @click="showFoundrySlideover = true"
+          >
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-3">
                 <div class="p-2">
-                  <UIcon name="i-lucide-castle" class="size-6 text-neutral-500" />
+                  <UIcon name="i-lucide-castle" class="size-6 text-primary" />
                 </div>
                 <div>
                   <h3 class="font-semibold text-primary">Foundry VTT</h3>
-                  <p class="text-sm text-muted">Synchronisation Foundry</p>
+                  <p class="text-sm text-muted">Gérer les connexions</p>
                 </div>
               </div>
-              <UBadge label="Bientôt" color="info" variant="solid" />
+              <UIcon name="i-lucide-chevron-right" class="size-5 text-muted" />
             </div>
-          </div>
+          </button>
 
-          <div class="p-4 rounded-lg bg-neutral-100 border border-default opacity-60">
+          <div class="p-4 rounded-lg bg-elevated border border-default opacity-60">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-3">
                 <div class="p-2">
-                  <UIcon name="i-lucide-flask-conical" class="size-6 text-neutral-500" />
+                  <UIcon name="i-lucide-flask-conical" class="size-6 text-muted" />
                 </div>
                 <div>
                   <h3 class="font-semibold text-primary">TaleSpire</h3>
@@ -124,11 +227,11 @@
             </div>
           </div>
 
-          <div class="p-4 rounded-lg bg-neutral-100 border border-default opacity-60">
+          <div class="p-4 rounded-lg bg-elevated border border-default opacity-60">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-3">
                 <div class="p-2">
-                  <UIcon name="i-lucide-dice-6" class="size-6 text-neutral-500" />
+                  <UIcon name="i-lucide-dice-6" class="size-6 text-muted" />
                 </div>
                 <div>
                   <h3 class="font-semibold text-primary">Owlbear Rodeo</h3>
@@ -138,6 +241,29 @@
               <UBadge label="Bientôt" color="info" variant="solid" />
             </div>
           </div>
+        </div>
+      </UCard>
+
+      <!-- Abonnement -->
+      <UCard>
+        <template #header>
+          <h2 class="text-xl font-semibold text-primary">Abonnement</h2>
+        </template>
+
+        <div class="space-y-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="font-medium">Plan actuel</p>
+              <p class="text-sm text-muted">{{ tierLabels[user?.tier ?? 'free'] }}</p>
+            </div>
+            <UBadge :color="tierColors[user?.tier ?? 'free']" variant="subtle" size="lg">
+              {{ tierLabels[user?.tier ?? 'free'] }}
+            </UBadge>
+          </div>
+
+          <UButton v-if="user?.tier === 'free'" block variant="outline" disabled>
+            Passer à Premium (bientôt disponible)
+          </UButton>
         </div>
       </UCard>
 
@@ -175,6 +301,136 @@
     </div>
   </div>
 
+  <!-- Slideover Foundry VTT -->
+  <SettingsFoundryConnectionsSlideover v-model="showFoundrySlideover" />
+
+  <!-- Modal de mot de passe -->
+  <UModal v-model:open="showPasswordModal" class="w-full max-w-2xl mx-4">
+    <template #header>
+      <div class="flex items-center gap-3">
+        <UIcon name="i-lucide-lock" class="size-6 text-primary" />
+        <h3 class="text-xl font-semibold text-primary">
+          {{ user?.hasPassword ? 'Modifier le mot de passe' : 'Créer un mot de passe' }}
+        </h3>
+      </div>
+    </template>
+
+    <template #body>
+      <form @submit.prevent="handlePasswordSubmit" class="space-y-6">
+        <!-- Current password (only if has password) -->
+        <UFormField
+          v-if="user?.hasPassword"
+          label="Mot de passe actuel"
+          name="currentPassword"
+          :error="passwordFieldErrors.currentPassword"
+          required
+        >
+          <UInput
+            v-model="passwordForm.currentPassword"
+            type="password"
+            placeholder="Votre mot de passe actuel"
+            leading-icon="i-lucide-lock"
+            size="xl"
+            :ui="{
+              root: 'relative',
+              base: 'bg-(--theme-input-bg) text-(--theme-input-text) placeholder:text-(--theme-input-placeholder) focus:border-primary focus:ring-primary',
+            }"
+            required
+          />
+        </UFormField>
+
+        <UFormField
+          label="Nouveau mot de passe"
+          name="password"
+          :error="passwordFieldErrors.password"
+          required
+          hint="Minimum 8 caractères"
+        >
+          <UInput
+            v-model="passwordForm.password"
+            type="password"
+            placeholder="Votre nouveau mot de passe"
+            leading-icon="i-lucide-lock"
+            size="xl"
+            :ui="{
+              root: 'relative',
+              base: 'bg-(--theme-input-bg) text-(--theme-input-text) placeholder:text-(--theme-input-placeholder) focus:border-primary focus:ring-primary',
+            }"
+            required
+          />
+        </UFormField>
+
+        <UFormField
+          label="Confirmer le mot de passe"
+          name="passwordConfirmation"
+          :error="passwordFieldErrors.passwordConfirmation"
+          required
+        >
+          <UInput
+            v-model="passwordForm.passwordConfirmation"
+            type="password"
+            placeholder="Confirmez votre nouveau mot de passe"
+            leading-icon="i-lucide-lock"
+            size="xl"
+            :ui="{
+              root: 'relative',
+              base: 'bg-(--theme-input-bg) text-(--theme-input-text) placeholder:text-(--theme-input-placeholder) focus:border-primary focus:ring-primary',
+            }"
+            required
+          />
+        </UFormField>
+
+        <UAlert
+          v-if="passwordErrorMessage"
+          color="error"
+          variant="subtle"
+          icon="i-lucide-alert-circle"
+        >
+          <template #title>
+            <span class="font-semibold">{{ passwordErrorMessage }}</span>
+          </template>
+        </UAlert>
+
+        <UAlert
+          v-if="passwordSuccessMessage"
+          color="success"
+          variant="subtle"
+          icon="i-lucide-check-circle-2"
+        >
+          <template #title>
+            <span class="font-semibold">{{ passwordSuccessMessage }}</span>
+          </template>
+        </UAlert>
+      </form>
+    </template>
+
+    <template #footer>
+      <div class="flex flex-col sm:flex-row justify-end gap-3 w-full">
+        <UButton
+          variant="outline"
+          size="xl"
+          class="w-full sm:w-auto"
+          trailing-icon="i-lucide-x"
+          @click="closePasswordModal"
+        >
+          Annuler
+        </UButton>
+        <UButton
+          color="primary"
+          variant="solid"
+          size="xl"
+          class="w-full sm:w-auto"
+          :loading="passwordLoading"
+          :disabled="!isPasswordFormValid"
+          trailing-icon="i-lucide-check"
+          @click="handlePasswordSubmit"
+        >
+          {{ user?.hasPassword ? 'Modifier le mot de passe' : 'Créer le mot de passe' }}
+        </UButton>
+      </div>
+    </template>
+  </UModal>
+
   <!-- Modal de confirmation de suppression -->
   <UModal v-model:open="showDeleteModal" class="w-full max-w-lg mx-4">
     <template #header>
@@ -205,7 +461,7 @@
             size="lg"
             :ui="{
               root: 'ring-0 border-0 rounded-lg overflow-hidden',
-              base: 'px-3.5 py-2.5 bg-primary-100 text-primary-500 placeholder:text-primary-400 rounded-lg',
+              base: 'px-3.5 py-2.5 bg-(--theme-input-bg) text-(--theme-input-text) placeholder:text-(--theme-input-placeholder) rounded-lg',
             }"
           />
         </div>
@@ -233,179 +489,243 @@
       </div>
     </template>
   </UModal>
-
-  <!-- Modal de confirmation de révocation Twitch -->
-  <UModal v-model:open="showRevokeModal" class="w-full max-w-lg mx-4">
-    <template #header>
-      <div class="flex items-center gap-3">
-        <h3 class="text-xl font-semibold text-primary">Confirmer la révocation</h3>
-      </div>
-    </template>
-
-    <template #body>
-      <div class="space-y-4">
-        <UAlert
-          color="warning"
-          variant="soft"
-          icon="i-lucide-alert-circle"
-          title="Attention"
-          description="Cette action révoquera l'accès de Tumulte à votre compte Twitch et désactivera votre compte streamer. Vous devrez vous reconnecter pour réactiver votre compte."
-        />
-
-        <p class="text-secondary">Êtes-vous sûr de vouloir révoquer l'accès Twitch ?</p>
-      </div>
-    </template>
-
-    <template #footer>
-      <div class="flex flex-col sm:flex-row justify-end gap-3 w-full">
-        <UButton
-          color="neutral"
-          variant="outline"
-          label="Annuler"
-          class="w-full sm:w-auto"
-          @click="showRevokeModal = false"
-        />
-        <UButton
-          color="error"
-          variant="solid"
-          label="Confirmer la révocation"
-          class="w-full sm:w-auto"
-          :loading="revokeLoading"
-          @click="confirmRevokeTwitch"
-        />
-      </div>
-    </template>
-  </UModal>
-
-  <!-- Modal Twitch -->
-  <UModal v-model:open="showTwitchModal" class="w-full max-w-lg mx-4">
-    <template #header>
-      <div class="flex items-center gap-3">
-        <UIcon name="i-lucide-twitch" class="size-6 text-brand-500" />
-        <div>
-          <h3 class="text-xl font-semibold text-primary">Twitch</h3>
-          <p class="text-sm text-muted">Streaming et chat en direct</p>
-        </div>
-      </div>
-    </template>
-
-    <template #body>
-      <div class="space-y-4">
-        <!-- État connecté -->
-        <template v-if="user?.streamer">
-          <div class="p-4 rounded-lg bg-success-50 border border-success-200">
-            <div class="flex items-center gap-3">
-              <UIcon name="i-lucide-check-circle" class="size-5 text-success-500" />
-              <div>
-                <p class="font-semibold text-success-700">Compte connecté</p>
-                <p class="text-sm text-success-600">{{ user.streamer.twitchDisplayName }}</p>
-              </div>
-            </div>
-          </div>
-
-          <p class="text-sm text-muted">
-            Votre compte Twitch est lié à Tumulte. Vous pouvez lancer des sondages sur votre chaîne
-            et participer aux campagnes en tant que streamer.
-          </p>
-
-          <UAlert
-            color="warning"
-            variant="soft"
-            icon="i-lucide-alert-circle"
-            title="Révoquer l'accès"
-            description="Révoquer l'accès désactivera votre compte streamer et bloquera toutes vos actions sur Twitch via Tumulte."
-          />
-        </template>
-
-        <!-- État non connecté -->
-        <template v-else>
-          <div class="p-4 rounded-lg bg-neutral-100 border border-default">
-            <div class="flex items-center gap-3">
-              <UIcon name="i-lucide-unplug" class="size-5 text-muted" />
-              <div>
-                <p class="font-semibold text-primary">Non connecté</p>
-                <p class="text-sm text-muted">Aucun compte Twitch lié</p>
-              </div>
-            </div>
-          </div>
-
-          <p class="text-sm text-muted">
-            Connectez votre compte Twitch pour lancer des sondages sur votre chaîne et participer
-            aux campagnes en tant que streamer.
-          </p>
-        </template>
-      </div>
-    </template>
-
-    <template #footer>
-      <div class="flex flex-col sm:flex-row justify-end gap-3 w-full">
-        <UButton
-          color="primary"
-          variant="solid"
-          label="Fermer"
-          class="w-full sm:w-auto"
-          @click="showTwitchModal = false"
-        />
-        <UButton
-          v-if="user?.streamer"
-          color="error"
-          variant="solid"
-          label="Révoquer l'accès"
-          icon="i-lucide-unplug"
-          class="w-full sm:w-auto"
-          @click="openRevokeModal"
-        />
-        <UButton
-          v-else
-          color="primary"
-          variant="solid"
-          label="Connecter Twitch"
-          icon="i-lucide-twitch"
-          class="w-full sm:w-auto"
-          @click="connectTwitch"
-        />
-      </div>
-    </template>
-  </UModal>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { nextTick, onMounted, ref, computed, reactive } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { useSettings } from '@/composables/useSettings'
+import type { UserTier } from '@/types'
 
 definePageMeta({
   layout: 'authenticated' as const,
   middleware: ['auth'],
 })
 
-const _router = useRouter()
-const { user, logout } = useAuth()
-const { revokeTwitchAccess, deleteAccount } = useSettings()
+useHead({
+  title: 'Paramètres - Tumulte',
+})
 
+const route = useRoute()
+const router = useRouter()
+const { user, logout, resendVerificationEmail } = useAuth()
+const { deleteAccount } = useSettings()
+const toast = useToast()
+const config = useRuntimeConfig()
+
+// États
+const showFoundrySlideover = ref(false)
 const showDeleteModal = ref(false)
 const deleteConfirmation = ref('')
 const deleteLoading = ref(false)
+const resending = ref(false)
 
-const showRevokeModal = ref(false)
-const revokeLoading = ref(false)
-const showTwitchModal = ref(false)
+// États pour le mot de passe
+const showPasswordModal = ref(false)
+const passwordLoading = ref(false)
+const passwordErrorMessage = ref<string | null>(null)
+const passwordSuccessMessage = ref<string | null>(null)
+const passwordFieldErrors = reactive<Record<string, string | undefined>>({})
 
-const goBackToDashboard = () => {
-  // Tous les utilisateurs vont vers /streamer
-  _router.push('/streamer')
+const passwordForm = reactive({
+  currentPassword: '',
+  password: '',
+  passwordConfirmation: '',
+})
+
+// Référence vers la card Twitch pour l'auto-scroll
+const twitchCardRef = ref<{ $el: HTMLElement } | null>(null)
+
+// Tier labels et colors
+const tierLabels: Record<UserTier, string> = {
+  free: 'Gratuit',
+  premium: 'Premium',
+  admin: 'Admin',
 }
 
-const confirmRevokeTwitch = async () => {
-  revokeLoading.value = true
+const tierColors: Record<UserTier, 'neutral' | 'primary' | 'error'> = {
+  free: 'neutral',
+  premium: 'primary',
+  admin: 'error',
+}
+
+// OAuth providers
+const oauthProviders = [
+  { id: 'twitch', label: 'Twitch', icon: 'i-simple-icons-twitch', iconColor: 'text-[#9146FF]' },
+  { id: 'google', label: 'Google', icon: 'i-simple-icons-google', iconColor: 'text-[#4285F4]' },
+]
+
+// Toast helpers
+function showSuccess(message: string) {
+  toast.add({ title: message, color: 'success', icon: 'i-lucide-check-circle' })
+}
+
+function showError(message: string) {
+  toast.add({ title: message, color: 'error', icon: 'i-lucide-alert-circle' })
+}
+
+// OAuth methods
+const isProviderLinked = (providerId: string) => {
+  return user.value?.authProviders?.some((p) => p.provider === providerId)
+}
+
+const getProviderStatus = (providerId: string) => {
+  const provider = user.value?.authProviders?.find((p) => p.provider === providerId)
+  if (provider) {
+    return provider.providerDisplayName || provider.providerEmail || 'Connecté'
+  }
+  return 'Non lié'
+}
+
+const canUnlinkProvider = computed(() => {
+  const linkedCount = user.value?.authProviders?.length ?? 0
+  const hasPassword = user.value?.hasPassword ?? false
+  // Must have at least one login method remaining
+  return linkedCount > 1 || (linkedCount === 1 && hasPassword)
+})
+
+function handleLinkProvider(providerId: string) {
+  // Redirect to OAuth with link mode
+  window.location.href = `${config.public.apiBase}/auth/link/${providerId}`
+}
+
+async function handleUnlinkProvider(providerId: string) {
   try {
-    await revokeTwitchAccess()
-    showRevokeModal.value = false
-  } catch (error) {
-    console.error('[Settings] Failed to revoke Twitch access:', error)
+    const response = await fetch(`${config.public.apiBase}/auth/unlink`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ provider: providerId }),
+    })
+
+    if (response.ok) {
+      showSuccess('Compte délié avec succès')
+      // Refresh user data
+      window.location.reload()
+    } else {
+      const result = await response.json()
+      showError(result.error || 'Une erreur est survenue')
+    }
+  } catch {
+    showError('Une erreur est survenue')
+  }
+}
+
+// Email verification
+async function handleResendVerification() {
+  resending.value = true
+  const result = await resendVerificationEmail()
+  resending.value = false
+
+  if (result.success) {
+    showSuccess('Email de vérification envoyé !')
+  } else {
+    showError(result.error?.error || 'Une erreur est survenue')
+  }
+}
+
+// Auto-scroll vers la section Twitch si on arrive depuis l'onboarding
+onMounted(async () => {
+  if (route.query.linkTwitch === 'true') {
+    await nextTick()
+    setTimeout(() => {
+      if (twitchCardRef.value?.$el) {
+        twitchCardRef.value.$el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }
+    }, 100)
+  }
+})
+
+const goBackToDashboard = () => {
+  router.push('/dashboard')
+}
+
+// Password methods
+const isPasswordFormValid = computed(() => {
+  const hasCurrentIfNeeded = user.value?.hasPassword
+    ? passwordForm.currentPassword.length > 0
+    : true
+  return (
+    hasCurrentIfNeeded &&
+    passwordForm.password.length >= 8 &&
+    passwordForm.password === passwordForm.passwordConfirmation
+  )
+})
+
+function openPasswordModal() {
+  showPasswordModal.value = true
+  passwordErrorMessage.value = null
+  passwordSuccessMessage.value = null
+  passwordForm.currentPassword = ''
+  passwordForm.password = ''
+  passwordForm.passwordConfirmation = ''
+  Object.keys(passwordFieldErrors).forEach((key) => (passwordFieldErrors[key] = undefined))
+}
+
+function closePasswordModal() {
+  showPasswordModal.value = false
+}
+
+async function handlePasswordSubmit() {
+  passwordLoading.value = true
+  passwordErrorMessage.value = null
+  passwordSuccessMessage.value = null
+  Object.keys(passwordFieldErrors).forEach((key) => (passwordFieldErrors[key] = undefined))
+
+  try {
+    const endpoint = user.value?.hasPassword
+      ? `${config.public.apiBase}/auth/change-password`
+      : `${config.public.apiBase}/auth/set-password`
+
+    const body = user.value?.hasPassword
+      ? {
+          currentPassword: passwordForm.currentPassword,
+          newPassword: passwordForm.password,
+        }
+      : {
+          password: passwordForm.password,
+        }
+
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(body),
+    })
+
+    const result = await response.json()
+
+    if (response.ok) {
+      passwordSuccessMessage.value = user.value?.hasPassword
+        ? 'Mot de passe modifié avec succès'
+        : 'Mot de passe créé avec succès'
+
+      // Reset form
+      passwordForm.currentPassword = ''
+      passwordForm.password = ''
+      passwordForm.passwordConfirmation = ''
+
+      // Show success toast and close modal after a short delay
+      showSuccess(passwordSuccessMessage.value)
+      setTimeout(() => {
+        closePasswordModal()
+        // Refresh user data
+        window.location.reload()
+      }, 1500)
+    } else {
+      passwordErrorMessage.value = result.error
+
+      if (result.errors) {
+        Object.entries(result.errors).forEach(([field, messages]) => {
+          passwordFieldErrors[field] = (messages as string[])[0]
+        })
+      }
+    }
+  } catch {
+    passwordErrorMessage.value = 'Une erreur est survenue'
   } finally {
-    revokeLoading.value = false
+    passwordLoading.value = false
   }
 }
 
@@ -420,21 +740,11 @@ const handleDeleteAccount = async () => {
     showDeleteModal.value = false
     // Déconnecter et rediriger
     await logout()
-    _router.push('/')
+    router.push('/')
   } catch (error) {
     console.error('[Settings] Failed to delete account:', error)
   } finally {
     deleteLoading.value = false
   }
-}
-
-const connectTwitch = () => {
-  const config = useRuntimeConfig()
-  window.location.href = `${config.public.apiBase}/auth/twitch/redirect`
-}
-
-const openRevokeModal = () => {
-  showTwitchModal.value = false
-  showRevokeModal.value = true
 }
 </script>

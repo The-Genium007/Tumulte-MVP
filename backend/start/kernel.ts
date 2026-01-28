@@ -23,6 +23,7 @@ server.errorHandler(() => import('#exceptions/handler'))
  * the request URL.
  */
 server.use([
+  () => import('#middleware/request_id_middleware'),
   () => import('#middleware/container_bindings_middleware'),
   () => import('#middleware/force_json_response_middleware'),
   () => import('#middleware/security_headers_middleware'),
@@ -47,5 +48,8 @@ export const middleware = router.named({
   guest: () => import('#middleware/guest_middleware'),
   auth: () => import('#middleware/auth_middleware'),
   rateLimit: () => import('#middleware/rate_limit_middleware'),
+  authLockout: () => import('#middleware/auth_lockout_middleware'),
   validateUuid: () => import('#middleware/validate_uuid_params_middleware'),
+  admin: () => import('#middleware/admin_middleware'),
+  premium: () => import('#middleware/premium_middleware'),
 })

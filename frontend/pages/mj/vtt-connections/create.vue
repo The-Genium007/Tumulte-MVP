@@ -12,7 +12,7 @@
               size="xl"
               square
               class="group"
-              @click="_router.push('/mj/campaigns/import')"
+              @click="_router.push('/mj')"
             >
               <template #leading>
                 <UIcon
@@ -76,7 +76,7 @@
               </p>
               <div class="mt-3 flex items-center gap-2">
                 <code
-                  class="flex-1 px-3 py-2 bg-neutral-200 rounded text-xs break-all select-all font-mono"
+                  class="flex-1 px-3 py-2 bg-elevated border border-muted rounded text-xs break-all select-all font-mono text-primary"
                 >
                   {{ foundryModuleUrl }}
                 </code>
@@ -96,7 +96,7 @@
 
           <!-- Code Input -->
           <div class="w-full max-w-64">
-            <label class="block text-sm font-bold text-secondary ml-4 uppercase mb-2">
+            <label class="block text-sm font-bold text-primary ml-4 uppercase mb-2">
               Code de connexion <span class="text-error-500">*</span>
             </label>
             <div class="flex items-center gap-2">
@@ -108,7 +108,7 @@
                 :disabled="pairing"
                 :ui="{
                   root: 'ring-0 border-0 rounded-lg overflow-hidden flex-1',
-                  base: 'px-3.5 py-2.5 bg-primary-100 text-primary-500 placeholder:text-primary-400 rounded-lg font-mono text-2xl tracking-widest text-center uppercase',
+                  base: 'px-3.5 py-2.5 bg-(--theme-input-bg) text-(--theme-input-text) placeholder:text-(--theme-input-placeholder) rounded-lg font-mono text-2xl tracking-widest text-center uppercase',
                 }"
                 @input="formatCode"
               />
@@ -187,7 +187,7 @@
               label="Continuer vers l'import de campagne"
               icon="i-lucide-arrow-right"
               trailing
-              @click="_router.push('/mj/campaigns/import')"
+              @click="_router.push('/mj')"
             />
           </div>
         </template>
@@ -206,7 +206,7 @@
                   </h3>
                 </div>
                 <button
-                  class="flex items-center justify-center size-8 rounded-full hover:bg-neutral-200 transition-colors shrink-0"
+                  class="flex items-center justify-center size-8 rounded-full hover:bg-accented transition-colors shrink-0"
                   @click="showSecurityModal = false"
                 >
                   <UIcon name="i-lucide-x" class="size-5 text-muted" />
