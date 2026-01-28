@@ -333,20 +333,8 @@
         </ClientOnly>
       </main>
 
-      <!-- Bouton toggle inspecteur -->
-      <button
-        class="inspector-toggle"
-        :class="{ 'inspector-closed': !showInspector }"
-        @click="showInspector = !showInspector"
-      >
-        <UIcon
-          :name="showInspector ? 'i-lucide-panel-right-close' : 'i-lucide-panel-right-open'"
-          class="size-4"
-        />
-      </button>
-
       <!-- Sidebar droite - Inspecteur -->
-      <aside class="studio-inspector" :class="{ collapsed: !showInspector }">
+      <aside class="studio-inspector">
         <div v-if="selectedElement" class="inspector-content">
           <!-- Header avec nom du calque et bouton supprimer -->
           <div class="inspector-header">
@@ -504,7 +492,6 @@ const currentConfigName = ref('Nouvelle configuration')
 const showConfigDropdown = ref(false)
 const showNewConfigModal = ref(false)
 const newConfigName = ref('')
-const showInspector = ref(false)
 
 // État pour la prévisualisation des dés
 const showDicePreview = ref(false)
@@ -915,7 +902,7 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background: var(--color-bg-page);
+  background: var(--ui-bg);
   overflow: hidden;
 }
 
@@ -925,8 +912,8 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem 1rem;
-  background: var(--color-bg-muted);
-  border-bottom: 1px solid var(--color-neutral-200);
+  background: var(--ui-bg-elevated);
+  border-bottom: 1px solid var(--ui-border);
 }
 
 .toolbar-left,
@@ -943,17 +930,17 @@ onUnmounted(() => {
   align-items: center;
   gap: 0.375rem;
   padding: 0.25rem 0.625rem;
-  background: var(--color-warning-50);
-  border: 1px solid var(--color-warning-200);
+  background: var(--ui-warning-muted);
+  border: 1px solid var(--ui-warning);
   border-radius: 9999px;
   font-size: 0.75rem;
-  color: var(--color-warning-700);
+  color: var(--ui-warning);
 }
 
 .save-indicator-dot {
   width: 6px;
   height: 6px;
-  background: var(--color-warning-500);
+  background: var(--ui-warning);
   border-radius: 50%;
   animation: pulse 2s ease-in-out infinite;
 }
@@ -979,19 +966,19 @@ onUnmounted(() => {
   width: 32px;
   height: 32px;
   border-radius: 6px;
-  color: var(--color-text-muted);
+  color: var(--ui-text-muted);
   transition: all 0.2s;
 }
 
 .back-link:hover {
-  background: var(--color-neutral-100);
-  color: var(--color-text-primary);
+  background: var(--ui-bg-accented);
+  color: var(--ui-text);
 }
 
 .toolbar-title {
   font-size: 1.125rem;
   font-weight: 600;
-  color: var(--color-text-primary);
+  color: var(--ui-text);
 }
 
 .undo-redo-buttons {
@@ -999,22 +986,22 @@ onUnmounted(() => {
   gap: 2px;
   margin-left: 0.5rem;
   padding-left: 0.75rem;
-  border-left: 1px solid var(--color-neutral-200);
+  border-left: 1px solid var(--ui-border);
 }
 
 /* Configuration name display */
 .config-name-display {
   font-size: 0.875rem;
   font-weight: 500;
-  color: var(--color-text-muted);
+  color: var(--ui-text-muted);
   max-width: 200px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   padding: 0.25rem 0.5rem;
-  background: var(--color-neutral-100);
+  background: var(--ui-bg-accented);
   border-radius: 6px;
-  border: 1px solid var(--color-neutral-200);
+  border: 1px solid var(--ui-border);
 }
 
 /* Main */
@@ -1029,8 +1016,8 @@ onUnmounted(() => {
 /* Sidebars */
 .studio-sidebar,
 .studio-inspector {
-  background: var(--color-bg-muted);
-  border-right: 1px solid var(--color-neutral-200);
+  background: var(--ui-bg-elevated);
+  border-right: 1px solid var(--ui-border);
 }
 
 .studio-sidebar {
@@ -1039,61 +1026,16 @@ onUnmounted(() => {
 }
 
 .studio-inspector {
-  position: relative;
   border-right: none;
-  border-left: 1px solid var(--color-neutral-200);
+  border-left: 1px solid var(--ui-border);
   width: 350px;
-  transition: width 0.3s ease;
   overflow-y: auto;
   overflow-x: hidden;
 }
 
-.studio-inspector.collapsed {
-  width: 0;
-  border-left: none;
-}
-
-.studio-inspector.collapsed .inspector-content,
-.studio-inspector.collapsed .inspector-empty {
-  opacity: 0;
-  pointer-events: none;
-}
-
-.inspector-toggle {
-  position: absolute;
-  right: 350px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 24px;
-  height: 48px;
-  background: var(--color-bg-muted);
-  border: 1px solid var(--color-neutral-200);
-  border-right: none;
-  border-radius: 6px 0 0 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-text-muted);
-  cursor: pointer;
-  transition:
-    right 0.3s ease,
-    background 0.2s,
-    color 0.2s;
-  z-index: 20;
-}
-
-.inspector-toggle.inspector-closed {
-  right: 0;
-}
-
-.inspector-toggle:hover {
-  background: var(--color-neutral-100);
-  color: var(--color-text-primary);
-}
-
 .sidebar-section {
   padding: 1rem;
-  border-bottom: 1px solid var(--color-neutral-200);
+  border-bottom: 1px solid var(--ui-border);
 }
 
 .sidebar-title {
@@ -1101,7 +1043,7 @@ onUnmounted(() => {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--color-text-primary);
+  color: var(--ui-text);
   margin-bottom: 0.75rem;
 }
 
@@ -1118,19 +1060,19 @@ onUnmounted(() => {
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem;
-  background: var(--color-bg-page);
-  border: 1px solid var(--color-neutral-200);
+  background: var(--ui-bg);
+  border: 1px solid var(--ui-border);
   border-radius: 8px;
-  color: var(--color-text-muted);
+  color: var(--ui-text-muted);
   font-size: 0.75rem;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .element-item:hover {
-  background: var(--color-neutral-100);
-  border-color: var(--color-primary-400);
-  color: var(--color-text-primary);
+  background: var(--ui-bg-elevated);
+  border-color: var(--ui-primary);
+  color: var(--ui-text);
 }
 
 /* Layers */
@@ -1152,18 +1094,18 @@ onUnmounted(() => {
   padding: 0.5rem 0.75rem;
   border-radius: 6px;
   cursor: pointer;
-  color: var(--color-text-muted);
+  color: var(--ui-text-muted);
   transition: all 0.2s;
 }
 
 .layer-item:hover {
-  background: var(--color-neutral-100);
-  color: var(--color-text-primary);
+  background: var(--ui-bg-elevated);
+  color: var(--ui-text);
 }
 
 .layer-item.selected {
-  background: var(--color-primary-100);
-  color: var(--color-text-primary);
+  background: var(--ui-bg-accented);
+  color: var(--ui-text);
 }
 
 .layer-name {
@@ -1192,18 +1134,18 @@ onUnmounted(() => {
   width: 24px;
   height: 24px;
   border-radius: 4px;
-  color: var(--color-text-muted);
+  color: var(--ui-text-muted);
   transition: all 0.2s;
 }
 
 .layer-action:hover {
-  background: var(--color-neutral-200);
-  color: var(--color-text-primary);
+  background: var(--ui-bg-elevated);
+  color: var(--ui-text);
 }
 
 /* Canvas */
 .studio-canvas {
-  background: var(--color-neutral-300);
+  background: var(--ui-bg-muted);
   padding: 1.5rem;
   min-width: 0; /* Permet au flex de réduire si nécessaire */
 }
@@ -1221,7 +1163,7 @@ onUnmounted(() => {
   margin-bottom: 0;
   padding: 1rem;
   padding-bottom: 0.75rem;
-  border-bottom: 1px solid var(--color-neutral-200);
+  border-bottom: 1px solid var(--ui-border);
 }
 
 .inspector-header-info {
@@ -1235,7 +1177,7 @@ onUnmounted(() => {
 .inspector-element-name {
   font-size: 1rem;
   font-weight: 600;
-  color: var(--color-text-primary);
+  color: var(--ui-text);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1248,7 +1190,7 @@ onUnmounted(() => {
   width: 28px;
   height: 28px;
   border-radius: 6px;
-  color: var(--color-error-500);
+  color: var(--ui-error);
   background: transparent;
   border: none;
   cursor: pointer;
@@ -1257,8 +1199,8 @@ onUnmounted(() => {
 }
 
 .inspector-delete-btn:hover {
-  background: var(--color-error-100);
-  color: var(--color-error-600);
+  background: var(--ui-error-muted);
+  color: var(--ui-error);
 }
 
 .inspector-title {
@@ -1272,7 +1214,7 @@ onUnmounted(() => {
   gap: 0.5rem;
   margin-bottom: 1rem;
   padding-bottom: 0.75rem;
-  border-bottom: 1px solid var(--color-neutral-200);
+  border-bottom: 1px solid var(--ui-border);
 }
 
 .inspector-header-info {
@@ -1286,7 +1228,7 @@ onUnmounted(() => {
 .inspector-element-name {
   font-size: 1rem;
   font-weight: 600;
-  color: var(--color-text-primary);
+  color: var(--ui-text);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1299,7 +1241,7 @@ onUnmounted(() => {
   width: 28px;
   height: 28px;
   border-radius: 6px;
-  color: var(--color-error-500);
+  color: var(--ui-error);
   background: transparent;
   border: none;
   cursor: pointer;
@@ -1308,8 +1250,8 @@ onUnmounted(() => {
 }
 
 .inspector-delete-btn:hover {
-  background: var(--color-error-100);
-  color: var(--color-error-600);
+  background: var(--ui-error-muted);
+  color: var(--ui-error);
 }
 
 .inspector-empty {
@@ -1320,7 +1262,7 @@ onUnmounted(() => {
   height: 100%;
   padding: 2rem;
   text-align: center;
-  color: var(--color-text-disabled);
+  color: var(--ui-text-dimmed);
   gap: 1rem;
 }
 
@@ -1331,18 +1273,18 @@ onUnmounted(() => {
   justify-content: space-between;
   padding: 0.75rem;
   border-radius: 8px;
-  background: var(--color-neutral-100);
+  background: var(--ui-bg-accented);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .config-item:hover {
-  background: var(--color-neutral-200);
+  background: var(--ui-bg-elevated);
 }
 
 .config-item.active {
-  background: var(--color-primary-100);
-  border: 1px solid var(--color-primary-300);
+  background: var(--ui-primary-muted);
+  border: 1px solid var(--ui-primary);
 }
 
 .config-info {
@@ -1352,7 +1294,7 @@ onUnmounted(() => {
 
 .config-name {
   font-weight: 500;
-  color: var(--color-text-primary);
+  color: var(--ui-text);
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -1360,7 +1302,7 @@ onUnmounted(() => {
 
 .config-date {
   font-size: 0.75rem;
-  color: var(--color-text-muted);
+  color: var(--ui-text-muted);
   margin-top: 0.25rem;
 }
 
@@ -1385,14 +1327,14 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   padding: 0.5rem;
-  border-bottom: 1px solid var(--color-neutral-200);
+  border-bottom: 1px solid var(--ui-border);
   margin-bottom: 0.5rem;
 }
 
 .config-dropdown-title {
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--color-text-primary);
+  color: var(--ui-text);
 }
 
 .config-dropdown-content {
@@ -1407,7 +1349,7 @@ onUnmounted(() => {
   justify-content: center;
   padding: 1.5rem;
   text-align: center;
-  color: var(--color-text-disabled);
+  color: var(--ui-text-dimmed);
   gap: 0.5rem;
   font-size: 0.875rem;
 }

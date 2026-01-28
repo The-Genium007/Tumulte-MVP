@@ -222,7 +222,7 @@
             <!-- Présentation de l'Overlay Studio -->
             <div class="flex items-start gap-4">
               <div class="shrink-0 size-12 flex items-center justify-center">
-                <UIcon name="i-lucide-palette" class="size-8 text-primary-500" />
+                <UIcon name="i-lucide-palette" class="size-8 text-primary-400" />
               </div>
               <div class="flex-1 min-w-0">
                 <h3 class="text-lg font-semibold text-primary mb-1">Overlay Studio</h3>

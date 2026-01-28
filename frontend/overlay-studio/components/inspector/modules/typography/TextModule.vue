@@ -238,7 +238,9 @@ const textAlignOptions = [
 
 // UI customization for selects to make them more visible
 const selectUi = {
-  base: 'bg-neutral-100 text-neutral-600',
+  base: 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300',
+  content: 'bg-white dark:bg-neutral-800',
+  item: 'text-neutral-700 dark:text-neutral-200 data-highlighted:bg-neutral-100 dark:data-highlighted:bg-neutral-700',
 }
 
 const updateField = <K extends keyof TextStyleConfig>(field: K, value: TextStyleConfig[K]) => {
@@ -274,7 +276,7 @@ const toggleTextDecoration = (decoration: 'underline' | 'line-through') => {
 
 .field label {
   font-size: 0.75rem;
-  color: var(--color-neutral-400);
+  color: var(--ui-text-muted);
 }
 
 .inline-field {
@@ -286,7 +288,7 @@ const toggleTextDecoration = (decoration: 'underline' | 'line-through') => {
 
 .inline-field label {
   font-size: 0.75rem;
-  color: var(--color-neutral-400);
+  color: var(--ui-text-muted);
 }
 
 .input-with-unit {
@@ -297,13 +299,13 @@ const toggleTextDecoration = (decoration: 'underline' | 'line-through') => {
 
 .unit {
   font-size: 0.75rem;
-  color: var(--color-neutral-400);
+  color: var(--ui-text-muted);
 }
 
 .button-group {
   display: flex;
   gap: 0.25rem;
-  background: var(--color-neutral-100);
+  background: var(--ui-bg-elevated);
   border-radius: 6px;
   padding: 0.25rem;
 }
@@ -318,17 +320,17 @@ const toggleTextDecoration = (decoration: 'underline' | 'line-through') => {
   background: transparent;
   border-radius: 6px;
   cursor: pointer;
-  color: var(--color-neutral-400);
+  color: var(--ui-text-muted);
   transition: all 0.15s ease;
 }
 
 .toggle-button:hover {
-  background: var(--color-neutral-200);
-  color: var(--color-text-primary);
+  background: var(--ui-bg-accented);
+  color: var(--ui-text);
 }
 
 .toggle-button.active {
-  background: var(--color-primary-500);
+  background: var(--ui-primary);
   color: white;
 }
 </style>

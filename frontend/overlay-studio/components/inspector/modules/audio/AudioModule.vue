@@ -20,6 +20,7 @@
         :model-value="modelValue.soundFile"
         :items="soundOptions"
         size="xs"
+        :ui="selectUi"
         @update:model-value="(v: string) => updateField('soundFile', v)"
       />
     </div>
@@ -89,6 +90,13 @@ const emit = defineEmits<{
   'update:modelValue': [value: AudioConfig]
 }>()
 
+// UI customization for selects
+const selectUi = {
+  base: 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300',
+  content: 'bg-white dark:bg-neutral-800',
+  item: 'text-neutral-700 dark:text-neutral-200 data-highlighted:bg-neutral-100 dark:data-highlighted:bg-neutral-700',
+}
+
 const isPlaying = ref(false)
 let audioElement: HTMLAudioElement | null = null
 
@@ -149,7 +157,7 @@ onUnmounted(() => {
   flex-direction: column;
   gap: 0.5rem;
   padding: 0.75rem;
-  background: var(--color-neutral-100);
+  background: var(--ui-bg-elevated);
   border-radius: 8px;
 }
 
@@ -166,7 +174,7 @@ onUnmounted(() => {
   gap: 0.375rem;
   font-size: 0.75rem;
   font-weight: 500;
-  color: var(--color-neutral-500);
+  color: var(--ui-text-muted);
 }
 
 .field {
@@ -177,7 +185,7 @@ onUnmounted(() => {
 
 .field label {
   font-size: 0.75rem;
-  color: var(--color-neutral-400);
+  color: var(--ui-text-muted);
 }
 
 .volume-control {
@@ -193,17 +201,17 @@ onUnmounted(() => {
   width: 28px;
   height: 28px;
   border: none;
-  background: var(--color-white);
+  background: var(--ui-bg);
   border-radius: 6px;
   cursor: pointer;
-  color: var(--color-neutral-400);
+  color: var(--ui-text-muted);
   transition: all 0.15s ease;
   flex-shrink: 0;
 }
 
 .volume-button:hover:not(:disabled) {
-  background: var(--color-neutral-200);
-  color: var(--color-text-primary);
+  background: var(--ui-bg-accented);
+  color: var(--ui-text);
 }
 
 .volume-button:disabled {
@@ -219,7 +227,7 @@ onUnmounted(() => {
 .volume-value {
   font-size: 0.75rem;
   font-weight: 500;
-  color: var(--color-text-primary);
+  color: var(--ui-text);
   font-variant-numeric: tabular-nums;
   min-width: 36px;
   text-align: right;

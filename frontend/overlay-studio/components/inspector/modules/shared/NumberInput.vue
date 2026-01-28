@@ -143,8 +143,8 @@ onUnmounted(() => {
   padding-right: 24px;
   font-size: 0.75rem;
   font-weight: 500;
-  color: var(--color-text-primary);
-  background: var(--color-neutral-100);
+  color: var(--ui-text);
+  background: var(--ui-bg-elevated);
   border: none;
   border-radius: 6px;
   text-align: center;
@@ -162,7 +162,7 @@ onUnmounted(() => {
 
 .number-input:focus {
   outline: none;
-  box-shadow: 0 0 0 2px var(--color-primary-200);
+  box-shadow: 0 0 0 2px var(--ui-primary);
 }
 
 .spin-buttons {
@@ -173,7 +173,7 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   width: 20px;
-  border-left: 1px solid var(--color-neutral-200);
+  border-left: 1px solid var(--ui-border);
   border-radius: 0 6px 6px 0;
   overflow: hidden;
 }
@@ -183,25 +183,25 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--color-neutral-100);
+  background: var(--ui-bg-elevated);
   border: none;
   cursor: pointer;
-  color: var(--color-neutral-400);
+  color: var(--ui-text-muted);
   padding: 0;
   transition: all 0.15s ease;
 }
 
 .spin-button:hover {
-  background: var(--color-neutral-200);
-  color: var(--color-primary-500);
+  background: var(--ui-bg-accented);
+  color: var(--ui-primary);
 }
 
 .spin-button:active {
-  background: var(--color-primary-100);
-  color: var(--color-primary-600);
+  background: var(--ui-bg-accented);
+  color: var(--ui-primary);
 }
 
 .spin-button-up {
-  border-bottom: 1px solid var(--color-neutral-200);
+  border-bottom: 1px solid var(--ui-border);
 }
 </style>

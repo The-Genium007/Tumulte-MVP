@@ -143,7 +143,7 @@ const updateField = <K extends keyof TextShadowConfig>(field: K, value: TextShad
 
 .inline-field label {
   font-size: 0.75rem;
-  color: var(--color-neutral-400);
+  color: var(--ui-text-muted);
 }
 
 .slider-field {
@@ -160,12 +160,12 @@ const updateField = <K extends keyof TextShadowConfig>(field: K, value: TextShad
 
 .slider-header label {
   font-size: 0.75rem;
-  color: var(--color-neutral-400);
+  color: var(--ui-text-muted);
 }
 
 .slider-value {
   font-size: 0.75rem;
-  color: var(--color-text-primary);
+  color: var(--ui-text);
   font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
@@ -175,7 +175,7 @@ const updateField = <K extends keyof TextShadowConfig>(field: K, value: TextShad
   justify-content: center;
   align-items: center;
   padding: 1.5rem;
-  background: var(--color-neutral-800);
+  background: #1a1a2e;
   border-radius: 8px;
 }
 

@@ -317,12 +317,12 @@ const applyPreset = (preset: FilterPreset) => {
 
 .slider-header label {
   font-size: 0.75rem;
-  color: var(--color-text-muted);
+  color: var(--ui-text-muted);
 }
 
 .slider-value {
   font-size: 0.75rem;
-  color: var(--color-text-primary);
+  color: var(--ui-text);
   font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
@@ -340,7 +340,7 @@ const applyPreset = (preset: FilterPreset) => {
   align-items: center;
   gap: 0.25rem;
   padding: 0.5rem;
-  border: 1px solid var(--color-neutral-200);
+  border: 1px solid var(--ui-border);
   background: transparent;
   border-radius: 6px;
   cursor: pointer;
@@ -348,8 +348,8 @@ const applyPreset = (preset: FilterPreset) => {
 }
 
 .preset-button:hover {
-  border-color: var(--color-primary-300);
-  background: var(--color-primary-50);
+  border-color: var(--ui-primary);
+  background: var(--ui-bg-accented);
 }
 
 .preset-preview {
@@ -361,6 +361,6 @@ const applyPreset = (preset: FilterPreset) => {
 
 .preset-button span {
   font-size: 0.625rem;
-  color: var(--color-text-muted);
+  color: var(--ui-text-muted);
 }
 </style>
