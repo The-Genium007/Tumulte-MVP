@@ -13,7 +13,7 @@ describe('useCampaigns Composable', () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked((globalThis as any).useRuntimeConfig).mockReturnValue({
       public: {
-        apiBase: 'http://localhost:3333/api/v2',
+        apiBase: 'http://localhost:3333',
       },
     } as ReturnType<typeof useRuntimeConfig>)
   })
@@ -40,7 +40,7 @@ describe('useCampaigns Composable', () => {
     const { fetchCampaigns, campaigns } = useCampaigns()
     await fetchCampaigns()
 
-    expect(fetch).toHaveBeenCalledWith('http://localhost:3333/api/v2/mj/campaigns', {
+    expect(fetch).toHaveBeenCalledWith('http://localhost:3333/mj/campaigns', {
       credentials: 'include',
     })
     expect(campaigns.value).toEqual(mockCampaigns)
@@ -107,7 +107,7 @@ describe('useCampaigns Composable', () => {
       description: 'Test description',
     })
 
-    expect(fetch).toHaveBeenCalledWith('http://localhost:3333/api/v2/mj/campaigns', {
+    expect(fetch).toHaveBeenCalledWith('http://localhost:3333/mj/campaigns', {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -158,7 +158,7 @@ describe('useCampaigns Composable', () => {
 
     const result = await updateCampaign('1', { name: 'New Name' })
 
-    expect(fetch).toHaveBeenCalledWith('http://localhost:3333/api/v2/mj/campaigns/1', {
+    expect(fetch).toHaveBeenCalledWith('http://localhost:3333/mj/campaigns/1', {
       method: 'PUT',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -199,7 +199,7 @@ describe('useCampaigns Composable', () => {
 
     await deleteCampaign('1')
 
-    expect(fetch).toHaveBeenCalledWith('http://localhost:3333/api/v2/mj/campaigns/1', {
+    expect(fetch).toHaveBeenCalledWith('http://localhost:3333/mj/campaigns/1', {
       method: 'DELETE',
       credentials: 'include',
     })
@@ -261,10 +261,9 @@ describe('useCampaigns Composable', () => {
     const { searchTwitchStreamers } = useCampaigns()
     const result = await searchTwitchStreamers('streamer1')
 
-    expect(fetch).toHaveBeenCalledWith(
-      'http://localhost:3333/api/v2/mj/dashboards/search?q=streamer1',
-      { credentials: 'include' }
-    )
+    expect(fetch).toHaveBeenCalledWith('http://localhost:3333/mj/dashboards/search?q=streamer1', {
+      credentials: 'include',
+    })
     expect(result).toEqual([
       {
         id: '123',
@@ -305,7 +304,7 @@ describe('useCampaigns Composable', () => {
       const { getCampaignMembers } = useCampaigns()
       const result = await getCampaignMembers('campaign-1')
 
-      expect(fetch).toHaveBeenCalledWith('http://localhost:3333/api/v2/mj/campaigns/campaign-1', {
+      expect(fetch).toHaveBeenCalledWith('http://localhost:3333/mj/campaigns/campaign-1', {
         credentials: 'include',
       })
       expect(result).toEqual(mockMembers)
@@ -384,15 +383,12 @@ describe('useCampaigns Composable', () => {
       const { inviteStreamer } = useCampaigns()
       await inviteStreamer('campaign-1', { streamer_id: 'streamer-123' })
 
-      expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:3333/api/v2/mj/campaigns/campaign-1/invite',
-        {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ streamer_id: 'streamer-123' }),
-        }
-      )
+      expect(fetch).toHaveBeenCalledWith('http://localhost:3333/mj/campaigns/campaign-1/invite', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ streamer_id: 'streamer-123' }),
+      })
     })
 
     test('should invite streamer by twitch info', async () => {
@@ -409,20 +405,17 @@ describe('useCampaigns Composable', () => {
         profile_image_url: 'https://example.com/img.png',
       })
 
-      expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:3333/api/v2/mj/campaigns/campaign-1/invite',
-        {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            twitch_user_id: '123456',
-            twitch_login: 'newstreamer',
-            twitch_display_name: 'NewStreamer',
-            profile_image_url: 'https://example.com/img.png',
-          }),
-        }
-      )
+      expect(fetch).toHaveBeenCalledWith('http://localhost:3333/mj/campaigns/campaign-1/invite', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          twitch_user_id: '123456',
+          twitch_login: 'newstreamer',
+          twitch_display_name: 'NewStreamer',
+          profile_image_url: 'https://example.com/img.png',
+        }),
+      })
     })
 
     test('should handle errors', async () => {
@@ -449,7 +442,7 @@ describe('useCampaigns Composable', () => {
       await removeMember('campaign-1', 'member-1')
 
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:3333/api/v2/mj/campaigns/campaign-1/members/member-1',
+        'http://localhost:3333/mj/campaigns/campaign-1/members/member-1',
         {
           method: 'DELETE',
           credentials: 'include',
@@ -491,10 +484,9 @@ describe('useCampaigns Composable', () => {
       const { fetchInvitations } = useCampaigns()
       const result = await fetchInvitations()
 
-      expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:3333/api/v2/dashboard/campaigns/invitations',
-        { credentials: 'include' }
-      )
+      expect(fetch).toHaveBeenCalledWith('http://localhost:3333/dashboard/campaigns/invitations', {
+        credentials: 'include',
+      })
       expect(result).toEqual(mockInvitations)
     })
 
@@ -520,7 +512,7 @@ describe('useCampaigns Composable', () => {
       await acceptInvitation('inv-1')
 
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:3333/api/v2/dashboard/campaigns/invitations/inv-1/accept',
+        'http://localhost:3333/dashboard/campaigns/invitations/inv-1/accept',
         {
           method: 'POST',
           credentials: 'include',
@@ -550,7 +542,7 @@ describe('useCampaigns Composable', () => {
       await declineInvitation('inv-1')
 
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:3333/api/v2/dashboard/campaigns/invitations/inv-1/decline',
+        'http://localhost:3333/dashboard/campaigns/invitations/inv-1/decline',
         {
           method: 'POST',
           credentials: 'include',
@@ -585,7 +577,7 @@ describe('useCampaigns Composable', () => {
       const { fetchActiveCampaigns } = useCampaigns()
       const result = await fetchActiveCampaigns()
 
-      expect(fetch).toHaveBeenCalledWith('http://localhost:3333/api/v2/dashboard/campaigns', {
+      expect(fetch).toHaveBeenCalledWith('http://localhost:3333/dashboard/campaigns', {
         credentials: 'include',
       })
       expect(result).toEqual(mockCampaigns)
@@ -613,7 +605,7 @@ describe('useCampaigns Composable', () => {
       await leaveCampaign('campaign-1')
 
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:3333/api/v2/dashboard/campaigns/campaign-1/leave',
+        'http://localhost:3333/dashboard/campaigns/campaign-1/leave',
         {
           method: 'POST',
           credentials: 'include',
@@ -649,7 +641,7 @@ describe('useCampaigns Composable', () => {
       const result = await grantAuthorization('campaign-1')
 
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:3333/api/v2/dashboard/campaigns/campaign-1/authorize',
+        'http://localhost:3333/dashboard/campaigns/campaign-1/authorize',
         {
           method: 'POST',
           credentials: 'include',
@@ -682,7 +674,7 @@ describe('useCampaigns Composable', () => {
       await revokeAuthorization('campaign-1')
 
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:3333/api/v2/dashboard/campaigns/campaign-1/authorize',
+        'http://localhost:3333/dashboard/campaigns/campaign-1/authorize',
         {
           method: 'DELETE',
           credentials: 'include',
@@ -734,7 +726,7 @@ describe('useCampaigns Composable', () => {
       const result = await getAuthorizationStatus()
 
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:3333/api/v2/dashboard/campaigns/authorization-status',
+        'http://localhost:3333/dashboard/campaigns/authorization-status',
         { credentials: 'include' }
       )
       expect(result).toEqual(mockStatus)
@@ -778,7 +770,7 @@ describe('useCampaigns Composable', () => {
       const result = await getLiveStatus('campaign-1')
 
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:3333/api/v2/mj/campaigns/campaign-1/live-status',
+        'http://localhost:3333/mj/campaigns/campaign-1/live-status',
         { credentials: 'include' }
       )
       expect(result).toEqual(mockLiveStatus)
@@ -818,7 +810,7 @@ describe('useCampaigns Composable', () => {
       await searchTwitchStreamers('test user&special')
 
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:3333/api/v2/mj/dashboards/search?q=test%20user%26special',
+        'http://localhost:3333/mj/dashboards/search?q=test%20user%26special',
         { credentials: 'include' }
       )
     })

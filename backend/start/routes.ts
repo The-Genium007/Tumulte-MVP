@@ -240,6 +240,8 @@ router
     // Streamers (recherche Twitch)
     router.get('/streamers', '#controllers/mj/streamers_controller.index')
     router.get('/streamers/search', '#controllers/mj/streamers_controller.search')
+    // Alias pour compatibilité frontend
+    router.get('/dashboards/search', '#controllers/mj/streamers_controller.search')
   })
   .prefix('/mj')
   .use(middleware.auth({ guards: ['web', 'api'] }))

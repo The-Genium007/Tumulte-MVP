@@ -96,7 +96,7 @@ export const handlers = [
   }),
 
   // Streamers endpoints
-  http.get(`${API_URL}/api/v2/mj/dashboards/search`, ({ request }) => {
+  http.get(`${API_URL}/mj/dashboards/search`, ({ request }) => {
     const url = new URL(request.url)
     const query = url.searchParams.get('query')
     return HttpResponse.json([
