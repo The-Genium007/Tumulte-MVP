@@ -32,7 +32,7 @@ const openResultsModal = (poll: PollInstance) => {
         </div>
         <UButton
           color="primary"
-          variant="solid"
+          variant="outline"
           icon="i-lucide-settings"
           label="Réglages"
           :to="`/mj/campaigns/${campaign.id}`"

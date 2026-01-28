@@ -69,16 +69,16 @@ const handleCancel = () => {
               type="button"
               class="w-full flex items-center gap-4 p-3 rounded-lg border-2 transition-all text-left hover:border-primary-400"
               :class="{
-                'border-primary-500 bg-primary-50': selectedCharacterId === character.id,
-                'border-default bg-elevated': selectedCharacterId !== character.id,
+                'border-primary-500 dark:border-primary-400 bg-primary-50 dark:bg-primary-950': selectedCharacterId === character.id,
+                'border-primary-300 dark:border-primary-700 bg-elevated': selectedCharacterId !== character.id,
               }"
               @click="selectedCharacterId = character.id"
             >
               <!-- Avatar -->
               <div
-                class="size-12 rounded-full bg-primary-100 flex items-center justify-center shrink-0"
+                class="size-12 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center shrink-0"
               >
-                <UIcon name="i-lucide-user" class="size-6 text-primary-500" />
+                <UIcon name="i-lucide-user" class="size-6 text-primary-500 dark:text-primary-300" />
               </div>
 
               <!-- Info -->
@@ -92,8 +92,8 @@ const handleCancel = () => {
                 <div
                   class="size-5 rounded-full border-2 flex items-center justify-center"
                   :class="{
-                    'border-primary-500 bg-primary-500': selectedCharacterId === character.id,
-                    'border-neutral-300': selectedCharacterId !== character.id,
+                    'border-primary-500 dark:border-primary-400 bg-primary-500 dark:bg-primary-400': selectedCharacterId === character.id,
+                    'border-primary-300 dark:border-primary-600': selectedCharacterId !== character.id,
                   }"
                 >
                   <UIcon

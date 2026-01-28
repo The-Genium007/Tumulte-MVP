@@ -169,9 +169,28 @@ export default class OverlayStudioController {
   /**
    * Récupère la configuration active d'un streamer (endpoint public)
    * GET /overlay/:streamerId/config
+   * Query params:
+   *   - campaign: (optional) ID de la campagne pour récupérer la config spécifique
+   *
+   * Logique de résolution:
+   * 1. Si campaign est fourni → cherche campaign_memberships.overlay_config_id
+   * 2. Sinon → utilise l'overlay "is_active" du streamer
+   * 3. Fallback → config par défaut système
    */
-  async getActiveConfig({ params, response }: HttpContext) {
-    const config = await this.overlayService.getActiveConfigForStreamer(params.streamerId)
+  async getActiveConfig({ params, request, response }: HttpContext) {
+    const campaignId = request.qs().campaign as string | undefined
+
+    let config
+
+    // Si un campaignId est fourni, chercher la config spécifique à cette campagne
+    if (campaignId) {
+      config = await this.overlayService.getConfigForCampaign(params.streamerId, campaignId)
+    }
+
+    // Fallback: config active du streamer
+    if (!config) {
+      config = await this.overlayService.getActiveConfigForStreamer(params.streamerId)
+    }
 
     if (!config) {
       return response.notFound({ error: 'No active configuration found' })

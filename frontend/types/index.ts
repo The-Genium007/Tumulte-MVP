@@ -220,6 +220,7 @@ export interface PollStartEvent {
   durationSeconds: number
   startedAt: string
   endsAt: string
+  campaign_id?: string
 }
 
 export interface PollEndEvent {

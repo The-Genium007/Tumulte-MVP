@@ -24,6 +24,8 @@ const showCharacterModal = ref(false)
 const updateLoading = ref(false)
 const overlayLoading = ref(false)
 const selectedOverlayId = ref<string | null>(null)
+// ID de l'overlay actuellement sauvegardé (pour détecter les changements)
+const savedOverlayId = ref<string | null>(null)
 
 onMounted(async () => {
   await loadSettings()
@@ -33,8 +35,10 @@ const loadSettings = async () => {
   loading.value = true
   try {
     settings.value = await getCampaignSettings(campaignId.value)
-    // Initialiser la sélection d'overlay
-    selectedOverlayId.value = settings.value.overlay?.current.id ?? null
+    // Initialiser la sélection d'overlay et la valeur sauvegardée
+    const currentId = settings.value.overlay?.current.id ?? null
+    selectedOverlayId.value = currentId
+    savedOverlayId.value = currentId
   } catch {
     toast.add({
       title: 'Erreur',
@@ -96,6 +100,16 @@ const overlayOptions = computed(() => {
   }))
 })
 
+// Nom du thème actuellement sauvegardé
+const savedOverlayName = computed(() => {
+  return settings.value?.overlay?.current.name ?? 'Tumulte Default'
+})
+
+// Vérifie si la sélection a changé par rapport à la valeur sauvegardée
+const hasOverlayChanged = computed(() => {
+  return selectedOverlayId.value !== savedOverlayId.value
+})
+
 // URL de prévisualisation de l'overlay
 const previewUrl = computed(() => {
   if (selectedOverlayId.value === null) {
@@ -104,11 +118,11 @@ const previewUrl = computed(() => {
   return `/dashboard/overlay-preview?config=${selectedOverlayId.value}`
 })
 
-// Gérer le changement d'overlay
-const handleOverlayChange = async (overlayId: string | null) => {
+// Valider et sauvegarder le changement d'overlay
+const handleOverlaySave = async () => {
   overlayLoading.value = true
   try {
-    await updateOverlay(campaignId.value, overlayId)
+    await updateOverlay(campaignId.value, selectedOverlayId.value)
 
     toast.add({
       title: 'Overlay modifié',
@@ -116,6 +130,8 @@ const handleOverlayChange = async (overlayId: string | null) => {
       color: 'success',
     })
 
+    // Mettre à jour la valeur sauvegardée et recharger les settings
+    savedOverlayId.value = selectedOverlayId.value
     await loadSettings()
   } catch (error) {
     toast.add({
@@ -124,10 +140,15 @@ const handleOverlayChange = async (overlayId: string | null) => {
       color: 'error',
     })
     // Restaurer la valeur précédente en cas d'erreur
-    selectedOverlayId.value = settings.value?.overlay?.current.id ?? null
+    selectedOverlayId.value = savedOverlayId.value
   } finally {
     overlayLoading.value = false
   }
+}
+
+// Annuler le changement et restaurer la valeur sauvegardée
+const handleOverlayCancel = () => {
+  selectedOverlayId.value = savedOverlayId.value
 }
 </script>
 
@@ -181,12 +202,12 @@ const handleOverlayChange = async (overlayId: string | null) => {
 
           <!-- Personnage assigné -->
           <div v-if="settings.assignedCharacter" class="space-y-6">
-            <div class="flex items-center gap-4 p-4 rounded-lg bg-primary-50">
+            <div class="flex items-center gap-4 p-4 rounded-lg bg-primary-50 dark:bg-primary-950">
               <!-- Avatar -->
               <div
-                class="size-16 rounded-full bg-primary-100 flex items-center justify-center shrink-0"
+                class="size-16 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center shrink-0"
               >
-                <UIcon name="i-lucide-user" class="size-8 text-primary-500" />
+                <UIcon name="i-lucide-user" class="size-8 text-primary-500 dark:text-primary-300" />
               </div>
 
               <!-- Info -->
@@ -248,36 +269,85 @@ const handleOverlayChange = async (overlayId: string | null) => {
           </template>
 
           <div class="space-y-4">
+            <!-- Thème actuellement sauvegardé -->
+            <div
+              class="flex items-center gap-3 p-3 rounded-lg bg-emerald-100 dark:bg-emerald-950 border border-emerald-400 dark:border-emerald-700"
+            >
+              <div class="flex items-center justify-center size-10 rounded-full bg-emerald-200 dark:bg-emerald-900">
+                <UIcon name="i-lucide-check-circle" class="size-5 text-emerald-700 dark:text-emerald-400" />
+              </div>
+              <div class="flex-1">
+                <p class="text-xs font-medium text-emerald-800 dark:text-emerald-300 uppercase tracking-wide">
+                  Thème actif
+                </p>
+                <p class="text-sm font-semibold text-emerald-900 dark:text-emerald-100">
+                  {{ savedOverlayName }}
+                </p>
+              </div>
+            </div>
+
             <p class="text-sm text-muted">
               Sélectionnez l'overlay à utiliser pour cette campagne. Vous pouvez créer des overlays
               personnalisés dans l'Overlay Studio.
             </p>
 
-            <div class="flex flex-col sm:flex-row gap-3">
+            <div class="flex flex-col gap-3">
               <!-- Dropdown de sélection -->
               <USelect
                 v-model="selectedOverlayId"
                 :items="overlayOptions"
                 placeholder="Sélectionner un overlay"
                 size="lg"
-                class="flex-1"
-                :ui="{ base: 'bg-primary-100 text-primary-600' }"
-                :loading="overlayLoading"
-                @update:model-value="handleOverlayChange"
+                class="w-full"
+                :ui="{
+                  base: 'bg-primary-100 dark:bg-primary-900 text-primary-600 dark:text-primary-300 border-primary-300 dark:border-primary-600',
+                  trailingIcon: 'text-primary-500 dark:text-primary-400'
+                }"
               />
 
-              <!-- Bouton Prévisualiser -->
-              <UButton
-                color="primary"
-                variant="soft"
-                icon="i-lucide-eye"
-                size="lg"
-                :to="previewUrl"
-                target="_blank"
-              >
-                <span class="hidden sm:inline">Prévisualiser</span>
-                <span class="sm:hidden">Aperçu</span>
-              </UButton>
+              <!-- Boutons d'action -->
+              <div class="flex flex-col sm:flex-row gap-2">
+                <!-- Bouton Prévisualiser -->
+                <UButton
+                  color="neutral"
+                  variant="soft"
+                  icon="i-lucide-eye"
+                  size="lg"
+                  :to="previewUrl"
+                  target="_blank"
+                  class="flex-1 sm:flex-none"
+                >
+                  <span class="hidden sm:inline">Prévisualiser</span>
+                  <span class="sm:hidden">Aperçu</span>
+                </UButton>
+
+                <!-- Bouton Annuler (visible si changement) -->
+                <UButton
+                  v-if="hasOverlayChanged"
+                  color="neutral"
+                  variant="outline"
+                  icon="i-lucide-x"
+                  size="lg"
+                  class="flex-1 sm:flex-none"
+                  @click="handleOverlayCancel"
+                >
+                  Annuler
+                </UButton>
+
+                <!-- Bouton Valider (visible si changement) -->
+                <UButton
+                  v-if="hasOverlayChanged"
+                  color="success"
+                  variant="solid"
+                  icon="i-lucide-check"
+                  size="lg"
+                  :loading="overlayLoading"
+                  class="flex-1 sm:flex-none"
+                  @click="handleOverlaySave"
+                >
+                  Valider le changement
+                </UButton>
+              </div>
             </div>
 
             <!-- Lien vers Overlay Studio -->

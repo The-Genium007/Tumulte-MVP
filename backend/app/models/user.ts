@@ -73,6 +73,10 @@ class User extends compose(BaseModel, AuthFinder) {
   @column.dateTime({ serializeAs: null })
   declare passwordResetSentAt: DateTime | null
 
+  // Welcome email tracking (to prevent duplicate sends)
+  @column.dateTime({ serializeAs: null })
+  declare welcomeEmailSentAt: DateTime | null
+
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
 

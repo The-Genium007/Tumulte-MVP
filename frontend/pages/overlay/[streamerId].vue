@@ -86,7 +86,7 @@ const streamerId = computed(() => route.params.streamerId as string)
 const _isPreviewMode = computed(() => route.query.preview === 'true')
 
 // Charger la configuration de l'overlay
-const { visibleElements, fetchConfig } = useOverlayConfig(streamerId)
+const { visibleElements, fetchConfig, setActiveCampaign } = useOverlayConfig(streamerId)
 
 // Récupérer l'élément dice pour extraire les configs HUD
 const diceElement = computed(() => visibleElements.value.find((el) => el.type === 'dice'))
@@ -407,7 +407,13 @@ const setupWebSocketSubscription = () => {
   }
 
   unsubscribe = subscribeToStreamerPolls(streamerId.value, {
-    onPollStart: (data) => {
+    onPollStart: async (data) => {
+      // Si un campaign_id est présent, recharger la config spécifique à cette campagne
+      if (data.campaign_id) {
+        console.log('[Overlay] Poll started with campaign:', data.campaign_id)
+        await setActiveCampaign(data.campaign_id)
+      }
+
       const totalDuration = data.durationSeconds || 60
       activePoll.value = { ...data, totalDuration }
       isEnding.value = false

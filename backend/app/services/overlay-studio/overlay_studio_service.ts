@@ -134,6 +134,17 @@ export class OverlayStudioService {
   }
 
   /**
+   * Récupère la configuration overlay spécifique à une campagne pour un streamer
+   * Cherche dans campaign_memberships.overlay_config_id
+   */
+  async getConfigForCampaign(
+    streamerId: string,
+    campaignId: string
+  ): Promise<OverlayConfig | null> {
+    return await this.overlayRepository.findByCampaignMembership(streamerId, campaignId)
+  }
+
+  /**
    * Récupère le streamerId à partir de l'userId
    */
   async getStreamerIdForUser(userId: string): Promise<string | null> {
