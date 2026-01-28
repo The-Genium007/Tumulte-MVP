@@ -383,6 +383,7 @@ export interface CampaignSettings {
 // Dice Roll types (VTT Integration)
 export interface DiceRollEvent {
   id: string
+  campaignId?: string
   characterId: string
   characterName: string
   characterAvatar: string | null

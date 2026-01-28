@@ -496,15 +496,24 @@ const setupWebSocketSubscription = () => {
     },
 
     // VTT Integration - Dice Rolls
-    onDiceRoll: (data) => {
+    onDiceRoll: async (data) => {
+      // Recharger la config spécifique à la campagne si nécessaire
+      if (data.campaignId) {
+        await setActiveCampaign(data.campaignId)
+      }
       handleDiceRoll(data)
     },
 
-    onDiceRollCritical: (data) => {
+    onDiceRollCritical: async (data) => {
       // SECURITY: Never display hidden rolls on overlay (GM secret rolls)
       if (data.isHidden) {
         console.log('[Overlay] Ignoring hidden critical roll (GM secret)')
         return
+      }
+
+      // Recharger la config spécifique à la campagne si nécessaire
+      if (data.campaignId) {
+        await setActiveCampaign(data.campaignId)
       }
 
       // Les rolls critiques passent devant la queue

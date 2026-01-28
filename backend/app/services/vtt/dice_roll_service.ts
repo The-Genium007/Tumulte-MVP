@@ -72,6 +72,7 @@ export default class DiceRollService {
     // Préparer le payload de base
     const basePayload = {
       id: diceRoll.id,
+      campaignId: campaign.id,
       characterId: character.id,
       characterName: character.name,
       characterAvatar: character.avatarUrl,
