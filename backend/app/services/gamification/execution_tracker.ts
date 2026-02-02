@@ -36,6 +36,7 @@ export interface ActionExecutedPayload {
   message?: string
   originalValue?: number
   invertedValue?: number
+  [key: string]: string | number | boolean | undefined
 }
 
 const REDIS_PREFIX = 'gamification:pending:'
@@ -268,13 +269,16 @@ export class ExecutionTracker {
     instance: GamificationInstance,
     payload: ActionExecutedPayload
   ): Promise<void> {
+    // Message WebSocket à broadcaster
+    const message = {
+      event: 'gamification:action_executed',
+      data: payload,
+    }
+
     // Pour une instance individuelle, broadcast au streamer
     if (instance.streamerId) {
       const channel = `streamer:${instance.streamerId}:polls`
-      transmit.broadcast(channel, {
-        event: 'gamification:action_executed',
-        data: payload,
-      })
+      transmit.broadcast(channel, message as any)
 
       logger.debug(
         {
@@ -289,10 +293,7 @@ export class ExecutionTracker {
     if (instance.type === 'group' && instance.streamerSnapshots) {
       for (const snapshot of instance.streamerSnapshots) {
         const channel = `streamer:${snapshot.streamerId}:polls`
-        transmit.broadcast(channel, {
-          event: 'gamification:action_executed',
-          data: payload,
-        })
+        transmit.broadcast(channel, message as any)
       }
 
       logger.debug(

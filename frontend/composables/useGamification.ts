@@ -241,7 +241,7 @@ export const useGamification = () => {
   const triggerEvent = async (
     campaignId: string,
     eventId: string,
-    data?: { streamerId?: string; viewerCount?: number }
+    data?: { streamerId?: string; viewerCount?: number; customData?: Record<string, unknown> }
   ): Promise<GamificationInstance> => {
     loading.value = true
     error.value = null

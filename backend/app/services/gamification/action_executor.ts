@@ -126,8 +126,6 @@ export class ActionExecutor {
     if (!diceData && isTestMode && customData?.diceValue !== undefined) {
       // Build fake diceRoll for testing
       const diceValue = customData.diceValue
-      const isCritSuccess = diceValue === 20
-      const isCritFailure = diceValue === 1
 
       diceData = {
         rollId: `test-${Date.now()}`,
@@ -136,8 +134,7 @@ export class ActionExecutor {
         formula: '1d20',
         result: diceValue,
         diceResults: [diceValue],
-        isCritical: isCritSuccess || isCritFailure,
-        criticalType: isCritSuccess ? 'success' : isCritFailure ? 'failure' : null,
+        criticalType: diceValue === 20 ? 'success' : 'failure',
       }
 
       logger.info(

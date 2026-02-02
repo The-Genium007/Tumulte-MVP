@@ -115,12 +115,13 @@ export class CampaignEventDto {
   /**
    * Configuration d'affichage par type d'événement
    */
-  static readonly TYPE_CONFIG: Record<CampaignEventType, CampaignEventTypeConfig> = {
+  static readonly typeConfig: Record<CampaignEventType, CampaignEventTypeConfig> = {
     poll: {
       icon: 'i-lucide-bar-chart-2',
       iconColor: 'text-success-600',
       label: 'Sondage',
     },
+    // eslint-disable-next-line camelcase
     gamification_dice_reverse: {
       icon: 'i-lucide-dice-5',
       iconColor: 'text-orange-500',
@@ -138,7 +139,7 @@ export class CampaignEventDto {
       totalVotes: number
     }
   ): CampaignEventDto {
-    const config = this.TYPE_CONFIG.poll
+    const config = this.typeConfig.poll
 
     // Calculer les résultats
     const votesByOption = aggregatedResults?.votesByOption || {}
@@ -182,7 +183,7 @@ export class CampaignEventDto {
    * Convertit une GamificationInstance complétée en CampaignEventDto
    */
   static fromGamificationInstance(instance: GamificationInstance): CampaignEventDto {
-    const config = this.TYPE_CONFIG.gamification_dice_reverse
+    const config = this.typeConfig.gamification_dice_reverse
 
     // Extraire le nom du personnage depuis triggerData
     const characterName = instance.triggerData?.diceRoll?.characterName || 'Personnage'

@@ -431,7 +431,7 @@ const handleOverlayCancel = () => {
           <template #header>
             <div class="flex items-center gap-3">
               <h2 class="text-xl font-semibold text-primary">Points de chaîne Twitch</h2>
-              <UBadge color="purple" variant="soft" size="sm"> Gamification </UBadge>
+              <UBadge color="primary" variant="soft" size="sm"> Gamification </UBadge>
             </div>
           </template>
 

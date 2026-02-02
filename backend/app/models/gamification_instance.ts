@@ -53,6 +53,14 @@ export interface ResultData {
   actionResult?: Record<string, unknown>
   /** Erreur si échec */
   error?: string
+  /** Indique si l'action a été exécutée (par Foundry) */
+  executed?: boolean
+  /** Date d'exécution de l'action */
+  executedAt?: string
+  /** Succès de l'exécution */
+  executionSuccess?: boolean
+  /** Message d'exécution */
+  executionMessage?: string
 }
 
 /**
