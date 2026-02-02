@@ -2,6 +2,7 @@
 import { ref, onMounted, computed } from 'vue'
 import CharacterSelectionModal from '@/components/dashboard/CharacterSelectionModal.vue'
 import { useCampaignCharacters } from '@/composables/useCampaignCharacters'
+import { useStreamerGamification } from '@/composables/useStreamerGamification'
 import type { CampaignSettings } from '@/types'
 
 definePageMeta({
@@ -18,6 +19,16 @@ const { characters, fetchCharacters, getCampaignSettings, updateCharacter, updat
 
 const campaignId = computed(() => route.params.id as string)
 
+// Gamification
+const {
+  events: gamificationEvents,
+  isLoading: gamificationLoading,
+  canUseChannelPoints,
+  fetchEvents: fetchGamificationEvents,
+  updateCost,
+  isEventLoading,
+} = useStreamerGamification(campaignId)
+
 const settings = ref<CampaignSettings | null>(null)
 const loading = ref(true)
 const showCharacterModal = ref(false)
@@ -29,7 +40,40 @@ const savedOverlayId = ref<string | null>(null)
 
 onMounted(async () => {
   await loadSettings()
+  // Charger les événements gamification en parallèle
+  fetchGamificationEvents()
 })
+
+// État d'édition des coûts par événement
+const editingCost = ref<Record<string, boolean>>({})
+const editCostValues = ref<Record<string, number>>({})
+
+const startEditCost = (eventId: string, currentCost: number) => {
+  editingCost.value[eventId] = true
+  editCostValues.value[eventId] = currentCost
+}
+
+const cancelEditCost = (eventId: string) => {
+  editingCost.value[eventId] = false
+  delete editCostValues.value[eventId]
+}
+
+const saveCost = async (eventId: string) => {
+  const newCost = editCostValues.value[eventId]
+  if (newCost && newCost >= 1) {
+    await updateCost(eventId, newCost)
+    editingCost.value[eventId] = false
+    delete editCostValues.value[eventId]
+  }
+}
+
+// Formater le coût en points
+const formatCost = (cost: number) => {
+  if (cost >= 1000) {
+    return `${(cost / 1000).toFixed(cost % 1000 === 0 ? 0 : 1)}k`
+  }
+  return cost.toString()
+}
 
 const loadSettings = async () => {
   loading.value = true
@@ -379,6 +423,164 @@ const handleOverlayCancel = () => {
                 </template>
               </UAlert>
             </div>
+          </div>
+        </UCard>
+
+        <!-- Section : Intégration Twitch (Gamification) -->
+        <UCard>
+          <template #header>
+            <div class="flex items-center gap-3">
+              <h2 class="text-xl font-semibold text-primary">Points de chaîne Twitch</h2>
+              <UBadge color="purple" variant="soft" size="sm"> Gamification </UBadge>
+            </div>
+          </template>
+
+          <!-- Loading -->
+          <div v-if="gamificationLoading" class="flex items-center justify-center py-8">
+            <UIcon name="i-lucide-loader-2" class="size-8 text-primary animate-spin" />
+          </div>
+
+          <!-- Pas d'événements disponibles -->
+          <div
+            v-else-if="gamificationEvents.length === 0"
+            class="flex flex-col items-center justify-center py-8 text-center"
+          >
+            <UIcon name="i-lucide-gift" class="size-12 text-neutral-400 mb-4" />
+            <p class="text-base font-normal text-neutral-400">Aucun événement disponible</p>
+            <p class="text-sm text-neutral-400 mt-1 max-w-md mx-auto">
+              Le MJ n'a pas encore activé d'événements gamification pour cette campagne.
+            </p>
+          </div>
+
+          <!-- Liste des événements -->
+          <div v-else class="space-y-4">
+            <!-- Avertissement non-affilié -->
+            <UAlert
+              v-if="!canUseChannelPoints"
+              color="warning"
+              variant="soft"
+              icon="i-lucide-alert-triangle"
+            >
+              <template #title>Compte non affilié</template>
+              <template #description>
+                <p class="text-sm">
+                  Les points de chaîne Twitch sont réservés aux streamers affiliés ou partenaires.
+                  Cette fonctionnalité sera disponible dès que votre chaîne sera affiliée.
+                </p>
+              </template>
+            </UAlert>
+
+            <p class="text-sm text-muted">
+              Voici les événements activés par le MJ pour cette campagne. Vous pouvez personnaliser
+              le coût en points de chaîne pour votre audience.
+            </p>
+
+            <!-- Événements -->
+            <div class="space-y-3">
+              <div
+                v-for="event in gamificationEvents"
+                :key="event.eventId"
+                class="p-4 rounded-lg border transition-all bg-purple-50 dark:bg-purple-950/30 border-purple-200 dark:border-purple-800"
+              >
+                <div class="flex items-start gap-4">
+                  <!-- Icône colorée -->
+                  <div
+                    class="size-12 rounded-lg flex items-center justify-center shrink-0"
+                    :style="{ backgroundColor: event.rewardColor + '20' }"
+                  >
+                    <UIcon
+                      name="i-game-icons-perspective-dice-six-faces-random"
+                      class="size-6"
+                      :style="{ color: event.rewardColor }"
+                    />
+                  </div>
+
+                  <!-- Contenu -->
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-1">
+                      <h3 class="font-semibold text-primary truncate">{{ event.eventName }}</h3>
+                      <UBadge color="success" variant="soft" size="xs">
+                        Actif sur votre chaîne
+                      </UBadge>
+                    </div>
+
+                    <p v-if="event.eventDescription" class="text-sm text-muted line-clamp-2 mb-2">
+                      {{ event.eventDescription }}
+                    </p>
+
+                    <!-- Info coût recommandé -->
+                    <div class="flex flex-wrap items-center gap-2 text-xs text-muted mb-3">
+                      <span class="flex items-center gap-1">
+                        <UIcon name="i-lucide-coins" class="size-3" />
+                        Recommandé: {{ formatCost(event.recommendedCost) }} pts
+                      </span>
+                      <span v-if="event.difficultyExplanation" class="text-neutral-400">
+                        • {{ event.difficultyExplanation }}
+                      </span>
+                    </div>
+
+                    <!-- Édition du coût -->
+                    <div class="pt-3 border-t border-default">
+                      <div v-if="!editingCost[event.eventId]" class="flex items-center gap-3">
+                        <span class="text-sm">
+                          Coût sur votre chaîne:
+                          <strong class="text-primary">{{
+                            formatCost(event.effectiveCost)
+                          }}</strong>
+                          points
+                        </span>
+                        <UButton
+                          color="neutral"
+                          variant="ghost"
+                          size="xs"
+                          icon="i-lucide-pencil"
+                          @click="startEditCost(event.eventId, event.effectiveCost)"
+                        />
+                      </div>
+                      <div v-else class="flex items-center gap-2">
+                        <UInput
+                          v-model.number="editCostValues[event.eventId]"
+                          type="number"
+                          :min="1"
+                          :max="1000000"
+                          size="sm"
+                          class="w-32"
+                          @keyup.enter="saveCost(event.eventId)"
+                          @keyup.escape="cancelEditCost(event.eventId)"
+                        />
+                        <span class="text-sm text-muted">points</span>
+                        <UButton
+                          color="success"
+                          variant="soft"
+                          size="xs"
+                          icon="i-lucide-check"
+                          :loading="isEventLoading(event.eventId)"
+                          @click="saveCost(event.eventId)"
+                        />
+                        <UButton
+                          color="neutral"
+                          variant="ghost"
+                          size="xs"
+                          icon="i-lucide-x"
+                          @click="cancelEditCost(event.eventId)"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Explication -->
+            <UAlert color="info" variant="soft" icon="i-lucide-info" class="mt-4">
+              <template #description>
+                <p class="text-sm">
+                  Ces événements sont gérés par le MJ de la campagne. Une récompense de points de
+                  chaîne est automatiquement créée sur votre chaîne Twitch. Vous pouvez
+                  personnaliser le coût en points selon votre audience.
+                </p>
+              </template>
+            </UAlert>
           </div>
         </UCard>
       </template>
