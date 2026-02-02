@@ -3,7 +3,11 @@
  * Centralise les constantes et fonctions partagées entre TransformGizmo et StudioCanvas
  */
 
-import type { PollProperties } from '../types'
+import type {
+  PollProperties,
+  DiceReverseGoalBarProperties,
+  DiceReverseImpactHudProperties,
+} from '../types'
 
 // ===== CONSTANTES DE CONFIGURATION DU GIZMO =====
 
@@ -114,4 +118,62 @@ export const HUD_CSS_TO_CANVAS = 1.0
 export const DEFAULT_GIZMO_SIZE = {
   width: 100,
   height: 100,
+}
+
+// ===== DICE REVERSE GIZMO SIZES =====
+
+/**
+ * Facteurs de conversion CSS → Canvas pour les éléments DiceReverse
+ * Similaire au Poll, ajustés empiriquement pour que le gizmo englobe correctement les éléments
+ * Le composant Html de TresJS avec scale="50" affecte le rendu
+ */
+export const DICE_REVERSE_CSS_TO_CANVAS_WIDTH = 1.25
+export const DICE_REVERSE_CSS_TO_CANVAS_HEIGHT = 1.7
+
+/**
+ * Calcule la taille du gizmo pour une Goal Bar
+ * @param props - Les propriétés de la Goal Bar
+ * @returns La largeur et hauteur du gizmo en coordonnées canvas
+ */
+export const calculateGoalBarGizmoSize = (
+  props: DiceReverseGoalBarProperties
+): { width: number; height: number } => {
+  // La Goal Bar a une structure CSS avec:
+  // - padding: 16px 20px dans .goal-container
+  // - hauteur = header (titre ~28px + stats) + progress bar (height prop) + marges
+  const cssWidth = props.width
+  // Calculer la hauteur CSS approximative basée sur le contenu
+  const headerHeight = 28 + 14 // titre + margin-bottom
+  const progressBarHeight = props.progressBar.height
+  const containerPadding = 16 * 2 // top + bottom padding
+  const cssHeight = headerHeight + progressBarHeight + containerPadding
+
+  return {
+    width: (cssWidth + GIZMO_PADDING * 2) * DICE_REVERSE_CSS_TO_CANVAS_WIDTH,
+    height: (cssHeight + GIZMO_PADDING * 2) * DICE_REVERSE_CSS_TO_CANVAS_HEIGHT,
+  }
+}
+
+/**
+ * Calcule la taille du gizmo pour un Impact HUD
+ * @param props - Les propriétés de l'Impact HUD
+ * @returns La largeur et hauteur du gizmo en coordonnées canvas
+ */
+export const calculateImpactHudGizmoSize = (
+  props: DiceReverseImpactHudProperties
+): { width: number; height: number } => {
+  // L'Impact HUD a une structure CSS avec:
+  // - padding: 20px 32px dans .impact-container
+  // - titre (fontSize + margin-bottom) + detail (fontSize)
+  const cssWidth = props.width
+  // Calculer la hauteur CSS approximative basée sur la typographie
+  const titleHeight = props.typography.title.fontSize * 1.2 + 8 // line-height + margin-bottom
+  const detailHeight = props.typography.detail.fontSize * 1.2
+  const containerPadding = 20 * 2 // top + bottom padding
+  const cssHeight = titleHeight + detailHeight + containerPadding
+
+  return {
+    width: (cssWidth + GIZMO_PADDING * 2) * DICE_REVERSE_CSS_TO_CANVAS_WIDTH,
+    height: (cssHeight + GIZMO_PADDING * 2) * DICE_REVERSE_CSS_TO_CANVAS_HEIGHT,
+  }
 }

@@ -159,8 +159,18 @@ import { computed, ref, onMounted, onUnmounted, nextTick } from 'vue'
 import type { Object3D } from 'three'
 import { useOverlayStudioStore } from '../stores/overlayStudio'
 import { useInjectedUndoRedo } from '../composables/useUndoRedo'
-import type { PollProperties, DiceProperties } from '../types'
-import { calculatePollGizmoSize, HUD_BASE_SIZE } from '../utils/gizmo-size'
+import type {
+  PollProperties,
+  DiceProperties,
+  DiceReverseGoalBarProperties,
+  DiceReverseImpactHudProperties,
+} from '../types'
+import {
+  calculatePollGizmoSize,
+  calculateGoalBarGizmoSize,
+  calculateImpactHudGizmoSize,
+  HUD_BASE_SIZE,
+} from '../utils/gizmo-size'
 import StudioElement from './StudioElement.vue'
 import TransformGizmo, { type ActiveEdges, type ResizeHandle } from './TransformGizmo.vue'
 
@@ -455,6 +465,16 @@ const getElementHalfSize = (element: typeof gizmoTargetElement.value) => {
     // Pour les dice, le gizmo cible le HUD, pas le canvas entier
     baseWidth = HUD_BASE_SIZE.width
     baseHeight = HUD_BASE_SIZE.height
+  } else if (element.type === 'diceReverseGoalBar') {
+    const goalBarProps = element.properties as DiceReverseGoalBarProperties
+    const gizmoSize = calculateGoalBarGizmoSize(goalBarProps)
+    baseWidth = gizmoSize.width
+    baseHeight = gizmoSize.height
+  } else if (element.type === 'diceReverseImpactHud') {
+    const impactHudProps = element.properties as DiceReverseImpactHudProperties
+    const gizmoSize = calculateImpactHudGizmoSize(impactHudProps)
+    baseWidth = gizmoSize.width
+    baseHeight = gizmoSize.height
   }
 
   return {
@@ -622,6 +642,16 @@ const handleResize = (
     // Pour les dice, le gizmo cible le HUD
     baseWidth = HUD_BASE_SIZE.width
     baseHeight = HUD_BASE_SIZE.height
+  } else if (el.type === 'diceReverseGoalBar') {
+    const goalBarProps = el.properties as DiceReverseGoalBarProperties
+    const gizmoSize = calculateGoalBarGizmoSize(goalBarProps)
+    baseWidth = gizmoSize.width
+    baseHeight = gizmoSize.height
+  } else if (el.type === 'diceReverseImpactHud') {
+    const impactHudProps = el.properties as DiceReverseImpactHudProperties
+    const gizmoSize = calculateImpactHudGizmoSize(impactHudProps)
+    baseWidth = gizmoSize.width
+    baseHeight = gizmoSize.height
   }
 
   // Calculer les nouveaux facteurs d'échelle (basé sur le scale du target)

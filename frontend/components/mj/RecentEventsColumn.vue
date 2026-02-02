@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { PollInstance } from '~/types/api'
+import type { CampaignEvent } from '@/types/campaign-events'
 import { usePollsStore } from '~/stores/polls'
 
 const props = defineProps<{
@@ -7,93 +7,54 @@ const props = defineProps<{
   maxHeight?: string
 }>()
 
-const emit = defineEmits<{
-  viewResults: [poll: PollInstance]
-}>()
-
-const config = useRuntimeConfig()
-const API_URL = config.public.apiBase
 const pollsStore = usePollsStore()
+const { events, loading, fetchEvents } = useCampaignEvents()
 
-const loading = ref(false)
-const finishedPolls = ref<PollInstance[]>([])
+// State pour la modal de détail
+const selectedEvent = ref<CampaignEvent | null>(null)
+const isDetailModalOpen = ref(false)
 
 /**
- * Récupère les sondages terminés de la campagne
+ * Ouvre la modal de détail pour un événement
  */
-const fetchFinishedPolls = async () => {
-  if (!props.campaignId) return
-
-  loading.value = true
-  try {
-    const response = await fetch(
-      `${API_URL}/mj/campaigns/${props.campaignId}/polls/instances?status=COMPLETED`,
-      { credentials: 'include' }
-    )
-
-    if (!response.ok) throw new Error('Failed to fetch polls')
-
-    const data = await response.json()
-
-    // Filtrer uniquement les sondages terminés et trier par date de fin
-    finishedPolls.value = (data.data || [])
-      .filter((poll: PollInstance) => poll.status === 'ENDED' && poll.endedAt)
-      .sort(
-        (a: PollInstance, b: PollInstance) =>
-          new Date(b.endedAt!).getTime() - new Date(a.endedAt!).getTime()
-      )
-      .slice(0, 20) // Limiter à 20 derniers
-  } catch (error) {
-    console.error('Failed to fetch finished polls:', error)
-    finishedPolls.value = []
-  } finally {
-    loading.value = false
-  }
+const openEventDetail = (event: CampaignEvent) => {
+  selectedEvent.value = event
+  isDetailModalOpen.value = true
 }
 
 /**
- * Formate la date d'un sondage terminé
+ * Charge les événements au changement de campagne
  */
-const formatPollDate = (dateStr: string | null): string => {
-  if (!dateStr) return ''
+watch(
+  () => props.campaignId,
+  async (campaignId) => {
+    if (campaignId) {
+      await fetchEvents(campaignId, { limit: 20 })
+    }
+  },
+  { immediate: true }
+)
 
-  const date = new Date(dateStr)
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const diffMins = Math.floor(diffMs / 60000)
-  const diffHours = Math.floor(diffMs / 3600000)
-  const diffDays = Math.floor(diffMs / 86400000)
-
-  // Format relatif pour les récents
-  if (diffMins < 1) return "À l'instant"
-  if (diffMins < 60) return `Il y a ${diffMins} min`
-  if (diffHours < 24) return `Il y a ${diffHours}h`
-  if (diffDays < 7) return `Il y a ${diffDays}j`
-
-  // Format date pour les plus anciens
-  return date.toLocaleDateString('fr-FR', {
-    day: 'numeric',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
-
-// Charger les sondages au changement de campagne
-watch(() => props.campaignId, fetchFinishedPolls, { immediate: true })
-
-// Rafraîchir quand un sondage se termine (signalé par pollsStore.lastPollEndedAt)
+/**
+ * Rafraîchit quand un sondage se termine (signalé par pollsStore.lastPollEndedAt)
+ */
 watch(
   () => pollsStore.lastPollEndedAt,
-  (newValue) => {
-    if (newValue) {
+  async (newValue) => {
+    if (newValue && props.campaignId) {
       // Petit délai pour laisser le backend enregistrer les résultats
-      setTimeout(() => {
-        fetchFinishedPolls()
+      setTimeout(async () => {
+        await fetchEvents(props.campaignId, { limit: 20 })
       }, 500)
     }
   }
 )
+
+/**
+ * Rafraîchit aussi quand une instance de gamification se termine
+ * On écoute les événements WebSocket si disponibles
+ */
+// TODO: Ajouter listener WebSocket pour gamification/instance_completed
 </script>
 
 <template>
@@ -116,45 +77,27 @@ watch(
 
     <!-- Empty state -->
     <div
-      v-else-if="finishedPolls.length === 0"
+      v-else-if="events.length === 0"
       class="flex-1 flex flex-col items-center justify-center text-center py-12"
     >
       <UIcon name="i-lucide-history" class="size-12 text-muted mb-4" />
-      <p class="text-base font-normal text-muted">Aucun sondage terminé</p>
-      <p class="text-sm text-muted mt-1">Les résultats de vos sondages apparaîtront ici</p>
+      <p class="text-base font-normal text-muted">Aucun événement</p>
+      <p class="text-sm text-muted mt-1">
+        Les résultats de vos sondages et intégrations Twitch apparaîtront ici
+      </p>
     </div>
 
-    <!-- Liste des sondages terminés -->
+    <!-- Liste des événements -->
     <div v-else class="flex-1 space-y-2 overflow-y-auto min-h-0">
-      <div
-        v-for="poll in finishedPolls"
-        :key="poll.id"
-        class="flex items-center gap-3 p-3 bg-muted rounded-lg cursor-pointer hover:bg-muted/75 transition-colors group"
-        @click="emit('viewResults', poll)"
-      >
-        <!-- Icône -->
-        <div
-          class="shrink-0 w-10 h-10 rounded-lg bg-success-light flex items-center justify-center"
-        >
-          <UIcon name="i-lucide-bar-chart-2" class="size-5 text-success-600" />
-        </div>
-
-        <!-- Contenu -->
-        <div class="flex-1 min-w-0">
-          <p class="font-medium text-primary text-sm truncate capitalize">
-            {{ poll.title }}
-          </p>
-          <p class="text-xs text-muted">
-            {{ formatPollDate(poll.endedAt) }}
-          </p>
-        </div>
-
-        <!-- Chevron -->
-        <UIcon
-          name="i-lucide-chevron-right"
-          class="size-5 text-muted group-hover:text-primary transition-colors shrink-0"
-        />
-      </div>
+      <MjCampaignEventRow
+        v-for="event in events"
+        :key="event.id"
+        :event="event"
+        @click="openEventDetail"
+      />
     </div>
+
+    <!-- Modal de détail -->
+    <MjCampaignEventDetailModal v-model:open="isDetailModalOpen" :event="selectedEvent" />
   </div>
 </template>

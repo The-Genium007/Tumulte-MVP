@@ -10,6 +10,9 @@ import type {
   ElementProperties,
   PollProperties,
   DiceProperties,
+  DiceReverseProperties,
+  DiceReverseGoalBarProperties,
+  DiceReverseImpactHudProperties,
   HudTransform,
 } from '../types'
 
@@ -328,7 +331,213 @@ export const useOverlayStudioStore = defineStore('overlayStudio', () => {
             criticalType: null,
           },
         } as DiceProperties
+
+      // Legacy type - kept for backward compatibility
+      case 'diceReverse':
+        return {
+          goalBar: {
+            container: {
+              backgroundColor: 'rgba(26, 26, 46, 0.98)',
+              borderColor: '#9146FF',
+              borderWidth: 2,
+              borderRadius: 16,
+              opacity: 1,
+            },
+            progressBar: {
+              height: 28,
+              backgroundColor: 'rgba(255, 255, 255, 0.1)',
+              fillColor: '#9146FF',
+              fillGradientEnabled: true,
+              fillGradientStart: '#9146FF',
+              fillGradientEnd: '#ff6b9d',
+              glowColor: '#ffffff',
+            },
+            shake: {
+              startPercent: 70,
+              maxIntensity: 8,
+            },
+            animations: {
+              entry: {
+                duration: 500,
+                easing: 'ease-out',
+              },
+              exit: {
+                duration: 350,
+                easing: 'ease-in',
+              },
+              success: {
+                displayDuration: 3000,
+              },
+            },
+            audio: {
+              progressSound: { enabled: true, volume: 0.3 },
+              successSound: { enabled: true, volume: 0.5 },
+            },
+            typography: {
+              title: {
+                fontFamily: 'Inter',
+                fontSize: 20,
+                fontWeight: 800,
+                color: '#ffffff',
+              },
+              progress: {
+                fontFamily: 'Inter',
+                fontSize: 16,
+                fontWeight: 600,
+                color: 'rgba(255, 255, 255, 0.85)',
+              },
+              timer: {
+                fontFamily: 'Inter',
+                fontSize: 18,
+                fontWeight: 700,
+                color: '#ffffff',
+              },
+            },
+            transform: {
+              position: { x: 0, y: 460 },
+              scale: 1,
+            },
+            width: 500,
+          },
+          impactHud: {
+            container: {
+              backgroundColor: 'rgba(26, 26, 46, 0.98)',
+              borderColor: '#FFD700',
+              borderWidth: 3,
+              borderRadius: 16,
+            },
+            animations: {
+              dropDistance: 200,
+              dropDuration: 150,
+              displayDuration: 3000,
+            },
+            audio: {
+              impactSound: { enabled: true, volume: 0.6 },
+            },
+            typography: {
+              title: {
+                fontFamily: 'Inter',
+                fontSize: 28,
+                fontWeight: 900,
+                color: '#FFD700',
+              },
+              detail: {
+                fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                fontSize: 42,
+                fontWeight: 800,
+                color: '#ffffff',
+              },
+            },
+            transform: {
+              position: { x: 0, y: 0 },
+              scale: 1,
+            },
+          },
+          mockData: {
+            eventName: '🎲 Critique de Gandalf!',
+            currentProgress: 45,
+            objectiveTarget: 100,
+            timeRemaining: 25,
+            isComplete: false,
+          },
+        } as DiceReverseProperties
+
+      // New separate types for individual canvas elements
+      case 'diceReverseGoalBar':
+        return {
+          container: {
+            backgroundColor: 'rgba(26, 26, 46, 0.98)',
+            borderColor: '#9146FF',
+            borderWidth: 2,
+            borderRadius: 16,
+            opacity: 1,
+          },
+          progressBar: {
+            height: 28,
+            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            fillColor: '#9146FF',
+            fillGradientEnabled: true,
+            fillGradientStart: '#9146FF',
+            fillGradientEnd: '#ff6b9d',
+            glowColor: '#ffffff',
+          },
+          shake: {
+            startPercent: 70,
+            maxIntensity: 8,
+          },
+          animations: {
+            entry: { duration: 500, easing: 'ease-out' },
+            exit: { duration: 350, easing: 'ease-in' },
+            success: { displayDuration: 3000 },
+          },
+          audio: {
+            progressSound: { enabled: true, volume: 0.3 },
+            successSound: { enabled: true, volume: 0.5 },
+          },
+          typography: {
+            title: { fontFamily: 'Inter', fontSize: 20, fontWeight: 800, color: '#ffffff' },
+            progress: {
+              fontFamily: 'Inter',
+              fontSize: 16,
+              fontWeight: 600,
+              color: 'rgba(255, 255, 255, 0.85)',
+            },
+            timer: { fontFamily: 'Inter', fontSize: 18, fontWeight: 700, color: '#ffffff' },
+          },
+          width: 500,
+          height: 100, // Approximate height for gizmo
+          mockData: {
+            eventName: '🎲 Critique de Gandalf!',
+            currentProgress: 45,
+            objectiveTarget: 100,
+            timeRemaining: 25,
+            isComplete: false,
+          },
+        } as DiceReverseGoalBarProperties
+
+      case 'diceReverseImpactHud':
+        return {
+          container: {
+            backgroundColor: 'rgba(26, 26, 46, 0.98)',
+            borderColor: '#FFD700',
+            borderWidth: 3,
+            borderRadius: 16,
+          },
+          animations: {
+            dropDistance: 200,
+            dropDuration: 150,
+            displayDuration: 3000,
+          },
+          audio: {
+            impactSound: { enabled: true, volume: 0.6 },
+          },
+          typography: {
+            title: { fontFamily: 'Inter', fontSize: 28, fontWeight: 900, color: '#FFD700' },
+            detail: {
+              fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+              fontSize: 42,
+              fontWeight: 800,
+              color: '#ffffff',
+            },
+          },
+          width: 350,
+          height: 120, // Approximate height for gizmo
+        } as DiceReverseImpactHudProperties
     }
+  }
+
+  /**
+   * Génère un nom lisible pour un type d'élément
+   */
+  function getElementDisplayName(type: OverlayElementType): string {
+    const names: Record<OverlayElementType, string> = {
+      poll: 'Sondage',
+      dice: 'Dés 3D',
+      diceReverse: 'Inversion',
+      diceReverseGoalBar: 'Goal Bar',
+      diceReverseImpactHud: 'Impact HUD',
+    }
+    return names[type] || type
   }
 
   /**
@@ -345,7 +554,7 @@ export const useOverlayStudioStore = defineStore('overlayStudio', () => {
     const element: OverlayElement = {
       id: generateId(),
       type,
-      name: `${type.charAt(0).toUpperCase() + type.slice(1)} ${elements.value.length + 1}`,
+      name: `${getElementDisplayName(type)} ${elements.value.length + 1}`,
       position: finalPosition,
       rotation: { x: 0, y: 0, z: 0 },
       scale: { x: 1, y: 1, z: 1 },
@@ -360,6 +569,46 @@ export const useOverlayStudioStore = defineStore('overlayStudio', () => {
     isDirty.value = true
 
     return element
+  }
+
+  /**
+   * Ajoute les deux éléments DiceReverse (Goal Bar + Impact HUD) en une seule action
+   * Appelé quand l'utilisateur clique sur "Inversion" dans le sidebar
+   */
+  function addDiceReverseElements(): { goalBar: OverlayElement; impactHud: OverlayElement } {
+    // Créer la Goal Bar (en haut du canvas)
+    const goalBar: OverlayElement = {
+      id: generateId(),
+      type: 'diceReverseGoalBar',
+      name: `Goal Bar ${elements.value.length + 1}`,
+      position: { x: 0, y: 400, z: 0 }, // Haut du canvas
+      rotation: { x: 0, y: 0, z: 0 },
+      scale: { x: 1, y: 1, z: 1 },
+      visible: true,
+      locked: false,
+      zIndex: 0,
+      properties: getDefaultProperties('diceReverseGoalBar'),
+    }
+
+    // Créer l'Impact HUD (au centre)
+    const impactHud: OverlayElement = {
+      id: generateId(),
+      type: 'diceReverseImpactHud',
+      name: `Impact HUD ${elements.value.length + 2}`,
+      position: { x: 0, y: 0, z: 0 }, // Centre du canvas
+      rotation: { x: 0, y: 0, z: 0 },
+      scale: { x: 1, y: 1, z: 1 },
+      visible: true,
+      locked: false,
+      zIndex: 1, // Au-dessus de la Goal Bar
+      properties: getDefaultProperties('diceReverseImpactHud'),
+    }
+
+    elements.value.push(goalBar, impactHud)
+    selectedElementId.value = goalBar.id // Sélectionner la Goal Bar par défaut
+    isDirty.value = true
+
+    return { goalBar, impactHud }
   }
 
   /**
@@ -663,6 +912,7 @@ export const useOverlayStudioStore = defineStore('overlayStudio', () => {
 
     // Actions - Éléments
     addElement,
+    addDiceReverseElements,
     removeElement,
     updateElement,
     updateElementPosition,

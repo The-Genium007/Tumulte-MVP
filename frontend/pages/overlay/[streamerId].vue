@@ -47,6 +47,26 @@
       :style="diceHudTransformStyle"
       @hidden="handleDiceRollHidden"
     />
+
+    <!-- Dice Reverse Goal Bar - Positioned at top center (Twitch Goal style) -->
+    <div class="dice-reverse-container">
+      <DiceReverseGoalBar
+        :instance="activeGamificationInstance"
+        :visible="isGamificationVisible"
+        @complete="handleGamificationComplete"
+        @expired="handleGamificationExpired"
+        @hidden="handleGamificationHidden"
+      />
+    </div>
+
+    <!-- Dice Reverse Impact HUD - Appears when action executes (e.g., dice inversion) -->
+    <div class="dice-reverse-impact-container">
+      <DiceReverseImpactHUD
+        :data="gamificationImpactData"
+        :visible="isGamificationImpactVisible"
+        @hidden="handleGamificationImpactHidden"
+      />
+    </div>
   </div>
 </template>
 
@@ -54,12 +74,21 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import LivePollElement from '@/overlay-studio/components/LivePollElement.vue'
 import DiceRollOverlay from '@/components/overlay/DiceRollOverlay.vue'
+import DiceReverseGoalBar from '@/components/overlay/DiceReverseGoalBar.vue'
+import DiceReverseImpactHUD, {
+  type ImpactData,
+} from '@/components/overlay/DiceReverseImpactHUD.vue'
 // Note: LiveDiceElement a été remplacé par DiceBox - voir DiceBox.client.vue
 import { useWebSocket } from '@/composables/useWebSocket'
 import { useOverlayConfig } from '@/composables/useOverlayConfig'
 import { useWorkerTimer } from '@/composables/useWorkerTimer'
 import { useOBSEvents } from '@/composables/useOBSEvents'
-import type { PollStartEvent, DiceRollEvent } from '@/types'
+import type {
+  PollStartEvent,
+  DiceRollEvent,
+  GamificationInstanceEvent,
+  GamificationActionExecutedEvent,
+} from '@/types'
 import type { DiceProperties } from '@/overlay-studio/types'
 
 // State pour l'indicateur de connexion
@@ -207,6 +236,16 @@ const ROLL_DISPLAY_DURATION = 5000 // 5s d'affichage après animation 3D
 const ROLL_FADE_DURATION = 1500 // 1.5s de fade out (doit correspondre au CSS)
 const ROLL_DELAY_BETWEEN = 500 // 0.5s entre deux rolls
 
+// =============================================
+// Gamification State
+// =============================================
+const activeGamificationInstance = ref<GamificationInstanceEvent | null>(null)
+const isGamificationVisible = ref(false)
+
+// Impact HUD state (appears when action executes, e.g., dice inversion)
+const gamificationImpactData = ref<ImpactData | null>(null)
+const isGamificationImpactVisible = ref(false)
+
 const { subscribeToStreamerPolls } = useWebSocket()
 
 // Style du container de dés basé sur la position de l'élément
@@ -339,6 +378,37 @@ const processNextRoll = () => {
  */
 const handleDiceRollHidden = () => {
   console.log('[Overlay] Dice roll popup transition complete')
+}
+
+// =============================================
+// Gamification Handlers
+// =============================================
+
+const handleGamificationComplete = () => {
+  console.log('[Overlay] Gamification gauge reported complete')
+  // L'animation de succès est gérée par le composant
+}
+
+const handleGamificationExpired = () => {
+  console.log('[Overlay] Gamification gauge reported expired')
+  // Cache la jauge après expiration
+  setTimeout(() => {
+    isGamificationVisible.value = false
+    activeGamificationInstance.value = null
+  }, 2000)
+}
+
+const handleGamificationHidden = () => {
+  console.log('[Overlay] Gamification goal bar hidden')
+  isGamificationVisible.value = false
+  activeGamificationInstance.value = null
+}
+
+// Impact HUD handler
+const handleGamificationImpactHidden = () => {
+  console.log('[Overlay] Gamification impact HUD hidden')
+  isGamificationImpactVisible.value = false
+  gamificationImpactData.value = null
 }
 
 // Variable pour stocker la fonction de désabonnement
@@ -522,6 +592,68 @@ const setupWebSocketSubscription = () => {
         currentDiceRoll.value = data
       }
     },
+
+    // Gamification events
+    onGamificationStart: (data) => {
+      console.log('[Overlay] Gamification started:', data)
+      activeGamificationInstance.value = data
+      isGamificationVisible.value = true
+    },
+
+    onGamificationProgress: (data) => {
+      console.log('[Overlay] Gamification progress:', data)
+      if (activeGamificationInstance.value?.id === data.instanceId) {
+        activeGamificationInstance.value = {
+          ...activeGamificationInstance.value,
+          currentProgress: data.currentProgress,
+          progressPercentage: data.progressPercentage,
+          isObjectiveReached: data.isObjectiveReached,
+        }
+      }
+    },
+
+    onGamificationComplete: (data) => {
+      console.log('[Overlay] Gamification complete:', data)
+      if (activeGamificationInstance.value?.id === data.instanceId) {
+        activeGamificationInstance.value = {
+          ...activeGamificationInstance.value,
+          status: 'completed',
+          isObjectiveReached: true,
+        }
+      }
+    },
+
+    onGamificationExpired: (data) => {
+      console.log('[Overlay] Gamification expired:', data)
+      if (activeGamificationInstance.value?.id === data.instanceId) {
+        activeGamificationInstance.value = {
+          ...activeGamificationInstance.value,
+          status: 'expired',
+        }
+        // Hide after a short delay
+        setTimeout(() => {
+          isGamificationVisible.value = false
+          activeGamificationInstance.value = null
+        }, 2000)
+      }
+    },
+
+    // Gamification Action Executed - Shows Impact HUD when action executes (e.g., dice inversion)
+    onGamificationActionExecuted: (data: GamificationActionExecutedEvent) => {
+      console.log('[Overlay] Gamification action executed:', data)
+
+      // Transform to ImpactData format
+      gamificationImpactData.value = {
+        instanceId: data.instanceId,
+        eventName: data.eventName,
+        actionType: data.actionType,
+        success: data.success,
+        message: data.message,
+        originalValue: data.originalValue,
+        invertedValue: data.invertedValue,
+      }
+      isGamificationImpactVisible.value = true
+    },
   })
 
   isWsConnected.value = true
@@ -679,5 +811,23 @@ body,
 .dice-hidden {
   opacity: 0;
   pointer-events: none;
+}
+
+/* Container pour la jauge de dice reverse (Goal Bar) */
+.dice-reverse-container {
+  position: fixed;
+  top: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+}
+
+/* Container pour le HUD d'impact dice reverse (slam animation) */
+.dice-reverse-impact-container {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 200;
 }
 </style>

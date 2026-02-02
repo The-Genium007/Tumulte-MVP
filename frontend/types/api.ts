@@ -227,3 +227,179 @@ export interface LaunchPollRequest {
   durationSeconds?: number
   templateId?: string | null
 }
+
+// ==========================================
+// Gamification
+// ==========================================
+
+export type GamificationEventType = 'individual' | 'group'
+export type GamificationTriggerType = 'dice_critical' | 'manual' | 'custom'
+export type GamificationActionType = 'dice_invert' | 'chat_message' | 'stat_modify' | 'custom'
+export type GamificationCooldownType = 'time' | 'gm_validation' | 'event_complete'
+export type GamificationInstanceStatus = 'active' | 'completed' | 'expired' | 'cancelled'
+
+export interface GamificationTriggerConfig {
+  criticalSuccess?: {
+    enabled: boolean
+    threshold?: number
+    diceType?: string
+  }
+  criticalFailure?: {
+    enabled: boolean
+    threshold?: number
+    diceType?: string
+  }
+  customRules?: Record<string, unknown>
+}
+
+export interface GamificationActionConfig {
+  diceInvert?: {
+    trollMessage?: string
+    deleteOriginal?: boolean
+  }
+  chatMessage?: {
+    content?: string
+    speaker?: string
+  }
+  statModify?: {
+    actorId?: string
+    updates?: Record<string, unknown>
+  }
+  customActions?: Record<string, unknown>
+}
+
+export interface GamificationCooldownConfig {
+  durationSeconds?: number
+  waitForEventId?: string
+}
+
+export interface GamificationEvent {
+  id: string
+  slug: string
+  name: string
+  description: string | null
+  type: GamificationEventType
+  triggerType: GamificationTriggerType
+  triggerConfig: GamificationTriggerConfig | null
+  actionType: GamificationActionType
+  actionConfig: GamificationActionConfig | null
+  defaultCost: number
+  defaultObjectiveCoefficient: number
+  defaultMinimumObjective: number
+  defaultDuration: number
+  cooldownType: GamificationCooldownType
+  cooldownConfig: GamificationCooldownConfig | null
+  rewardColor: string
+  isSystem: boolean
+  isActive: boolean
+  createdAt: string
+}
+
+export interface CampaignGamificationConfig {
+  id: string
+  campaignId: string
+  eventId: string
+  event?: GamificationEvent
+  isEnabled: boolean
+  cost: number | null
+  objectiveCoefficient: number | null
+  minimumObjective: number | null
+  duration: number | null
+  cooldown: number | null
+  maxClicksPerUserPerSession: number
+  twitchRewardId: string | null
+  createdAt: string
+  updatedAt: string
+  // Computed effective values
+  effectiveCost: number
+  effectiveObjectiveCoefficient: number
+  effectiveMinimumObjective: number
+  effectiveDuration: number
+}
+
+export interface GamificationStreamerSnapshot {
+  streamerId: string
+  streamerName: string
+  viewerCount: number
+  objective: number
+  contributions: number
+}
+
+export interface GamificationTriggerData {
+  diceRoll?: {
+    messageId?: string
+    characterId?: string
+    characterName?: string
+    formula: string
+    result: number
+    diceResults: number[]
+    criticalType: 'success' | 'failure'
+  }
+  manual?: {
+    triggeredBy: string
+    reason?: string
+  }
+}
+
+export interface GamificationResultData {
+  success: boolean
+  message?: string
+  error?: string
+  actionResult?: Record<string, unknown>
+}
+
+export interface GamificationInstance {
+  id: string
+  campaignId: string
+  eventId: string
+  event?: GamificationEvent
+  type: GamificationEventType
+  status: GamificationInstanceStatus
+  triggerData: GamificationTriggerData | null
+  objectiveTarget: number
+  currentProgress: number
+  progressPercentage: number
+  isObjectiveReached: boolean
+  duration: number
+  startsAt: string
+  expiresAt: string
+  completedAt: string | null
+  resultData: GamificationResultData | null
+  cooldownEndsAt: string | null
+  // For individual instances
+  streamerId: string | null
+  viewerCountAtStart: number | null
+  // For group instances
+  streamerSnapshots: GamificationStreamerSnapshot[] | null
+  // Contributions summary
+  contributionsCount: number
+  createdAt: string
+}
+
+export interface GamificationContribution {
+  id: string
+  instanceId: string
+  streamerId: string
+  twitchUserId: string
+  twitchUsername: string
+  amount: number
+  twitchRedemptionId: string
+  createdAt: string
+}
+
+// Request payloads
+export interface UpdateGamificationConfigRequest {
+  isEnabled?: boolean
+  cost?: number | null
+  objectiveCoefficient?: number | null
+  minimumObjective?: number | null
+  duration?: number | null
+  cooldown?: number | null
+  maxClicksPerUserPerSession?: number
+}
+
+// Cooldown status
+export interface GamificationCooldownStatus {
+  onCooldown: boolean
+  endsAt: string | null
+}

@@ -396,6 +396,57 @@
               @play-preview="playPollPreview"
             />
           </template>
+
+          <template v-else-if="selectedElement.type === 'diceReverse'">
+            <DiceReverseInspector
+              :goal-bar="(selectedElement.properties as DiceReverseProperties).goalBar"
+              :impact-hud="(selectedElement.properties as DiceReverseProperties).impactHud"
+              :mock-data="(selectedElement.properties as DiceReverseProperties).mockData"
+              @update-goal-bar="updateDiceReverseGoalBar"
+              @update-impact-hud="updateDiceReverseImpactHud"
+              @update-mock-data="updateDiceReverseMockData"
+            />
+          </template>
+
+          <template v-else-if="selectedElement.type === 'diceReverseGoalBar'">
+            <DiceReverseGoalBarInspector
+              :container="(selectedElement.properties as DiceReverseGoalBarProperties).container"
+              :progress-bar="
+                (selectedElement.properties as DiceReverseGoalBarProperties).progressBar
+              "
+              :shake="(selectedElement.properties as DiceReverseGoalBarProperties).shake"
+              :typography="(selectedElement.properties as DiceReverseGoalBarProperties).typography"
+              :audio="(selectedElement.properties as DiceReverseGoalBarProperties).audio"
+              :width="(selectedElement.properties as DiceReverseGoalBarProperties).width"
+              :mock-data="(selectedElement.properties as DiceReverseGoalBarProperties).mockData"
+              @update-container="updateGoalBarContainer"
+              @update-progress-bar="updateGoalBarProgressBar"
+              @update-shake="updateGoalBarShake"
+              @update-typography="updateGoalBarTypography"
+              @update-audio="updateGoalBarAudio"
+              @update-width="updateGoalBarWidth"
+              @update-mock-data="updateGoalBarMockData"
+            />
+          </template>
+
+          <template v-else-if="selectedElement.type === 'diceReverseImpactHud'">
+            <DiceReverseImpactHudInspector
+              :container="(selectedElement.properties as DiceReverseImpactHudProperties).container"
+              :animations="
+                (selectedElement.properties as DiceReverseImpactHudProperties).animations
+              "
+              :audio="(selectedElement.properties as DiceReverseImpactHudProperties).audio"
+              :typography="
+                (selectedElement.properties as DiceReverseImpactHudProperties).typography
+              "
+              :width="(selectedElement.properties as DiceReverseImpactHudProperties).width"
+              @update-container="updateImpactHudContainer"
+              @update-animations="updateImpactHudAnimations"
+              @update-audio="updateImpactHudAudio"
+              @update-typography="updateImpactHudTypography"
+              @update-width="updateImpactHudWidth"
+            />
+          </template>
         </div>
 
         <div v-else class="inspector-empty">
@@ -418,8 +469,18 @@ import { useDevice } from '~/composables/useDevice'
 import StudioCanvas from '~/overlay-studio/components/StudioCanvas.vue'
 import DiceInspector from '~/overlay-studio/components/inspector/DiceInspector.vue'
 import PollInspector from '~/overlay-studio/components/inspector/PollInspector.vue'
+import DiceReverseInspector from '~/overlay-studio/components/inspector/DiceReverseInspector.vue'
+import DiceReverseGoalBarInspector from '~/overlay-studio/components/inspector/DiceReverseGoalBarInspector.vue'
+import DiceReverseImpactHudInspector from '~/overlay-studio/components/inspector/DiceReverseImpactHudInspector.vue'
 import UnsavedChangesModal from '~/overlay-studio/components/UnsavedChangesModal.vue'
-import type { OverlayElementType, DiceProperties, PollProperties } from '~/overlay-studio/types'
+import type {
+  OverlayElementType,
+  DiceProperties,
+  PollProperties,
+  DiceReverseProperties,
+  DiceReverseGoalBarProperties,
+  DiceReverseImpactHudProperties,
+} from '~/overlay-studio/types'
 
 definePageMeta({
   layout: 'studio' as const,
@@ -513,6 +574,7 @@ const loading = computed(() => api.loading.value)
 const elementTypes = [
   { type: 'poll' as const, label: 'Sondage', icon: 'i-lucide-bar-chart-3' },
   { type: 'dice' as const, label: 'Dés 3D', icon: 'i-lucide-dice-5' },
+  { type: 'diceReverse' as const, label: 'Inversion', icon: 'i-lucide-refresh-ccw' },
 ]
 
 // Auto-save: surveiller les modifications et sauvegarder automatiquement
@@ -528,12 +590,26 @@ watch(
 
 // Icône selon le type
 const getElementIcon = (type: OverlayElementType): string => {
+  // Icônes pour les types non présents dans elementTypes (sous-types)
+  const iconMap: Partial<Record<OverlayElementType, string>> = {
+    diceReverseGoalBar: 'i-lucide-goal',
+    diceReverseImpactHud: 'i-lucide-zap',
+  }
+  if (iconMap[type]) return iconMap[type]!
+
   const found = elementTypes.find((t) => t.type === type)
   return found?.icon || 'i-lucide-box'
 }
 
 // Actions
 const addElement = (type: OverlayElementType) => {
+  // Pour "Inversion", créer les deux éléments séparés (Goal Bar + Impact HUD)
+  if (type === 'diceReverse') {
+    store.addDiceReverseElements()
+    pushSnapshot('Ajouter Inversion (Goal Bar + Impact HUD)')
+    return
+  }
+
   store.addElement(type)
   pushSnapshot(`Ajouter ${type}`)
 }
@@ -590,6 +666,24 @@ const {
   updatePollAnimations,
   updatePollLayout,
   updatePollMockData,
+  // Dice Reverse (legacy)
+  updateDiceReverseGoalBar,
+  updateDiceReverseImpactHud,
+  updateDiceReverseMockData,
+  // Goal Bar (separate element)
+  updateGoalBarContainer,
+  updateGoalBarProgressBar,
+  updateGoalBarShake,
+  updateGoalBarMockData,
+  updateGoalBarTypography,
+  updateGoalBarWidth,
+  updateGoalBarAudio,
+  // Impact HUD (separate element)
+  updateImpactHudContainer,
+  updateImpactHudAnimations,
+  updateImpactHudAudio,
+  updateImpactHudTypography,
+  updateImpactHudWidth,
 } = useElementUpdater(selectedElement, store.updateElement, debouncedPushSnapshot)
 
 // Prévisualisation du sondage

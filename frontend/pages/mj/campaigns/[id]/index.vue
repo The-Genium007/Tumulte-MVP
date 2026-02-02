@@ -488,6 +488,117 @@
         </div>
       </UCard>
 
+      <!-- Intégration Twitch Section -->
+      <UCard class="mt-8">
+        <template #header>
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <UIcon name="i-lucide-twitch" class="size-6 text-[#9146FF]" />
+              <h2 class="text-xl font-bold text-primary">Intégration Twitch</h2>
+            </div>
+            <div class="flex items-center gap-2">
+              <!-- Reset Cooldowns Button -->
+              <UButton
+                v-if="hasEnabledEvents"
+                icon="i-lucide-timer-reset"
+                label="Reset Cooldowns"
+                color="warning"
+                variant="soft"
+                size="sm"
+                :loading="resettingGamificationCooldowns"
+                @click="handleResetGamificationCooldowns"
+              />
+              <!-- Collapse toggle -->
+              <UButton
+                :icon="
+                  gamificationSectionExpanded ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'
+                "
+                color="neutral"
+                variant="ghost"
+                size="sm"
+                square
+                @click="gamificationSectionExpanded = !gamificationSectionExpanded"
+              />
+            </div>
+          </div>
+        </template>
+
+        <Transition name="collapse">
+          <div v-if="gamificationSectionExpanded" class="space-y-6">
+            <!-- Loading State -->
+            <div v-if="gamificationLoading" class="flex items-center justify-center py-8">
+              <UIcon
+                name="i-game-icons-dice-twenty-faces-twenty"
+                class="size-10 text-primary animate-spin-slow"
+              />
+            </div>
+
+            <!-- Error State -->
+            <UAlert
+              v-else-if="gamificationError"
+              color="error"
+              variant="soft"
+              icon="i-lucide-alert-circle"
+              :title="gamificationError"
+            />
+
+            <!-- Content -->
+            <template v-else>
+              <!-- Info Banner -->
+              <UAlert
+                color="info"
+                variant="soft"
+                icon="i-lucide-sparkles"
+                title="Points de chaîne Twitch"
+                description="Configurez les événements d'intégration pour permettre à vos viewers d'influencer le jeu. Chaque événement sera créé comme récompense sur les chaînes des streamers actifs."
+              />
+
+              <!-- Active Instances (if any) -->
+              <div v-if="activeGamificationInstances.length > 0" class="space-y-3">
+                <div class="flex items-center gap-2">
+                  <UIcon name="i-lucide-activity" class="size-5 text-success-500" />
+                  <h3 class="text-lg font-semibold text-primary">Événements en cours</h3>
+                </div>
+                <MjGamificationInstanceRow
+                  v-for="instance in activeGamificationInstances"
+                  :key="instance.id"
+                  :instance="instance"
+                  :is-dev="isDev"
+                  @cancel="handleCancelGamificationInstance"
+                  @force-complete="handleForceCompleteInstance"
+                />
+              </div>
+
+              <!-- Event Cards -->
+              <div v-if="gamificationEvents.length > 0" class="space-y-4">
+                <h3 class="text-lg font-semibold text-primary">Configuration des événements</h3>
+                <MjGamificationEventCard
+                  v-for="event in gamificationEvents"
+                  :key="event.id"
+                  :event="event"
+                  :config="getConfigForEvent(event.id)"
+                  :loading="savingGamificationEventId === event.id"
+                  :is-dev="isDev"
+                  :campaign-id="campaignId"
+                  @toggle="handleToggleGamificationEvent"
+                  @update="handleUpdateGamificationConfig"
+                  @trigger-test="handleTriggerTest"
+                />
+              </div>
+
+              <!-- No Events -->
+              <div v-else class="flex flex-col items-center justify-center text-center py-8">
+                <UIcon name="i-lucide-gamepad-2" class="size-10 text-muted mb-4" />
+                <p class="text-base font-normal text-muted">Aucun événement disponible</p>
+                <p class="text-sm text-muted mt-1">
+                  Les événements de gamification seront bientôt disponibles.
+                </p>
+              </div>
+            </template>
+          </div>
+        </Transition>
+      </UCard>
+
       <!-- Danger Zone -->
       <UCard class="mt-8">
         <template #header>
@@ -704,7 +815,9 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useCampaigns } from '@/composables/useCampaigns'
+import { useGamification } from '@/composables/useGamification'
 import type { Campaign, CampaignMembership, StreamerSearchResult, LiveStatusMap } from '@/types'
+import type { GamificationInstance, UpdateGamificationConfigRequest } from '@/types/api'
 
 const _router = useRouter()
 const route = useRoute()
@@ -718,6 +831,33 @@ const {
   deleteCampaign,
   getLiveStatus,
 } = useCampaigns()
+
+// Gamification composable
+const {
+  events: gamificationEvents,
+  loading: gamificationLoading,
+  error: gamificationError,
+  hasEnabledEvents,
+  fetchEvents,
+  fetchCampaignConfigs,
+  enableEvent,
+  updateConfig,
+  disableEvent,
+  fetchActiveInstances,
+  cancelInstance,
+  triggerEvent,
+  forceCompleteInstance,
+  resetCooldowns,
+  getConfigForEvent,
+} = useGamification()
+
+// Check if we're in dev/staging mode
+const config = useRuntimeConfig()
+const isDev = computed(() => {
+  // Check if we're in dev/staging by looking at the API URL or NODE_ENV
+  const apiBase = config.public.apiBase as string
+  return apiBase.includes('localhost') || apiBase.includes('staging') || import.meta.dev
+})
 
 const campaign = ref<Campaign | null>(null)
 const liveStatus = ref<LiveStatusMap>({})
@@ -738,11 +878,25 @@ const searchQuery = ref('')
 const searchResults = ref<StreamerSearchResult[]>([])
 const searching = ref(false)
 
+// Gamification state
+const activeGamificationInstances = ref<GamificationInstance[]>([])
+const savingGamificationEventId = ref<string | null>(null)
+const resettingGamificationCooldowns = ref(false)
+const gamificationSectionExpanded = ref(true)
+
 // Auto-refresh intervals
 let refreshInterval: ReturnType<typeof setInterval> | null = null
 let liveStatusInterval: ReturnType<typeof setInterval> | null = null
+let gamificationInterval: ReturnType<typeof setInterval> | null = null
 const REFRESH_INTERVAL_MS = 60000 // Refresh members every 60 seconds
-const LIVE_STATUS_INTERVAL_MS = 30000 // Refresh live status every 30 seconds
+const GAMIFICATION_REFRESH_INTERVAL_MS = 10000 // Refresh active instances every 10 seconds
+
+// Smart polling intervals for live status
+const LIVE_STATUS_INTERVALS = {
+  NOBODY_LIVE: 120000, // 2 minutes si personne n'est live
+  SOMEONE_LIVE: 30000, // 30 secondes si quelqu'un est live
+}
+let currentLiveStatusInterval: number = LIVE_STATUS_INTERVALS.NOBODY_LIVE
 
 // Computed properties
 const activeMembersCount = computed(() => members.value.filter((m) => m.status === 'ACTIVE').length)
@@ -809,14 +963,31 @@ const filteredSearchResults = computed(() => {
   return searchResults.value.filter((streamer) => !isStreamerAlreadyInvited(streamer.id))
 })
 
-// Load campaign and members
+// Handle tab visibility - pause polling when tab is hidden
+const handleVisibilityChange = () => {
+  if (document.hidden) {
+    console.log('[LiveStatus] Tab hidden - pausing polling')
+    stopAutoRefresh()
+  } else {
+    console.log('[LiveStatus] Tab visible - resuming polling')
+    // Fetch immediately then restart polling
+    fetchLiveStatus()
+    startAutoRefresh()
+  }
+}
+
+// Load campaign, members, and gamification data
 onMounted(async () => {
-  await loadMembers()
+  await Promise.all([loadMembers(), loadGamificationData()])
   startAutoRefresh()
+
+  // Listen for tab visibility changes
+  document.addEventListener('visibilitychange', handleVisibilityChange)
 })
 
 onUnmounted(() => {
   stopAutoRefresh()
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
   if (searchTimeout) {
     clearTimeout(searchTimeout)
     searchTimeout = null
@@ -830,11 +1001,43 @@ const startAutoRefresh = () => {
     }, REFRESH_INTERVAL_MS)
   }
 
-  // Auto-refresh live status every 30 seconds
-  if (!liveStatusInterval) {
-    liveStatusInterval = setInterval(async () => {
-      await fetchLiveStatus()
-    }, LIVE_STATUS_INTERVAL_MS)
+  // Smart polling for live status - adapts interval based on live streamers
+  startSmartLiveStatusPolling()
+
+  // Auto-refresh gamification instances every 10 seconds
+  if (!gamificationInterval) {
+    gamificationInterval = setInterval(async () => {
+      await loadActiveGamificationInstances()
+    }, GAMIFICATION_REFRESH_INTERVAL_MS)
+  }
+}
+
+// Smart live status polling - adjusts interval based on whether anyone is live
+const startSmartLiveStatusPolling = () => {
+  if (liveStatusInterval) {
+    clearInterval(liveStatusInterval)
+  }
+
+  liveStatusInterval = setInterval(async () => {
+    await fetchLiveStatus()
+    adjustLiveStatusPollingInterval()
+  }, currentLiveStatusInterval)
+}
+
+// Adjust polling interval based on live status
+const adjustLiveStatusPollingInterval = () => {
+  const anyoneLive = liveMembersCount.value > 0
+  const newInterval = anyoneLive
+    ? LIVE_STATUS_INTERVALS.SOMEONE_LIVE
+    : LIVE_STATUS_INTERVALS.NOBODY_LIVE
+
+  // Only restart if interval changed
+  if (newInterval !== currentLiveStatusInterval) {
+    console.log(
+      `[LiveStatus] Adjusting polling interval: ${currentLiveStatusInterval}ms -> ${newInterval}ms (${anyoneLive ? 'someone live' : 'nobody live'})`
+    )
+    currentLiveStatusInterval = newInterval
+    startSmartLiveStatusPolling()
   }
 }
 
@@ -846,6 +1049,10 @@ const stopAutoRefresh = () => {
   if (liveStatusInterval) {
     clearInterval(liveStatusInterval)
     liveStatusInterval = null
+  }
+  if (gamificationInterval) {
+    clearInterval(gamificationInterval)
+    gamificationInterval = null
   }
 }
 
@@ -876,6 +1083,121 @@ const refreshMembersQuietly = async () => {
 // Handle authorization expiry - trigger a refresh
 const handleAuthorizationExpired = () => {
   refreshMembersQuietly()
+}
+
+// Gamification handlers
+const loadGamificationData = async () => {
+  try {
+    await Promise.all([
+      fetchEvents(),
+      fetchCampaignConfigs(campaignId),
+      loadActiveGamificationInstances(),
+    ])
+  } catch (err) {
+    console.error('Failed to load gamification data:', err)
+  }
+}
+
+const loadActiveGamificationInstances = async () => {
+  try {
+    activeGamificationInstances.value = await fetchActiveInstances(campaignId)
+  } catch (err) {
+    console.error('Failed to load active instances:', err)
+  }
+}
+
+const handleToggleGamificationEvent = async (eventId: string, enabled: boolean) => {
+  savingGamificationEventId.value = eventId
+  try {
+    if (enabled) {
+      await enableEvent(campaignId, eventId)
+    } else {
+      await disableEvent(campaignId, eventId)
+    }
+  } catch (err) {
+    console.error('Failed to toggle event:', err)
+  } finally {
+    savingGamificationEventId.value = null
+  }
+}
+
+const handleUpdateGamificationConfig = async (
+  eventId: string,
+  updates: UpdateGamificationConfigRequest
+) => {
+  savingGamificationEventId.value = eventId
+  try {
+    await updateConfig(campaignId, eventId, updates)
+  } catch (err) {
+    console.error('Failed to update config:', err)
+  } finally {
+    savingGamificationEventId.value = null
+  }
+}
+
+const handleCancelGamificationInstance = async (instanceId: string) => {
+  try {
+    await cancelInstance(campaignId, instanceId)
+    await loadActiveGamificationInstances()
+  } catch (err) {
+    console.error('Failed to cancel instance:', err)
+  }
+}
+
+const handleResetGamificationCooldowns = async () => {
+  resettingGamificationCooldowns.value = true
+  try {
+    const result = await resetCooldowns(campaignId)
+    console.log(`Reset ${result.count} cooldowns`)
+  } catch (err) {
+    console.error('Failed to reset cooldowns:', err)
+  } finally {
+    resettingGamificationCooldowns.value = false
+  }
+}
+
+// Test handlers (DEV/STAGING only)
+const handleTriggerTest = async (eventId: string, diceValue: number) => {
+  if (!isDev.value) return
+
+  // Use owner as the streamer for tests
+  const owner = members.value.find((m) => m.isOwner)
+  if (!owner) {
+    console.error('Owner not found for test trigger')
+    return
+  }
+
+  savingGamificationEventId.value = eventId
+  try {
+    // Create the instance with the dice value
+    const instance = await triggerEvent(campaignId, eventId, {
+      streamerId: owner.streamer.id,
+      viewerCount: 100, // Test with 100 viewers
+      customData: { diceValue, isTest: true },
+    })
+
+    // Immediately force complete to send dice to Foundry
+    if (instance?.id) {
+      await forceCompleteInstance(campaignId, instance.id)
+    }
+
+    await loadActiveGamificationInstances()
+  } catch (err) {
+    console.error('Failed to trigger test event:', err)
+  } finally {
+    savingGamificationEventId.value = null
+  }
+}
+
+const handleForceCompleteInstance = async (instanceId: string) => {
+  if (!isDev.value) return
+
+  try {
+    await forceCompleteInstance(campaignId, instanceId)
+    await loadActiveGamificationInstances()
+  } catch (err) {
+    console.error('Failed to force complete instance:', err)
+  }
 }
 
 const loadMembers = async () => {
@@ -979,8 +1301,6 @@ const confirmDeleteCampaign = async () => {
 }
 
 // VTT Connection helpers
-const config = useRuntimeConfig()
-
 const getTunnelStatusColor = (status?: string): 'success' | 'warning' | 'error' | 'neutral' => {
   switch (status) {
     case 'connected':

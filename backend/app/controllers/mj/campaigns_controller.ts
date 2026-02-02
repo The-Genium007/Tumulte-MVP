@@ -5,8 +5,9 @@ import { CampaignService } from '#services/campaigns/campaign_service'
 import { MembershipService } from '#services/campaigns/membership_service'
 import { ReadinessService } from '#services/campaigns/readiness_service'
 import { StreamerRepository } from '#repositories/streamer_repository'
-import { TwitchApiService } from '#services/twitch/twitch_api_service'
+import { LiveStatusService } from '#services/twitch/live_status_service'
 import { PushNotificationService } from '#services/notifications/push_notification_service'
+import { CampaignEventsService } from '#services/campaign_events_service'
 import VttImportService from '#services/vtt/vtt_import_service'
 import VttConnection from '#models/vtt_connection'
 import { campaign as Campaign } from '#models/campaign'
@@ -30,8 +31,9 @@ export default class CampaignsController {
     private membershipService: MembershipService,
     private readinessService: ReadinessService,
     private streamerRepository: StreamerRepository,
-    private twitchApiService: TwitchApiService,
-    private vttImportService: VttImportService
+    private liveStatusService: LiveStatusService,
+    private vttImportService: VttImportService,
+    private campaignEventsService: CampaignEventsService
   ) {}
 
   /**
@@ -183,6 +185,8 @@ export default class CampaignsController {
   /**
    * Récupère le statut live des membres d'une campagne
    * GET /api/v2/mj/campaigns/:id/live-status
+   *
+   * Utilise un cache Redis de 30 secondes pour éviter les appels excessifs à l'API Twitch
    */
   async liveStatus({ auth, params, response }: HttpContext) {
     const userId = auth.user!.id
@@ -196,84 +200,14 @@ export default class CampaignsController {
         ?.filter((m) => m.status === 'ACTIVE' && m.streamer?.twitchUserId)
         .map((m) => m.streamer.twitchUserId) || []
 
-    logger.info({
-      event: 'live_status_request',
-      campaignId: params.id,
-      twitchUserIds,
-      memberCount: campaign.memberships?.length || 0,
-    })
-
     if (twitchUserIds.length === 0) {
       return response.ok({ data: {} })
     }
 
-    try {
-      // Récupérer un app token pour l'API Twitch
-      const accessToken = await this.twitchApiService.getAppAccessToken()
+    // Utiliser le LiveStatusService avec cache Redis
+    const liveStatus = await this.liveStatusService.getLiveStatus(params.id, twitchUserIds)
 
-      logger.info({
-        event: 'twitch_app_token_obtained',
-        tokenPrefix: accessToken.substring(0, 10) + '...',
-      })
-
-      // Récupérer les streams en cours
-      const liveStreams = await this.twitchApiService.getStreamsByUserIds(
-        twitchUserIds,
-        accessToken
-      )
-
-      logger.info({
-        event: 'twitch_streams_response',
-        liveStreamCount: liveStreams.size,
-        liveUserIds: Array.from(liveStreams.keys()),
-      })
-
-      // Construire la réponse: map twitchUserId -> live info (snake_case for API response)
-      interface LiveStatusEntry {
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        is_live: boolean
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        game_name?: string
-        title?: string
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        viewer_count?: number
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        started_at?: string
-      }
-
-      const liveStatus: Record<string, LiveStatusEntry> = {}
-
-      for (const twitchUserId of twitchUserIds) {
-        const stream = liveStreams.get(twitchUserId)
-        if (stream) {
-          liveStatus[twitchUserId] = {
-            // eslint-disable-next-line camelcase
-            is_live: true,
-            // eslint-disable-next-line camelcase
-            game_name: stream.game_name,
-            title: stream.title,
-            // eslint-disable-next-line camelcase
-            viewer_count: stream.viewer_count,
-
-            started_at: stream.started_at,
-          }
-        } else {
-          // eslint-disable-next-line camelcase
-          liveStatus[twitchUserId] = { is_live: false }
-        }
-      }
-
-      return response.ok({ data: liveStatus })
-    } catch (error) {
-      logger.error({
-        event: 'live_status_fetch_failed',
-        campaignId: params.id,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      })
-
-      // En cas d'erreur, retourner un objet vide plutôt qu'échouer
-      return response.ok({ data: {} })
-    }
+    return response.ok({ data: liveStatus })
   }
 
   /**
@@ -364,6 +298,29 @@ export default class CampaignsController {
         notified: userIds.length,
         streamers: unreadyStreamers.map((s) => s.streamerName),
       },
+    })
+  }
+
+  /**
+   * Récupère les événements unifiés d'une campagne (sondages, gamification, etc.)
+   * GET /api/v2/mj/campaigns/:id/events
+   */
+  async events({ auth, params, request, response }: HttpContext) {
+    const userId = auth.user!.id
+
+    // Vérifier que l'utilisateur a accès à cette campagne
+    await this.campaignService.getCampaignWithMembers(params.id, userId)
+
+    // Paramètres de requête
+    const limit = Math.min(Number(request.input('limit', 20)), 50)
+
+    const events = await this.campaignEventsService.getEvents(params.id, {
+      limit,
+      includeContributors: true,
+    })
+
+    return response.ok({
+      data: events,
     })
   }
 

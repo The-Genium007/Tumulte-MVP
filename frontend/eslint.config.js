@@ -77,6 +77,7 @@ export default [
         usePwaInstall: 'readonly',
         useLoadingScreen: 'readonly',
         useTimeFormat: 'readonly',
+        useCampaignEvents: 'readonly',
       },
     },
   },
@@ -155,6 +156,9 @@ export default [
 
             // Counters and aggregates
             'polls_count',
+
+            // Gamification event types (database slugs)
+            'gamification_dice_reverse',
           ],
         },
       ],
@@ -203,11 +207,11 @@ export default [
           format: null,
         },
         {
-          // Allow Vue emit convention "update:*"
+          // Allow Vue emit convention "update:*" and "update-*"
           selector: 'typeProperty',
           format: null,
           filter: {
-            regex: '^update:',
+            regex: '^update[-:]',
             match: true,
           },
         },

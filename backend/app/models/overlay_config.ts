@@ -8,13 +8,23 @@ import { streamer as Streamer } from './streamer.js'
  */
 export interface OverlayElement {
   id: string
-  type: 'text' | 'image' | 'shape' | 'particle' | 'poll' | 'dice'
+  type:
+    | 'text'
+    | 'image'
+    | 'shape'
+    | 'particle'
+    | 'poll'
+    | 'dice'
+    | 'diceReverse'
+    | 'diceReverseGoalBar'
+    | 'diceReverseImpactHud'
   name: string
   position: { x: number; y: number; z: number }
   rotation: { x: number; y: number; z: number }
   scale: { x: number; y: number; z: number }
   visible: boolean
   locked: boolean
+  zIndex?: number
   properties: Record<string, unknown>
 }
 
@@ -77,6 +87,95 @@ class OverlayConfig extends BaseModel {
         height: 1080,
       },
       elements: [],
+    }
+  }
+
+  /**
+   * Retourne les propriétés par défaut pour un élément Goal Bar (inversion de dé)
+   */
+  static getDefaultGoalBarProperties(): Record<string, unknown> {
+    return {
+      container: {
+        backgroundColor: 'rgba(26, 26, 46, 0.98)',
+        borderColor: '#9146FF',
+        borderWidth: 2,
+        borderRadius: 16,
+        opacity: 1,
+      },
+      progressBar: {
+        height: 28,
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        fillColor: '#9146FF',
+        fillGradientEnabled: true,
+        fillGradientStart: '#9146FF',
+        fillGradientEnd: '#ff6b9d',
+        glowColor: '#ffffff',
+      },
+      shake: {
+        startPercent: 70,
+        maxIntensity: 8,
+      },
+      animations: {
+        entry: { duration: 500, easing: 'ease-out' },
+        exit: { duration: 350, easing: 'ease-in' },
+        success: { displayDuration: 3000 },
+      },
+      audio: {
+        progressSound: { enabled: true, volume: 0.3 },
+        successSound: { enabled: true, volume: 0.5 },
+      },
+      typography: {
+        title: { fontFamily: 'Inter', fontSize: 20, fontWeight: 800, color: '#ffffff' },
+        progress: {
+          fontFamily: 'Inter',
+          fontSize: 16,
+          fontWeight: 600,
+          color: 'rgba(255, 255, 255, 0.85)',
+        },
+        timer: { fontFamily: 'Inter', fontSize: 18, fontWeight: 700, color: '#ffffff' },
+      },
+      width: 500,
+      height: 100,
+      mockData: {
+        eventName: '🎲 Critique de Gandalf!',
+        currentProgress: 45,
+        objectiveTarget: 100,
+        timeRemaining: 25,
+        isComplete: false,
+      },
+    }
+  }
+
+  /**
+   * Retourne les propriétés par défaut pour un élément Impact HUD (inversion de dé)
+   */
+  static getDefaultImpactHudProperties(): Record<string, unknown> {
+    return {
+      container: {
+        backgroundColor: 'rgba(26, 26, 46, 0.98)',
+        borderColor: '#FFD700',
+        borderWidth: 3,
+        borderRadius: 16,
+      },
+      animations: {
+        dropDistance: 200,
+        dropDuration: 150,
+        displayDuration: 3000,
+      },
+      audio: {
+        impactSound: { enabled: true, volume: 0.6 },
+      },
+      typography: {
+        title: { fontFamily: 'Inter', fontSize: 28, fontWeight: 900, color: '#FFD700' },
+        detail: {
+          fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+          fontSize: 42,
+          fontWeight: 800,
+          color: '#ffffff',
+        },
+      },
+      width: 350,
+      height: 120,
     }
   }
 
@@ -283,7 +382,32 @@ class OverlayConfig extends BaseModel {
           scale: { x: 1, y: 1, z: 1 },
           visible: true,
           locked: false,
+          zIndex: 1,
           properties: this.getDefaultDiceProperties(),
+        },
+        {
+          id: 'default_goal_bar',
+          type: 'diceReverseGoalBar',
+          name: 'Goal Bar par défaut',
+          position: { x: 0, y: 400, z: 0 },
+          rotation: { x: 0, y: 0, z: 0 },
+          scale: { x: 1, y: 1, z: 1 },
+          visible: true,
+          locked: false,
+          zIndex: 2,
+          properties: this.getDefaultGoalBarProperties(),
+        },
+        {
+          id: 'default_impact_hud',
+          type: 'diceReverseImpactHud',
+          name: 'Impact HUD par défaut',
+          position: { x: 0, y: 0, z: 0 },
+          rotation: { x: 0, y: 0, z: 0 },
+          scale: { x: 1, y: 1, z: 1 },
+          visible: true,
+          locked: false,
+          zIndex: 3,
+          properties: this.getDefaultImpactHudProperties(),
         },
       ],
     }

@@ -57,7 +57,7 @@ class TwitchApiService {
    * @returns Token d'application valide
    */
   async getAppAccessToken(): Promise<string> {
-    // Si on a déjà un token valide, le retourner
+    // Si on a déjà un token valide, le retourner (sans log pour éviter le spam)
     if (this.appAccessToken && Date.now() < this.tokenExpiry) {
       return this.appAccessToken
     }
@@ -98,6 +98,13 @@ class TwitchApiService {
       this.appAccessToken = data.access_token
       // Expire 5 minutes avant la vraie expiration pour être sûr
       this.tokenExpiry = Date.now() + (data.expires_in - 300) * 1000
+
+      // Log uniquement lors d'un VRAI renouvellement de token
+      logger.info({
+        event: 'twitch_app_token_renewed',
+        expiresIn: data.expires_in,
+        expiresAt: new Date(this.tokenExpiry).toISOString(),
+      })
 
       return this.appAccessToken
     } catch (error) {
@@ -242,7 +249,6 @@ class TwitchApiService {
 
       try {
         const url = `https://api.twitch.tv/helix/streams?${params}`
-        logger.info(`Fetching Twitch streams: ${url}`)
 
         const response = await fetch(url, {
           headers: {
@@ -259,7 +265,12 @@ class TwitchApiService {
 
         const data = (await response.json()) as { data: TwitchStream[] }
 
-        logger.info(`Twitch streams response: ${JSON.stringify(data.data.map((s) => s.user_id))}`)
+        // Log uniquement en debug pour éviter le spam
+        logger.debug({
+          event: 'twitch_streams_fetched',
+          requestedCount: chunk.length,
+          liveCount: data.data.length,
+        })
 
         // Ajouter les streams actifs à la map
         for (const stream of data.data) {

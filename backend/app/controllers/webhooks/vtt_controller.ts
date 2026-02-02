@@ -1,8 +1,10 @@
 import type { HttpContext } from '@adonisjs/core/http'
+import { inject } from '@adonisjs/core'
 import { z } from 'zod'
 import { DateTime } from 'luxon'
 import VttConnection from '#models/vtt_connection'
 import VttWebhookService from '#services/vtt/vtt_webhook_service'
+import { InstanceManager } from '#services/gamification/instance_manager'
 
 // Schéma de validation pour le payload de dice roll
 const diceRollPayloadSchema = z.object({
@@ -20,7 +22,17 @@ const diceRollPayloadSchema = z.object({
   metadata: z.record(z.string(), z.unknown()).optional(), // Données spécifiques VTT
 })
 
+// Schéma de validation pour le callback d'exécution gamification
+const gamificationExecutedPayloadSchema = z.object({
+  success: z.boolean(),
+  message: z.string().optional(),
+  originalValue: z.number().optional(),
+  invertedValue: z.number().optional(),
+})
+
+@inject()
 export default class VttController {
+  constructor(private instanceManager: InstanceManager) {}
   /**
    * Reçoit un événement de dice roll d'un module/script VTT
    * POST /webhooks/vtt/dice-roll
@@ -131,6 +143,85 @@ export default class VttController {
       console.error('Error testing VTT connection:', error)
       return response.internalServerError({
         error: 'An error occurred while testing the connection',
+      })
+    }
+  }
+
+  /**
+   * Callback appelé par Foundry VTT quand une action de gamification est exécutée
+   * POST /webhooks/vtt/gamification/:instanceId/executed
+   *
+   * Cet endpoint est appelé par le module Foundry après avoir exécuté l'action
+   * (ex: inversion de dé). Il déclenche l'envoi du WebSocket pour l'Impact HUD.
+   */
+  async gamificationExecuted({ request, response, params }: HttpContext) {
+    try {
+      // 1. Extraire et valider l'API key
+      const authHeader = request.header('Authorization')
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return response.unauthorized({
+          error: 'Missing or invalid Authorization header',
+        })
+      }
+
+      const apiKey = authHeader.substring(7)
+
+      // 2. Vérifier la connexion VTT
+      const vttConnection = await VttConnection.query()
+        .where('api_key', apiKey)
+        .where('status', 'active')
+        .firstOrFail()
+
+      // 3. Mettre à jour le timestamp
+      vttConnection.lastWebhookAt = DateTime.now()
+      await vttConnection.save()
+
+      // 4. Valider le payload
+      const payload = gamificationExecutedPayloadSchema.parse(request.body())
+      const instanceId = params.instanceId as string
+
+      if (!instanceId) {
+        return response.badRequest({
+          error: 'Missing instanceId parameter',
+        })
+      }
+
+      // 5. Marquer l'instance comme exécutée (déclenche WebSocket)
+      const instance = await this.instanceManager.markExecuted(
+        instanceId,
+        payload.success,
+        payload.message
+      )
+
+      if (!instance) {
+        return response.notFound({
+          error: 'Instance not found or not pending execution',
+        })
+      }
+
+      return response.ok({
+        success: true,
+        instanceId: instance.id,
+        executionStatus: instance.executionStatus,
+        message: 'Gamification action execution recorded',
+      })
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return response.badRequest({
+          error: 'Invalid payload',
+          details: error.issues,
+        })
+      }
+
+      if (error.code === 'E_ROW_NOT_FOUND') {
+        return response.unauthorized({
+          error: 'Invalid API key or inactive connection',
+        })
+      }
+
+      console.error('Error processing gamification executed webhook:', error)
+      return response.internalServerError({
+        error: 'An error occurred while processing the webhook',
       })
     }
   }
