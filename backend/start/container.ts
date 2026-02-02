@@ -69,7 +69,8 @@ app.container.bind('twitchAuthService', async () => {
   return new mod.twitchAuthService()
 })
 
-app.container.bind('twitchApiService', async () => {
+// Singleton pour réutiliser le token d'application Twitch entre les requêtes
+app.container.singleton('twitchApiService', async () => {
   const mod = await import('#services/twitch/twitch_api_service')
   return new mod.twitchApiService()
 })
@@ -95,6 +96,30 @@ app.container.singleton('twitchChatCountdownService', async () => {
 app.container.singleton('webSocketService', async () => {
   const mod = await import('#services/websocket/websocket_service')
   return new mod.webSocketService()
+})
+
+// VTT WebSocket Service
+app.container.singleton('vttWebSocketService', async () => {
+  const mod = await import('#services/vtt/vtt_websocket_service')
+  return new mod.default()
+})
+
+// Gamification Services
+app.container.singleton('foundryCommandAdapter', async () => {
+  const mod = await import('#services/gamification/foundry_command_adapter')
+  const vttWebSocketService = await app.container.make('vttWebSocketService')
+  return new mod.FoundryCommandAdapter(vttWebSocketService)
+})
+
+app.container.singleton('gamificationService', async () => {
+  const mod = await import('#services/gamification/gamification_service')
+  const gamificationService = await app.container.make(mod.GamificationService)
+
+  // Injecter le FoundryCommandAdapter
+  const foundryCommandAdapter = await app.container.make('foundryCommandAdapter')
+  gamificationService.setFoundryCommandService(foundryCommandAdapter)
+
+  return gamificationService
 })
 
 // Poll Services
@@ -241,6 +266,13 @@ declare module '@adonisjs/core/types' {
     >
     pollLifecycleService: InstanceType<
       typeof import('#services/polls/poll_lifecycle_service').PollLifecycleService
+    >
+    vttWebSocketService: InstanceType<typeof import('#services/vtt/vtt_websocket_service').default>
+    foundryCommandAdapter: InstanceType<
+      typeof import('#services/gamification/foundry_command_adapter').FoundryCommandAdapter
+    >
+    gamificationService: InstanceType<
+      typeof import('#services/gamification/gamification_service').GamificationService
     >
 
     // Repositories

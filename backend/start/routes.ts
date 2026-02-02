@@ -175,6 +175,9 @@ router
       '#controllers/mj/campaigns_controller.removeMember'
     )
 
+    // Campaign Events (unified events: polls, gamification, etc.)
+    router.get('/campaigns/:id/events', '#controllers/mj/campaigns_controller.events')
+
     // Polls (templates liés directement aux campagnes)
     // CRUD des polls (templates de sondages)
     router.get('/campaigns/:campaignId/polls', '#controllers/mj/polls_controller.indexByCampaign')
@@ -205,6 +208,55 @@ router
           keyPrefix: 'poll_launch_legacy',
         })
       )
+
+    // ---- Gamification ----
+    // Événements disponibles
+    router.get('/gamification/events', '#controllers/mj/gamification_controller.listEvents')
+    router.get('/gamification/events/:eventId', '#controllers/mj/gamification_controller.showEvent')
+
+    // Configuration gamification par campagne
+    router.get(
+      '/campaigns/:id/gamification',
+      '#controllers/mj/gamification_controller.getCampaignConfig'
+    )
+    router.post(
+      '/campaigns/:id/gamification/events/:eventId/enable',
+      '#controllers/mj/gamification_controller.enableEvent'
+    )
+    router.post(
+      '/campaigns/:id/gamification/events/:eventId/disable',
+      '#controllers/mj/gamification_controller.disableEvent'
+    )
+    router.put(
+      '/campaigns/:id/gamification/events/:eventId',
+      '#controllers/mj/gamification_controller.updateConfig'
+    )
+
+    // Instances de gamification
+    router.get(
+      '/campaigns/:id/gamification/instances',
+      '#controllers/mj/gamification_controller.listInstances'
+    )
+    router.post(
+      '/campaigns/:id/gamification/trigger',
+      '#controllers/mj/gamification_controller.triggerEvent'
+    )
+    router.post(
+      '/campaigns/:id/gamification/instances/:instanceId/cancel',
+      '#controllers/mj/gamification_controller.cancelInstance'
+    )
+
+    // Force complete (DEV/STAGING only - for testing)
+    router.post(
+      '/campaigns/:id/gamification/instances/:instanceId/force-complete',
+      '#controllers/mj/gamification_controller.forceComplete'
+    )
+
+    // Statistiques gamification
+    router.get(
+      '/campaigns/:id/gamification/stats',
+      '#controllers/mj/gamification_controller.getStats'
+    )
 
     // VTT Connections - Static routes FIRST (before :id routes)
     router.get('/vtt-connections', '#controllers/mj/vtt_connections_controller.index')
@@ -489,6 +541,48 @@ router
         '#controllers/overlay-studio/overlay_studio_controller.sendPreviewCommand'
       )
       .use(middleware.rateLimit())
+
+    // ---- Streamer Gamification ----
+    // Liste des événements gamification disponibles pour une campagne (avec config streamer)
+    router.get(
+      '/campaigns/:campaignId/gamification',
+      '#controllers/streamer/gamification_controller.list'
+    )
+    // Activer un événement (crée le reward Twitch)
+    router
+      .post(
+        '/campaigns/:campaignId/gamification/events/:eventId/enable',
+        '#controllers/streamer/gamification_controller.enable'
+      )
+      .use(
+        middleware.rateLimit({
+          maxRequests: 10,
+          windowSeconds: 60,
+          keyPrefix: 'gamification_enable',
+        })
+      )
+    // Désactiver un événement (supprime le reward Twitch)
+    router
+      .post(
+        '/campaigns/:campaignId/gamification/events/:eventId/disable',
+        '#controllers/streamer/gamification_controller.disable'
+      )
+      .use(
+        middleware.rateLimit({
+          maxRequests: 10,
+          windowSeconds: 60,
+          keyPrefix: 'gamification_disable',
+        })
+      )
+    // Mettre à jour le coût du reward
+    router
+      .put(
+        '/campaigns/:campaignId/gamification/events/:eventId/cost',
+        '#controllers/streamer/gamification_controller.updateCost'
+      )
+      .use(
+        middleware.rateLimit({ maxRequests: 20, windowSeconds: 60, keyPrefix: 'gamification_cost' })
+      )
   })
   .prefix('/dashboard')
   .use(middleware.auth({ guards: ['web', 'api'] }))
@@ -509,6 +603,15 @@ router
     router.get(
       '/:streamerId/config',
       '#controllers/overlay-studio/overlay_studio_controller.getActiveConfig'
+    )
+    // Gamification - Instance active (public)
+    router.get(
+      '/:streamerId/gamification/active',
+      '#controllers/overlay/gamification_overlay_controller.getActive'
+    )
+    router.get(
+      '/:streamerId/campaigns/:campaignId/gamification/active',
+      '#controllers/overlay/gamification_overlay_controller.getActiveForCampaign'
     )
   })
   .prefix('/overlay')
@@ -577,6 +680,12 @@ router
       .post('/dice-roll', '#controllers/webhooks/vtt_controller.diceRoll')
       .use(middleware.rateLimit({ maxRequests: 100, windowSeconds: 60, keyPrefix: 'vtt_webhook' }))
     router.post('/test', '#controllers/webhooks/vtt_controller.test')
+
+    // Gamification action executed callback (called by Foundry after executing action)
+    router.post(
+      '/gamification/:instanceId/executed',
+      '#controllers/webhooks/vtt_controller.gamificationExecuted'
+    )
   })
   .prefix('/webhooks/vtt')
 // Pas de middleware auth - authentification via Bearer token dans le controller
@@ -609,6 +718,16 @@ router
     )
   })
   .prefix('/webhooks/foundry')
+
+// ==========================================
+// Twitch EventSub Webhooks (public, auth via HMAC signature)
+// ==========================================
+router
+  .group(() => {
+    router.post('/eventsub', '#controllers/webhooks/twitch_eventsub_controller.handle')
+  })
+  .prefix('/webhooks/twitch')
+// Pas de middleware auth - authentification via signature HMAC Twitch
 
 // ==========================================
 // Transmit WebSocket routes

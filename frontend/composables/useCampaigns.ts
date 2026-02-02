@@ -368,20 +368,57 @@ export const useCampaigns = () => {
     }
   }
 
+  // Déduplication des requêtes live status en cours
+  const pendingLiveStatusRequests = new Map<string, Promise<LiveStatusMap>>()
+  const lastLiveStatusFetch = new Map<string, number>()
+  const LIVE_STATUS_DEBOUNCE_MS = 500
+
   /**
    * Récupère le statut live des membres d'une campagne
+   * Avec debounce (500ms) et déduplication des requêtes
    */
   const getLiveStatus = async (campaignId: string): Promise<LiveStatusMap> => {
+    // Debounce: ignorer si appelé trop rapidement
+    const now = Date.now()
+    const lastFetch = lastLiveStatusFetch.get(campaignId) || 0
+    if (now - lastFetch < LIVE_STATUS_DEBOUNCE_MS) {
+      // Retourner la requête en cours si elle existe
+      const pending = pendingLiveStatusRequests.get(campaignId)
+      if (pending) {
+        return pending
+      }
+      return {}
+    }
+
+    // Déduplication: réutiliser la requête en cours si elle existe
+    const existingRequest = pendingLiveStatusRequests.get(campaignId)
+    if (existingRequest) {
+      return existingRequest
+    }
+
+    // Créer une nouvelle requête
+    lastLiveStatusFetch.set(campaignId, now)
+
+    const request = (async () => {
+      try {
+        const response = await fetch(`${API_URL}/mj/campaigns/${campaignId}/live-status`, {
+          credentials: 'include',
+        })
+        if (!response.ok) throw new Error('Failed to fetch live status')
+        const data = await response.json()
+        return data.data
+      } catch (error) {
+        console.error('Failed to fetch live status:', error)
+        throw error
+      }
+    })()
+
+    pendingLiveStatusRequests.set(campaignId, request)
+
     try {
-      const response = await fetch(`${API_URL}/mj/campaigns/${campaignId}/live-status`, {
-        credentials: 'include',
-      })
-      if (!response.ok) throw new Error('Failed to fetch live status')
-      const data = await response.json()
-      return data.data
-    } catch (error) {
-      console.error('Failed to fetch live status:', error)
-      throw error
+      return await request
+    } finally {
+      pendingLiveStatusRequests.delete(campaignId)
     }
   }
 

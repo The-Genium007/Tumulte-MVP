@@ -97,8 +97,8 @@ new Ignitor(APP_ROOT, { importer: IMPORTER })
           adapter: createAdapter(pubClient, subClient),
         })
 
-        const { default: VttWebSocketService } = await import('#services/vtt/vtt_websocket_service')
-        const vttWebSocketService = new VttWebSocketService()
+        // Use the container singleton to ensure the same instance is used everywhere
+        const vttWebSocketService = await app.container.make('vttWebSocketService')
         vttWebSocketService.setup(io)
 
         console.log('[Socket.IO] Server initialized with Redis adapter for horizontal scaling')

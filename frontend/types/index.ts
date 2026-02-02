@@ -404,6 +404,126 @@ export interface DiceRollEvent {
   modifiers: string[] | null // Detected modifiers (e.g., ["+2", "-1"])
 }
 
+// Gamification types (Overlay Events)
+export interface GamificationInstanceEvent {
+  id: string
+  campaignId: string
+  eventId: string
+  event?: {
+    id: string
+    slug: string
+    name: string
+    type: 'individual' | 'group'
+    actionType: string
+    rewardColor: string
+  }
+  type: 'individual' | 'group'
+  status: 'active' | 'armed' | 'completed' | 'expired' | 'cancelled'
+  objectiveTarget: number
+  currentProgress: number
+  progressPercentage: number
+  isObjectiveReached: boolean
+  duration: number
+  startsAt: string
+  expiresAt: string
+  completedAt: string | null
+  armedAt?: string | null
+  streamerId: string | null
+  viewerCountAtStart: number | null
+  triggerData: {
+    diceRoll?: {
+      messageId?: string
+      characterId?: string
+      characterName?: string
+      formula: string
+      result: number
+      diceResults: number[]
+      criticalType: 'success' | 'failure'
+    }
+    activation?: {
+      triggeredBy: string
+      twitchUserId: string
+      redemptionId: string
+    }
+    manual?: {
+      triggeredBy: string
+      reason?: string
+    }
+  } | null
+}
+
+export interface GamificationProgressEvent {
+  instanceId: string
+  currentProgress: number
+  objectiveTarget: number
+  progressPercentage: number
+  isObjectiveReached: boolean
+  contributorUsername: string
+}
+
+export interface GamificationCompleteEvent {
+  instanceId: string
+  success: boolean
+  message?: string
+}
+
+/**
+ * Event emitted when an instance becomes "armed" (gauge filled, waiting for critical)
+ */
+export interface GamificationArmedEvent {
+  instanceId: string
+  armedAt: string
+  streamerId: string | null
+  eventId: string
+}
+
+/**
+ * Event emitted when an armed instance is consumed by a critical dice roll
+ */
+export interface GamificationConsumedEvent {
+  instanceId: string
+  streamerId: string | null
+  eventId: string
+  completedAt: string | null
+  cooldownEndsAt: string | null
+  resultData: {
+    success: boolean
+    message?: string
+  } | null
+  diceRoll: {
+    characterName: string
+    formula: string
+    result: number
+    criticalType: 'success' | 'failure'
+  }
+}
+
+/**
+ * Event emitted when an expired instance is refunded
+ */
+export interface GamificationRefundedEvent {
+  instanceId: string
+  streamerId: string | null
+  totalContributions: number
+  refundedCount: number
+  failedCount: number
+}
+
+/**
+ * Event emitted when a gamification action is executed (e.g., dice inversion by Foundry VTT)
+ * This can happen minutes/hours after the gauge was completed
+ */
+export interface GamificationActionExecutedEvent {
+  instanceId: string
+  eventName: string
+  actionType: 'dice_invert' | 'chat_message' | 'stat_modify'
+  success: boolean
+  message?: string
+  // For dice_invert specifically
+  originalValue?: number
+  invertedValue?: number
+}
+
 // Cookie Consent types (RGPD)
 export type ConsentCategory = 'required' | 'analytics' | 'marketing'
 

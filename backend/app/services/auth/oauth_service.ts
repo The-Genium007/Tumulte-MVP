@@ -47,22 +47,32 @@ class OAuthService {
       .first()
 
     if (authProvider) {
-      // Update tokens if provided
-      if (data.accessToken) {
-        await authProvider.updateTokens(data.accessToken, data.refreshToken, data.tokenExpiresAt)
-      }
+      // Handle orphan auth provider (user was deleted but provider record remains)
+      if (!authProvider.user) {
+        logger.warn(
+          { authProviderId: authProvider.id, userId: authProvider.userId, provider: data.provider },
+          'Orphan AuthProvider found - deleting and creating fresh user'
+        )
+        await authProvider.delete()
+        // Fall through to create new user
+      } else {
+        // Update tokens if provided
+        if (data.accessToken) {
+          await authProvider.updateTokens(data.accessToken, data.refreshToken, data.tokenExpiresAt)
+        }
 
-      // Update user avatar if changed
-      if (data.avatarUrl && authProvider.user.avatarUrl !== data.avatarUrl) {
-        authProvider.user.avatarUrl = data.avatarUrl
-        await authProvider.user.save()
-      }
+        // Update user avatar if changed
+        if (data.avatarUrl && authProvider.user.avatarUrl !== data.avatarUrl) {
+          authProvider.user.avatarUrl = data.avatarUrl
+          await authProvider.user.save()
+        }
 
-      logger.info(
-        { userId: authProvider.userId, provider: data.provider },
-        'Existing user logged in via OAuth'
-      )
-      return { user: authProvider.user, isNew: false, authProvider }
+        logger.info(
+          { userId: authProvider.userId, provider: data.provider },
+          'Existing user logged in via OAuth'
+        )
+        return { user: authProvider.user, isNew: false, authProvider }
+      }
     }
 
     // 2. Check if a user exists with this email

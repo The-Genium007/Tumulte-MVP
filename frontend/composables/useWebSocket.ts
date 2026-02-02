@@ -6,6 +6,10 @@ import type {
   ReadinessChangeEvent,
   PreviewCommandEvent,
   DiceRollEvent,
+  GamificationInstanceEvent,
+  GamificationProgressEvent,
+  GamificationCompleteEvent,
+  GamificationActionExecutedEvent,
 } from '@/types'
 import { loggers } from '@/utils/logger'
 
@@ -608,6 +612,12 @@ export const useWebSocket = () => {
       onPreviewCommand?: (data: PreviewCommandEvent) => void
       onDiceRoll?: (data: DiceRollEvent) => void
       onDiceRollCritical?: (data: DiceRollEvent) => void
+      // Gamification events
+      onGamificationStart?: (data: GamificationInstanceEvent) => void
+      onGamificationProgress?: (data: GamificationProgressEvent) => void
+      onGamificationComplete?: (data: GamificationCompleteEvent) => void
+      onGamificationExpired?: (data: { instanceId: string }) => void
+      onGamificationActionExecuted?: (data: GamificationActionExecutedEvent) => void
     }
   ): (() => Promise<void>) => {
     if (!client.value) {
@@ -661,6 +671,32 @@ export const useWebSocket = () => {
         case 'dice-roll:critical':
           if (callbacks.onDiceRollCritical) {
             callbacks.onDiceRollCritical(message.data as DiceRollEvent)
+          }
+          break
+        // Gamification events
+        case 'gamification:start':
+          if (callbacks.onGamificationStart) {
+            callbacks.onGamificationStart(message.data as GamificationInstanceEvent)
+          }
+          break
+        case 'gamification:progress':
+          if (callbacks.onGamificationProgress) {
+            callbacks.onGamificationProgress(message.data as GamificationProgressEvent)
+          }
+          break
+        case 'gamification:complete':
+          if (callbacks.onGamificationComplete) {
+            callbacks.onGamificationComplete(message.data as GamificationCompleteEvent)
+          }
+          break
+        case 'gamification:expired':
+          if (callbacks.onGamificationExpired) {
+            callbacks.onGamificationExpired(message.data as { instanceId: string })
+          }
+          break
+        case 'gamification:action_executed':
+          if (callbacks.onGamificationActionExecuted) {
+            callbacks.onGamificationActionExecuted(message.data as GamificationActionExecutedEvent)
           }
           break
         default:

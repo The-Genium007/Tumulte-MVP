@@ -30,9 +30,16 @@
 
 <script setup lang="ts">
 import { computed, ref, onUnmounted } from 'vue'
-import type { OverlayElement, PollProperties } from '../types'
+import type {
+  OverlayElement,
+  PollProperties,
+  DiceReverseGoalBarProperties,
+  DiceReverseImpactHudProperties,
+} from '../types'
 import {
   calculatePollGizmoSize,
+  calculateGoalBarGizmoSize,
+  calculateImpactHudGizmoSize,
   HUD_BASE_SIZE,
   HUD_CSS_TO_CANVAS,
   GIZMO_PADDING,
@@ -110,6 +117,16 @@ const baseSize = computed(() => {
       width: (HUD_BASE_SIZE.width + GIZMO_PADDING * 2) * HUD_CSS_TO_CANVAS,
       height: (HUD_BASE_SIZE.height + GIZMO_PADDING * 2) * HUD_CSS_TO_CANVAS,
     }
+  }
+
+  if (props.element.type === 'diceReverseGoalBar') {
+    const goalBarProps = props.element.properties as DiceReverseGoalBarProperties
+    return calculateGoalBarGizmoSize(goalBarProps)
+  }
+
+  if (props.element.type === 'diceReverseImpactHud') {
+    const impactHudProps = props.element.properties as DiceReverseImpactHudProperties
+    return calculateImpactHudGizmoSize(impactHudProps)
   }
 
   return DEFAULT_GIZMO_SIZE
