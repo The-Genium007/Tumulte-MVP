@@ -7,14 +7,17 @@ const props = defineProps<{
   title?: string
   description?: string
   confirmLabel?: string
+  skipLabel?: string
   loading?: boolean
+  allowSkip?: boolean
 }>()
 
 const model = defineModel<boolean>({ default: false })
 
 const emit = defineEmits<{
-  confirm: [characterId: string]
+  confirm: [characterId: string | null]
   cancel: []
+  skip: []
 }>()
 
 const selectedCharacterId = ref<string | null>(props.currentCharacterId || null)
@@ -38,6 +41,11 @@ const handleConfirm = () => {
   if (selectedCharacterId.value) {
     emit('confirm', selectedCharacterId.value)
   }
+}
+
+const handleSkip = () => {
+  emit('skip')
+  model.value = false
 }
 
 const handleCancel = () => {
@@ -123,12 +131,21 @@ const handleCancel = () => {
         <template #footer>
           <div class="flex flex-col sm:flex-row justify-end gap-3 w-full">
             <UButton
-              color="primary"
-              variant="solid"
+              color="neutral"
+              variant="outline"
               label="Annuler"
               class="w-full sm:w-auto"
               :disabled="loading"
               @click="handleCancel"
+            />
+            <UButton
+              v-if="allowSkip"
+              color="neutral"
+              variant="soft"
+              :label="skipLabel || 'Choisir plus tard'"
+              class="w-full sm:w-auto"
+              :disabled="loading"
+              @click="handleSkip"
             />
             <UButton
               color="primary"

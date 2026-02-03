@@ -57,6 +57,9 @@ const hiddenCount = computed(() => Math.max(0, characters.value.length - MAX_VIS
 
 // Check if a character is currently active
 const isActive = (character: GmCharacter) => activeCharacter.value?.id === character.id
+
+// Check if a character is assigned to a streamer (not selectable by GM)
+const isAssignedToStreamer = (character: GmCharacter) => character.assignedToStreamer !== null
 </script>
 
 <template>
@@ -120,6 +123,17 @@ const isActive = (character: GmCharacter) => activeCharacter.value?.id === chara
                     </div>
                     <span class="text-sm text-secondary"
                       ><strong>Non-joueur</strong> — Personnage contrôlé par le MJ (PNJ)</span
+                    >
+                  </div>
+
+                  <div class="flex items-center gap-2">
+                    <div
+                      class="size-5 rounded-full bg-info-500 flex items-center justify-center"
+                    >
+                      <UIcon name="i-lucide-user" class="size-3 text-white" />
+                    </div>
+                    <span class="text-sm text-secondary"
+                      ><strong>Assigné</strong> — PJ contrôlé par un streamer (non sélectionnable)</span
                     >
                   </div>
                 </div>
@@ -244,18 +258,34 @@ const isActive = (character: GmCharacter) => activeCharacter.value?.id === chara
             v-for="character in visibleCharacters"
             :key="character.id"
             class="flex items-center gap-2 px-3 py-2 rounded-lg transition-all border-2 shrink-0"
-            :class="
-              isActive(character)
-                ? 'bg-primary-50 dark:bg-primary-900/30 border-primary-400 dark:border-primary-500'
-                : 'bg-elevated border-transparent hover:border-muted'
-            "
-            :disabled="updating"
-            @click="handleSelectCharacter(character)"
+            :class="[
+              isAssignedToStreamer(character)
+                ? 'bg-muted/30 border-transparent opacity-60 cursor-not-allowed'
+                : isActive(character)
+                  ? 'bg-primary-50 dark:bg-primary-900/30 border-primary-400 dark:border-primary-500'
+                  : 'bg-elevated border-transparent hover:border-muted'
+            ]"
+            :disabled="updating || isAssignedToStreamer(character)"
+            :title="isAssignedToStreamer(character) ? `Joué par ${character.assignedToStreamer?.streamerName}` : ''"
+            @click="!isAssignedToStreamer(character) && handleSelectCharacter(character)"
           >
             <div class="relative shrink-0">
-              <CharacterAvatar :src="character.avatarUrl" :alt="character.name" size="xs" />
-              <!-- Badge type -->
+              <CharacterAvatar
+                :src="character.avatarUrl"
+                :alt="character.name"
+                size="xs"
+                :class="isAssignedToStreamer(character) ? 'grayscale' : ''"
+              />
+              <!-- Badge type ou icône assigné -->
               <div
+                v-if="isAssignedToStreamer(character)"
+                class="absolute -bottom-0.5 -right-0.5 size-3.5 rounded-full bg-info-500 flex items-center justify-center"
+                :title="`Joué par ${character.assignedToStreamer?.streamerName}`"
+              >
+                <UIcon name="i-lucide-user" class="size-2.5 text-white" />
+              </div>
+              <div
+                v-else
                 class="absolute -bottom-0.5 -right-0.5 size-3.5 rounded-full flex items-center justify-center text-[8px] font-bold"
                 :class="
                   character.characterType === 'pc'
@@ -266,9 +296,17 @@ const isActive = (character: GmCharacter) => activeCharacter.value?.id === chara
                 {{ character.characterType === 'pc' ? 'J' : 'N' }}
               </div>
             </div>
-            <span class="text-xs font-medium whitespace-nowrap max-w-20 truncate">
-              {{ character.name }}
-            </span>
+            <div class="flex flex-col items-start min-w-0">
+              <span class="text-xs font-medium whitespace-nowrap max-w-20 truncate">
+                {{ character.name }}
+              </span>
+              <span
+                v-if="isAssignedToStreamer(character)"
+                class="text-[10px] text-info-500 whitespace-nowrap max-w-20 truncate"
+              >
+                {{ character.assignedToStreamer?.streamerName }}
+              </span>
+            </div>
             <UIcon
               v-if="isActive(character)"
               name="i-lucide-check"
@@ -359,31 +397,51 @@ const isActive = (character: GmCharacter) => activeCharacter.value?.id === chara
                 v-for="character in groupedCharacters.pcs"
                 :key="character.id"
                 class="flex flex-col items-center gap-2 p-3 rounded-lg transition-colors border-2"
-                :class="
-                  isActive(character)
-                    ? 'bg-primary-50 dark:bg-primary-900/20 border-primary-300 dark:border-primary-600'
-                    : 'bg-elevated border-default hover:border-muted'
-                "
-                :disabled="updating"
-                @click="handleSelectCharacter(character)"
+                :class="[
+                  isAssignedToStreamer(character)
+                    ? 'bg-muted/20 border-default opacity-60 cursor-not-allowed'
+                    : isActive(character)
+                      ? 'bg-primary-50 dark:bg-primary-900/20 border-primary-300 dark:border-primary-600'
+                      : 'bg-elevated border-default hover:border-muted'
+                ]"
+                :disabled="updating || isAssignedToStreamer(character)"
+                @click="!isAssignedToStreamer(character) && handleSelectCharacter(character)"
               >
                 <div class="relative">
                   <CharacterAvatar
                     :src="character.avatarUrl"
                     :alt="character.name"
                     size="lg"
-                    :class="isActive(character) ? 'ring-2 ring-primary-500' : ''"
+                    :class="[
+                      isActive(character) ? 'ring-2 ring-primary-500' : '',
+                      isAssignedToStreamer(character) ? 'grayscale' : ''
+                    ]"
                   />
+                  <!-- Badge "joué par" si assigné -->
                   <div
-                    v-if="isActive(character)"
+                    v-if="isAssignedToStreamer(character)"
+                    class="absolute -bottom-1 -right-1 size-5 rounded-full bg-info-500 flex items-center justify-center"
+                  >
+                    <UIcon name="i-lucide-user" class="size-3 text-white" />
+                  </div>
+                  <div
+                    v-else-if="isActive(character)"
                     class="absolute -bottom-1 -right-1 size-5 rounded-full bg-primary-500 flex items-center justify-center"
                   >
                     <UIcon name="i-lucide-check" class="size-3 text-white" />
                   </div>
                 </div>
-                <span class="text-xs font-medium text-center truncate w-full">
-                  {{ character.name }}
-                </span>
+                <div class="flex flex-col items-center w-full">
+                  <span class="text-xs font-medium text-center truncate w-full">
+                    {{ character.name }}
+                  </span>
+                  <span
+                    v-if="isAssignedToStreamer(character)"
+                    class="text-[10px] text-info-500 truncate w-full text-center"
+                  >
+                    Joué par {{ character.assignedToStreamer?.streamerName }}
+                  </span>
+                </div>
               </button>
             </div>
           </div>

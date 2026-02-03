@@ -35,11 +35,11 @@ export const useCampaignCharacters = () => {
   }
 
   /**
-   * Accepte une invitation avec choix de personnage
+   * Accepte une invitation avec choix optionnel de personnage
    */
   const acceptInvitationWithCharacter = async (
     invitationId: string,
-    characterId: string
+    characterId?: string | null
   ): Promise<void> => {
     try {
       const response = await fetch(
@@ -48,7 +48,7 @@ export const useCampaignCharacters = () => {
           method: 'POST',
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ characterId }),
+          body: JSON.stringify(characterId ? { characterId } : {}),
         }
       )
 
@@ -57,7 +57,7 @@ export const useCampaignCharacters = () => {
         throw new Error(error.error || 'Failed to accept invitation')
       }
     } catch (error) {
-      console.error('Failed to accept invitation with character:', error)
+      console.error('Failed to accept invitation:', error)
       throw error
     }
   }

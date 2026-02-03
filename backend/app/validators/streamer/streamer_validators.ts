@@ -4,7 +4,7 @@ import { z } from 'zod'
 // ACCEPT INVITATION
 // ========================================
 export const acceptInvitationSchema = z.object({
-  characterId: z.string().uuid('ID de personnage invalide'),
+  characterId: z.string().uuid('ID de personnage invalide').optional(),
 })
 export type AcceptInvitationDto = z.infer<typeof acceptInvitationSchema>
 
