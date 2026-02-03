@@ -98,9 +98,12 @@
         :characters="characters"
         :loading="acceptLoading"
         title="Choisir votre personnage"
-        description="Sélectionnez le personnage que vous allez jouer dans cette campagne."
+        description="Sélectionnez le personnage que vous allez jouer dans cette campagne, ou choisissez plus tard."
         confirm-label="Accepter et rejoindre"
+        skip-label="Rejoindre sans personnage"
+        allow-skip
         @confirm="handleConfirmAccept"
+        @skip="handleSkipCharacterSelection"
         @cancel="showCharacterModal = false"
       />
 
@@ -376,7 +379,7 @@ const handleAccept = async (invitation: CampaignInvitation) => {
   }
 }
 
-const handleConfirmAccept = async (characterId: string) => {
+const handleConfirmAccept = async (characterId: string | null) => {
   if (!selectedInvitation.value) return
 
   acceptLoading.value = true
@@ -402,6 +405,10 @@ const handleConfirmAccept = async (characterId: string) => {
   } finally {
     acceptLoading.value = false
   }
+}
+
+const handleSkipCharacterSelection = async () => {
+  await handleConfirmAccept(null)
 }
 
 const handleDecline = async (id: string) => {

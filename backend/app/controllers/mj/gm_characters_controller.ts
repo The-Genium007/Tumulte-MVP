@@ -2,6 +2,7 @@ import { inject } from '@adonisjs/core'
 import type { HttpContext } from '@adonisjs/core/http'
 import { campaign as Campaign } from '#models/campaign'
 import Character from '#models/character'
+import CharacterAssignment from '#models/character_assignment'
 import DiceRoll from '#models/dice_roll'
 
 /**
@@ -36,16 +37,44 @@ export default class GmCharactersController {
       .orderBy('character_type', 'asc') // PCs first, then NPCs
       .orderBy('name', 'asc')
 
+    // Get all character assignments for this campaign to know which PCs are claimed
+    const assignments = await CharacterAssignment.query()
+      .where('campaign_id', params.id)
+      .preload('streamer', (query) => {
+        query.preload('user')
+      })
+
+    // Create a map of characterId -> streamer info
+    const assignmentMap = new Map(
+      assignments.map((a) => [
+        a.characterId,
+        {
+          streamerId: a.streamerId,
+          streamerName: a.streamer?.twitchDisplayName || 'Joueur',
+        },
+      ])
+    )
+
     return response.ok({
-      data: characters.map((char) => ({
-        id: char.id,
-        name: char.name,
-        avatarUrl: char.avatarUrl,
-        characterType: char.characterType,
-        vttCharacterId: char.vttCharacterId,
-        stats: char.stats,
-        lastSyncAt: char.lastSyncAt?.toISO(),
-      })),
+      data: characters.map((char) => {
+        const assignment = assignmentMap.get(char.id)
+        return {
+          id: char.id,
+          name: char.name,
+          avatarUrl: char.avatarUrl,
+          characterType: char.characterType,
+          vttCharacterId: char.vttCharacterId,
+          stats: char.stats,
+          lastSyncAt: char.lastSyncAt?.toISO(),
+          // New fields for assignment info
+          assignedToStreamer: assignment
+            ? {
+                streamerId: assignment.streamerId,
+                streamerName: assignment.streamerName,
+              }
+            : null,
+        }
+      }),
     })
   }
 

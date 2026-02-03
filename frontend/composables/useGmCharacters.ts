@@ -1,13 +1,19 @@
 import { ref, computed } from 'vue'
 
+export interface GmCharacterAssignment {
+  streamerId: string
+  streamerName: string
+}
+
 export interface GmCharacter {
   id: string
   name: string
   avatarUrl: string | null
-  characterType: 'pc' | 'npc'
+  characterType: 'pc' | 'npc' | 'monster'
   vttCharacterId: string
   stats: Record<string, unknown> | null
   lastSyncAt: string | null
+  assignedToStreamer: GmCharacterAssignment | null
 }
 
 /**

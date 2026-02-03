@@ -50,9 +50,9 @@ export default class CampaignsController {
   }
 
   /**
-   * Accepte une invitation avec choix de personnage
+   * Accepte une invitation avec choix optionnel de personnage
    * POST /api/v2/streamer/invitations/:id/accept
-   * Body: { characterId: string }
+   * Body: { characterId?: string }
    */
   async acceptInvitation({ auth, params, request, response }: HttpContext) {
     const streamer = await this.streamerRepository.findByUserId(auth.user!.id)
@@ -62,16 +62,22 @@ export default class CampaignsController {
     }
 
     try {
-      // Valider le body avec le characterId requis
+      // Valider le body avec le characterId optionnel
       const { characterId } = acceptInvitationSchema.parse(request.body())
 
-      await this.membershipService.acceptInvitationWithCharacter(
-        params.id,
-        streamer.id,
-        characterId
-      )
-
-      return response.ok({ message: 'Invitation accepted and character assigned' })
+      if (characterId) {
+        // Accepter avec assignation de personnage
+        await this.membershipService.acceptInvitationWithCharacter(
+          params.id,
+          streamer.id,
+          characterId
+        )
+        return response.ok({ message: 'Invitation accepted and character assigned' })
+      } else {
+        // Accepter sans personnage (sélection ultérieure)
+        await this.membershipService.acceptInvitation(params.id, streamer.id)
+        return response.ok({ message: 'Invitation accepted' })
+      }
     } catch (error) {
       return response.badRequest({
         error: error instanceof Error ? error.message : 'Failed to accept invitation',
