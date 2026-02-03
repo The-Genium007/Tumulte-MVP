@@ -22,7 +22,7 @@ export default class Character extends BaseModel {
   declare avatarUrl: string | null
 
   @column()
-  declare characterType: 'pc' | 'npc'
+  declare characterType: 'pc' | 'npc' | 'monster'
 
   @column()
   declare stats: object | null

@@ -4,7 +4,7 @@ export class CharacterDto {
   id!: string
   name!: string
   avatarUrl!: string | null
-  characterType!: 'pc' | 'npc'
+  characterType!: 'pc' | 'npc' | 'monster'
   vttCharacterId!: string
 
   static fromModel(character: Character): CharacterDto {

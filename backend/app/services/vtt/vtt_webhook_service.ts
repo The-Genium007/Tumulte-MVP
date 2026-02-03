@@ -187,7 +187,7 @@ export default class VttWebhookService {
       vttCharacterId: string
       name: string
       avatarUrl?: string | null
-      characterType?: 'pc' | 'npc'
+      characterType?: 'pc' | 'npc' | 'monster'
       stats?: Record<string, unknown> | null
       inventory?: Record<string, unknown> | null
       vttData?: Record<string, unknown> | null
@@ -238,17 +238,31 @@ export default class VttWebhookService {
     }
 
     // Déterminer le characterType de manière fiable
-    // Priorité: 1) vttData.type (source de vérité Foundry), 2) characterData.characterType, 3) défaut 'pc'
-    const resolveCharacterType = (): 'pc' | 'npc' => {
-      // En D&D 5e/PF2e: actor.type === 'character' = PC, 'npc' = NPC
+    // Le module Foundry envoie maintenant directement le type classifié (pc, npc, ou monster)
+    // via actor-classifier.js qui gère la logique multi-système
+    const resolveCharacterType = (): 'pc' | 'npc' | 'monster' => {
+      // Le module envoie le characterType déjà résolu par actor-classifier.js
+      // qui prend en compte hasPlayerOwner, actor.type, et la logique système-spécifique
+      if (characterData.characterType) {
+        return characterData.characterType
+      }
+
+      // Fallback legacy: si characterType n'est pas fourni, utiliser vttData.type
       const vttType = characterData.vttData?.type as string | undefined
       if (vttType) {
+        const lowerType = vttType.toLowerCase()
         // Types connus pour les PCs dans différents systèmes
-        const pcTypes = ['character', 'pc', 'player']
-        return pcTypes.includes(vttType.toLowerCase()) ? 'pc' : 'npc'
+        const pcTypes = ['character', 'pc', 'player', 'investigator']
+        if (pcTypes.includes(lowerType)) return 'pc'
+        // Types connus pour les monsters
+        const monsterTypes = ['creature', 'monster', 'enemy', 'adversary', 'beast', 'vaesen']
+        if (monsterTypes.includes(lowerType)) return 'monster'
+        // Tout le reste est NPC
+        return 'npc'
       }
-      // Fallback sur ce que le module envoie
-      return characterData.characterType || 'pc'
+
+      // Défaut final
+      return 'pc'
     }
 
     const resolvedCharacterType = resolveCharacterType()

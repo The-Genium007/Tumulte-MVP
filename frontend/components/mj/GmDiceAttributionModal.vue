@@ -189,11 +189,7 @@ const formatRollResult = (roll: PendingDiceRoll) => {
                   :disabled="attributing"
                   @click="handleSelectCharacter(character)"
                 >
-                  <UAvatar
-                    :src="character.avatarUrl || undefined"
-                    :alt="character.name"
-                    size="lg"
-                  />
+                  <CharacterAvatar :src="character.avatarUrl" :alt="character.name" size="lg" />
                   <span class="text-xs font-medium text-center truncate w-full">
                     {{ character.name }}
                   </span>
@@ -215,11 +211,7 @@ const formatRollResult = (roll: PendingDiceRoll) => {
                   :disabled="attributing"
                   @click="handleSelectCharacter(character)"
                 >
-                  <UAvatar
-                    :src="character.avatarUrl || undefined"
-                    :alt="character.name"
-                    size="lg"
-                  />
+                  <CharacterAvatar :src="character.avatarUrl" :alt="character.name" size="lg" />
                   <span class="text-xs font-medium text-center truncate w-full">
                     {{ character.name }}
                   </span>

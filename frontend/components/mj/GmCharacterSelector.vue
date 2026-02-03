@@ -154,8 +154,8 @@ const isActive = (character: GmCharacter) => activeCharacter.value?.id === chara
           "
         >
           <template v-if="activeCharacter">
-            <UAvatar
-              :src="activeCharacter.avatarUrl || undefined"
+            <CharacterAvatar
+              :src="activeCharacter.avatarUrl"
               :alt="activeCharacter.name"
               size="md"
               class="ring-2 ring-primary-500 shrink-0"
@@ -253,7 +253,7 @@ const isActive = (character: GmCharacter) => activeCharacter.value?.id === chara
             @click="handleSelectCharacter(character)"
           >
             <div class="relative shrink-0">
-              <UAvatar :src="character.avatarUrl || undefined" :alt="character.name" size="xs" />
+              <CharacterAvatar :src="character.avatarUrl" :alt="character.name" size="xs" />
               <!-- Badge type -->
               <div
                 class="absolute -bottom-0.5 -right-0.5 size-3.5 rounded-full flex items-center justify-center text-[8px] font-bold"
@@ -368,8 +368,8 @@ const isActive = (character: GmCharacter) => activeCharacter.value?.id === chara
                 @click="handleSelectCharacter(character)"
               >
                 <div class="relative">
-                  <UAvatar
-                    :src="character.avatarUrl || undefined"
+                  <CharacterAvatar
+                    :src="character.avatarUrl"
                     :alt="character.name"
                     size="lg"
                     :class="isActive(character) ? 'ring-2 ring-primary-500' : ''"
@@ -411,8 +411,8 @@ const isActive = (character: GmCharacter) => activeCharacter.value?.id === chara
                 @click="handleSelectCharacter(character)"
               >
                 <div class="relative">
-                  <UAvatar
-                    :src="character.avatarUrl || undefined"
+                  <CharacterAvatar
+                    :src="character.avatarUrl"
                     :alt="character.name"
                     size="lg"
                     :class="isActive(character) ? 'ring-2 ring-primary-500' : ''"
