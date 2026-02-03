@@ -6,11 +6,14 @@ import type { TriggerData } from '#models/gamification_instance'
 
 /**
  * Données d'un jet de dé reçu depuis Foundry
+ *
+ * Note: characterId et characterName peuvent être null pour les jets MJ
+ * en attente d'attribution ou ignorés.
  */
 export interface DiceRollData {
   rollId: string
-  characterId: string
-  characterName: string
+  characterId: string | null
+  characterName: string | null
   formula: string
   result: number
   diceResults: number[]

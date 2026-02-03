@@ -159,6 +159,70 @@ export interface PollMockData {
   totalDuration: number
 }
 
+// ===== INTERFACES GAMIFICATION POLL =====
+
+/**
+ * Configuration du timer gamifié
+ */
+export interface PollTimerConfig {
+  showBadge: boolean // Afficher le badge ⏱ visible
+  urgentThreshold: number // Seuil en secondes pour mode urgent (défaut: 10)
+  urgentColor: string // Couleur du timer en mode urgent
+}
+
+/**
+ * Configuration de la barre de temps gamifiée
+ */
+export interface PollTimeBarConfig {
+  enabled: boolean // Afficher la barre de temps
+  shimmerEnabled: boolean // Effet shimmer sur la barre
+  glowEdgeEnabled: boolean // Glow au bord de la progression
+  shakeWhenUrgent: boolean // Tremblement quand < urgentThreshold
+  shakeIntensity: number // Intensité du shake (1-10)
+}
+
+/**
+ * Configuration du leader (option en tête)
+ */
+export interface PollLeaderConfig {
+  showCrown: boolean // Afficher 👑 sur le leader
+  pulseAnimation: boolean // Animation de pulsation sur le leader
+  changeSound: AudioSettings // Son quand le leader change
+}
+
+/**
+ * Configuration de l'affichage des résultats
+ */
+export interface PollResultConfig {
+  displayDuration: number // Durée d'affichage en ms (défaut: 5000)
+  winnerColor: string // Couleur du/des gagnant(s) (défaut: #FFD700 doré)
+  winnerScale: number // Zoom sur le gagnant (défaut: 1.05)
+  winnerGlow: boolean // Glow doré autour du gagnant
+  winnerGlowColor: string // Couleur du glow (défaut: #FFD700)
+  loserFadeOut: boolean // Fade-out des perdants
+  loserFadeDuration: number // Durée du fade en ms
+  loserFinalOpacity: number // Opacité finale des perdants (0 = invisible)
+}
+
+/**
+ * Configuration des ex-aequo
+ */
+export interface PollTieBreakerConfig {
+  showAllWinners: boolean // Afficher tous les ex-aequo en doré
+  titleText: string // Texte affiché (défaut: "EX-ÆQUO !")
+}
+
+/**
+ * Configuration complète de la gamification du poll
+ */
+export interface PollGamificationConfig {
+  timer: PollTimerConfig
+  timeBar: PollTimeBarConfig
+  leader: PollLeaderConfig
+  result: PollResultConfig
+  tieBreaker: PollTieBreakerConfig
+}
+
 /**
  * Propriétés spécifiques pour un élément poll (sondage)
  */
@@ -172,6 +236,7 @@ export interface PollProperties {
   medalColors: MedalColors
   progressBar: ProgressBarConfig
   animations: PollAnimationsConfig
+  gamification: PollGamificationConfig
   layout: {
     maxWidth: number
     minOptionsToShow: number

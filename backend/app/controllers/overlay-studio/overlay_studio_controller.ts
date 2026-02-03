@@ -2,6 +2,7 @@ import { inject } from '@adonisjs/core'
 import type { HttpContext } from '@adonisjs/core/http'
 import logger from '@adonisjs/core/services/logger'
 import transmit from '@adonisjs/transmit/services/main'
+import { z } from 'zod'
 import { OverlayStudioService } from '#services/overlay-studio/overlay_studio_service'
 import {
   OverlayConfigDto,
@@ -14,6 +15,10 @@ import {
   updateOverlayConfigSchema,
   previewCommandSchema,
 } from '#validators/overlay-studio/overlay_config_validator'
+import { RESERVED_CONFIG_IDS } from '#constants/overlay'
+
+/** Schema de validation pour les IDs de configuration (UUID) */
+const configIdSchema = z.string().uuid('Invalid config ID format')
 
 /**
  * Contrôleur pour la gestion des configurations d'overlay
@@ -21,6 +26,33 @@ import {
 @inject()
 export default class OverlayStudioController {
   constructor(private overlayService: OverlayStudioService) {}
+
+  /**
+   * Valide qu'un ID de configuration est un UUID valide et n'est pas réservé
+   * @returns Message d'erreur si invalide, null si valide
+   */
+  private validateConfigId(
+    id: string
+  ): { status: 'forbidden' | 'badRequest'; error: string } | null {
+    // Vérifier si l'ID est réservé (ex: 'default')
+    if (RESERVED_CONFIG_IDS.includes(id as (typeof RESERVED_CONFIG_IDS)[number])) {
+      return {
+        status: 'forbidden',
+        error: 'Cannot modify system default configuration',
+      }
+    }
+
+    // Valider que l'ID est un UUID valide
+    const validation = configIdSchema.safeParse(id)
+    if (!validation.success) {
+      return {
+        status: 'badRequest',
+        error: 'Invalid config ID format',
+      }
+    }
+
+    return null
+  }
 
   /**
    * Liste les configurations du streamer
@@ -45,6 +77,12 @@ export default class OverlayStudioController {
    * GET /streamer/overlay-studio/configs/:id
    */
   async show({ auth, params, response }: HttpContext) {
+    // Valider l'ID avant toute requête DB
+    const idError = this.validateConfigId(params.id)
+    if (idError) {
+      return response[idError.status]({ error: idError.error })
+    }
+
     try {
       const config = await this.overlayService.getConfigById(auth.user!.id, params.id)
 
@@ -94,6 +132,12 @@ export default class OverlayStudioController {
    * PUT /streamer/overlay-studio/configs/:id
    */
   async update({ auth, params, request, response }: HttpContext) {
+    // Valider l'ID avant toute requête DB
+    const idError = this.validateConfigId(params.id)
+    if (idError) {
+      return response[idError.status]({ error: idError.error })
+    }
+
     const validation = updateOverlayConfigSchema.safeParse(request.body())
 
     if (!validation.success) {
@@ -129,6 +173,12 @@ export default class OverlayStudioController {
    * DELETE /streamer/overlay-studio/configs/:id
    */
   async destroy({ auth, params, response }: HttpContext) {
+    // Valider l'ID avant toute requête DB
+    const idError = this.validateConfigId(params.id)
+    if (idError) {
+      return response[idError.status]({ error: idError.error })
+    }
+
     try {
       const deleted = await this.overlayService.deleteConfig(auth.user!.id, params.id)
 
@@ -149,6 +199,12 @@ export default class OverlayStudioController {
    * POST /streamer/overlay-studio/configs/:id/activate
    */
   async activate({ auth, params, response }: HttpContext) {
+    // Valider l'ID avant toute requête DB
+    const idError = this.validateConfigId(params.id)
+    if (idError) {
+      return response[idError.status]({ error: idError.error })
+    }
+
     try {
       const config = await this.overlayService.activateConfig(auth.user!.id, params.id)
 
@@ -165,6 +221,55 @@ export default class OverlayStudioController {
         error: error instanceof Error ? error.message : 'Failed to activate configuration',
       })
     }
+  }
+
+  /**
+   * Récupère la configuration système par défaut "Tumulte Default"
+   * GET /overlay-studio/default-config
+   * Endpoint public - pas besoin d'authentification
+   */
+  async getDefaultConfig({ response }: HttpContext) {
+    const defaultConfig = OverlayConfig.getDefaultConfigWithPoll()
+    return response.ok({
+      data: {
+        id: 'default',
+        name: 'Tumulte Default',
+        config: defaultConfig,
+      },
+    })
+  }
+
+  /**
+   * Récupère les propriétés par défaut pour un type d'élément
+   * GET /overlay-studio/defaults/:type
+   * Endpoint public - pas besoin d'authentification
+   *
+   * Types supportés: poll, dice, diceReverseGoalBar, diceReverseImpactHud
+   */
+  async getElementDefaults({ params, response }: HttpContext) {
+    const { type } = params
+
+    const defaultsMap: Record<string, () => Record<string, unknown>> = {
+      poll: () => OverlayConfig.getDefaultPollProperties(),
+      dice: () => OverlayConfig.getDefaultDiceProperties(),
+      diceReverseGoalBar: () => OverlayConfig.getDefaultGoalBarProperties(),
+      diceReverseImpactHud: () => OverlayConfig.getDefaultImpactHudProperties(),
+    }
+
+    const getDefaults = defaultsMap[type]
+    if (!getDefaults) {
+      return response.badRequest({
+        error: `Unknown element type: ${type}`,
+        supportedTypes: Object.keys(defaultsMap),
+      })
+    }
+
+    return response.ok({
+      data: {
+        type,
+        properties: getDefaults(),
+      },
+    })
   }
 
   /**

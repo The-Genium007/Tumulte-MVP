@@ -12,7 +12,10 @@ export default class DiceRoll extends BaseModel {
   declare campaignId: string
 
   @column()
-  declare characterId: string
+  declare characterId: string | null
+
+  @column()
+  declare pendingAttribution: boolean
 
   @column()
   declare vttRollId: string | null

@@ -2,11 +2,12 @@ import DiceRoll from '#models/dice_roll'
 import Character from '#models/character'
 import { campaign as Campaign } from '#models/campaign'
 import CharacterAssignment from '#models/character_assignment'
+import { streamer as Streamer } from '#models/streamer'
 import transmit from '@adonisjs/transmit/services/main'
 
 interface CreateDiceRollData {
   campaignId: string
-  characterId: string
+  characterId: string | null // Nullable for pending GM rolls
   vttRollId: string | null
   rollFormula: string
   result: number
@@ -22,6 +23,8 @@ interface CreateDiceRollData {
   ability: string | null
   abilityRaw: string | null
   modifiers: string[] | null
+  // GM attribution
+  pendingAttribution?: boolean
 }
 
 export default class DiceRollService {
@@ -48,14 +51,20 @@ export default class DiceRollService {
       ability: data.ability,
       abilityRaw: data.abilityRaw,
       modifiers: data.modifiers,
+      // GM attribution
+      pendingAttribution: data.pendingAttribution ?? false,
     })
 
-    // 2. Charger les relations nécessaires
-    await diceRoll.load('character')
+    // 2. Charger les relations nécessaires (only if character exists)
+    if (data.characterId) {
+      await diceRoll.load('character')
+    }
     await diceRoll.load('campaign')
 
-    // 3. Émettre les événements WebSocket
-    await this.emitDiceRollEvents(diceRoll)
+    // 3. Émettre les événements WebSocket (only if not pending)
+    if (!data.pendingAttribution) {
+      await this.emitDiceRollEvents(diceRoll)
+    }
 
     return diceRoll
   }
@@ -64,10 +73,43 @@ export default class DiceRollService {
    * Émet les événements WebSocket pour le dice roll
    * - Event global vers le channel de campagne
    * - Events spécifiques vers les channels des streamers assignés
+   *
+   * Note: Pour les rolls avec pendingAttribution=true ou sans personnage,
+   * cette méthode ne devrait pas être appelée (vérifiée en amont).
    */
   private async emitDiceRollEvents(diceRoll: DiceRoll): Promise<void> {
     const character = diceRoll.character
     const campaign = diceRoll.campaign
+
+    // Guard: Si pas de personnage, on ne peut pas émettre les événements standards
+    // (Les rolls sans personnage sont soit pending, soit ignorés)
+    if (!character) {
+      // Émettre uniquement l'event global sans données personnage
+      transmit.broadcast(`campaign/${campaign.id}/dice-rolls`, {
+        event: 'dice-roll:new',
+        data: {
+          id: diceRoll.id,
+          campaignId: campaign.id,
+          characterId: null,
+          characterName: 'Inconnu',
+          characterAvatar: null,
+          rollFormula: diceRoll.rollFormula,
+          result: diceRoll.result,
+          diceResults: diceRoll.diceResults,
+          isCritical: diceRoll.isCritical,
+          criticalType: diceRoll.criticalType,
+          isHidden: diceRoll.isHidden,
+          rollType: diceRoll.rollType,
+          rolledAt: diceRoll.rolledAt.toISO(),
+          skill: diceRoll.skill,
+          skillRaw: diceRoll.skillRaw,
+          ability: diceRoll.ability,
+          abilityRaw: diceRoll.abilityRaw,
+          modifiers: diceRoll.modifiers,
+        },
+      })
+      return
+    }
 
     // Préparer le payload de base
     const basePayload = {
@@ -108,6 +150,7 @@ export default class DiceRollService {
   /**
    * Notifie les streamers concernés par ce dice roll
    * - Le streamer assigné au personnage (s'il y en a un)
+   * - Le streamer du GM si c'est son personnage incarné (gmActiveCharacterId)
    * - Tous les streamers de la campagne si le roll est critique
    */
   private async notifyStreamers(
@@ -122,13 +165,25 @@ export default class DiceRollService {
       .where('campaign_id', campaign.id)
       .first()
 
+    // Vérifier si c'est le personnage incarné par le GM
+    const isGmIncarnatedCharacter = campaign.gmActiveCharacterId === character.id
+
+    // Trouver le streamer du GM (owner de la campagne) si nécessaire
+    let gmStreamer: Streamer | null = null
+    if (isGmIncarnatedCharacter) {
+      gmStreamer = await Streamer.query().where('user_id', campaign.ownerId).first()
+    }
+
     // Si roll critique, notifier TOUS les streamers de la campagne
     if (diceRoll.isCritical) {
       const allAssignments = await CharacterAssignment.query()
         .where('campaign_id', campaign.id)
         .preload('streamer')
 
+      const notifiedStreamerIds = new Set<string>()
+
       for (const assignment of allAssignments) {
+        notifiedStreamerIds.add(assignment.streamerId)
         // Use same channel as polls (streamer:${id}:polls) so overlay receives it
         transmit.broadcast(`streamer:${assignment.streamerId}:polls`, {
           event: 'dice-roll:critical',
@@ -139,10 +194,30 @@ export default class DiceRollService {
           },
         })
       }
+
+      // Notifier aussi le GM s'il n'a pas déjà été notifié via un assignment
+      if (gmStreamer && !notifiedStreamerIds.has(gmStreamer.id)) {
+        transmit.broadcast(`streamer:${gmStreamer.id}:polls`, {
+          event: 'dice-roll:critical',
+          data: {
+            ...basePayload,
+            isOwnCharacter: isGmIncarnatedCharacter,
+          },
+        })
+      }
     } else if (characterAssignment) {
-      // Sinon, notifier uniquement le streamer assigné au personnage
+      // Notifier le streamer assigné au personnage (joueur)
       // Use same channel as polls (streamer:${id}:polls) so overlay receives it
       transmit.broadcast(`streamer:${characterAssignment.streamerId}:polls`, {
+        event: 'dice-roll:new',
+        data: {
+          ...basePayload,
+          isOwnCharacter: true,
+        },
+      })
+    } else if (gmStreamer) {
+      // Notifier le GM si c'est son personnage incarné
+      transmit.broadcast(`streamer:${gmStreamer.id}:polls`, {
         event: 'dice-roll:new',
         data: {
           ...basePayload,

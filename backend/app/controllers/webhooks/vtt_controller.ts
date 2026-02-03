@@ -65,12 +65,18 @@ export default class VttController {
 
       // 5. Déléguer le traitement au service
       const webhookService = new VttWebhookService()
-      const diceRoll = await webhookService.processDiceRoll(vttConnection, payload)
+      const { diceRoll, pendingAttribution } = await webhookService.processDiceRoll(
+        vttConnection,
+        payload
+      )
 
       return response.ok({
         success: true,
         rollId: diceRoll.id,
-        message: 'Dice roll recorded successfully',
+        pendingAttribution,
+        message: pendingAttribution
+          ? 'Dice roll recorded, pending GM attribution'
+          : 'Dice roll recorded successfully',
       })
     } catch (error) {
       // Gestion des erreurs de validation Zod

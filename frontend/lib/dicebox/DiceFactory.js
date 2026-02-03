@@ -520,6 +520,8 @@ class DiceFactory {
 
 	// pass in colorset data from dice-box
 	setMaterialInfo(colorset = '') {
+		// DEBUG
+		console.log('[DiceFactory.setMaterialInfo] Called - dice_color:', this.dice_color, 'label_color:', this.label_color)
 		let prevcolordata = this.colordata;
 		let prevtexture = this.dice_texture;
 		let prevmaterial = this.dice_material;
@@ -615,13 +617,13 @@ class DiceFactory {
 			this.dice_material_rand = this.dice_material;
 		}
 
-		// console.log('this.colordata', this.colordata)
-
 		if (this.colordata &&this.colordata.id != prevcolordata.id) {
 			this.applyColorSet(prevcolordata, prevtexture, prevmaterial);
 			// this.applyTexture(prevtexture);
 			// this.applyMaterial(prevmaterial);
 		}
+		// DEBUG
+		console.log('[DiceFactory.setMaterialInfo] Final - dice_color_rand:', this.dice_color_rand, 'label_color_rand:', this.label_color_rand)
 	}
 
 	calc_texture_size(approx) {

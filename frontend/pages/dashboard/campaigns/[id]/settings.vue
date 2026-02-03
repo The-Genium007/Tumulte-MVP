@@ -238,8 +238,8 @@ const handleOverlayCancel = () => {
 
       <!-- Settings Content -->
       <template v-else-if="settings">
-        <!-- Section : Mon Personnage -->
-        <UCard>
+        <!-- Section : Mon Personnage (masquée pour les owners qui utilisent l'Incarnation) -->
+        <UCard v-if="!settings.isOwner">
           <template #header>
             <h2 class="text-xl font-semibold text-primary">Mon personnage</h2>
           </template>

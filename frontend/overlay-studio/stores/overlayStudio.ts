@@ -9,12 +9,55 @@ import type {
   OverlayElementType,
   ElementProperties,
   PollProperties,
+  PollGamificationConfig,
   DiceProperties,
   DiceReverseProperties,
   DiceReverseGoalBarProperties,
   DiceReverseImpactHudProperties,
   HudTransform,
 } from '../types'
+
+/**
+ * Valeurs par défaut pour la gamification du poll
+ */
+const DEFAULT_POLL_GAMIFICATION: PollGamificationConfig = {
+  timer: {
+    showBadge: true,
+    urgentThreshold: 10,
+    urgentColor: '#ef4444',
+  },
+  timeBar: {
+    enabled: true,
+    shimmerEnabled: true,
+    glowEdgeEnabled: true,
+    shakeWhenUrgent: true,
+    shakeIntensity: 5,
+  },
+  leader: {
+    showCrown: true,
+    pulseAnimation: true,
+    changeSound: { enabled: true, volume: 0.4 },
+  },
+  result: {
+    displayDuration: 5000,
+    winnerColor: '#FFD700',
+    winnerScale: 1.05,
+    winnerGlow: true,
+    winnerGlowColor: '#FFD700',
+    loserFadeOut: true,
+    loserFadeDuration: 300,
+    loserFinalOpacity: 0,
+  },
+  tieBreaker: {
+    showAllWinners: true,
+    titleText: 'EX-ÆQUO !',
+  },
+}
+
+/**
+ * Types pour le cache des defaults
+ */
+type DefaultsType = 'poll' | 'dice' | 'diceReverseGoalBar' | 'diceReverseImpactHud'
 
 /**
  * Store principal pour l'Overlay Studio
@@ -38,6 +81,15 @@ export const useOverlayStudioStore = defineStore('overlayStudio', () => {
   // ===== État de sauvegarde =====
   const isDirty = ref(false)
   const lastSavedSnapshot = ref<string | null>(null)
+
+  // ===== Cache des propriétés par défaut (chargées depuis l'API) =====
+  const defaultsCache = ref<Record<DefaultsType, Record<string, unknown> | null>>({
+    poll: null,
+    dice: null,
+    diceReverseGoalBar: null,
+    diceReverseImpactHud: null,
+  })
+  const defaultsLoaded = ref(false)
 
   // ===== Canvas =====
   const canvasWidth = ref(1920)
@@ -82,6 +134,42 @@ export const useOverlayStudioStore = defineStore('overlayStudio', () => {
     return sorted
   })
 
+  // ===== Actions - Chargement des defaults =====
+
+  /**
+   * Charge les propriétés par défaut depuis l'API backend
+   * Doit être appelé au démarrage de l'Overlay Studio
+   */
+  async function loadDefaults(): Promise<void> {
+    if (defaultsLoaded.value) return
+
+    const config = useRuntimeConfig()
+    const API_URL = config.public.apiBase
+    const types: DefaultsType[] = ['poll', 'dice', 'diceReverseGoalBar', 'diceReverseImpactHud']
+
+    try {
+      const results = await Promise.allSettled(
+        types.map(async (type) => {
+          const response = await fetch(`${API_URL}/overlay-studio/defaults/${type}`)
+          if (!response.ok) throw new Error(`Failed to fetch defaults for ${type}`)
+          const data = await response.json()
+          return { type, properties: data.data.properties }
+        })
+      )
+
+      for (const result of results) {
+        if (result.status === 'fulfilled') {
+          defaultsCache.value[result.value.type] = result.value.properties
+        }
+      }
+
+      defaultsLoaded.value = true
+      console.log('[OverlayStudio] Defaults loaded from API')
+    } catch (error) {
+      console.warn('[OverlayStudio] Failed to load defaults from API, using local fallback:', error)
+    }
+  }
+
   // ===== Actions - Éléments =====
 
   /**
@@ -93,9 +181,24 @@ export const useOverlayStudioStore = defineStore('overlayStudio', () => {
 
   /**
    * Crée les propriétés par défaut selon le type d'élément
-   * NOTE: Ajouter de nouveaux types ici
+   * Utilise le cache API si disponible, sinon fallback sur les valeurs locales
    */
   function getDefaultProperties(type: OverlayElementType): ElementProperties {
+    // Vérifier si on a des defaults chargés depuis l'API
+    const apiDefaults = defaultsCache.value[type as DefaultsType]
+    if (apiDefaults) {
+      return apiDefaults as unknown as ElementProperties
+    }
+
+    // Fallback sur les valeurs locales (utilisé si l'API n'a pas répondu)
+    return getLocalDefaultProperties(type)
+  }
+
+  /**
+   * Propriétés par défaut locales (fallback si l'API échoue)
+   * NOTE: Ces valeurs doivent rester synchronisées avec le backend
+   */
+  function getLocalDefaultProperties(type: OverlayElementType): ElementProperties {
     switch (type) {
       case 'poll':
         return {
@@ -186,6 +289,7 @@ export const useOverlayStudioStore = defineStore('overlayStudio', () => {
               displayDuration: 20,
             },
           },
+          gamification: DEFAULT_POLL_GAMIFICATION,
           layout: {
             maxWidth: 600,
             minOptionsToShow: 2,
@@ -202,86 +306,86 @@ export const useOverlayStudioStore = defineStore('overlayStudio', () => {
 
       case 'dice':
         return {
-          // Configuration DiceBox (rendu 3D)
+          // Configuration DiceBox (rendu 3D) - Dés blancs avec chiffres violet Tumulte
           diceBox: {
             colors: {
-              foreground: '#000000',
-              background: '#ffffff',
+              foreground: '#9146FF', // Tumulte Purple pour les chiffres
+              background: '#ffffff', // Dés blancs
               outline: 'none',
             },
             texture: 'none',
             material: 'glass',
             lightIntensity: 1.0,
           },
-          // Configuration HUD
+          // Configuration HUD - Style harmonisé avec Goal Bar
           hud: {
             container: {
-              backgroundColor: 'rgba(15, 23, 42, 0.95)',
-              borderColor: 'rgba(148, 163, 184, 0.3)',
+              backgroundColor: 'rgba(26, 26, 46, 0.98)', // Même que Goal Bar
+              borderColor: '#9146FF', // Tumulte Purple
               borderWidth: 2,
               borderRadius: 16,
               padding: { top: 24, right: 24, bottom: 24, left: 24 },
               backdropBlur: 10,
               boxShadow: {
                 enabled: true,
-                color: 'rgba(0, 0, 0, 0.5)',
-                blur: 60,
+                color: 'rgba(145, 70, 255, 0.3)', // Glow violet subtil
+                blur: 40,
                 offsetX: 0,
-                offsetY: 20,
+                offsetY: 10,
               },
             },
             criticalBadge: {
               successBackground: 'rgba(34, 197, 94, 0.3)',
-              successTextColor: 'rgb(74, 222, 128)',
+              successTextColor: '#22c55e',
               successBorderColor: 'rgba(34, 197, 94, 0.5)',
               failureBackground: 'rgba(239, 68, 68, 0.3)',
-              failureTextColor: 'rgb(252, 165, 165)',
+              failureTextColor: '#ef4444',
               failureBorderColor: 'rgba(239, 68, 68, 0.5)',
             },
             formula: {
               typography: {
-                fontFamily: "'Courier New', monospace",
+                fontFamily: 'Inter',
                 fontSize: 20,
                 fontWeight: 600,
-                color: 'rgb(148, 163, 184)',
+                color: 'rgba(255, 255, 255, 0.85)', // Même que Goal Bar progress
               },
             },
             result: {
               typography: {
-                fontFamily: 'system-ui',
+                fontFamily: 'Inter',
                 fontSize: 48,
                 fontWeight: 800,
-                color: 'rgb(226, 232, 240)',
+                color: '#ffffff',
               },
-              criticalSuccessColor: 'rgb(74, 222, 128)',
-              criticalFailureColor: 'rgb(252, 165, 165)',
+              criticalSuccessColor: '#22c55e',
+              criticalFailureColor: '#ef4444',
             },
             diceBreakdown: {
-              backgroundColor: 'rgba(15, 23, 42, 0.7)',
-              borderColor: 'rgba(148, 163, 184, 0.3)',
-              borderRadius: 6,
+              backgroundColor: 'rgba(145, 70, 255, 0.15)', // Tumulte Purple transparent
+              borderColor: 'rgba(145, 70, 255, 0.3)',
+              borderRadius: 8,
               typography: {
-                fontFamily: "'Courier New', monospace",
+                fontFamily: 'Inter',
                 fontSize: 16,
                 fontWeight: 600,
-                color: 'rgb(203, 213, 225)',
+                color: 'rgba(255, 255, 255, 0.85)',
               },
             },
             skillInfo: {
-              backgroundColor: 'rgba(59, 130, 246, 0.15)',
-              borderColor: 'rgba(59, 130, 246, 0.3)',
+              backgroundColor: 'rgba(145, 70, 255, 0.15)', // Tumulte Purple transparent
+              borderColor: 'rgba(145, 70, 255, 0.3)',
               borderRadius: 8,
               skillTypography: {
-                fontFamily: 'system-ui',
+                fontFamily: 'Inter',
                 fontSize: 16,
                 fontWeight: 700,
-                color: 'rgb(147, 197, 253)',
+                color: '#ffffff',
               },
               abilityTypography: {
-                fontFamily: 'system-ui',
+                fontFamily: 'Inter',
                 fontSize: 14,
                 fontWeight: 500,
-                color: 'rgb(148, 163, 184)',
+                color: 'rgba(255, 255, 255, 0.7)',
               },
             },
             minWidth: 320,
@@ -292,7 +396,7 @@ export const useOverlayStudioStore = defineStore('overlayStudio', () => {
             position: { x: 0, y: -300 },
             scale: 1,
           },
-          // Couleurs des critiques (glow)
+          // Couleurs des critiques (glow sur les dés 3D)
           colors: {
             criticalSuccessGlow: '#22c55e',
             criticalFailureGlow: '#ef4444',
@@ -779,13 +883,17 @@ export const useOverlayStudioStore = defineStore('overlayStudio', () => {
       element.zIndex = 0
     }
 
-    // Pour les éléments poll, s'assurer que questionBoxStyle existe
+    // Pour les éléments poll, s'assurer que les propriétés existent
     if (element.type === 'poll') {
       const pollProps = element.properties as PollProperties
       const pollDefaults = defaults as PollProperties
 
       if (!pollProps.questionBoxStyle) {
         pollProps.questionBoxStyle = pollDefaults.questionBoxStyle
+      }
+      // Migration pour ajouter gamification aux configs existantes
+      if (!pollProps.gamification) {
+        pollProps.gamification = DEFAULT_POLL_GAMIFICATION
       }
     }
 
@@ -903,12 +1011,16 @@ export const useOverlayStudioStore = defineStore('overlayStudio', () => {
     canvasWidth,
     canvasHeight,
     isDirty,
+    defaultsLoaded,
 
     // Computed
     selectedElement,
     activeConfig,
     visibleElements,
     sortedVisibleElements,
+
+    // Actions - Initialisation
+    loadDefaults,
 
     // Actions - Éléments
     addElement,

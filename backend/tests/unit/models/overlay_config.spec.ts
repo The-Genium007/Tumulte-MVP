@@ -21,24 +21,32 @@ test.group('OverlayConfig Model - Static Methods', () => {
 
     const props = OverlayConfig.getDefaultDiceProperties()
 
-    // Check main categories exist
+    // Check main categories exist (new structure with diceBox and hud)
+    assert.property(props, 'diceBox')
+    assert.property(props, 'hud')
+    assert.property(props, 'hudTransform')
     assert.property(props, 'colors')
-    assert.property(props, 'textures')
-    assert.property(props, 'physics')
-    assert.property(props, 'resultText')
     assert.property(props, 'audio')
     assert.property(props, 'animations')
-    assert.property(props, 'layout')
     assert.property(props, 'mockData')
 
-    // Check some specific values
-    const colors = props.colors as Record<string, string>
-    assert.equal(colors.baseColor, '#1a1a2e')
-    assert.equal(colors.numberColor, '#ffffff')
+    // Check diceBox structure
+    const diceBox = props.diceBox as Record<string, unknown>
+    assert.property(diceBox, 'colors')
+    assert.property(diceBox, 'texture')
+    assert.property(diceBox, 'material')
 
-    const physics = props.physics as Record<string, number>
-    assert.equal(physics.gravity, -30)
-    assert.equal(physics.bounciness, 0.4)
+    // Check diceBox colors
+    const diceBoxColors = diceBox.colors as Record<string, string>
+    assert.equal(diceBoxColors.foreground, '#9146FF') // Tumulte Purple
+    assert.equal(diceBoxColors.background, '#ffffff') // White dice
+
+    // Check hud structure
+    const hud = props.hud as Record<string, unknown>
+    assert.property(hud, 'container')
+    assert.property(hud, 'criticalBadge')
+    assert.property(hud, 'formula')
+    assert.property(hud, 'result')
   })
 
   test('getDefaultGoalBarProperties should return all goal bar configuration', async ({
@@ -87,7 +95,7 @@ test.group('OverlayConfig Model - Static Methods', () => {
 
     // Check some specific values
     const container = props.container as Record<string, unknown>
-    assert.equal(container.borderColor, '#FFD700')
+    assert.equal(container.borderColor, '#9146FF') // Tumulte Purple (harmonized)
     assert.equal(container.borderWidth, 3)
 
     const typography = props.typography as Record<string, unknown>

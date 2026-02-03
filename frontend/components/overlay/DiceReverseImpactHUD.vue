@@ -28,6 +28,20 @@ const props = defineProps<{
       dropDuration?: number
       displayDuration?: number
     }
+    typography?: {
+      title?: {
+        fontFamily?: string
+        fontSize?: number
+        fontWeight?: number
+        color?: string
+      }
+      detail?: {
+        fontFamily?: string
+        fontSize?: number
+        fontWeight?: number
+        color?: string
+      }
+    }
   }
 }>()
 
@@ -146,7 +160,7 @@ watch(
 
 onMounted(() => {
   // Initialize audio
-  impactAudio.value = new Audio('/sounds/dice-reverse/impact.mp3')
+  impactAudio.value = new Audio('/audio/dice-reverse/impact.wav')
   impactAudio.value.volume = 0.6
 })
 
@@ -176,16 +190,39 @@ onUnmounted(() => {
         class="impact-container"
         :style="{
           backgroundColor: customStyles?.container?.backgroundColor ?? 'rgba(26, 26, 46, 0.98)',
-          borderColor: customStyles?.container?.borderColor ?? '#FFD700',
+          borderColor: customStyles?.container?.borderColor ?? '#9146FF',
           borderWidth: `${customStyles?.container?.borderWidth ?? 3}px`,
           borderRadius: `${customStyles?.container?.borderRadius ?? 16}px`,
         }"
       >
         <!-- Title -->
-        <div class="impact-title">{{ displayTitle }}</div>
+        <div
+          class="impact-title"
+          :style="{
+            fontFamily: customStyles?.typography?.title?.fontFamily ?? 'Inter',
+            fontSize: `${customStyles?.typography?.title?.fontSize ?? 28}px`,
+            fontWeight: customStyles?.typography?.title?.fontWeight ?? 900,
+            color: customStyles?.typography?.title?.color ?? '#9146FF',
+          }"
+        >
+          {{ displayTitle }}
+        </div>
 
         <!-- Detail (e.g., "20 → 1") -->
-        <div v-if="displayDetail" class="impact-detail">{{ displayDetail }}</div>
+        <div
+          v-if="displayDetail"
+          class="impact-detail"
+          :style="{
+            fontFamily:
+              customStyles?.typography?.detail?.fontFamily ??
+              `'JetBrains Mono', 'Fira Code', monospace`,
+            fontSize: `${customStyles?.typography?.detail?.fontSize ?? 42}px`,
+            fontWeight: customStyles?.typography?.detail?.fontWeight ?? 800,
+            color: customStyles?.typography?.detail?.color ?? '#ffffff',
+          }"
+        >
+          {{ displayDetail }}
+        </div>
       </div>
 
       <!-- Screen shake overlay (invisible but causes shake effect) -->
@@ -200,11 +237,11 @@ onUnmounted(() => {
   font-family: 'Inter', system-ui, sans-serif;
 }
 
-/* Glow effect */
+/* Glow effect - Purple gradient matching Goal Bar */
 .impact-glow {
   position: absolute;
   inset: -30px;
-  background: #ffd700;
+  background: linear-gradient(135deg, #9146ff, #ff6b9d);
   border-radius: 40px;
   filter: blur(40px);
   opacity: 0;
@@ -213,7 +250,7 @@ onUnmounted(() => {
 
 .phase-impact .impact-glow,
 .phase-visible .impact-glow {
-  opacity: 0.5;
+  opacity: 0.4;
 }
 
 .phase-impact .impact-glow {
@@ -222,34 +259,35 @@ onUnmounted(() => {
 
 @keyframes glow-flash {
   0% {
-    opacity: 0.8;
+    opacity: 0.7;
     transform: scale(1.2);
   }
   100% {
-    opacity: 0.5;
+    opacity: 0.4;
     transform: scale(1);
   }
 }
 
-/* Main container */
+/* Main container - Glass effect matching Goal Bar */
 .impact-container {
   position: relative;
   border-style: solid;
   padding: 20px 32px;
   text-align: center;
+  background: linear-gradient(135deg, rgba(26, 26, 46, 0.98), rgba(35, 35, 55, 0.98));
   box-shadow:
     0 15px 50px rgba(0, 0, 0, 0.6),
-    0 0 30px rgba(255, 215, 0, 0.3),
+    0 0 30px rgba(145, 70, 255, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .impact-title {
   font-size: 28px;
   font-weight: 900;
-  color: #ffd700;
+  color: #9146ff;
   text-shadow:
     0 2px 10px rgba(0, 0, 0, 0.5),
-    0 0 20px rgba(255, 215, 0, 0.3);
+    0 0 20px rgba(145, 70, 255, 0.4);
   letter-spacing: 1px;
   margin-bottom: 8px;
 }

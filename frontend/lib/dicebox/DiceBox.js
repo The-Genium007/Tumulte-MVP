@@ -14,7 +14,7 @@ const defaultConfig = {
 	framerate: (1/60),
 	sounds: false,
 	volume: 100,
-	color_spotlight: 0xefdfd5,
+	color_spotlight: 0xffffff,
 	shadows: true,
 	theme_surface:  "green-felt",
 	sound_dieMaterial: 'plastic',
@@ -23,7 +23,7 @@ const defaultConfig = {
 	theme_texture: "",
 	theme_material: "glass",
 	gravity_multiplier: 400,
-	light_intensity: 0.7,
+	light_intensity: 1.2,
 	baseScale: 100,
 	strength: 1,
 	iterationLimit: 1000,
@@ -369,7 +369,7 @@ class DiceBox {
 		this.light.shadow.mapSize.height = 1024;
 		this.scene.add(this.light);
 
-		this.light_amb = new THREE.HemisphereLight( 0xffffbb, 0x676771, this.light_intensity );
+		this.light_amb = new THREE.HemisphereLight( 0xffffff, 0xaaaaaa, this.light_intensity );
 		this.scene.add(this.light_amb);
 
 		if (this.desk) this.scene.remove(this.desk);

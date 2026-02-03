@@ -11,6 +11,7 @@ import type {
   MedalColors,
   ProgressBarConfig,
   PollAnimationsConfig,
+  PollGamificationConfig,
   PollMockData,
 } from '../types'
 import { deepMerge } from './usePropertyUpdater'
@@ -174,6 +175,13 @@ export function useElementUpdater(
     updatePollProperty('animations', merged)
   }
 
+  function updatePollGamification(gamification: Partial<PollGamificationConfig>): void {
+    if (!selectedElement.value) return
+    const props = selectedElement.value.properties as PollProperties
+    const merged = deepMerge(props.gamification, gamification)
+    updatePollProperty('gamification', merged)
+  }
+
   function updatePollLayout(
     layout: Partial<{ maxWidth: number; minOptionsToShow: number; maxOptionsToShow: number }>
   ): void {
@@ -324,6 +332,7 @@ export function useElementUpdater(
     updatePollMedalColors,
     updatePollProgressBar,
     updatePollAnimations,
+    updatePollGamification,
     updatePollLayout,
     updatePollMockData,
     // Dice Reverse (legacy)

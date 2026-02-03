@@ -5,6 +5,7 @@ import { DateTime } from 'luxon'
 import VttConnection from '#models/vtt_connection'
 import TokenRevocationList from '#models/token_revocation_list'
 import { campaign as Campaign } from '#models/campaign'
+import DiceRoll from '#models/dice_roll'
 import env from '#start/env'
 import logger from '@adonisjs/core/services/logger'
 import VttWebhookService from '#services/vtt/vtt_webhook_service'
@@ -284,7 +285,7 @@ export default class VttWebSocketService {
 
       // Process dice roll via webhook service (same logic as HTTP webhook)
       const webhookService = new VttWebhookService()
-      const diceRoll = await webhookService.processDiceRoll(connection, {
+      const { diceRoll, pendingAttribution } = await webhookService.processDiceRoll(connection, {
         campaignId: data.campaignId,
         characterId: data.characterId,
         characterName: data.characterName,
@@ -305,10 +306,72 @@ export default class VttWebSocketService {
         modifiers: data.modifiers,
       })
 
-      socket.emit('dice:roll:ack', { success: true, rollId: diceRoll.id })
+      // If roll needs attribution, emit event to GM frontend
+      if (pendingAttribution) {
+        await this.emitPendingAttributionEvent(connection, diceRoll, data)
+      }
+
+      socket.emit('dice:roll:ack', {
+        success: true,
+        rollId: diceRoll.id,
+        pendingAttribution,
+      })
     } catch (error) {
       logger.error('Failed to handle dice roll', { error })
       socket.emit('dice:roll:ack', { success: false, error: (error as Error).message })
+    }
+  }
+
+  /**
+   * Emit event to GM frontend for pending dice roll attribution
+   */
+  private async emitPendingAttributionEvent(
+    connection: VttConnection,
+    diceRoll: DiceRoll,
+    originalData: any
+  ): Promise<void> {
+    try {
+      // Find the campaign for this connection
+      const campaign = await Campaign.query().where('vtt_connection_id', connection.id).first()
+
+      if (!campaign) {
+        logger.warn('No campaign found for pending attribution event', {
+          connectionId: connection.id,
+        })
+        return
+      }
+
+      // Import transmit dynamically to avoid circular dependency
+      const transmitModule = await import('@adonisjs/transmit/services/main')
+      const transmit = transmitModule.default
+
+      // Emit to campaign channel for GM to see
+      transmit.broadcast(`campaign/${campaign.id}/dice-rolls`, {
+        event: 'gm:dice:pending',
+        data: {
+          rollId: diceRoll.id,
+          rollFormula: diceRoll.rollFormula,
+          result: diceRoll.result,
+          diceResults: diceRoll.diceResults,
+          isCritical: diceRoll.isCritical,
+          criticalType: diceRoll.criticalType,
+          rollType: diceRoll.rollType,
+          rolledAt: diceRoll.rolledAt.toISO(),
+          // Original character info from VTT (for context)
+          vttCharacterName: originalData.characterName,
+          vttCharacterId: originalData.characterId,
+          // Enriched flavor data
+          skill: diceRoll.skill,
+          ability: diceRoll.ability,
+        },
+      })
+
+      logger.info('Emitted pending attribution event to GM', {
+        campaignId: campaign.id,
+        rollId: diceRoll.id,
+      })
+    } catch (error) {
+      logger.error('Failed to emit pending attribution event', { error })
     }
   }
 

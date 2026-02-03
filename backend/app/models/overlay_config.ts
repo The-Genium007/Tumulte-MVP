@@ -153,7 +153,7 @@ class OverlayConfig extends BaseModel {
     return {
       container: {
         backgroundColor: 'rgba(26, 26, 46, 0.98)',
-        borderColor: '#FFD700',
+        borderColor: '#9146FF',
         borderWidth: 3,
         borderRadius: 16,
       },
@@ -166,7 +166,7 @@ class OverlayConfig extends BaseModel {
         impactSound: { enabled: true, volume: 0.6 },
       },
       typography: {
-        title: { fontFamily: 'Inter', fontSize: 28, fontWeight: 900, color: '#FFD700' },
+        title: { fontFamily: 'Inter', fontSize: 28, fontWeight: 900, color: '#9146FF' },
         detail: {
           fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
           fontSize: 42,
@@ -181,50 +181,113 @@ class OverlayConfig extends BaseModel {
 
   /**
    * Retourne les propriétés par défaut pour un élément dice
+   * Structure moderne avec diceBox (rendu 3D) et hud (affichage résultat)
+   * Style harmonisé avec la Goal Bar (Tumulte Purple theme)
    */
   static getDefaultDiceProperties(): Record<string, unknown> {
     return {
-      colors: {
-        baseColor: '#1a1a2e',
-        numberColor: '#ffffff',
-        criticalSuccessGlow: '#ffd700',
-        criticalFailureGlow: '#ff4444',
+      // Configuration DiceBox (rendu 3D) - Dés blancs avec chiffres violet Tumulte
+      diceBox: {
+        colors: {
+          foreground: '#9146FF', // Tumulte Purple pour les chiffres
+          background: '#ffffff', // Dés blancs
+          outline: 'none',
+        },
+        texture: 'none',
+        material: 'glass',
+        lightIntensity: 1.0,
       },
-      textures: {
-        enabled: false,
-        textureUrl: null,
-      },
-      physics: {
-        gravity: -30,
-        bounciness: 0.4,
-        friction: 0.3,
-        rollForce: 1,
-        spinForce: 1,
-      },
-      resultText: {
-        enabled: true,
-        typography: {
-          fontFamily: 'Inter',
-          fontSize: 64,
-          fontWeight: 800,
-          color: '#ffffff',
-          textShadow: {
+      // Configuration HUD - Style harmonisé avec Goal Bar
+      hud: {
+        container: {
+          backgroundColor: 'rgba(26, 26, 46, 0.98)', // Même que Goal Bar
+          borderColor: '#9146FF', // Tumulte Purple
+          borderWidth: 2,
+          borderRadius: 16,
+          padding: { top: 24, right: 24, bottom: 24, left: 24 },
+          backdropBlur: 10,
+          boxShadow: {
             enabled: true,
-            color: 'rgba(0, 0, 0, 0.8)',
-            blur: 8,
+            color: 'rgba(145, 70, 255, 0.3)', // Glow violet subtil
+            blur: 40,
             offsetX: 0,
-            offsetY: 4,
+            offsetY: 10,
           },
         },
-        offsetY: 50,
-        fadeInDelay: 0.3,
-        persistDuration: 3,
+        criticalBadge: {
+          successBackground: 'rgba(34, 197, 94, 0.3)',
+          successTextColor: '#22c55e',
+          successBorderColor: 'rgba(34, 197, 94, 0.5)',
+          failureBackground: 'rgba(239, 68, 68, 0.3)',
+          failureTextColor: '#ef4444',
+          failureBorderColor: 'rgba(239, 68, 68, 0.5)',
+        },
+        formula: {
+          typography: {
+            fontFamily: 'Inter',
+            fontSize: 20,
+            fontWeight: 600,
+            color: 'rgba(255, 255, 255, 0.85)', // Même que Goal Bar progress
+          },
+        },
+        result: {
+          typography: {
+            fontFamily: 'Inter',
+            fontSize: 48,
+            fontWeight: 800,
+            color: '#ffffff',
+          },
+          criticalSuccessColor: '#22c55e',
+          criticalFailureColor: '#ef4444',
+        },
+        diceBreakdown: {
+          backgroundColor: 'rgba(145, 70, 255, 0.15)', // Tumulte Purple transparent
+          borderColor: 'rgba(145, 70, 255, 0.3)',
+          borderRadius: 8,
+          typography: {
+            fontFamily: 'Inter',
+            fontSize: 16,
+            fontWeight: 600,
+            color: 'rgba(255, 255, 255, 0.85)',
+          },
+        },
+        skillInfo: {
+          backgroundColor: 'rgba(145, 70, 255, 0.15)', // Tumulte Purple transparent
+          borderColor: 'rgba(145, 70, 255, 0.3)',
+          borderRadius: 8,
+          skillTypography: {
+            fontFamily: 'Inter',
+            fontSize: 16,
+            fontWeight: 700,
+            color: '#ffffff',
+          },
+          abilityTypography: {
+            fontFamily: 'Inter',
+            fontSize: 14,
+            fontWeight: 500,
+            color: 'rgba(255, 255, 255, 0.7)',
+          },
+        },
+        minWidth: 320,
+        maxWidth: 400,
       },
+      // Transform indépendant du HUD (position et scale)
+      hudTransform: {
+        position: { x: 0, y: -300 },
+        scale: 1,
+      },
+      // Couleurs des critiques (glow sur les dés 3D)
+      colors: {
+        criticalSuccessGlow: '#22c55e',
+        criticalFailureGlow: '#ef4444',
+      },
+      // Audio
       audio: {
         rollSound: { enabled: true, volume: 0.7 },
         criticalSuccessSound: { enabled: true, volume: 0.9 },
         criticalFailureSound: { enabled: true, volume: 0.9 },
       },
+      // Animations
       animations: {
         entry: {
           type: 'throw',
@@ -243,16 +306,153 @@ class OverlayConfig extends BaseModel {
           delay: 2,
         },
       },
-      layout: {
-        maxDice: 10,
-        diceSize: 1,
-      },
+      // Données mock pour prévisualisation
       mockData: {
-        rollFormula: '2d20+5',
-        diceTypes: ['d20', 'd20'],
-        diceValues: [18, 7],
+        rollFormula: '1d20',
+        diceTypes: ['d20'],
+        diceValues: [18],
         isCritical: false,
         criticalType: null,
+      },
+    }
+  }
+
+  /**
+   * Retourne les propriétés par défaut pour un élément poll avec gamification
+   */
+  static getDefaultPollProperties(): Record<string, unknown> {
+    return {
+      questionStyle: {
+        fontFamily: 'Inter',
+        fontSize: 42,
+        fontWeight: 800,
+        color: '#ffffff',
+        textShadow: {
+          enabled: true,
+          color: 'rgba(0, 0, 0, 0.6)',
+          blur: 8,
+          offsetX: 0,
+          offsetY: 3,
+        },
+      },
+      questionBoxStyle: {
+        backgroundColor: 'rgba(26, 26, 46, 0.95)',
+        borderColor: 'rgba(147, 51, 234, 0.4)',
+        borderWidth: 2,
+        borderRadius: 20,
+        opacity: 1,
+        padding: { top: 24, right: 32, bottom: 24, left: 32 },
+      },
+      optionBoxStyle: {
+        backgroundColor: 'rgba(35, 35, 55, 0.9)',
+        borderColor: '#9333ea',
+        borderWidth: 2,
+        borderRadius: 14,
+        opacity: 1,
+        padding: { top: 14, right: 20, bottom: 14, left: 20 },
+      },
+      optionTextStyle: {
+        fontFamily: 'Inter',
+        fontSize: 22,
+        fontWeight: 600,
+        color: '#ffffff',
+      },
+      optionPercentageStyle: {
+        fontFamily: 'Inter',
+        fontSize: 26,
+        fontWeight: 800,
+        color: '#e0d0ff',
+      },
+      optionSpacing: 12,
+      medalColors: {
+        gold: '#FFD700',
+        silver: '#C0C0C0',
+        bronze: '#CD7F32',
+        base: '#9333ea',
+      },
+      progressBar: {
+        height: 10,
+        backgroundColor: 'rgba(147, 51, 234, 0.15)',
+        fillColor: '#9333ea',
+        fillGradient: {
+          enabled: true,
+          startColor: '#9333ea',
+          endColor: '#ec4899',
+        },
+        borderRadius: 5,
+        position: 'bottom',
+        showTimeText: false,
+        timeTextStyle: {
+          fontFamily: 'Inter',
+          fontSize: 18,
+          fontWeight: 700,
+          color: '#ffffff',
+        },
+      },
+      animations: {
+        entry: {
+          animation: { duration: 0.5, easing: 'ease-out', delay: 0 },
+          slideDirection: 'up',
+          sound: { enabled: true, volume: 0.7 },
+          soundLeadTime: 1.5,
+        },
+        loop: {
+          music: { enabled: true, volume: 0.25 },
+        },
+        exit: {
+          animation: { duration: 0.4, easing: 'ease-in', delay: 0 },
+        },
+        result: {
+          winnerEnlarge: { scale: 1.08, duration: 0.3 },
+          loserFadeOut: { opacity: 0.2, duration: 0.4 },
+          sound: { enabled: true, volume: 0.8 },
+          displayDuration: 5,
+        },
+      },
+      gamification: {
+        timer: {
+          showBadge: true,
+          urgentThreshold: 10,
+          urgentColor: '#ef4444',
+        },
+        timeBar: {
+          enabled: true,
+          shimmerEnabled: true,
+          glowEdgeEnabled: true,
+          shakeWhenUrgent: true,
+          shakeIntensity: 4,
+        },
+        leader: {
+          showCrown: true,
+          pulseAnimation: true,
+          changeSound: { enabled: true, volume: 0.4 },
+        },
+        result: {
+          displayDuration: 5000,
+          winnerColor: '#FFD700',
+          winnerScale: 1.05,
+          winnerGlow: true,
+          winnerGlowColor: '#FFD700',
+          loserFadeOut: true,
+          loserFadeDuration: 300,
+          loserFinalOpacity: 0,
+        },
+        tieBreaker: {
+          showAllWinners: true,
+          titleText: 'EX-ÆQUO !',
+        },
+      },
+      layout: {
+        maxWidth: 520,
+        minOptionsToShow: 2,
+        maxOptionsToShow: 5,
+      },
+      mockData: {
+        question: 'Quelle action pour le héros ?',
+        options: ['Attaquer', 'Fuir', 'Négocier', 'Explorer'],
+        percentages: [35, 28, 22, 15],
+        timeRemaining: 45,
+        totalDuration: 60,
       },
     }
   }
@@ -279,99 +479,8 @@ class OverlayConfig extends BaseModel {
           scale: { x: 0.5, y: 0.5, z: 1 },
           visible: true,
           locked: false,
-          properties: {
-            questionStyle: {
-              fontFamily: 'Inter',
-              fontSize: 48,
-              fontWeight: 700,
-              color: '#ffffff',
-              textShadow: {
-                enabled: true,
-                color: 'rgba(0, 0, 0, 0.5)',
-                blur: 4,
-                offsetX: 0,
-                offsetY: 2,
-              },
-            },
-            optionBoxStyle: {
-              backgroundColor: 'rgba(17, 17, 17, 0.9)',
-              borderColor: '#9333ea',
-              borderWidth: 2,
-              borderRadius: 12,
-              opacity: 1,
-              padding: { top: 16, right: 24, bottom: 16, left: 24 },
-            },
-            optionTextStyle: {
-              fontFamily: 'Inter',
-              fontSize: 24,
-              fontWeight: 600,
-              color: '#ffffff',
-            },
-            optionPercentageStyle: {
-              fontFamily: 'Inter',
-              fontSize: 28,
-              fontWeight: 800,
-              color: '#e0d0ff',
-            },
-            optionSpacing: 16,
-            medalColors: {
-              gold: '#FFD700',
-              silver: '#C0C0C0',
-              bronze: '#CD7F32',
-              base: '#9333ea',
-            },
-            progressBar: {
-              height: 8,
-              backgroundColor: 'rgba(147, 51, 234, 0.2)',
-              fillColor: '#9333ea',
-              fillGradient: {
-                enabled: true,
-                startColor: '#9333ea',
-                endColor: '#ec4899',
-              },
-              borderRadius: 4,
-              position: 'bottom',
-              showTimeText: true,
-              timeTextStyle: {
-                fontFamily: 'Inter',
-                fontSize: 20,
-                fontWeight: 700,
-                color: '#ffffff',
-              },
-            },
-            animations: {
-              entry: {
-                animation: { duration: 0.5, easing: 'ease-out', delay: 0 },
-                slideDirection: 'up',
-                sound: { enabled: true, volume: 0.8 },
-                soundLeadTime: 1.5,
-              },
-              loop: {
-                music: { enabled: true, volume: 0.3 },
-              },
-              exit: {
-                animation: { duration: 0.5, easing: 'ease-in', delay: 0 },
-              },
-              result: {
-                winnerEnlarge: { scale: 1.1, duration: 0.3 },
-                loserFadeOut: { opacity: 0.3, duration: 0.5 },
-                sound: { enabled: true, volume: 0.8 },
-                displayDuration: 5,
-              },
-            },
-            layout: {
-              maxWidth: 480,
-              minOptionsToShow: 2,
-              maxOptionsToShow: 5,
-            },
-            mockData: {
-              question: 'Quelle action pour le héros ?',
-              options: ['Attaquer', 'Fuir', 'Négocier', 'Explorer'],
-              percentages: [35, 28, 22, 15],
-              timeRemaining: 45,
-              totalDuration: 60,
-            },
-          },
+          zIndex: 0,
+          properties: this.getDefaultPollProperties(),
         },
         {
           id: 'default_dice',

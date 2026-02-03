@@ -380,6 +380,7 @@
               :medal-colors="(selectedElement.properties as PollProperties).medalColors"
               :progress-bar="(selectedElement.properties as PollProperties).progressBar"
               :animations="(selectedElement.properties as PollProperties).animations"
+              :gamification="(selectedElement.properties as PollProperties).gamification"
               :layout="(selectedElement.properties as PollProperties).layout"
               :mock-data="(selectedElement.properties as PollProperties).mockData"
               @update-question-style="updatePollQuestionStyle"
@@ -391,6 +392,7 @@
               @update-medal-colors="updatePollMedalColors"
               @update-progress-bar="updatePollProgressBar"
               @update-animations="updatePollAnimations"
+              @update-gamification="updatePollGamification"
               @update-layout="updatePollLayout"
               @update-mock-data="updatePollMockData"
               @play-preview="playPollPreview"
@@ -664,6 +666,7 @@ const {
   updatePollMedalColors,
   updatePollProgressBar,
   updatePollAnimations,
+  updatePollGamification,
   updatePollLayout,
   updatePollMockData,
   // Dice Reverse (legacy)
@@ -974,8 +977,12 @@ const handleKeydown = (event: KeyboardEvent) => {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
   window.addEventListener('keydown', handleKeydown)
+
+  // Charger les propriétés par défaut depuis l'API (en parallèle)
+  store.loadDefaults()
+
   loadConfigs()
 
   // Initialiser l'historique

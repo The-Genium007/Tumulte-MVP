@@ -5,8 +5,10 @@ import {
   createTestVttProvider,
   createTestVttConnection,
   createTestCampaign,
+  createTestStreamer,
 } from '#tests/helpers/test_utils'
 import Character from '#models/character'
+import CharacterAssignment from '#models/character_assignment'
 import DiceRoll from '#models/dice_roll'
 import { DateTime } from 'luxon'
 
@@ -39,7 +41,7 @@ test.group('VttWebhookService - processDiceRoll', (group) => {
       isCritical: false,
     }
 
-    const diceRoll = await service.processDiceRoll(connection, payload)
+    const { diceRoll } = await service.processDiceRoll(connection, payload)
 
     assert.exists(diceRoll.id)
     assert.equal(diceRoll.campaignId, campaign.id)
@@ -107,6 +109,15 @@ test.group('VttWebhookService - processDiceRoll', (group) => {
       lastSyncAt: DateTime.now(),
     })
 
+    // Create a streamer and assign the character to them
+    // (Required for the roll to be attributed to the character)
+    const streamer = await createTestStreamer()
+    await CharacterAssignment.create({
+      campaignId: campaign.id,
+      streamerId: streamer.id,
+      characterId: existingChar.id,
+    })
+
     const payload = {
       campaignId: 'vtt-campaign-reuse',
       characterId: 'existing-char-id',
@@ -117,7 +128,7 @@ test.group('VttWebhookService - processDiceRoll', (group) => {
       isCritical: false,
     }
 
-    const diceRoll = await service.processDiceRoll(connection, payload)
+    const { diceRoll } = await service.processDiceRoll(connection, payload)
 
     assert.equal(diceRoll.characterId, existingChar.id)
 
@@ -201,10 +212,10 @@ test.group('VttWebhookService - processDiceRoll', (group) => {
     }
 
     // First call should create roll
-    const firstRoll = await service.processDiceRoll(connection, payload)
+    const { diceRoll: firstRoll } = await service.processDiceRoll(connection, payload)
 
     // Second call with same rollId should return existing
-    const secondRoll = await service.processDiceRoll(connection, payload)
+    const { diceRoll: secondRoll } = await service.processDiceRoll(connection, payload)
 
     assert.equal(firstRoll.id, secondRoll.id)
 
@@ -248,7 +259,7 @@ test.group('VttWebhookService - processDiceRoll', (group) => {
       modifiers: ['+5 proficiency', '+3 dex'],
     }
 
-    const diceRoll = await service.processDiceRoll(connection, payload)
+    const { diceRoll } = await service.processDiceRoll(connection, payload)
 
     assert.equal(diceRoll.skill, 'Acrobatics')
     assert.equal(diceRoll.skillRaw, 'acrobatics')
