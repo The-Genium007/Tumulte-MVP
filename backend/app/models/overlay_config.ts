@@ -182,89 +182,90 @@ class OverlayConfig extends BaseModel {
   /**
    * Retourne les propriétés par défaut pour un élément dice
    * Structure moderne avec diceBox (rendu 3D) et hud (affichage résultat)
+   * Style harmonisé avec la Goal Bar (Tumulte Purple theme)
    */
   static getDefaultDiceProperties(): Record<string, unknown> {
     return {
-      // Configuration DiceBox (rendu 3D)
+      // Configuration DiceBox (rendu 3D) - Dés blancs avec chiffres violet Tumulte
       diceBox: {
         colors: {
-          foreground: '#000000',
-          background: '#ffffff',
+          foreground: '#9146FF', // Tumulte Purple pour les chiffres
+          background: '#ffffff', // Dés blancs
           outline: 'none',
         },
         texture: 'none',
         material: 'glass',
         lightIntensity: 1.0,
       },
-      // Configuration HUD (affichage des résultats)
+      // Configuration HUD - Style harmonisé avec Goal Bar
       hud: {
         container: {
-          backgroundColor: 'rgba(15, 23, 42, 0.95)',
-          borderColor: 'rgba(148, 163, 184, 0.3)',
+          backgroundColor: 'rgba(26, 26, 46, 0.98)', // Même que Goal Bar
+          borderColor: '#9146FF', // Tumulte Purple
           borderWidth: 2,
           borderRadius: 16,
           padding: { top: 24, right: 24, bottom: 24, left: 24 },
           backdropBlur: 10,
           boxShadow: {
             enabled: true,
-            color: 'rgba(0, 0, 0, 0.5)',
-            blur: 60,
+            color: 'rgba(145, 70, 255, 0.3)', // Glow violet subtil
+            blur: 40,
             offsetX: 0,
-            offsetY: 20,
+            offsetY: 10,
           },
         },
         criticalBadge: {
           successBackground: 'rgba(34, 197, 94, 0.3)',
-          successTextColor: 'rgb(74, 222, 128)',
+          successTextColor: '#22c55e',
           successBorderColor: 'rgba(34, 197, 94, 0.5)',
           failureBackground: 'rgba(239, 68, 68, 0.3)',
-          failureTextColor: 'rgb(252, 165, 165)',
+          failureTextColor: '#ef4444',
           failureBorderColor: 'rgba(239, 68, 68, 0.5)',
         },
         formula: {
           typography: {
-            fontFamily: "'Courier New', monospace",
+            fontFamily: 'Inter',
             fontSize: 20,
             fontWeight: 600,
-            color: 'rgb(148, 163, 184)',
+            color: 'rgba(255, 255, 255, 0.85)', // Même que Goal Bar progress
           },
         },
         result: {
           typography: {
-            fontFamily: 'system-ui',
+            fontFamily: 'Inter',
             fontSize: 48,
             fontWeight: 800,
-            color: 'rgb(226, 232, 240)',
+            color: '#ffffff',
           },
-          criticalSuccessColor: 'rgb(74, 222, 128)',
-          criticalFailureColor: 'rgb(252, 165, 165)',
+          criticalSuccessColor: '#22c55e',
+          criticalFailureColor: '#ef4444',
         },
         diceBreakdown: {
-          backgroundColor: 'rgba(15, 23, 42, 0.7)',
-          borderColor: 'rgba(148, 163, 184, 0.3)',
-          borderRadius: 6,
+          backgroundColor: 'rgba(145, 70, 255, 0.15)', // Tumulte Purple transparent
+          borderColor: 'rgba(145, 70, 255, 0.3)',
+          borderRadius: 8,
           typography: {
-            fontFamily: "'Courier New', monospace",
+            fontFamily: 'Inter',
             fontSize: 16,
             fontWeight: 600,
-            color: 'rgb(203, 213, 225)',
+            color: 'rgba(255, 255, 255, 0.85)',
           },
         },
         skillInfo: {
-          backgroundColor: 'rgba(59, 130, 246, 0.15)',
-          borderColor: 'rgba(59, 130, 246, 0.3)',
+          backgroundColor: 'rgba(145, 70, 255, 0.15)', // Tumulte Purple transparent
+          borderColor: 'rgba(145, 70, 255, 0.3)',
           borderRadius: 8,
           skillTypography: {
-            fontFamily: 'system-ui',
+            fontFamily: 'Inter',
             fontSize: 16,
             fontWeight: 700,
-            color: 'rgb(147, 197, 253)',
+            color: '#ffffff',
           },
           abilityTypography: {
-            fontFamily: 'system-ui',
+            fontFamily: 'Inter',
             fontSize: 14,
             fontWeight: 500,
-            color: 'rgb(148, 163, 184)',
+            color: 'rgba(255, 255, 255, 0.7)',
           },
         },
         minWidth: 320,
@@ -275,7 +276,7 @@ class OverlayConfig extends BaseModel {
         position: { x: 0, y: -300 },
         scale: 1,
       },
-      // Couleurs des critiques (glow)
+      // Couleurs des critiques (glow sur les dés 3D)
       colors: {
         criticalSuccessGlow: '#22c55e',
         criticalFailureGlow: '#ef4444',

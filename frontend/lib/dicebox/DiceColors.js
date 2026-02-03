@@ -96,7 +96,9 @@ export class DiceColors {
 		}
 
 		let defaultSet = COLORSETS["white"]
+
 		let colorset = Object.assign({},defaultSet,options)
+
 		// get texture data
 		let texture = this.getTexture(colorset.texture)
 
