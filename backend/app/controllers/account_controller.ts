@@ -8,6 +8,7 @@ import { campaignMembership as CampaignMembership } from '#models/campaign_membe
 import { pollTemplate as PollTemplate } from '#models/poll_template'
 import { pollInstance as PollInstance } from '#models/poll_instance'
 import { pollChannelLink as PollChannelLink } from '#models/poll_channel_link'
+import AuthProvider from '#models/auth_provider'
 
 /**
  * Extrait un message d'erreur sûr depuis une erreur inconnue
@@ -107,6 +108,21 @@ export default class AccountController {
         user.displayName = `Utilisateur supprimé ${shortId}`
         user.email = null
         await user.save()
+
+        // 10. Anonymiser les AuthProviders (CRUCIAL: empêche la reconnexion via OAuth)
+        // On obfusque le providerUserId pour que l'utilisateur ne soit plus identifiable
+        // lors d'une future connexion avec le même compte OAuth
+        await AuthProvider.query({ client: trx })
+          .where('userId', user.id)
+          .update({
+            providerUserId: `deleted_${shortId}_${Date.now()}`,
+            providerEmail: null,
+            providerDisplayName: null,
+            accessTokenEncrypted: null,
+            refreshTokenEncrypted: null,
+            tokenExpiresAt: null,
+            providerData: null,
+          })
       })
 
       // Déconnecter l'utilisateur (hors transaction)

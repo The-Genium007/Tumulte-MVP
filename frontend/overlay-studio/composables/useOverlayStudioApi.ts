@@ -37,6 +37,22 @@ export const useOverlayStudioApi = () => {
   const AUTO_SAVE_DELAY = 2000
 
   /**
+   * Récupère la configuration système par défaut "Tumulte Default"
+   * Endpoint public - pas besoin d'authentification
+   */
+  const fetchDefaultConfig = async (): Promise<OverlayConfigData> => {
+    try {
+      const response = await fetch(`${API_URL}/overlay/default-config`)
+      if (!response.ok) throw new Error('Failed to fetch default config')
+      const data = await response.json()
+      return data.data.config
+    } catch (error) {
+      console.error('Failed to fetch default config:', error)
+      throw error
+    }
+  }
+
+  /**
    * Récupère toutes les configurations du streamer
    */
   const fetchConfigs = async (): Promise<OverlayConfig[]> => {
@@ -271,6 +287,13 @@ export const useOverlayStudioApi = () => {
 
       if (!response.ok) {
         console.error('[AutoSave] Failed to save config')
+        const toast = useToast()
+        toast.add({
+          title: 'Erreur de sauvegarde',
+          description: 'La sauvegarde automatique a échoué. Vérifiez votre connexion.',
+          color: 'error',
+          icon: 'i-lucide-alert-circle',
+        })
         return
       }
 
@@ -340,6 +363,7 @@ export const useOverlayStudioApi = () => {
     autoSaving: readonly(autoSaving),
 
     // Methods
+    fetchDefaultConfig,
     fetchConfigs,
     fetchConfig,
     createConfig,

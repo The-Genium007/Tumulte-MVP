@@ -97,7 +97,7 @@
             <ColorModule
               :model-value="props.typography.title.color"
               label="Couleur"
-              :presets="['#ffffff', '#ffd700', '#ff6b6b', '#4ade80']"
+              :presets="['#9146FF', '#ffffff', '#ffd700', '#ff6b6b', '#4ade80']"
               @update:model-value="(v: string) => updateTypography('title', 'color', v)"
             />
           </div>
@@ -125,7 +125,7 @@
             <ColorModule
               :model-value="props.typography.detail.color"
               label="Couleur"
-              :presets="['#ffffff', '#ffd700', '#ff6b6b', '#4ade80']"
+              :presets="['#ffffff', '#9146FF', '#ffd700', '#ff6b6b', '#4ade80']"
               @update:model-value="(v: string) => updateTypography('detail', 'color', v)"
             />
           </div>

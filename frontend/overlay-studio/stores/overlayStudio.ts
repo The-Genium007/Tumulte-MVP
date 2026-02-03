@@ -9,12 +9,50 @@ import type {
   OverlayElementType,
   ElementProperties,
   PollProperties,
+  PollGamificationConfig,
   DiceProperties,
   DiceReverseProperties,
   DiceReverseGoalBarProperties,
   DiceReverseImpactHudProperties,
   HudTransform,
 } from '../types'
+
+/**
+ * Valeurs par défaut pour la gamification du poll
+ */
+const DEFAULT_POLL_GAMIFICATION: PollGamificationConfig = {
+  timer: {
+    showBadge: true,
+    urgentThreshold: 10,
+    urgentColor: '#ef4444',
+  },
+  timeBar: {
+    enabled: true,
+    shimmerEnabled: true,
+    glowEdgeEnabled: true,
+    shakeWhenUrgent: true,
+    shakeIntensity: 5,
+  },
+  leader: {
+    showCrown: true,
+    pulseAnimation: true,
+    changeSound: { enabled: true, volume: 0.4 },
+  },
+  result: {
+    displayDuration: 5000,
+    winnerColor: '#FFD700',
+    winnerScale: 1.05,
+    winnerGlow: true,
+    winnerGlowColor: '#FFD700',
+    loserFadeOut: true,
+    loserFadeDuration: 300,
+    loserFinalOpacity: 0,
+  },
+  tieBreaker: {
+    showAllWinners: true,
+    titleText: 'EX-ÆQUO !',
+  },
+}
 
 /**
  * Store principal pour l'Overlay Studio
@@ -186,6 +224,7 @@ export const useOverlayStudioStore = defineStore('overlayStudio', () => {
               displayDuration: 20,
             },
           },
+          gamification: DEFAULT_POLL_GAMIFICATION,
           layout: {
             maxWidth: 600,
             minOptionsToShow: 2,
@@ -779,13 +818,17 @@ export const useOverlayStudioStore = defineStore('overlayStudio', () => {
       element.zIndex = 0
     }
 
-    // Pour les éléments poll, s'assurer que questionBoxStyle existe
+    // Pour les éléments poll, s'assurer que les propriétés existent
     if (element.type === 'poll') {
       const pollProps = element.properties as PollProperties
       const pollDefaults = defaults as PollProperties
 
       if (!pollProps.questionBoxStyle) {
         pollProps.questionBoxStyle = pollDefaults.questionBoxStyle
+      }
+      // Migration pour ajouter gamification aux configs existantes
+      if (!pollProps.gamification) {
+        pollProps.gamification = DEFAULT_POLL_GAMIFICATION
       }
     }
 

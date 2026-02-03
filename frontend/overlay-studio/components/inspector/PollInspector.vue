@@ -451,6 +451,288 @@
       </div>
     </div>
 
+    <!-- Section Gamification -->
+    <div class="inspector-section">
+      <button class="section-header" @click="toggleSection('gamification')">
+        <UIcon name="i-lucide-gamepad-2" class="size-4" />
+        <span>Gamification</span>
+        <UIcon
+          :name="expandedSections.gamification ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+          class="size-4 ml-auto"
+        />
+      </button>
+      <div v-show="expandedSections.gamification" class="section-content">
+        <!-- Timer -->
+        <div class="sub-section">
+          <button class="sub-section-header" @click="toggleGamificationSubSection('timer')">
+            <span>Timer</span>
+            <UIcon
+              :name="
+                expandedGamificationSubSections.timer
+                  ? 'i-lucide-chevron-up'
+                  : 'i-lucide-chevron-down'
+              "
+              class="size-3"
+            />
+          </button>
+          <div v-show="expandedGamificationSubSections.timer" class="sub-section-content">
+            <div class="inline-field">
+              <label>Afficher badge timer</label>
+              <USwitch
+                :model-value="props.gamification.timer.showBadge"
+                size="sm"
+                @update:model-value="(v: boolean) => updateGamificationTimer('showBadge', v)"
+              />
+            </div>
+            <div class="inline-field">
+              <label>Seuil urgent</label>
+              <div class="input-with-unit">
+                <NumberInput
+                  :model-value="props.gamification.timer.urgentThreshold"
+                  :min="5"
+                  :max="30"
+                  :step="1"
+                  @update:model-value="(v) => updateGamificationTimer('urgentThreshold', v)"
+                />
+                <span class="unit">s</span>
+              </div>
+            </div>
+            <ColorModule
+              :model-value="props.gamification.timer.urgentColor"
+              label="Couleur urgent"
+              :presets="['#ef4444', '#f97316', '#dc2626', '#b91c1c']"
+              @update:model-value="(v: string) => updateGamificationTimer('urgentColor', v)"
+            />
+          </div>
+        </div>
+
+        <!-- Barre de temps -->
+        <div class="sub-section">
+          <button class="sub-section-header" @click="toggleGamificationSubSection('timeBar')">
+            <span>Barre de temps</span>
+            <UIcon
+              :name="
+                expandedGamificationSubSections.timeBar
+                  ? 'i-lucide-chevron-up'
+                  : 'i-lucide-chevron-down'
+              "
+              class="size-3"
+            />
+          </button>
+          <div v-show="expandedGamificationSubSections.timeBar" class="sub-section-content">
+            <div class="inline-field">
+              <label>Activer</label>
+              <USwitch
+                :model-value="props.gamification.timeBar.enabled"
+                size="sm"
+                @update:model-value="(v: boolean) => updateGamificationTimeBar('enabled', v)"
+              />
+            </div>
+            <div class="inline-field">
+              <label>Effet shimmer</label>
+              <USwitch
+                :model-value="props.gamification.timeBar.shimmerEnabled"
+                size="sm"
+                @update:model-value="(v: boolean) => updateGamificationTimeBar('shimmerEnabled', v)"
+              />
+            </div>
+            <div class="inline-field">
+              <label>Glow au bord</label>
+              <USwitch
+                :model-value="props.gamification.timeBar.glowEdgeEnabled"
+                size="sm"
+                @update:model-value="
+                  (v: boolean) => updateGamificationTimeBar('glowEdgeEnabled', v)
+                "
+              />
+            </div>
+            <div class="inline-field">
+              <label>Tremblement urgent</label>
+              <USwitch
+                :model-value="props.gamification.timeBar.shakeWhenUrgent"
+                size="sm"
+                @update:model-value="
+                  (v: boolean) => updateGamificationTimeBar('shakeWhenUrgent', v)
+                "
+              />
+            </div>
+            <div v-if="props.gamification.timeBar.shakeWhenUrgent" class="inline-field">
+              <label>Intensité shake</label>
+              <NumberInput
+                :model-value="props.gamification.timeBar.shakeIntensity"
+                :min="1"
+                :max="10"
+                :step="1"
+                @update:model-value="(v) => updateGamificationTimeBar('shakeIntensity', v)"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Leader -->
+        <div class="sub-section">
+          <button class="sub-section-header" @click="toggleGamificationSubSection('leader')">
+            <span>Leader</span>
+            <UIcon
+              :name="
+                expandedGamificationSubSections.leader
+                  ? 'i-lucide-chevron-up'
+                  : 'i-lucide-chevron-down'
+              "
+              class="size-3"
+            />
+          </button>
+          <div v-show="expandedGamificationSubSections.leader" class="sub-section-content">
+            <div class="inline-field">
+              <label>Afficher couronne 👑</label>
+              <USwitch
+                :model-value="props.gamification.leader.showCrown"
+                size="sm"
+                @update:model-value="(v: boolean) => updateGamificationLeader('showCrown', v)"
+              />
+            </div>
+            <div class="inline-field">
+              <label>Animation pulsation</label>
+              <USwitch
+                :model-value="props.gamification.leader.pulseAnimation"
+                size="sm"
+                @update:model-value="(v: boolean) => updateGamificationLeader('pulseAnimation', v)"
+              />
+            </div>
+            <AudioModule
+              :model-value="leaderChangeSoundConfig"
+              label="Son changement leader"
+              :show-preview="false"
+              @update:model-value="(v) => updateLeaderChangeSound(v)"
+            />
+          </div>
+        </div>
+
+        <!-- Résultat -->
+        <div class="sub-section">
+          <button class="sub-section-header" @click="toggleGamificationSubSection('result')">
+            <span>Résultat</span>
+            <UIcon
+              :name="
+                expandedGamificationSubSections.result
+                  ? 'i-lucide-chevron-up'
+                  : 'i-lucide-chevron-down'
+              "
+              class="size-3"
+            />
+          </button>
+          <div v-show="expandedGamificationSubSections.result" class="sub-section-content">
+            <div class="inline-field">
+              <label>Durée affichage</label>
+              <div class="input-with-unit">
+                <NumberInput
+                  :model-value="props.gamification.result.displayDuration / 1000"
+                  :min="2"
+                  :max="15"
+                  :step="0.5"
+                  @update:model-value="(v) => updateGamificationResult('displayDuration', v * 1000)"
+                />
+                <span class="unit">s</span>
+              </div>
+            </div>
+            <ColorModule
+              :model-value="props.gamification.result.winnerColor"
+              label="Couleur gagnant"
+              :presets="['#FFD700', '#f59e0b', '#eab308', '#fbbf24']"
+              @update:model-value="(v: string) => updateGamificationResult('winnerColor', v)"
+            />
+            <div class="inline-field">
+              <label>Zoom gagnant</label>
+              <div class="input-with-unit">
+                <NumberInput
+                  :model-value="props.gamification.result.winnerScale"
+                  :min="1"
+                  :max="1.3"
+                  :step="0.01"
+                  @update:model-value="(v) => updateGamificationResult('winnerScale', v)"
+                />
+                <span class="unit">x</span>
+              </div>
+            </div>
+            <div class="inline-field">
+              <label>Glow gagnant</label>
+              <USwitch
+                :model-value="props.gamification.result.winnerGlow"
+                size="sm"
+                @update:model-value="(v: boolean) => updateGamificationResult('winnerGlow', v)"
+              />
+            </div>
+            <ColorModule
+              v-if="props.gamification.result.winnerGlow"
+              :model-value="props.gamification.result.winnerGlowColor"
+              label="Couleur glow"
+              :presets="['#FFD700', '#f59e0b', '#eab308', '#fbbf24']"
+              @update:model-value="(v: string) => updateGamificationResult('winnerGlowColor', v)"
+            />
+            <div class="inline-field">
+              <label>Fade-out perdants</label>
+              <USwitch
+                :model-value="props.gamification.result.loserFadeOut"
+                size="sm"
+                @update:model-value="(v: boolean) => updateGamificationResult('loserFadeOut', v)"
+              />
+            </div>
+            <div v-if="props.gamification.result.loserFadeOut" class="inline-field">
+              <label>Durée fade</label>
+              <div class="input-with-unit">
+                <NumberInput
+                  :model-value="props.gamification.result.loserFadeDuration"
+                  :min="100"
+                  :max="1000"
+                  :step="50"
+                  @update:model-value="(v) => updateGamificationResult('loserFadeDuration', v)"
+                />
+                <span class="unit">ms</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ex-aequo -->
+        <div class="sub-section">
+          <button class="sub-section-header" @click="toggleGamificationSubSection('tieBreaker')">
+            <span>Ex-aequo</span>
+            <UIcon
+              :name="
+                expandedGamificationSubSections.tieBreaker
+                  ? 'i-lucide-chevron-up'
+                  : 'i-lucide-chevron-down'
+              "
+              class="size-3"
+            />
+          </button>
+          <div v-show="expandedGamificationSubSections.tieBreaker" class="sub-section-content">
+            <div class="inline-field">
+              <label>Tous en doré</label>
+              <USwitch
+                :model-value="props.gamification.tieBreaker.showAllWinners"
+                size="sm"
+                @update:model-value="
+                  (v: boolean) => updateGamificationTieBreaker('showAllWinners', v)
+                "
+              />
+            </div>
+            <div class="field">
+              <label>Texte titre</label>
+              <UInput
+                :model-value="props.gamification.tieBreaker.titleText"
+                size="sm"
+                :ui="inputUi"
+                @update:model-value="
+                  (v: string | number) => updateGamificationTieBreaker('titleText', String(v))
+                "
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Section Audio -->
     <div class="inspector-section">
       <button class="section-header" @click="toggleSection('audio')">
@@ -565,6 +847,7 @@ import type {
   ProgressBarConfig,
   PollAnimationsConfig,
   PollMockData,
+  PollGamificationConfig,
 } from '~/overlay-studio/types'
 
 const props = defineProps<{
@@ -577,6 +860,7 @@ const props = defineProps<{
   medalColors: MedalColors
   progressBar: ProgressBarConfig
   animations: PollAnimationsConfig
+  gamification: PollGamificationConfig
   layout: {
     maxWidth: number
     minOptionsToShow: number
@@ -599,6 +883,7 @@ const emit = defineEmits<{
     layout: Partial<{ maxWidth: number; minOptionsToShow: number; maxOptionsToShow: number }>,
   ]
   updateMockData: [data: Partial<PollMockData>]
+  updateGamification: [config: Partial<PollGamificationConfig>]
   playPreview: []
 }>()
 
@@ -608,6 +893,7 @@ const { sections: expandedSections, toggle: toggleSection } = useCollapsibleSect
   options: false,
   medals: false,
   progressBar: false,
+  gamification: false,
   animations: false,
   audio: false,
   preview: true,
@@ -627,6 +913,16 @@ const { sections: expandedSubSections, toggle: toggleSubSection } = useCollapsib
   percentage: false,
   spacing: false,
 })
+
+// Sub-sections for Gamification
+const { sections: expandedGamificationSubSections, toggle: toggleGamificationSubSection } =
+  useCollapsibleSections({
+    timer: true,
+    timeBar: false,
+    leader: false,
+    result: false,
+    tieBreaker: false,
+  })
 
 // Options
 const positionOptions = [
@@ -995,6 +1291,69 @@ const updateResultSound = (value: AudioConfig) => {
 
 const updateMockData = (key: keyof PollMockData, value: string | number | string[] | number[]) => {
   emit('updateMockData', { [key]: value })
+}
+
+// Gamification config
+const leaderChangeSoundConfig = computed<AudioConfig>(() => ({
+  enabled: props.gamification.leader.changeSound.enabled,
+  volume: props.gamification.leader.changeSound.volume,
+}))
+
+const updateGamificationTimer = (key: string, value: boolean | number | string) => {
+  emit('updateGamification', {
+    timer: {
+      ...props.gamification.timer,
+      [key]: value,
+    },
+  })
+}
+
+const updateGamificationTimeBar = (key: string, value: boolean | number) => {
+  emit('updateGamification', {
+    timeBar: {
+      ...props.gamification.timeBar,
+      [key]: value,
+    },
+  })
+}
+
+const updateGamificationLeader = (key: string, value: boolean) => {
+  emit('updateGamification', {
+    leader: {
+      ...props.gamification.leader,
+      [key]: value,
+    },
+  })
+}
+
+const updateLeaderChangeSound = (value: AudioConfig) => {
+  emit('updateGamification', {
+    leader: {
+      ...props.gamification.leader,
+      changeSound: {
+        enabled: value.enabled,
+        volume: value.volume,
+      },
+    },
+  })
+}
+
+const updateGamificationResult = (key: string, value: boolean | number | string) => {
+  emit('updateGamification', {
+    result: {
+      ...props.gamification.result,
+      [key]: value,
+    },
+  })
+}
+
+const updateGamificationTieBreaker = (key: string, value: boolean | string) => {
+  emit('updateGamification', {
+    tieBreaker: {
+      ...props.gamification.tieBreaker,
+      [key]: value,
+    },
+  })
 }
 </script>
 

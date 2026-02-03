@@ -213,32 +213,34 @@ function createBasicMapping(rollData: UniversalRollData): MappedRoll {
 
   return {
     original: rollData,
-    dice: [{
-      term: {
-        type: 'die',
-        faces,
-        count: diceCount,
-        results: rollData.diceResults.map(value => ({
+    dice: [
+      {
+        term: {
+          type: 'die',
+          faces,
+          count: diceCount,
+          results: rollData.diceResults.map((value) => ({
+            value,
+            active: true,
+          })),
+        },
+        config: {
+          render: can3D ? '3d' : '2d',
+          diceboxType: `d${faces}`,
+          soundProfile: 'plastic',
+        },
+        results: rollData.diceResults.map((value) => ({
           value,
+          label: String(value),
           active: true,
+          isCritical: faces === 20 && (value === 1 || value === 20),
+          criticalType: value === 20 ? 'success' : value === 1 ? 'failure' : undefined,
         })),
+        total: rollData.diceResults.reduce((a, b) => a + b, 0),
+        activeCount: rollData.diceResults.length,
+        droppedCount: 0,
       },
-      config: {
-        render: can3D ? '3d' : '2d',
-        diceboxType: `d${faces}`,
-        soundProfile: 'plastic',
-      },
-      results: rollData.diceResults.map(value => ({
-        value,
-        label: String(value),
-        active: true,
-        isCritical: (faces === 20 && (value === 1 || value === 20)),
-        criticalType: value === 20 ? 'success' : value === 1 ? 'failure' : undefined,
-      })),
-      total: rollData.diceResults.reduce((a, b) => a + b, 0),
-      activeCount: rollData.diceResults.length,
-      droppedCount: 0,
-    }],
+    ],
     operators: [],
     constant: null,
     total: rollData.result,
@@ -275,23 +277,24 @@ function handleFallbackComplete() {
 // WATCHERS
 // =============================================================================
 
-watch(() => props.visible, (visible) => {
-  if (visible && mappedRoll.value) {
-    // Determine rendering mode
-    if (props.enable3D && mappedRoll.value.has3D) {
-      show3D.value = true
-      showFallback.value = mappedRoll.value.has2D || mappedRoll.value.hasSymbols
-    }
-    else {
+watch(
+  () => props.visible,
+  (visible) => {
+    if (visible && mappedRoll.value) {
+      // Determine rendering mode
+      if (props.enable3D && mappedRoll.value.has3D) {
+        show3D.value = true
+        showFallback.value = mappedRoll.value.has2D || mappedRoll.value.hasSymbols
+      } else {
+        show3D.value = false
+        showFallback.value = true
+      }
+    } else {
       show3D.value = false
-      showFallback.value = true
+      showFallback.value = false
     }
   }
-  else {
-    show3D.value = false
-    showFallback.value = false
-  }
-})
+)
 </script>
 
 <template>
@@ -313,11 +316,7 @@ watch(() => props.visible, (visible) => {
       </div>
 
       <!-- Critical Badge -->
-      <div
-        v-if="diceRoll?.isCritical"
-        class="critical-badge"
-        :class="diceRoll.criticalType"
-      >
+      <div v-if="diceRoll?.isCritical" class="critical-badge" :class="diceRoll.criticalType">
         <UIcon
           :name="diceRoll.criticalType === 'success' ? 'i-lucide-trophy' : 'i-lucide-skull'"
           class="critical-icon"
@@ -433,14 +432,17 @@ watch(() => props.visible, (visible) => {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95));
-  border: 2px solid rgba(148, 163, 184, 0.3);
+  background: linear-gradient(135deg, rgba(26, 26, 46, 0.98), rgba(35, 35, 55, 0.98));
+  border: 2px solid rgba(145, 70, 255, 0.5);
   border-radius: 16px;
   padding: 24px;
   min-width: 320px;
   max-width: 480px;
   backdrop-filter: blur(10px);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.5),
+    0 0 30px rgba(145, 70, 255, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
   z-index: 9999;
   border-style: solid;
 }
@@ -449,14 +451,14 @@ watch(() => props.visible, (visible) => {
   background: none;
 }
 
-/* System Badge */
+/* System Badge - Purple Tumulte style */
 .system-badge {
   position: absolute;
   top: -10px;
   left: 50%;
   transform: translateX(-50%);
   padding: 4px 12px;
-  background: rgba(59, 130, 246, 0.9);
+  background: linear-gradient(135deg, #9146ff, #ff6b9d);
   border-radius: 12px;
   font-size: 11px;
   font-weight: 600;
@@ -464,6 +466,7 @@ watch(() => props.visible, (visible) => {
   text-transform: uppercase;
   letter-spacing: 0.5px;
   white-space: nowrap;
+  box-shadow: 0 2px 10px rgba(145, 70, 255, 0.4);
 }
 
 /* Critical States */
@@ -544,14 +547,14 @@ watch(() => props.visible, (visible) => {
 .roll-formula {
   font-size: 20px;
   font-weight: 600;
-  color: rgb(148, 163, 184);
+  color: rgba(255, 255, 255, 0.7);
   font-family: 'Courier New', monospace;
 }
 
 .roll-result {
   font-size: 48px;
   font-weight: 800;
-  color: rgb(226, 232, 240);
+  color: #ffffff;
   text-shadow: 0 2px 12px rgba(0, 0, 0, 0.7);
   line-height: 1;
 }
@@ -583,13 +586,13 @@ watch(() => props.visible, (visible) => {
 }
 
 .die {
-  background: rgba(15, 23, 42, 0.7);
-  border: 1px solid rgba(148, 163, 184, 0.3);
+  background: rgba(26, 26, 46, 0.8);
+  border: 1px solid rgba(145, 70, 255, 0.3);
   border-radius: 6px;
   padding: 4px 12px;
   font-size: 16px;
   font-weight: 600;
-  color: rgb(203, 213, 225);
+  color: rgba(255, 255, 255, 0.85);
   font-family: 'Courier New', monospace;
   transition: all 0.2s ease;
 }
@@ -606,7 +609,7 @@ watch(() => props.visible, (visible) => {
   color: rgb(252, 165, 165);
 }
 
-/* Modifier Summary */
+/* Modifier Summary - Purple Tumulte style */
 .modifier-summary {
   display: flex;
   gap: 6px;
@@ -616,42 +619,42 @@ watch(() => props.visible, (visible) => {
 
 .modifier-badge {
   padding: 4px 10px;
-  background: rgba(59, 130, 246, 0.2);
-  border: 1px solid rgba(59, 130, 246, 0.4);
+  background: rgba(145, 70, 255, 0.2);
+  border: 1px solid rgba(145, 70, 255, 0.4);
   border-radius: 12px;
   font-size: 12px;
   font-weight: 500;
-  color: rgb(147, 197, 253);
+  color: rgba(255, 255, 255, 0.85);
 }
 
-/* Skill Info */
+/* Skill Info - Purple Tumulte style */
 .skill-info {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
   padding: 8px 16px;
-  background: rgba(59, 130, 246, 0.15);
-  border: 1px solid rgba(59, 130, 246, 0.3);
+  background: rgba(145, 70, 255, 0.15);
+  border: 1px solid rgba(145, 70, 255, 0.3);
   border-radius: 8px;
 }
 
 .skill-name {
   font-size: 16px;
   font-weight: 700;
-  color: rgb(147, 197, 253);
+  color: rgba(255, 255, 255, 0.9);
   text-transform: capitalize;
 }
 
 .skill-separator {
-  color: rgba(148, 163, 184, 0.5);
+  color: rgba(255, 255, 255, 0.4);
   font-size: 12px;
 }
 
 .ability-name {
   font-size: 14px;
   font-weight: 500;
-  color: rgb(148, 163, 184);
+  color: rgba(255, 255, 255, 0.7);
 }
 
 /* Modifiers */
@@ -687,7 +690,7 @@ watch(() => props.visible, (visible) => {
   text-align: center;
   font-size: 14px;
   font-weight: 600;
-  color: rgb(148, 163, 184);
+  color: rgba(255, 255, 255, 0.7);
   text-transform: uppercase;
   letter-spacing: 1px;
 }
@@ -696,18 +699,19 @@ watch(() => props.visible, (visible) => {
 .character-info {
   text-align: center;
   padding-top: 8px;
-  border-top: 1px solid rgba(148, 163, 184, 0.2);
+  border-top: 1px solid rgba(145, 70, 255, 0.2);
 }
 
 .character-name {
   font-size: 14px;
   font-weight: 500;
-  color: rgb(148, 163, 184);
+  color: rgba(255, 255, 255, 0.7);
 }
 
 /* Animations */
 @keyframes pulse-critical {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 0 20px var(--critical-glow-color);
   }
   50% {
@@ -716,7 +720,8 @@ watch(() => props.visible, (visible) => {
 }
 
 @keyframes bounce {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0);
   }
   50% {

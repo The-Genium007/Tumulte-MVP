@@ -68,9 +68,7 @@ const totalValue = computed(() => {
 
 /** Check if any die has critical results */
 const hasCritical = computed(() => {
-  return props.dice.some(die =>
-    die.results.some(r => r.active && r.isCritical),
-  )
+  return props.dice.some((die) => die.results.some((r) => r.active && r.isCritical))
 })
 
 /** Get critical type if any */
@@ -109,7 +107,7 @@ function playRollSound() {
   oscillator.frequency.value = 800 + Math.random() * 400
   oscillator.type = 'sine'
 
-  const volume = props.volume / 100 * 0.3
+  const volume = (props.volume / 100) * 0.3
   gainNode.gain.setValueAtTime(volume, ctx.currentTime)
   gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1)
 
@@ -123,8 +121,7 @@ function getResultClass(result: MappedDieResult): string {
 
   if (!result.active) {
     classes.push('dropped')
-  }
-  else if (result.isCritical) {
+  } else if (result.isCritical) {
     classes.push(result.criticalType === 'success' ? 'critical-success' : 'critical-failure')
   }
 
@@ -195,8 +192,7 @@ onMounted(() => {
       playRollSound()
       index++
       setTimeout(showNext, interval)
-    }
-    else {
+    } else {
       // Animation complete
       setTimeout(() => {
         isAnimating.value = false
@@ -236,19 +232,14 @@ onUnmounted(() => {
           <!-- Individual results -->
           <div class="die-results">
             <template v-for="(result, resultIndex) in die.results" :key="`result-${resultIndex}`">
-              <span
-                v-if="result.active || showDropped"
-                :class="getResultClass(result)"
-              >
+              <span v-if="result.active || showDropped" :class="getResultClass(result)">
                 {{ result.label }}
               </span>
             </template>
           </div>
 
           <!-- Subtotal for this die group -->
-          <div v-if="die.activeCount > 1" class="die-subtotal">
-            = {{ die.total }}
-          </div>
+          <div v-if="die.activeCount > 1" class="die-subtotal">= {{ die.total }}</div>
 
           <!-- Dropped indicator -->
           <div v-if="die.droppedCount > 0" class="dropped-indicator">
@@ -514,7 +505,8 @@ onUnmounted(() => {
 
 /* Animations */
 @keyframes pulse-success {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow:
       0 0 20px rgba(72, 187, 120, 0.5),
       0 2px 4px rgba(0, 0, 0, 0.3);
@@ -527,7 +519,8 @@ onUnmounted(() => {
 }
 
 @keyframes pulse-failure {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow:
       0 0 20px rgba(245, 101, 101, 0.5),
       0 2px 4px rgba(0, 0, 0, 0.3);

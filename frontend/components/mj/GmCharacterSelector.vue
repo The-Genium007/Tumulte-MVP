@@ -177,11 +177,7 @@ const isActive = (character: GmCharacter) => activeCharacter.value?.id === chara
               <UIcon name="i-lucide-user-x" class="size-4 text-muted" />
             </div>
             <span class="text-xs font-medium whitespace-nowrap">Aucun</span>
-            <UIcon
-              v-if="!activeCharacter"
-              name="i-lucide-check"
-              class="size-4 text-primary-500"
-            />
+            <UIcon v-if="!activeCharacter" name="i-lucide-check" class="size-4 text-primary-500" />
           </button>
 
           <!-- Personnages visibles -->

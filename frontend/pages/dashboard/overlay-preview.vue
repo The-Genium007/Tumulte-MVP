@@ -232,9 +232,10 @@ const loadSelectedConfig = async (configId: string | undefined) => {
   try {
     loading.value = true
 
-    // Charger la configuration système par défaut
+    // Charger la configuration système par défaut depuis le backend
     if (configId === 'default') {
-      store.loadConfig(getSystemDefaultConfig())
+      const defaultConfig = await api.fetchDefaultConfig()
+      store.loadConfig(defaultConfig)
     } else {
       const fullConfig = await api.fetchConfig(configId)
       store.loadConfig(fullConfig.config)
@@ -331,99 +332,6 @@ const calculateCanvasScale = () => {
 // Observer le redimensionnement
 let resizeObserver: ResizeObserver | null = null
 
-// Configuration système par défaut (miroir de OverlayConfig.getDefaultConfigWithPoll() du backend)
-const getSystemDefaultConfig = () => ({
-  version: '1.0',
-  canvas: { width: 1920, height: 1080 },
-  elements: [
-    {
-      id: 'default_poll',
-      type: 'poll' as const,
-      name: 'Sondage par défaut',
-      position: { x: 664, y: 0, z: 0 },
-      rotation: { x: 0, y: 0, z: 0 },
-      scale: { x: 0.5, y: 0.5, z: 1 },
-      visible: true,
-      locked: false,
-      zIndex: 0,
-      properties: {
-        questionStyle: {
-          fontFamily: 'Inter',
-          fontSize: 48,
-          fontWeight: 700,
-          color: '#ffffff',
-          textShadow: {
-            enabled: true,
-            color: 'rgba(0, 0, 0, 0.5)',
-            blur: 4,
-            offsetX: 0,
-            offsetY: 2,
-          },
-        },
-        questionBoxStyle: {
-          backgroundColor: 'transparent',
-          borderColor: 'transparent',
-          borderWidth: 0,
-          borderRadius: 0,
-          opacity: 1,
-          padding: { top: 0, right: 0, bottom: 16, left: 0 },
-        },
-        optionBoxStyle: {
-          backgroundColor: 'rgba(17, 17, 17, 0.9)',
-          borderColor: '#9333ea',
-          borderWidth: 2,
-          borderRadius: 12,
-          opacity: 1,
-          padding: { top: 16, right: 24, bottom: 16, left: 24 },
-        },
-        optionTextStyle: { fontFamily: 'Inter', fontSize: 24, fontWeight: 600, color: '#ffffff' },
-        optionPercentageStyle: {
-          fontFamily: 'Inter',
-          fontSize: 28,
-          fontWeight: 800,
-          color: '#e0d0ff',
-        },
-        optionSpacing: 16,
-        medalColors: { gold: '#FFD700', silver: '#C0C0C0', bronze: '#CD7F32', base: '#9333ea' },
-        progressBar: {
-          height: 8,
-          backgroundColor: 'rgba(147, 51, 234, 0.2)',
-          fillColor: '#9333ea',
-          fillGradient: { enabled: true, startColor: '#9333ea', endColor: '#ec4899' },
-          borderRadius: 4,
-          position: 'bottom' as const,
-          showTimeText: true,
-          timeTextStyle: { fontFamily: 'Inter', fontSize: 20, fontWeight: 700, color: '#ffffff' },
-        },
-        animations: {
-          entry: {
-            animation: { duration: 0.5, easing: 'ease-out' as const, delay: 0 },
-            slideDirection: 'up' as const,
-            sound: { enabled: true, volume: 0.8 },
-            soundLeadTime: 1.5,
-          },
-          loop: { music: { enabled: true, volume: 0.3 } },
-          exit: { animation: { duration: 0.5, easing: 'ease-in' as const, delay: 0 } },
-          result: {
-            winnerEnlarge: { scale: 1.1, duration: 0.3 },
-            loserFadeOut: { opacity: 0.3, duration: 0.5 },
-            sound: { enabled: true, volume: 0.8 },
-            displayDuration: 5,
-          },
-        },
-        layout: { maxWidth: 480, minOptionsToShow: 2, maxOptionsToShow: 5 },
-        mockData: {
-          question: 'Quelle action pour le héros ?',
-          options: ['Attaquer', 'Fuir', 'Négocier', 'Explorer'],
-          percentages: [35, 28, 22, 15],
-          timeRemaining: 45,
-          totalDuration: 60,
-        },
-      },
-    },
-  ],
-})
-
 // Charger la configuration au montage
 onMounted(async () => {
   const route = useRoute()
@@ -433,10 +341,11 @@ onMounted(async () => {
     // Charger la liste des configs
     const configs = await api.fetchConfigs()
 
-    // Si ?config=default, charger la configuration système par défaut
+    // Si ?config=default, charger la configuration système par défaut depuis le backend
     if (configParam === 'default') {
       selectedConfigId.value = 'default'
-      store.loadConfig(getSystemDefaultConfig())
+      const defaultConfig = await api.fetchDefaultConfig()
+      store.loadConfig(defaultConfig)
     }
     // Si ?config=<uuid>, charger cette configuration spécifique
     else if (configParam && configParam !== 'default') {

@@ -74,16 +74,15 @@ const negativeSymbols = computed(() => {
 /** Calculate net outcome for display */
 const netOutcome = computed(() => {
   // For Genesys-style systems: success - failure
-  const successSymbol = processedSymbols.value.find(s => s.type === 'success')
-  const failureSymbol = processedSymbols.value.find(s => s.type === 'failure')
+  const successSymbol = processedSymbols.value.find((s) => s.type === 'success')
+  const failureSymbol = processedSymbols.value.find((s) => s.type === 'failure')
 
   const successes = successSymbol?.count || 0
   const failures = failureSymbol?.count || 0
 
   if (successes > 0) {
     return { type: 'success', count: successes }
-  }
-  else if (failures > 0) {
+  } else if (failures > 0) {
     return { type: 'failure', count: failures }
   }
 
@@ -92,11 +91,11 @@ const netOutcome = computed(() => {
 
 /** Check for triumph or despair */
 const hasTriumph = computed(() => {
-  return processedSymbols.value.some(s => s.type === 'triumph' && s.count > 0)
+  return processedSymbols.value.some((s) => s.type === 'triumph' && s.count > 0)
 })
 
 const hasDespair = computed(() => {
-  return processedSymbols.value.some(s => s.type === 'despair' && s.count > 0)
+  return processedSymbols.value.some((s) => s.type === 'despair' && s.count > 0)
 })
 
 // =============================================================================
@@ -128,8 +127,7 @@ function getSymbolClasses(symbol: SymbolResult): string[] {
 
   if (def.isPositive) {
     classes.push('positive')
-  }
-  else {
+  } else {
     classes.push('negative')
   }
 
@@ -158,8 +156,7 @@ onMounted(() => {
       }
       index++
       setTimeout(showNext, interval)
-    }
-    else {
+    } else {
       setTimeout(() => {
         isAnimating.value = false
       }, 200)
@@ -176,10 +173,7 @@ onMounted(() => {
     <template v-if="displayMode === 'compact'">
       <div class="compact-summary">
         <template v-for="symbol in processedSymbols" :key="symbol.type">
-          <span
-            v-if="symbol.count > 0"
-            :class="getSymbolClasses(symbol)"
-          >
+          <span v-if="symbol.count > 0" :class="getSymbolClasses(symbol)">
             <span class="icon">{{ getSymbolDef(symbol.type).icon }}</span>
             <span v-if="symbol.count > 1" class="count">{{ symbol.count }}</span>
           </span>
@@ -191,17 +185,11 @@ onMounted(() => {
     <template v-else>
       <!-- Net outcome banner -->
       <Transition name="outcome-reveal">
-        <div
-          v-if="!isAnimating && netOutcome"
-          class="outcome-banner"
-          :class="netOutcome.type"
-        >
+        <div v-if="!isAnimating && netOutcome" class="outcome-banner" :class="netOutcome.type">
           <span class="outcome-text">
             {{ netOutcome.type === 'success' ? 'SUCCESS' : 'FAILURE' }}
           </span>
-          <span v-if="netOutcome.count > 1" class="outcome-count">
-            ×{{ netOutcome.count }}
-          </span>
+          <span v-if="netOutcome.count > 1" class="outcome-count"> ×{{ netOutcome.count }} </span>
         </div>
       </Transition>
 
@@ -261,11 +249,15 @@ onMounted(() => {
         <div v-if="!isAnimating" class="effects-summary">
           <template v-for="symbol in processedSymbols" :key="`effect-${symbol.type}`">
             <span
-              v-if="symbol.count > 0 && !['success', 'failure', 'triumph', 'despair'].includes(symbol.type)"
+              v-if="
+                symbol.count > 0 &&
+                !['success', 'failure', 'triumph', 'despair'].includes(symbol.type)
+              "
               class="effect-badge"
               :class="getSymbolDef(symbol.type).isPositive ? 'positive' : 'negative'"
             >
-              {{ getSymbolDef(symbol.type).icon }} {{ symbol.count }} {{ getSymbolDef(symbol.type).name }}
+              {{ getSymbolDef(symbol.type).icon }} {{ symbol.count }}
+              {{ getSymbolDef(symbol.type).name }}
             </span>
           </template>
         </div>
@@ -386,7 +378,8 @@ onMounted(() => {
 }
 
 @keyframes special-glow {
-  0%, 100% {
+  0%,
+  100% {
     filter: brightness(1);
   }
   50% {

@@ -613,6 +613,13 @@ router
 // ==========================================
 // Routes Overlay (publiques, sans authentification)
 // ==========================================
+
+// Route publique pour la config par défaut (sans paramètre UUID)
+router.get(
+  '/overlay/default-config',
+  '#controllers/overlay-studio/overlay_studio_controller.getDefaultConfig'
+)
+
 router
   .group(() => {
     router.get('/:streamerId', '#controllers/streamer/overlay_controller.streamerInfo')

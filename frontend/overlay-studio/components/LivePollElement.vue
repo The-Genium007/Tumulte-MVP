@@ -3,13 +3,53 @@
     <!-- Wrapper pour les animations (séparé du positionnement) -->
     <div
       class="live-poll-animator"
-      :class="[`state-${state}`, animationClass]"
-      :style="innerWrapperStyle"
+      :class="[`state-${state}`, animationClass, { 'poll-shaking': shouldShake }]"
+      :style="[
+        innerWrapperStyle,
+        { transform: shouldShake ? `translateX(${shakeIntensity}px)` : undefined },
+      ]"
     >
       <div class="poll-content" :style="contentStyle">
-        <!-- Question -->
-        <div class="poll-question" :style="questionStyle">
-          {{ pollData?.title || 'Question du sondage' }}
+        <!-- Header avec question et timer badge -->
+        <div class="poll-header">
+          <div class="poll-question" :style="questionStyle">
+            <template v-if="state === 'result'">
+              {{
+                leaderIndices.length > 1 && gamification?.tieBreaker.showAllWinners
+                  ? gamification.tieBreaker.titleText
+                  : '🎉 RÉSULTAT 🎉'
+              }}
+            </template>
+            <template v-else>
+              {{ pollData?.title || 'Question du sondage' }}
+            </template>
+          </div>
+
+          <!-- Timer badge (gamification) -->
+          <div
+            v-if="gamification?.timer.showBadge && state !== 'result'"
+            class="timer-badge"
+            :class="{ 'timer-urgent': isUrgent }"
+            :style="{ '--urgent-color': gamification?.timer.urgentColor }"
+          >
+            ⏱ {{ formatTime(remainingTime) }}
+          </div>
+        </div>
+
+        <!-- Time bar gamifiée -->
+        <div
+          v-if="gamification?.timeBar.enabled && state !== 'result'"
+          class="gamified-time-bar"
+          :class="{ 'time-bar-urgent': isUrgent }"
+        >
+          <div class="time-bar-fill" :style="timeBarFillStyle">
+            <div v-if="gamification?.timeBar.shimmerEnabled" class="time-bar-shimmer" />
+          </div>
+          <div
+            v-if="gamification?.timeBar.glowEdgeEnabled"
+            class="time-bar-glow"
+            :style="{ left: `${timePercent}%` }"
+          />
         </div>
 
         <!-- Options -->
@@ -20,26 +60,56 @@
             class="poll-option"
             :class="{
               'is-winner': state === 'result' && isWinner(index),
-              'is-loser': state === 'result' && !isWinner(index),
+              'is-loser':
+                state === 'result' && !isWinner(index) && gamification?.result.loserFadeOut,
+              'is-leader': leaderIndices.includes(index) && state !== 'result',
             }"
             :style="getOptionStyle(index)"
           >
             <div class="option-content">
               <span class="option-text" :style="optionTextStyle">
+                <span v-if="state === 'result' && isWinner(index)" class="winner-trophy">🏆</span>
                 {{ option }}
+                <span
+                  v-if="
+                    leaderIndices.includes(index) &&
+                    state !== 'result' &&
+                    gamification?.leader.showCrown
+                  "
+                  class="leader-crown"
+                  :class="{ 'crown-pulse': gamification?.leader.pulseAnimation }"
+                >
+                  👑
+                </span>
               </span>
-              <span class="option-percentage" :style="optionPercentageStyle">
+              <span
+                class="option-percentage"
+                :style="[
+                  optionPercentageStyle,
+                  state === 'result' && isWinner(index)
+                    ? { color: gamification?.result.winnerColor }
+                    : {},
+                ]"
+              >
                 {{ percentages[index] || 0 }}%
               </span>
             </div>
             <div class="option-bar-container">
-              <div class="option-bar" :style="getBarStyle(index)" />
+              <div
+                class="option-bar"
+                :class="{ 'bar-winner': state === 'result' && isWinner(index) }"
+                :style="getBarStyle(index)"
+              />
             </div>
           </div>
         </div>
 
-        <!-- Barre de progression du temps -->
-        <div class="poll-progress" :style="progressContainerStyle">
+        <!-- Barre de progression du temps (legacy, si gamification désactivée) -->
+        <div
+          v-if="!gamification?.timeBar.enabled"
+          class="poll-progress"
+          :style="progressContainerStyle"
+        >
           <div class="progress-bar" :style="progressBarStyle">
             <div class="progress-fill" :style="progressFillStyle" />
           </div>
@@ -77,11 +147,13 @@ const emit = defineEmits<{
 }>()
 
 // Types
-type PollState = 'hidden' | 'entering' | 'active' | 'result' | 'exiting'
+type PollState = 'hidden' | 'entering' | 'active' | 'urgent' | 'result' | 'exiting'
 
 // État
 const state = ref<PollState>('hidden')
 const remainingTime = ref(0)
+const shakeIntensity = ref(0)
+const previousLeaderIndex = ref<number | null>(null)
 
 // Worker timer pour résister au throttling OBS
 const workerTimer = useWorkerTimer()
@@ -94,6 +166,10 @@ let isExternalControl = false
 const introAudio = ref<HTMLAudioElement | null>(null)
 const loopAudio = ref<HTMLAudioElement | null>(null)
 const resultAudio = ref<HTMLAudioElement | null>(null)
+const leaderChangeAudio = ref<HTMLAudioElement | null>(null)
+
+// Shake interval
+let shakeInterval: ReturnType<typeof setInterval> | null = null
 
 // Gestion sécurisée des timers pour éviter les memory leaks
 const activeTimers = new Set<ReturnType<typeof setTimeout>>()
@@ -145,6 +221,74 @@ const rankings = computed(() => {
 const isWinner = (index: number): boolean => {
   return rankings.value[index] === 1
 }
+
+// Gamification computed
+const gamification = computed(() => config.value.gamification)
+
+const isUrgent = computed(() => {
+  if (!gamification.value) return false
+  return remainingTime.value > 0 && remainingTime.value <= gamification.value.timer.urgentThreshold
+})
+
+const leaderIndices = computed(() => {
+  const maxPercent = Math.max(...Object.values(props.percentages))
+  if (maxPercent === 0) return []
+  return Object.entries(props.percentages)
+    .filter(([, percent]) => percent === maxPercent)
+    .map(([index]) => parseInt(index))
+})
+
+const shouldShake = computed(() => {
+  if (!gamification.value) return false
+  return (
+    isUrgent.value &&
+    gamification.value.timeBar.shakeWhenUrgent &&
+    state.value !== 'result' &&
+    state.value !== 'hidden'
+  )
+})
+
+// Shake animation
+const updateShake = () => {
+  if (!shouldShake.value || !gamification.value) {
+    shakeIntensity.value = 0
+    return
+  }
+  const intensity = gamification.value.timeBar.shakeIntensity
+  shakeIntensity.value = (Math.random() - 0.5) * 2 * intensity
+}
+
+// Play leader change sound
+const playLeaderChangeSound = () => {
+  if (!gamification.value?.leader.changeSound.enabled || !leaderChangeAudio.value) return
+  try {
+    leaderChangeAudio.value.currentTime = 0
+    leaderChangeAudio.value.play().catch(() => {})
+  } catch {
+    // Ignore audio errors
+  }
+}
+
+// Format time as mm:ss
+const formatTime = (seconds: number): string => {
+  const mins = Math.floor(seconds / 60)
+  const secs = seconds % 60
+  return `${mins}:${secs.toString().padStart(2, '0')}`
+}
+
+// Time percent for gamified bar
+const timePercent = computed(() => {
+  const totalDuration = props.pollData?.totalDuration || 60
+  if (totalDuration === 0) return 100
+  return (remainingTime.value / totalDuration) * 100
+})
+
+// Time bar fill style (gamified)
+const timeBarFillStyle = computed(() => {
+  return {
+    width: `${timePercent.value}%`,
+  }
+})
 
 // Obtenir la couleur de médaille selon le rang
 const getMedalColor = (rank: number): string => {
@@ -269,20 +413,27 @@ const getOptionStyle = (index: number) => {
     padding: `${box.padding.top}px ${box.padding.right}px ${box.padding.bottom}px ${box.padding.left}px`,
   }
 
-  // Animation de résultat
+  // Animation de résultat avec gamification
   if (state.value === 'result') {
-    const resultAnim = config.value.animations.result
+    const gam = gamification.value
     if (isWinner(index)) {
+      const winnerColor = gam?.result.winnerColor || '#FFD700'
+      const winnerScale = gam?.result.winnerScale || 1.05
+      const winnerGlow = gam?.result.winnerGlow
+      const winnerGlowColor = gam?.result.winnerGlowColor || '#FFD700'
+
       return {
         ...baseStyle,
-        transform: `scale(${resultAnim.winnerEnlarge.scale})`,
-        transition: `transform ${resultAnim.winnerEnlarge.duration}s ease-out`,
+        borderColor: winnerColor,
+        transform: `scale(${winnerScale})`,
+        transition: 'transform 0.3s ease-out, border-color 0.3s ease',
+        boxShadow: winnerGlow ? `0 0 30px ${winnerGlowColor}` : undefined,
       }
-    } else {
+    } else if (gam?.result.loserFadeOut) {
       return {
         ...baseStyle,
-        opacity: resultAnim.loserFadeOut.opacity,
-        transition: `opacity ${resultAnim.loserFadeOut.duration}s ease-out`,
+        opacity: gam.result.loserFinalOpacity,
+        transition: `opacity ${gam.result.loserFadeDuration}ms ease-out`,
       }
     }
   }
@@ -411,6 +562,12 @@ const initAudio = () => {
     resultAudio.value = new Audio('/audio/poll/result.wav')
     resultAudio.value.volume = resultAnim.sound.volume
   }
+
+  // Leader change sound (gamification)
+  if (gamification.value?.leader.changeSound.enabled) {
+    leaderChangeAudio.value = new Audio('/audio/poll/leader-change.wav')
+    leaderChangeAudio.value.volume = gamification.value.leader.changeSound.volume
+  }
 }
 
 const playIntro = async () => {
@@ -462,6 +619,10 @@ const cleanupAudio = () => {
   if (resultAudio.value) {
     resultAudio.value.pause()
     resultAudio.value = null
+  }
+  if (leaderChangeAudio.value) {
+    leaderChangeAudio.value.pause()
+    leaderChangeAudio.value = null
   }
 }
 
@@ -636,23 +797,52 @@ watch(
 watch(
   () => props.isEnding,
   (ending) => {
-    if (ending && state.value === 'active') {
+    if (ending && (state.value === 'active' || state.value === 'urgent')) {
       endPoll()
     }
   }
 )
+
+// Watch for leader changes (gamification)
+watch(
+  leaderIndices,
+  (newLeaders) => {
+    if (state.value === 'result' || state.value === 'hidden') return
+    if (newLeaders.length === 0) return
+
+    const newLeader = newLeaders[0]
+    if (previousLeaderIndex.value !== null && previousLeaderIndex.value !== newLeader) {
+      playLeaderChangeSound()
+    }
+    previousLeaderIndex.value = newLeader ?? null
+  },
+  { deep: true }
+)
+
+// Watch for urgent state (gamification)
+watch(isUrgent, (urgent) => {
+  if (urgent && state.value === 'active') {
+    transitionTo('urgent')
+  }
+})
 
 // Cleanup
 onMounted(() => {
   if (props.pollData) {
     startPoll()
   }
+  // Start shake interval
+  shakeInterval = setInterval(updateShake, 50)
 })
 
 onUnmounted(() => {
   clearAllTimers()
   stopTimer()
   cleanupAudio()
+  if (shakeInterval) {
+    clearInterval(shakeInterval)
+    shakeInterval = null
+  }
 })
 </script>
 
@@ -843,5 +1033,176 @@ onUnmounted(() => {
     opacity: 0;
     transform: rotate(var(--poll-rotation)) scale(var(--poll-scale-x), var(--poll-scale-y));
   }
+}
+
+/* ========== Gamification Styles ========== */
+
+.poll-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  gap: 16px;
+}
+
+/* Timer badge */
+.timer-badge {
+  background: rgba(147, 51, 234, 0.3);
+  border: 2px solid rgba(147, 51, 234, 0.5);
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-size: 18px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  min-width: 80px;
+  text-align: center;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.timer-urgent {
+  background: rgba(239, 68, 68, 0.3);
+  border-color: var(--urgent-color, #ef4444);
+  color: var(--urgent-color, #ef4444);
+  animation: timer-pulse 0.5s ease-in-out infinite;
+}
+
+@keyframes timer-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+/* Gamified time bar */
+.gamified-time-bar {
+  position: relative;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.time-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #9333ea, #ec4899);
+  border-radius: 4px;
+  transition: width 0.3s ease-out;
+  position: relative;
+  overflow: hidden;
+}
+
+.time-bar-urgent .time-bar-fill {
+  background: linear-gradient(90deg, #ef4444, #f97316);
+}
+
+.time-bar-shimmer {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    transparent 100%
+  );
+  animation: shimmer 2s linear infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.time-bar-glow {
+  position: absolute;
+  top: 50%;
+  width: 20px;
+  height: 30px;
+  background: #fff;
+  filter: blur(12px);
+  transform: translate(-50%, -50%);
+  transition: left 0.3s ease-out;
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Shake animation */
+.poll-shaking {
+  transition: transform 0.05s linear;
+}
+
+/* Leader crown */
+.leader-crown {
+  font-size: 16px;
+  display: inline-block;
+  margin-left: 6px;
+}
+
+.crown-pulse {
+  animation: crown-pulse 1s ease-in-out infinite;
+}
+
+@keyframes crown-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+}
+
+/* Winner trophy */
+.winner-trophy {
+  font-size: 20px;
+  margin-right: 8px;
+  animation: trophy-bounce 0.5s ease-out;
+}
+
+@keyframes trophy-bounce {
+  0% {
+    transform: scale(0) rotate(-20deg);
+  }
+  50% {
+    transform: scale(1.3) rotate(10deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+/* Winner/Loser styles */
+.poll-option.is-leader {
+  transform: scale(1.02);
+}
+
+.poll-option.is-winner {
+  z-index: 1;
+}
+
+.poll-option.is-loser {
+  opacity: 0;
+  transform: scale(0.95);
+  transition: all 0.3s ease;
+  pointer-events: none;
+}
+
+.option-bar.bar-winner {
+  background: linear-gradient(90deg, #ffd700, #f59e0b) !important;
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+}
+
+/* État urgent */
+.state-urgent {
+  transform: rotate(var(--poll-rotation)) scale(var(--poll-scale-x), var(--poll-scale-y));
 }
 </style>

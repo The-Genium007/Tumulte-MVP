@@ -99,9 +99,7 @@ const formatRollResult = (roll: PendingDiceRoll) => {
               </div>
               <div>
                 <h3 class="heading-card">Jet en attente d'attribution</h3>
-                <p class="text-caption mt-0.5">
-                  {{ pendingRolls.length }} jet(s) en attente
-                </p>
+                <p class="text-caption mt-0.5">{{ pendingRolls.length }} jet(s) en attente</p>
               </div>
             </div>
             <UButton
@@ -115,7 +113,10 @@ const formatRollResult = (roll: PendingDiceRoll) => {
         </template>
 
         <!-- Loading state -->
-        <div v-if="pendingLoading || charactersLoading" class="flex items-center justify-center py-8">
+        <div
+          v-if="pendingLoading || charactersLoading"
+          class="flex items-center justify-center py-8"
+        >
           <UIcon name="i-lucide-loader-2" class="size-8 animate-spin text-muted" />
         </div>
 
@@ -131,7 +132,11 @@ const formatRollResult = (roll: PendingDiceRoll) => {
           <div class="p-4 rounded-lg bg-elevated border border-default">
             <div class="flex items-center justify-between mb-3">
               <span class="text-body-sm font-medium">{{ formatRollResult(currentRoll) }}</span>
-              <UBadge v-if="currentRoll.isCritical" :color="currentRoll.criticalType === 'success' ? 'success' : 'error'" variant="soft">
+              <UBadge
+                v-if="currentRoll.isCritical"
+                :color="currentRoll.criticalType === 'success' ? 'success' : 'error'"
+                variant="soft"
+              >
                 {{ currentRoll.criticalType === 'success' ? 'Critique !' : 'Échec critique' }}
               </UBadge>
             </div>
@@ -144,8 +149,10 @@ const formatRollResult = (roll: PendingDiceRoll) => {
                   :key="index"
                   class="size-10 rounded-lg bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center font-bold text-lg"
                   :class="{
-                    'bg-success-100 dark:bg-success-900/30 text-success-600': currentRoll.isCritical && currentRoll.criticalType === 'success',
-                    'bg-error-100 dark:bg-error-900/30 text-error-600': currentRoll.isCritical && currentRoll.criticalType === 'failure',
+                    'bg-success-100 dark:bg-success-900/30 text-success-600':
+                      currentRoll.isCritical && currentRoll.criticalType === 'success',
+                    'bg-error-100 dark:bg-error-900/30 text-error-600':
+                      currentRoll.isCritical && currentRoll.criticalType === 'failure',
                   }"
                 >
                   {{ die }}
@@ -232,9 +239,7 @@ const formatRollResult = (roll: PendingDiceRoll) => {
               :loading="attributing"
               @click="handleIgnore"
             />
-            <p class="text-caption">
-              Le jet sera enregistré sans personnage
-            </p>
+            <p class="text-caption">Le jet sera enregistré sans personnage</p>
           </div>
         </template>
       </UCard>
