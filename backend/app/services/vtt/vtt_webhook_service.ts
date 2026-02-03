@@ -2,6 +2,7 @@ import { DateTime } from 'luxon'
 import VttConnection from '#models/vtt_connection'
 import { campaign as Campaign } from '#models/campaign'
 import Character from '#models/character'
+import CharacterAssignment from '#models/character_assignment'
 import DiceRoll from '#models/dice_roll'
 import DiceRollService from '#services/vtt/dice_roll_service'
 import logger from '@adonisjs/core/services/logger'
@@ -30,16 +31,25 @@ interface DiceRollPayload {
 export default class VttWebhookService {
   /**
    * Traite un événement de dice roll provenant d'un VTT
+   *
+   * Logic for GM rolls:
+   * 1. If the character from VTT belongs to a player (has CharacterAssignment) → use that character
+   * 2. If no player assignment (GM rolling as NPC or unassigned character):
+   *    a. If GM has an active character set → use that character
+   *    b. If no active character → create pending roll for manual attribution
    */
-  async processDiceRoll(vttConnection: VttConnection, payload: DiceRollPayload): Promise<DiceRoll> {
+  async processDiceRoll(
+    vttConnection: VttConnection,
+    payload: DiceRollPayload
+  ): Promise<{ diceRoll: DiceRoll; pendingAttribution: boolean }> {
     // 1. Trouver la campagne Tumulte correspondante
     const campaign = await Campaign.query()
       .where('vtt_connection_id', vttConnection.id)
       .where('vtt_campaign_id', payload.campaignId)
       .firstOrFail()
 
-    // 2. Trouver ou créer le personnage
-    const character = await this.findOrCreateCharacter(campaign, payload)
+    // 2. Trouver ou créer le personnage from VTT
+    const vttCharacter = await this.findOrCreateCharacter(campaign, payload)
 
     // 3. Vérifier si le roll existe déjà (déduplication)
     if (payload.rollId) {
@@ -50,15 +60,21 @@ export default class VttWebhookService {
 
       if (existingRoll) {
         // Roll déjà traité, retourner l'existant
-        return existingRoll
+        return { diceRoll: existingRoll, pendingAttribution: existingRoll.pendingAttribution }
       }
     }
 
-    // 4. Créer le dice roll via le service
+    // 4. Determine which character to attribute this roll to
+    const { characterId, pendingAttribution } = await this.resolveCharacterForRoll(
+      campaign,
+      vttCharacter
+    )
+
+    // 5. Créer le dice roll via le service
     const diceRollService = new DiceRollService()
     const diceRoll = await diceRollService.recordDiceRoll({
       campaignId: campaign.id,
-      characterId: character.id,
+      characterId,
       vttRollId: payload.rollId || null,
       rollFormula: payload.rollFormula,
       result: payload.result,
@@ -74,9 +90,52 @@ export default class VttWebhookService {
       ability: payload.ability || null,
       abilityRaw: payload.abilityRaw || null,
       modifiers: payload.modifiers || null,
+      pendingAttribution,
     })
 
-    return diceRoll
+    return { diceRoll, pendingAttribution }
+  }
+
+  /**
+   * Resolve which character a dice roll should be attributed to
+   *
+   * @returns characterId (null if pending) and pendingAttribution flag
+   */
+  private async resolveCharacterForRoll(
+    campaign: Campaign,
+    vttCharacter: Character
+  ): Promise<{ characterId: string | null; pendingAttribution: boolean }> {
+    // Check if this character is assigned to a player (streamer)
+    const playerAssignment = await CharacterAssignment.query()
+      .where('character_id', vttCharacter.id)
+      .where('campaign_id', campaign.id)
+      .first()
+
+    if (playerAssignment) {
+      // This is a player's character - attribute to them
+      logger.debug('Roll attributed to player character', {
+        characterId: vttCharacter.id,
+        characterName: vttCharacter.name,
+      })
+      return { characterId: vttCharacter.id, pendingAttribution: false }
+    }
+
+    // This is a GM roll (no player owns this character)
+    // Check if GM has an active character set
+    if (campaign.gmActiveCharacterId) {
+      logger.debug('Roll attributed to GM active character', {
+        gmActiveCharacterId: campaign.gmActiveCharacterId,
+        originalCharacterId: vttCharacter.id,
+      })
+      return { characterId: campaign.gmActiveCharacterId, pendingAttribution: false }
+    }
+
+    // No active character - roll needs manual attribution
+    logger.info('Roll pending attribution (no GM active character)', {
+      campaignId: campaign.id,
+      vttCharacterId: vttCharacter.id,
+    })
+    return { characterId: null, pendingAttribution: true }
   }
 
   /**
@@ -178,6 +237,22 @@ export default class VttWebhookService {
       )
     }
 
+    // Déterminer le characterType de manière fiable
+    // Priorité: 1) vttData.type (source de vérité Foundry), 2) characterData.characterType, 3) défaut 'pc'
+    const resolveCharacterType = (): 'pc' | 'npc' => {
+      // En D&D 5e/PF2e: actor.type === 'character' = PC, 'npc' = NPC
+      const vttType = characterData.vttData?.type as string | undefined
+      if (vttType) {
+        // Types connus pour les PCs dans différents systèmes
+        const pcTypes = ['character', 'pc', 'player']
+        return pcTypes.includes(vttType.toLowerCase()) ? 'pc' : 'npc'
+      }
+      // Fallback sur ce que le module envoie
+      return characterData.characterType || 'pc'
+    }
+
+    const resolvedCharacterType = resolveCharacterType()
+
     // Chercher ou créer le personnage
     let character = await Character.query()
       .where('campaign_id', campaign.id)
@@ -189,7 +264,7 @@ export default class VttWebhookService {
       character.merge({
         name: characterData.name,
         avatarUrl: characterData.avatarUrl,
-        characterType: characterData.characterType || character.characterType,
+        characterType: resolvedCharacterType,
         stats: characterData.stats || character.stats,
         inventory: characterData.inventory || character.inventory,
         vttData: characterData.vttData || character.vttData,
@@ -203,7 +278,7 @@ export default class VttWebhookService {
         vttCharacterId: characterData.vttCharacterId,
         name: characterData.name,
         avatarUrl: characterData.avatarUrl || null,
-        characterType: characterData.characterType || 'pc',
+        characterType: resolvedCharacterType,
         stats: characterData.stats || null,
         inventory: characterData.inventory || null,
         vttData: characterData.vttData || null,

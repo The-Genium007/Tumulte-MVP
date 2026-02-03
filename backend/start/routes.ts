@@ -178,6 +178,28 @@ router
     // Campaign Events (unified events: polls, gamification, etc.)
     router.get('/campaigns/:id/events', '#controllers/mj/campaigns_controller.events')
 
+    // GM Character Incarnation
+    router.get('/campaigns/:id/characters', '#controllers/mj/gm_characters_controller.index')
+    router.get('/campaigns/:id/active-character', '#controllers/mj/gm_characters_controller.show')
+    router.post(
+      '/campaigns/:id/active-character',
+      '#controllers/mj/gm_characters_controller.update'
+    )
+    router.delete(
+      '/campaigns/:id/active-character',
+      '#controllers/mj/gm_characters_controller.destroy'
+    )
+
+    // GM Dice Roll Attribution
+    router.get(
+      '/campaigns/:id/pending-rolls',
+      '#controllers/mj/gm_characters_controller.pendingRolls'
+    )
+    router.post(
+      '/campaigns/:id/dice-rolls/:rollId/attribute',
+      '#controllers/mj/gm_characters_controller.attributeRoll'
+    )
+
     // Polls (templates liés directement aux campagnes)
     // CRUD des polls (templates de sondages)
     router.get('/campaigns/:campaignId/polls', '#controllers/mj/polls_controller.indexByCampaign')

@@ -553,8 +553,8 @@ export class InstanceManager {
     connectionId: string,
     diceRollData?: {
       rollId: string
-      characterId: string
-      characterName: string
+      characterId: string | null
+      characterName: string | null
       formula: string
       result: number
       diceResults: number[]

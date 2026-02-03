@@ -58,27 +58,33 @@ export default class CharactersController {
   /**
    * Assigne un personnage au streamer pour une campagne
    * POST /streamer/campaigns/:campaignId/characters/:characterId/assign
-   * Accessible aux membres actifs ET aux propriétaires de la campagne
+   * Accessible uniquement aux membres actifs (pas aux owners qui utilisent l'Incarnation)
    */
   async assign({ auth, params, response }: HttpContext) {
     const user = auth.user!
 
     const streamer = await Streamer.query().where('user_id', user.id).firstOrFail()
 
-    // Vérifier que le streamer est membre actif OU propriétaire de la campagne
-    const campaignAsMember = await Campaign.query()
+    // Vérifier si l'utilisateur est propriétaire de la campagne
+    // Les owners ne peuvent pas s'assigner de personnage - ils utilisent l'Incarnation
+    const isOwner = await Campaign.query()
+      .where('id', params.campaignId)
+      .where('owner_id', user.id)
+      .first()
+
+    if (isOwner) {
+      return response.forbidden({
+        error: 'Campaign owners cannot assign characters. Use the Incarnation system instead.',
+      })
+    }
+
+    // Vérifier que le streamer est membre actif de la campagne
+    const campaign = await Campaign.query()
       .where('id', params.campaignId)
       .whereHas('memberships', (query) => {
         query.where('streamer_id', streamer.id).where('status', 'ACTIVE')
       })
       .first()
-
-    const campaignAsOwner = await Campaign.query()
-      .where('id', params.campaignId)
-      .where('owner_id', user.id)
-      .first()
-
-    const campaign = campaignAsMember || campaignAsOwner
 
     if (!campaign) {
       return response.notFound({ error: 'Campaign not found or access denied' })
@@ -124,27 +130,35 @@ export default class CharactersController {
   /**
    * Retire l'assignment de personnage du streamer pour une campagne
    * DELETE /streamer/campaigns/:campaignId/characters/unassign
-   * Accessible aux membres actifs ET aux propriétaires de la campagne
+   * Accessible uniquement aux membres actifs (pas aux owners)
    */
   async unassign({ auth, params, response }: HttpContext) {
     const user = auth.user!
 
     const streamer = await Streamer.query().where('user_id', user.id).firstOrFail()
 
-    // Vérifier que le streamer est membre actif OU propriétaire de la campagne
-    const campaignAsMember = await Campaign.query()
+    // Vérifier si l'utilisateur est propriétaire de la campagne
+    // Les owners n'ont pas d'assignment à retirer
+    const isOwner = await Campaign.query()
+      .where('id', params.campaignId)
+      .where('owner_id', user.id)
+      .first()
+
+    if (isOwner) {
+      return response.forbidden({
+        error: 'Campaign owners do not have character assignments.',
+      })
+    }
+
+    // Vérifier que le streamer est membre actif de la campagne
+    const campaign = await Campaign.query()
       .where('id', params.campaignId)
       .whereHas('memberships', (query) => {
         query.where('streamer_id', streamer.id).where('status', 'ACTIVE')
       })
       .first()
 
-    const campaignAsOwner = await Campaign.query()
-      .where('id', params.campaignId)
-      .where('owner_id', user.id)
-      .first()
-
-    if (!campaignAsMember && !campaignAsOwner) {
+    if (!campaign) {
       return response.notFound({ error: 'Campaign not found or access denied' })
     }
 

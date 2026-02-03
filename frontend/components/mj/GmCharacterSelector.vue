@@ -1,0 +1,414 @@
+<script setup lang="ts">
+import { useGmCharacters, type GmCharacter } from '@/composables/useGmCharacters'
+
+const props = defineProps<{
+  campaignId: string
+}>()
+
+const { characters, activeCharacter, loading, updating, initialize, setActiveCharacter } =
+  useGmCharacters()
+
+// État pour le modal "voir plus"
+const showAllCharactersModal = ref(false)
+
+// Initialize on mount
+onMounted(async () => {
+  if (props.campaignId) {
+    await initialize(props.campaignId)
+  }
+})
+
+// Re-fetch when campaign changes
+watch(
+  () => props.campaignId,
+  async (newId) => {
+    if (newId) {
+      await initialize(newId)
+    }
+  }
+)
+
+// Handle character selection
+const handleSelectCharacter = async (character: GmCharacter | null) => {
+  try {
+    await setActiveCharacter(props.campaignId, character?.id || null)
+    // Fermer le modal si ouvert
+    showAllCharactersModal.value = false
+  } catch (error) {
+    console.error('Failed to set active character:', error)
+  }
+}
+
+// Group characters by type for display
+const groupedCharacters = computed(() => {
+  const pcs = characters.value.filter((c) => c.characterType === 'pc')
+  const npcs = characters.value.filter((c) => c.characterType === 'npc')
+  return { pcs, npcs }
+})
+
+// Personnages à afficher dans la barre (limité)
+const MAX_VISIBLE_CHARACTERS = 6
+const visibleCharacters = computed(() => {
+  return characters.value.slice(0, MAX_VISIBLE_CHARACTERS)
+})
+
+const hasMoreCharacters = computed(() => characters.value.length > MAX_VISIBLE_CHARACTERS)
+const hiddenCount = computed(() => Math.max(0, characters.value.length - MAX_VISIBLE_CHARACTERS))
+
+// Check if a character is currently active
+const isActive = (character: GmCharacter) => activeCharacter.value?.id === character.id
+</script>
+
+<template>
+  <UCard>
+    <template #header>
+      <div class="flex items-center justify-between">
+        <div>
+          <h3 class="text-lg font-semibold text-primary">Incarnation</h3>
+          <p class="text-xs text-muted">Sélectionnez le personnage que vous incarnez</p>
+        </div>
+
+        <!-- Bouton voir tous si beaucoup de personnages -->
+        <UButton
+          v-if="hasMoreCharacters && !loading"
+          color="primary"
+          variant="soft"
+          size="xs"
+          @click="showAllCharactersModal = true"
+        >
+          Voir tout ({{ characters.length }})
+        </UButton>
+      </div>
+    </template>
+
+    <!-- Contenu -->
+    <div class="flex flex-col lg:flex-row gap-4">
+      <!-- Zone gauche: Personnage actif -->
+      <div class="lg:w-48 shrink-0">
+        <p class="text-xs font-medium text-muted uppercase tracking-wide mb-2">Actif</p>
+        <div
+          class="flex items-center gap-3 p-3 rounded-lg border-2"
+          :class="
+            activeCharacter
+              ? 'bg-primary-50 dark:bg-primary-900/20 border-primary-300 dark:border-primary-600'
+              : 'bg-subtle border-dashed border-default'
+          "
+        >
+          <template v-if="activeCharacter">
+            <UAvatar
+              :src="activeCharacter.avatarUrl || undefined"
+              :alt="activeCharacter.name"
+              size="md"
+              class="ring-2 ring-primary-500 shrink-0"
+            />
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-semibold text-primary truncate">
+                {{ activeCharacter.name }}
+              </p>
+              <UBadge
+                :color="activeCharacter.characterType === 'pc' ? 'success' : 'warning'"
+                variant="soft"
+                size="xs"
+              >
+                {{ activeCharacter.characterType === 'pc' ? 'Joueur' : 'Non-joueur' }}
+              </UBadge>
+            </div>
+          </template>
+          <template v-else>
+            <div class="size-10 rounded-full bg-muted/50 flex items-center justify-center shrink-0">
+              <UIcon name="i-lucide-user-x" class="size-5 text-muted" />
+            </div>
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-medium text-secondary">Aucun</p>
+              <p class="text-xs text-muted">Attribution manuelle</p>
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <!-- Séparateur vertical (desktop) -->
+      <div class="hidden lg:block w-px bg-default self-stretch" />
+
+      <!-- Séparateur horizontal (mobile) -->
+      <div class="lg:hidden h-px bg-default" />
+
+      <!-- Zone droite: Sélection des personnages -->
+      <div class="flex-1 min-w-0">
+        <p class="text-xs font-medium text-muted uppercase tracking-wide mb-2">Sélection</p>
+
+        <!-- Loading state -->
+        <div
+          v-if="loading"
+          class="flex items-center justify-center py-6 rounded-lg border border-dashed border-default bg-subtle"
+        >
+          <UIcon name="i-lucide-loader-2" class="size-5 animate-spin text-muted" />
+          <span class="ml-2 text-sm text-muted">Chargement des personnages...</span>
+        </div>
+
+        <!-- No characters -->
+        <div
+          v-else-if="characters.length === 0"
+          class="flex flex-col items-center justify-center py-6 rounded-lg border border-dashed border-default bg-subtle text-center"
+        >
+          <UIcon name="i-lucide-users" class="size-8 text-muted mb-2" />
+          <p class="text-sm font-medium text-secondary">Aucun personnage synchronisé</p>
+          <p class="text-xs text-muted mt-1">
+            Connectez Foundry VTT pour synchroniser les personnages
+          </p>
+        </div>
+
+        <!-- Liste des personnages -->
+        <div
+          v-else
+          class="flex items-center gap-2 p-2 overflow-x-auto rounded-lg border border-default bg-subtle scrollbar-thin"
+        >
+          <!-- Option "Aucun personnage" -->
+          <button
+            class="flex items-center gap-2 px-3 py-2 rounded-lg transition-all border-2 shrink-0"
+            :class="
+              !activeCharacter
+                ? 'bg-primary-50 dark:bg-primary-900/30 border-primary-400 dark:border-primary-500'
+                : 'bg-elevated border-transparent hover:border-muted'
+            "
+            :disabled="updating"
+            @click="handleSelectCharacter(null)"
+          >
+            <div class="size-8 rounded-full bg-muted/50 flex items-center justify-center shrink-0">
+              <UIcon name="i-lucide-user-x" class="size-4 text-muted" />
+            </div>
+            <span class="text-xs font-medium whitespace-nowrap">Aucun</span>
+            <UIcon
+              v-if="!activeCharacter"
+              name="i-lucide-check"
+              class="size-4 text-primary-500"
+            />
+          </button>
+
+          <!-- Personnages visibles -->
+          <button
+            v-for="character in visibleCharacters"
+            :key="character.id"
+            class="flex items-center gap-2 px-3 py-2 rounded-lg transition-all border-2 shrink-0"
+            :class="
+              isActive(character)
+                ? 'bg-primary-50 dark:bg-primary-900/30 border-primary-400 dark:border-primary-500'
+                : 'bg-elevated border-transparent hover:border-muted'
+            "
+            :disabled="updating"
+            @click="handleSelectCharacter(character)"
+          >
+            <div class="relative shrink-0">
+              <UAvatar :src="character.avatarUrl || undefined" :alt="character.name" size="xs" />
+              <!-- Badge type -->
+              <div
+                class="absolute -bottom-0.5 -right-0.5 size-3.5 rounded-full flex items-center justify-center text-[8px] font-bold"
+                :class="
+                  character.characterType === 'pc'
+                    ? 'bg-success-500 text-white'
+                    : 'bg-warning-500 text-white'
+                "
+              >
+                {{ character.characterType === 'pc' ? 'J' : 'N' }}
+              </div>
+            </div>
+            <span class="text-xs font-medium whitespace-nowrap max-w-20 truncate">
+              {{ character.name }}
+            </span>
+            <UIcon
+              v-if="isActive(character)"
+              name="i-lucide-check"
+              class="size-4 text-primary-500"
+            />
+          </button>
+
+          <!-- Bouton "+N" inline si plus de personnages -->
+          <button
+            v-if="hasMoreCharacters"
+            class="flex items-center gap-1.5 px-3 py-2 rounded-lg transition-all border-2 border-transparent shrink-0 bg-elevated hover:border-muted"
+            @click="showAllCharactersModal = true"
+          >
+            <UIcon name="i-lucide-more-horizontal" class="size-4 text-muted" />
+            <span class="text-xs font-medium text-muted">+{{ hiddenCount }}</span>
+          </button>
+        </div>
+
+        <!-- Indicateur de mise à jour -->
+        <div v-if="updating" class="flex items-center gap-2 mt-2 text-xs text-muted">
+          <UIcon name="i-lucide-loader-2" class="size-4 animate-spin" />
+          <span>Changement en cours...</span>
+        </div>
+      </div>
+    </div>
+  </UCard>
+
+  <!-- Modal "Tous les personnages" -->
+  <UModal v-model:open="showAllCharactersModal" class="w-full max-w-2xl mx-4">
+    <template #content>
+      <UCard>
+        <template #header>
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-lg font-semibold text-primary">Tous les personnages</h3>
+              <p class="text-xs text-muted">{{ characters.length }} personnage(s) disponible(s)</p>
+            </div>
+            <UButton
+              color="neutral"
+              variant="ghost"
+              icon="i-lucide-x"
+              size="sm"
+              @click="showAllCharactersModal = false"
+            />
+          </div>
+        </template>
+
+        <div class="space-y-6">
+          <!-- Option "Aucun personnage" -->
+          <button
+            class="w-full flex items-center gap-3 p-3 rounded-lg transition-colors border-2"
+            :class="
+              !activeCharacter
+                ? 'bg-primary-50 dark:bg-primary-900/20 border-primary-300 dark:border-primary-600'
+                : 'bg-elevated border-default hover:border-muted'
+            "
+            :disabled="updating"
+            @click="handleSelectCharacter(null)"
+          >
+            <div
+              class="size-12 rounded-full bg-muted/50 flex items-center justify-center shrink-0"
+              :class="!activeCharacter ? 'ring-2 ring-primary-500' : ''"
+            >
+              <UIcon name="i-lucide-user-x" class="size-6 text-muted" />
+            </div>
+            <div class="text-left flex-1">
+              <p class="text-sm font-medium">Aucun personnage</p>
+              <p class="text-xs text-muted">Les jets seront attribués manuellement</p>
+            </div>
+            <UIcon
+              v-if="!activeCharacter"
+              name="i-lucide-check-circle"
+              class="size-5 text-primary-500"
+            />
+          </button>
+
+          <!-- PJs -->
+          <div v-if="groupedCharacters.pcs.length > 0">
+            <div class="flex items-center gap-2 mb-3">
+              <UIcon name="i-lucide-sword" class="size-4 text-success-500" />
+              <span class="text-sm font-semibold text-primary">Personnages joueurs (PJ)</span>
+              <UBadge color="success" variant="soft" size="xs">{{
+                groupedCharacters.pcs.length
+              }}</UBadge>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <button
+                v-for="character in groupedCharacters.pcs"
+                :key="character.id"
+                class="flex flex-col items-center gap-2 p-3 rounded-lg transition-colors border-2"
+                :class="
+                  isActive(character)
+                    ? 'bg-primary-50 dark:bg-primary-900/20 border-primary-300 dark:border-primary-600'
+                    : 'bg-elevated border-default hover:border-muted'
+                "
+                :disabled="updating"
+                @click="handleSelectCharacter(character)"
+              >
+                <div class="relative">
+                  <UAvatar
+                    :src="character.avatarUrl || undefined"
+                    :alt="character.name"
+                    size="lg"
+                    :class="isActive(character) ? 'ring-2 ring-primary-500' : ''"
+                  />
+                  <div
+                    v-if="isActive(character)"
+                    class="absolute -bottom-1 -right-1 size-5 rounded-full bg-primary-500 flex items-center justify-center"
+                  >
+                    <UIcon name="i-lucide-check" class="size-3 text-white" />
+                  </div>
+                </div>
+                <span class="text-xs font-medium text-center truncate w-full">
+                  {{ character.name }}
+                </span>
+              </button>
+            </div>
+          </div>
+
+          <!-- PNJs -->
+          <div v-if="groupedCharacters.npcs.length > 0">
+            <div class="flex items-center gap-2 mb-3">
+              <UIcon name="i-lucide-skull" class="size-4 text-warning-500" />
+              <span class="text-sm font-semibold text-primary">Personnages non-joueurs (PNJ)</span>
+              <UBadge color="warning" variant="soft" size="xs">{{
+                groupedCharacters.npcs.length
+              }}</UBadge>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <button
+                v-for="character in groupedCharacters.npcs"
+                :key="character.id"
+                class="flex flex-col items-center gap-2 p-3 rounded-lg transition-colors border-2"
+                :class="
+                  isActive(character)
+                    ? 'bg-primary-50 dark:bg-primary-900/20 border-primary-300 dark:border-primary-600'
+                    : 'bg-elevated border-default hover:border-muted'
+                "
+                :disabled="updating"
+                @click="handleSelectCharacter(character)"
+              >
+                <div class="relative">
+                  <UAvatar
+                    :src="character.avatarUrl || undefined"
+                    :alt="character.name"
+                    size="lg"
+                    :class="isActive(character) ? 'ring-2 ring-primary-500' : ''"
+                  />
+                  <div
+                    v-if="isActive(character)"
+                    class="absolute -bottom-1 -right-1 size-5 rounded-full bg-primary-500 flex items-center justify-center"
+                  >
+                    <UIcon name="i-lucide-check" class="size-3 text-white" />
+                  </div>
+                </div>
+                <span class="text-xs font-medium text-center truncate w-full">
+                  {{ character.name }}
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <template #footer>
+          <div class="flex items-center justify-between">
+            <p class="text-xs text-muted">
+              Le personnage actif recevra automatiquement les jets de dés
+            </p>
+            <UButton
+              color="neutral"
+              variant="soft"
+              label="Fermer"
+              @click="showAllCharactersModal = false"
+            />
+          </div>
+        </template>
+      </UCard>
+    </template>
+  </UModal>
+</template>
+
+<style scoped>
+/* Scrollbar fine pour la liste horizontale */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-muted) transparent;
+}
+.scrollbar-thin::-webkit-scrollbar {
+  height: 4px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: var(--color-muted);
+  border-radius: 2px;
+}
+</style>

@@ -51,10 +51,54 @@ class OAuthService {
       if (!authProvider.user) {
         logger.warn(
           { authProviderId: authProvider.id, userId: authProvider.userId, provider: data.provider },
-          'Orphan AuthProvider found - deleting and creating fresh user'
+          'Orphan AuthProvider found - attempting recovery'
         )
-        await authProvider.delete()
-        // Fall through to create new user
+
+        // Try to find existing user by email before creating a new one
+        let existingUser: User | null = null
+        if (data.email) {
+          existingUser = await User.query().where('email', data.email.toLowerCase()).first()
+        }
+
+        if (existingUser) {
+          // Reassociate the AuthProvider with the existing user
+          logger.info(
+            {
+              authProviderId: authProvider.id,
+              oldUserId: authProvider.userId,
+              newUserId: existingUser.id,
+              email: data.email,
+              provider: data.provider,
+            },
+            'Orphan AuthProvider recovered - reassociating with existing user by email'
+          )
+
+          authProvider.userId = existingUser.id
+          if (data.accessToken) {
+            await authProvider.updateTokens(
+              data.accessToken,
+              data.refreshToken,
+              data.tokenExpiresAt
+            )
+          }
+          await authProvider.save()
+
+          // Update user avatar if changed
+          if (data.avatarUrl && existingUser.avatarUrl !== data.avatarUrl) {
+            existingUser.avatarUrl = data.avatarUrl
+            await existingUser.save()
+          }
+
+          return { user: existingUser, isNew: false, authProvider }
+        } else {
+          // No existing user found, delete orphan and create new
+          logger.info(
+            { authProviderId: authProvider.id, provider: data.provider },
+            'No existing user found for orphan AuthProvider - creating fresh user'
+          )
+          await authProvider.delete()
+          // Fall through to create new user
+        }
       } else {
         // Update tokens if provided
         if (data.accessToken) {

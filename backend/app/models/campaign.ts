@@ -39,6 +39,10 @@ class Campaign extends BaseModel {
   @column.dateTime()
   declare lastVttSyncAt: DateTime | null
 
+  // GM incarnation - currently active character for the GM
+  @column()
+  declare gmActiveCharacterId: string | null
+
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
 
@@ -80,6 +84,10 @@ class Campaign extends BaseModel {
 
   @hasMany(() => DiceRoll)
   declare diceRolls: HasMany<typeof DiceRoll>
+
+  // GM active character relation
+  @belongsTo(() => Character, { foreignKey: 'gmActiveCharacterId' })
+  declare gmActiveCharacter: BelongsTo<typeof Character>
 }
 
 export { Campaign as campaign }

@@ -197,7 +197,7 @@ export class ActionExecutor {
         diceData.formula,
         diceData.result,
         `🎲 Test de dé critique: ${diceData.result}`,
-        { characterId: diceData.characterId }
+        { characterId: diceData.characterId ?? undefined }
       )
 
       if (!originalRollResult.success) {
@@ -226,7 +226,7 @@ export class ActionExecutor {
         diceData.formula,
         invertedResult,
         `${trollMessage}\n\n(Résultat original: ${diceData.result} → Inversé: ${invertedResult})`,
-        { characterId: diceData.characterId }
+        { characterId: diceData.characterId ?? undefined }
       )
 
       if (!invertedRollResult.success) {
@@ -274,7 +274,7 @@ export class ActionExecutor {
       diceData.formula,
       invertedResult,
       `${trollMessage}\n\n(Résultat original: ${diceData.result} → Inversé: ${invertedResult})`,
-      { characterId: diceData.characterId }
+      { characterId: diceData.characterId ?? undefined }
     )
 
     if (!rollResult.success) {
