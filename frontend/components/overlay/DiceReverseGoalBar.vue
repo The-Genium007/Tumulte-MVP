@@ -218,9 +218,9 @@ onMounted(() => {
   shakeInterval = setInterval(updateShake, 50) // 20fps shake
 
   // Initialize audio elements
-  progressAudio.value = new Audio('/sounds/dice-reverse/progress.mp3')
+  progressAudio.value = new Audio('/audio/dice-reverse/progress.wav')
   progressAudio.value.volume = 0.3
-  successAudio.value = new Audio('/sounds/dice-reverse/success.mp3')
+  successAudio.value = new Audio('/audio/dice-reverse/succes.wav')
   successAudio.value.volume = 0.5
 })
 

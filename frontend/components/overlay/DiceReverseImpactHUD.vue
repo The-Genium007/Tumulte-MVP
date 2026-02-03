@@ -146,7 +146,7 @@ watch(
 
 onMounted(() => {
   // Initialize audio
-  impactAudio.value = new Audio('/sounds/dice-reverse/impact.mp3')
+  impactAudio.value = new Audio('/audio/dice-reverse/impact.wav')
   impactAudio.value.volume = 0.6
 })
 
