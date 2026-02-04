@@ -118,6 +118,24 @@ generate_prometheus_config() {
     log_success "prometheus.yml généré avec ENV_SUFFIX=$ENV_SUFFIX"
 }
 
+# Générer datasources.yml à partir du template
+generate_grafana_datasources() {
+    log_info "Génération de datasources.yml pour ENV_SUFFIX=$ENV_SUFFIX..."
+
+    DATASOURCES_TEMPLATE="grafana/provisioning/datasources/datasources.yml.template"
+    DATASOURCES_CONFIG="grafana/provisioning/datasources/datasources.yml"
+
+    if [[ ! -f "$DATASOURCES_TEMPLATE" ]]; then
+        log_error "Template $DATASOURCES_TEMPLATE non trouvé!"
+        exit 1
+    fi
+
+    # Remplacer le placeholder par la valeur réelle de ENV_SUFFIX
+    sed "s/ENV_SUFFIX_PLACEHOLDER/${ENV_SUFFIX}/g" "$DATASOURCES_TEMPLATE" > "$DATASOURCES_CONFIG"
+
+    log_success "datasources.yml généré avec URL: http://tumulte-prometheus-${ENV_SUFFIX}:9090"
+}
+
 # Générer les targets Prometheus dynamiquement
 generate_prometheus_targets() {
     log_info "Génération des targets Prometheus pour ENV_SUFFIX=$ENV_SUFFIX..."
@@ -185,6 +203,7 @@ case $ACTION in
         log_info "Démarrage monitoring (ENV_SUFFIX=$ENV_SUFFIX)..."
         generate_prometheus_config
         generate_prometheus_targets
+        generate_grafana_datasources
         prepare_alertmanager_config
 
         export ENV_SUFFIX
@@ -216,6 +235,7 @@ case $ACTION in
         $DOCKER_COMPOSE down
         generate_prometheus_config
         generate_prometheus_targets
+        generate_grafana_datasources
         prepare_alertmanager_config
         $DOCKER_COMPOSE up -d
         log_success "Stack redémarrée"

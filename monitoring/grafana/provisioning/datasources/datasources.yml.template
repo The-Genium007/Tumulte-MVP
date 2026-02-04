@@ -1,14 +1,14 @@
 # =============================================================================
 # Grafana Datasources - Auto-provisioning
 # =============================================================================
-# CE FICHIER EST GÉNÉRÉ AUTOMATIQUEMENT par scripts/deploy.sh
-# Ne pas modifier manuellement - les changements seront écrasés
+# CE FICHIER EST UN TEMPLATE - Ne pas modifier datasources.yml directement
+#
+# Le fichier datasources.yml est généré automatiquement par scripts/deploy.sh
+# selon l'environnement (staging/prod).
 #
 # Pour régénérer:
 #   ./scripts/deploy.sh staging
 #   ./scripts/deploy.sh prod
-#
-# ENV_SUFFIX: staging
 # =============================================================================
 
 apiVersion: 1
@@ -19,9 +19,8 @@ datasources:
     type: prometheus
     access: proxy
     # URL utilise le container_name avec suffixe d'environnement
-    # Staging: tumulte-prometheus-staging:9090
-    # Prod: tumulte-prometheus-prod:9090
-    url: http://tumulte-prometheus-staging:9090
+    # Sera remplacé par: tumulte-prometheus-staging ou tumulte-prometheus-prod
+    url: http://tumulte-prometheus-ENV_SUFFIX_PLACEHOLDER:9090
     isDefault: true
     editable: false
     jsonData:
