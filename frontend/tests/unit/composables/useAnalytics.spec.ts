@@ -78,9 +78,11 @@ describe('useAnalytics Composable', () => {
     test('should accept custom event names', () => {
       const { track } = useAnalytics()
 
+      // eslint-disable-next-line camelcase -- PostHog uses snake_case for properties
       track('custom_event', { custom_prop: 'value' })
 
       expect(mockPosthog.capture).toHaveBeenCalledWith('custom_event', {
+        // eslint-disable-next-line camelcase -- PostHog uses snake_case for properties
         custom_prop: 'value',
       })
     })
@@ -90,9 +92,11 @@ describe('useAnalytics Composable', () => {
     test('should call posthog.setPersonProperties', () => {
       const { setUserProperties } = useAnalytics()
 
+      // eslint-disable-next-line camelcase -- PostHog uses snake_case for properties
       setUserProperties({ campaigns_count: 5, tier: 'premium' })
 
       expect(mockPosthog.setPersonProperties).toHaveBeenCalledWith({
+        // eslint-disable-next-line camelcase -- PostHog uses snake_case for properties
         campaigns_count: 5,
         tier: 'premium',
       })
@@ -103,9 +107,11 @@ describe('useAnalytics Composable', () => {
     test('should call posthog.setPersonPropertiesOnce', () => {
       const { setUserPropertiesOnce } = useAnalytics()
 
+      // eslint-disable-next-line camelcase -- PostHog uses snake_case for properties
       setUserPropertiesOnce({ first_campaign_at: '2024-01-01' })
 
       expect(mockPosthog.setPersonPropertiesOnce).toHaveBeenCalledWith({
+        // eslint-disable-next-line camelcase -- PostHog uses snake_case for properties
         first_campaign_at: '2024-01-01',
       })
     })
