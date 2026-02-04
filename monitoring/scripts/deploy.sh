@@ -118,6 +118,28 @@ generate_prometheus_config() {
     log_success "prometheus.yml généré avec ENV_SUFFIX=$ENV_SUFFIX"
 }
 
+# Ensure dashboards directory exists
+ensure_dashboards_directory() {
+    log_info "Vérification du répertoire des dashboards..."
+
+    DASHBOARDS_DIR="grafana/dashboards"
+
+    if [[ ! -d "$DASHBOARDS_DIR" ]]; then
+        log_warning "Répertoire $DASHBOARDS_DIR non trouvé, création..."
+        mkdir -p "$DASHBOARDS_DIR"
+        log_success "Répertoire créé: $DASHBOARDS_DIR"
+    fi
+
+    # Check if there are any dashboard files
+    DASHBOARD_COUNT=$(find "$DASHBOARDS_DIR" -name "*.json" 2>/dev/null | wc -l)
+    if [[ "$DASHBOARD_COUNT" -eq 0 ]]; then
+        log_warning "Aucun fichier dashboard (.json) trouvé dans $DASHBOARDS_DIR"
+        log_warning "Les dashboards ne seront pas provisionnés automatiquement"
+    else
+        log_success "$DASHBOARD_COUNT dashboard(s) trouvé(s) dans $DASHBOARDS_DIR"
+    fi
+}
+
 # Générer datasources.yml à partir du template
 generate_grafana_datasources() {
     log_info "Génération de datasources.yml pour ENV_SUFFIX=$ENV_SUFFIX..."
@@ -204,6 +226,7 @@ case $ACTION in
         generate_prometheus_config
         generate_prometheus_targets
         generate_grafana_datasources
+        ensure_dashboards_directory
         prepare_alertmanager_config
 
         export ENV_SUFFIX
@@ -236,6 +259,7 @@ case $ACTION in
         generate_prometheus_config
         generate_prometheus_targets
         generate_grafana_datasources
+        ensure_dashboards_directory
         prepare_alertmanager_config
         $DOCKER_COMPOSE up -d
         log_success "Stack redémarrée"
