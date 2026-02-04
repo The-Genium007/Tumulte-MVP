@@ -119,18 +119,23 @@ class AuthProvider extends BaseModel {
 
   /**
    * Create a new auth provider with encrypted tokens
+   * @param data - Provider data including tokens
+   * @param options - Optional transaction client for atomic operations
    */
-  static async createWithEncryptedTokens(data: {
-    userId: string
-    provider: AuthProviderType
-    providerUserId: string
-    providerEmail?: string | null
-    providerDisplayName?: string | null
-    accessToken?: string
-    refreshToken?: string
-    tokenExpiresAt?: DateTime
-    providerData?: Record<string, unknown>
-  }): Promise<AuthProvider> {
+  static async createWithEncryptedTokens(
+    data: {
+      userId: string
+      provider: AuthProviderType
+      providerUserId: string
+      providerEmail?: string | null
+      providerDisplayName?: string | null
+      accessToken?: string
+      refreshToken?: string
+      tokenExpiresAt?: DateTime
+      providerData?: Record<string, unknown>
+    },
+    options?: { client?: any }
+  ): Promise<AuthProvider> {
     const authProvider = new AuthProvider()
     authProvider.userId = data.userId
     authProvider.provider = data.provider
@@ -147,6 +152,11 @@ class AuthProvider extends BaseModel {
     }
     if (data.tokenExpiresAt) {
       authProvider.tokenExpiresAt = data.tokenExpiresAt
+    }
+
+    // Use transaction if provided
+    if (options?.client) {
+      authProvider.useTransaction(options.client)
     }
 
     await authProvider.save()

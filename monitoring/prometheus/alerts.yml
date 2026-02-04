@@ -1,0 +1,197 @@
+# =============================================================================
+# Alerting Rules - Tumulte
+# =============================================================================
+# Ces règles déclenchent des alertes quand certaines conditions sont remplies.
+# Les alertes sont envoyées à Alertmanager qui les route (Discord, email, etc.)
+# =============================================================================
+
+groups:
+  # ---------------------------------------------------------------------------
+  # ALERTES APPLICATION - Tumulte Backend/Frontend
+  # ---------------------------------------------------------------------------
+  - name: tumulte_application
+    rules:
+      # Service down
+      - alert: TumulteBackendDown
+        expr: up{job="tumulte-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Backend Tumulte indisponible"
+          description: "Le backend ne répond plus depuis 1 minute."
+
+      - alert: TumulteFrontendDown
+        expr: up{job="tumulte-frontend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Frontend Tumulte indisponible"
+          description: "Le frontend ne répond plus depuis 1 minute."
+
+      # Latence élevée
+      - alert: HighRequestLatency
+        expr: histogram_quantile(0.95, rate(tumulte_http_request_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Latence HTTP élevée"
+          description: "95% des requêtes prennent plus de 1 seconde (p95: {{ $value }}s)"
+
+      # Taux d'erreurs élevé
+      - alert: HighErrorRate
+        expr: |
+          (
+            sum(rate(tumulte_http_requests_total{status_code=~"5.."}[5m]))
+            /
+            sum(rate(tumulte_http_requests_total[5m]))
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Taux d'erreurs HTTP élevé"
+          description: "Plus de 5% des requêtes sont en erreur 5xx ({{ $value | humanizePercentage }})"
+
+      # WebSocket connections spike
+      - alert: WebSocketConnectionsHigh
+        expr: tumulte_websocket_connections_total > 1000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Nombre élevé de connexions WebSocket"
+          description: "{{ $value }} connexions WebSocket actives"
+
+  # ---------------------------------------------------------------------------
+  # ALERTES INFRASTRUCTURE - Système
+  # ---------------------------------------------------------------------------
+  - name: infrastructure
+    rules:
+      # CPU élevé
+      - alert: HighCpuUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Utilisation CPU élevée"
+          description: "CPU à {{ $value }}% depuis 10 minutes sur {{ $labels.instance }}"
+
+      # Mémoire faible
+      - alert: LowMemoryAvailable
+        expr: (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100 < 10
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Mémoire disponible faible"
+          description: "Seulement {{ $value }}% de mémoire disponible sur {{ $labels.instance }}"
+
+      # Disque presque plein
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes{fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes) * 100 < 15
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Espace disque faible"
+          description: "{{ $value }}% d'espace restant sur {{ $labels.mountpoint }}"
+
+      - alert: DiskSpaceCritical
+        expr: (node_filesystem_avail_bytes{fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes) * 100 < 5
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Espace disque critique"
+          description: "Seulement {{ $value }}% d'espace restant sur {{ $labels.mountpoint }}"
+
+  # ---------------------------------------------------------------------------
+  # ALERTES POSTGRESQL
+  # ---------------------------------------------------------------------------
+  - name: postgresql
+    rules:
+      - alert: PostgresDown
+        expr: pg_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL indisponible"
+          description: "La base de données ne répond plus."
+
+      - alert: PostgresConnectionsHigh
+        expr: pg_stat_activity_count > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Nombre élevé de connexions PostgreSQL"
+          description: "{{ $value }} connexions actives (limite généralement à 100)"
+
+      - alert: PostgresSlowQueries
+        expr: rate(pg_stat_activity_max_tx_duration{state="active"}[5m]) > 60
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Requêtes PostgreSQL lentes"
+          description: "Des requêtes prennent plus de 60 secondes"
+
+  # ---------------------------------------------------------------------------
+  # ALERTES REDIS
+  # ---------------------------------------------------------------------------
+  - name: redis
+    rules:
+      - alert: RedisDown
+        expr: redis_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis indisponible"
+          description: "Le cache Redis ne répond plus."
+
+      - alert: RedisMemoryHigh
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Mémoire Redis élevée"
+          description: "Redis utilise {{ $value | humanizePercentage }} de sa mémoire max"
+
+  # ---------------------------------------------------------------------------
+  # ALERTES DOCKER/CONTAINERS
+  # ---------------------------------------------------------------------------
+  - name: containers
+    rules:
+      - alert: ContainerHighCpu
+        expr: rate(container_cpu_usage_seconds_total{name=~"tumulte.*"}[5m]) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Container CPU élevé"
+          description: "Container {{ $labels.name }} utilise {{ $value }}% CPU"
+
+      - alert: ContainerHighMemory
+        expr: container_memory_usage_bytes{name=~"tumulte.*"} / container_spec_memory_limit_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Container mémoire élevée"
+          description: "Container {{ $labels.name }} utilise {{ $value | humanizePercentage }} de sa limite mémoire"
+
+      - alert: ContainerRestarting
+        expr: increase(container_restart_count{name=~"tumulte.*"}[1h]) > 3
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Container qui redémarre fréquemment"
+          description: "Container {{ $labels.name }} a redémarré {{ $value }} fois en 1h"

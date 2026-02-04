@@ -1,5 +1,7 @@
 import { DateTime } from 'luxon'
+import db from '@adonisjs/lucid/services/db'
 import logger from '@adonisjs/core/services/logger'
+import { Sentry } from '#config/sentry'
 import User from '#models/user'
 import AuthProvider, { type AuthProviderType } from '#models/auth_provider'
 import { streamer as Streamer } from '#models/streamer'
@@ -26,6 +28,9 @@ class OAuthService {
    * 3. If no, check if a user exists with this email
    * 4. If yes, link the provider to existing user
    * 5. If no, create a new user and link the provider
+   *
+   * IMPORTANT: Uses database transaction to prevent race conditions
+   * that could create duplicate users on concurrent OAuth requests
    */
   async findOrCreateUser(data: {
     provider: AuthProviderType
@@ -38,41 +43,90 @@ class OAuthService {
     tokenExpiresAt?: DateTime
     providerData?: Record<string, unknown>
   }): Promise<{ user: User; isNew: boolean; authProvider: AuthProvider }> {
-    // 1. Check if provider is already linked to a user
-    let authProvider = await AuthProvider.query()
-      .where('provider', data.provider)
-      .where('provider_user_id', data.providerId)
-      .preload('user')
-      .first()
+    // Breadcrumb pour tracer le début du flow OAuth
+    Sentry.addBreadcrumb({
+      category: 'auth',
+      message: `findOrCreateUser started for ${data.provider}:${data.providerId}`,
+      level: 'info',
+      data: { email: data.email, provider: data.provider },
+    })
 
-    if (authProvider) {
-      // Handle orphan auth provider (user was deleted but provider record remains)
-      if (!authProvider.user) {
-        logger.warn(
-          { authProviderId: authProvider.id, userId: authProvider.userId, provider: data.provider },
-          'Orphan AuthProvider found - attempting recovery'
-        )
+    // Utiliser une transaction pour éviter les race conditions
+    return await db.transaction(async (trx) => {
+      // 1. Check if provider is already linked to a user
+      let authProvider = await AuthProvider.query({ client: trx })
+        .where('provider', data.provider)
+        .where('provider_user_id', data.providerId)
+        .preload('user')
+        .first()
 
-        // Try to find existing user by email before creating a new one
-        let existingUser: User | null = null
-        if (data.email) {
-          existingUser = await User.query().where('email', data.email.toLowerCase()).first()
-        }
-
-        if (existingUser) {
-          // Reassociate the AuthProvider with the existing user
-          logger.info(
+      if (authProvider) {
+        // Handle orphan auth provider (user was deleted but provider record remains)
+        if (!authProvider.user) {
+          Sentry.addBreadcrumb({
+            category: 'auth',
+            message: `Orphan AuthProvider detected for ${data.provider}`,
+            level: 'warning',
+            data: { authProviderId: authProvider.id, userId: authProvider.userId },
+          })
+          logger.warn(
             {
               authProviderId: authProvider.id,
-              oldUserId: authProvider.userId,
-              newUserId: existingUser.id,
-              email: data.email,
+              userId: authProvider.userId,
               provider: data.provider,
             },
-            'Orphan AuthProvider recovered - reassociating with existing user by email'
+            'Orphan AuthProvider found - attempting recovery'
           )
 
-          authProvider.userId = existingUser.id
+          // Try to find existing user by email before creating a new one
+          let existingUser: User | null = null
+          if (data.email) {
+            existingUser = await User.query({ client: trx })
+              .where('email', data.email.toLowerCase())
+              .first()
+          }
+
+          if (existingUser) {
+            // Reassociate the AuthProvider with the existing user
+            logger.info(
+              {
+                authProviderId: authProvider.id,
+                oldUserId: authProvider.userId,
+                newUserId: existingUser.id,
+                email: data.email,
+                provider: data.provider,
+              },
+              'Orphan AuthProvider recovered - reassociating with existing user by email'
+            )
+
+            authProvider.userId = existingUser.id
+            if (data.accessToken) {
+              await authProvider.updateTokens(
+                data.accessToken,
+                data.refreshToken,
+                data.tokenExpiresAt
+              )
+            }
+            await authProvider.save()
+
+            // Update user avatar if changed
+            if (data.avatarUrl && existingUser.avatarUrl !== data.avatarUrl) {
+              existingUser.avatarUrl = data.avatarUrl
+              await existingUser.save()
+            }
+
+            return { user: existingUser, isNew: false, authProvider }
+          } else {
+            // No existing user found, delete orphan and create new
+            logger.info(
+              { authProviderId: authProvider.id, provider: data.provider },
+              'No existing user found for orphan AuthProvider - creating fresh user'
+            )
+            await authProvider.delete()
+            // Fall through to create new user
+          }
+        } else {
+          // Update tokens if provided
           if (data.accessToken) {
             await authProvider.updateTokens(
               data.accessToken,
@@ -80,115 +134,178 @@ class OAuthService {
               data.tokenExpiresAt
             )
           }
-          await authProvider.save()
 
           // Update user avatar if changed
-          if (data.avatarUrl && existingUser.avatarUrl !== data.avatarUrl) {
-            existingUser.avatarUrl = data.avatarUrl
-            await existingUser.save()
+          if (data.avatarUrl && authProvider.user.avatarUrl !== data.avatarUrl) {
+            authProvider.user.avatarUrl = data.avatarUrl
+            await authProvider.user.save()
           }
 
-          return { user: existingUser, isNew: false, authProvider }
-        } else {
-          // No existing user found, delete orphan and create new
+          Sentry.addBreadcrumb({
+            category: 'auth',
+            message: `Existing user logged in via OAuth ${data.provider}`,
+            level: 'info',
+            data: { userId: authProvider.userId },
+          })
           logger.info(
-            { authProviderId: authProvider.id, provider: data.provider },
-            'No existing user found for orphan AuthProvider - creating fresh user'
+            { userId: authProvider.userId, provider: data.provider },
+            'Existing user logged in via OAuth'
           )
-          await authProvider.delete()
-          // Fall through to create new user
+          return { user: authProvider.user, isNew: false, authProvider }
         }
-      } else {
-        // Update tokens if provided
-        if (data.accessToken) {
-          await authProvider.updateTokens(data.accessToken, data.refreshToken, data.tokenExpiresAt)
+      }
+
+      // 2. Check if a user exists with this email
+      let user: User | null = null
+      let isNew = false
+
+      if (data.email) {
+        user = await User.query({ client: trx }).where('email', data.email.toLowerCase()).first()
+      }
+
+      if (user) {
+        // 3. Link provider to existing user
+        Sentry.addBreadcrumb({
+          category: 'auth',
+          message: `Linking ${data.provider} to existing user by email match`,
+          level: 'info',
+          data: { userId: user.id, email: data.email },
+        })
+
+        try {
+          authProvider = await AuthProvider.createWithEncryptedTokens(
+            {
+              userId: user.id,
+              provider: data.provider,
+              providerUserId: data.providerId,
+              providerEmail: data.email,
+              accessToken: data.accessToken,
+              refreshToken: data.refreshToken,
+              tokenExpiresAt: data.tokenExpiresAt,
+              providerData: data.providerData,
+            },
+            { client: trx }
+          )
+        } catch (error: unknown) {
+          // Handle unique constraint violation (race condition)
+          if (error && typeof error === 'object' && 'code' in error && error.code === '23505') {
+            Sentry.captureException(error, {
+              tags: { type: 'duplicate_provider_race_condition', provider: data.provider },
+              extra: { providerId: data.providerId, email: data.email },
+            })
+            logger.error(
+              {
+                event: 'oauth_duplicate_provider',
+                provider: data.provider,
+                providerId: data.providerId,
+              },
+              'Race condition: duplicate provider detected, fetching existing'
+            )
+
+            // Fetch the existing provider that was created by concurrent request
+            const existing = await AuthProvider.query({ client: trx })
+              .where('provider', data.provider)
+              .where('provider_user_id', data.providerId)
+              .preload('user')
+              .firstOrFail()
+            return { user: existing.user, isNew: false, authProvider: existing }
+          }
+          throw error
         }
 
-        // Update user avatar if changed
-        if (data.avatarUrl && authProvider.user.avatarUrl !== data.avatarUrl) {
-          authProvider.user.avatarUrl = data.avatarUrl
-          await authProvider.user.save()
+        // Update avatar if user doesn't have one
+        if (data.avatarUrl && !user.avatarUrl) {
+          user.avatarUrl = data.avatarUrl
+          user.useTransaction(trx)
+          await user.save()
+        }
+
+        // Mark email as verified (OAuth = verified identity)
+        if (!user.emailVerifiedAt) {
+          user.useTransaction(trx)
+          await user.markEmailAsVerified()
         }
 
         logger.info(
-          { userId: authProvider.userId, provider: data.provider },
-          'Existing user logged in via OAuth'
+          { userId: user.id, provider: data.provider },
+          'OAuth provider linked to existing user'
         )
-        return { user: authProvider.user, isNew: false, authProvider }
-      }
-    }
+      } else {
+        // 4. Create new user
+        Sentry.addBreadcrumb({
+          category: 'auth',
+          message: `Creating new user via ${data.provider}`,
+          level: 'info',
+          data: { email: data.email, displayName: data.displayName },
+        })
 
-    // 2. Check if a user exists with this email
-    let user: User | null = null
-    let isNew = false
-
-    if (data.email) {
-      user = await User.query().where('email', data.email.toLowerCase()).first()
-    }
-
-    if (user) {
-      // 3. Link provider to existing user
-      authProvider = await AuthProvider.createWithEncryptedTokens({
-        userId: user.id,
-        provider: data.provider,
-        providerUserId: data.providerId,
-        providerEmail: data.email,
-        accessToken: data.accessToken,
-        refreshToken: data.refreshToken,
-        tokenExpiresAt: data.tokenExpiresAt,
-        providerData: data.providerData,
-      })
-
-      // Update avatar if user doesn't have one
-      if (data.avatarUrl && !user.avatarUrl) {
-        user.avatarUrl = data.avatarUrl
-        await user.save()
-      }
-
-      // Mark email as verified (OAuth = verified identity)
-      if (!user.emailVerifiedAt) {
-        await user.markEmailAsVerified()
-      }
-
-      logger.info(
-        { userId: user.id, provider: data.provider },
-        'OAuth provider linked to existing user'
-      )
-    } else {
-      // 4. Create new user
-      user = await User.create({
-        email: data.email?.toLowerCase() ?? null,
-        displayName: data.displayName,
-        avatarUrl: data.avatarUrl ?? null,
-        tier: 'free',
-        emailVerifiedAt: data.email ? DateTime.now() : null, // OAuth = verified
-      })
-
-      authProvider = await AuthProvider.createWithEncryptedTokens({
-        userId: user.id,
-        provider: data.provider,
-        providerUserId: data.providerId,
-        providerEmail: data.email,
-        accessToken: data.accessToken,
-        refreshToken: data.refreshToken,
-        tokenExpiresAt: data.tokenExpiresAt,
-        providerData: data.providerData,
-      })
-
-      isNew = true
-      logger.info({ userId: user.id, provider: data.provider }, 'New user created via OAuth')
-
-      // Send welcome email for new users (non-blocking)
-      const newUser = user
-      welcomeEmailService.sendWelcomeEmail(newUser).catch((error) => {
-        logger.error(
-          { userId: newUser.id, error },
-          'Failed to send welcome email on OAuth registration'
+        user = await User.create(
+          {
+            email: data.email?.toLowerCase() ?? null,
+            displayName: data.displayName,
+            avatarUrl: data.avatarUrl ?? null,
+            tier: 'free',
+            emailVerifiedAt: data.email ? DateTime.now() : null, // OAuth = verified
+          },
+          { client: trx }
         )
-      })
-    }
 
-    return { user, isNew, authProvider }
+        try {
+          authProvider = await AuthProvider.createWithEncryptedTokens(
+            {
+              userId: user.id,
+              provider: data.provider,
+              providerUserId: data.providerId,
+              providerEmail: data.email,
+              accessToken: data.accessToken,
+              refreshToken: data.refreshToken,
+              tokenExpiresAt: data.tokenExpiresAt,
+              providerData: data.providerData,
+            },
+            { client: trx }
+          )
+        } catch (error: unknown) {
+          // Handle unique constraint violation (race condition)
+          if (error && typeof error === 'object' && 'code' in error && error.code === '23505') {
+            Sentry.captureException(error, {
+              tags: { type: 'duplicate_provider_race_condition', provider: data.provider },
+              extra: { providerId: data.providerId, email: data.email, newUserId: user.id },
+            })
+            logger.error(
+              {
+                event: 'oauth_duplicate_provider_new_user',
+                provider: data.provider,
+                providerId: data.providerId,
+              },
+              'Race condition: duplicate provider on new user creation'
+            )
+
+            // Rollback will happen automatically, fetch the winner
+            const existing = await AuthProvider.query({ client: trx })
+              .where('provider', data.provider)
+              .where('provider_user_id', data.providerId)
+              .preload('user')
+              .firstOrFail()
+            return { user: existing.user, isNew: false, authProvider: existing }
+          }
+          throw error
+        }
+
+        isNew = true
+        logger.info({ userId: user.id, provider: data.provider }, 'New user created via OAuth')
+
+        // Send welcome email for new users (non-blocking, outside transaction)
+        const newUser = user
+        welcomeEmailService.sendWelcomeEmail(newUser).catch((error) => {
+          logger.error(
+            { userId: newUser.id, error },
+            'Failed to send welcome email on OAuth registration'
+          )
+        })
+      }
+
+      return { user, isNew, authProvider }
+    }) // End of transaction
   }
 
   /**
@@ -331,8 +448,36 @@ class OAuthService {
     let streamer = await Streamer.query().where('twitch_user_id', twitchUser.id).first()
 
     if (streamer) {
-      // Update existing streamer
-      streamer.userId = user.id
+      // SECURITY: Prevent ownership change of existing Streamer
+      // This could happen if race condition created duplicate users
+      if (streamer.userId !== user.id) {
+        const error = new Error(
+          `Streamer ownership conflict: Twitch account ${twitchUser.id} already owned by user ${streamer.userId}, attempted by user ${user.id}`
+        )
+        Sentry.captureException(error, {
+          tags: { type: 'streamer_ownership_conflict' },
+          extra: {
+            streamerId: streamer.id,
+            currentOwnerId: streamer.userId,
+            attemptedOwnerId: user.id,
+            twitchUserId: twitchUser.id,
+            twitchLogin: twitchUser.login,
+          },
+        })
+        logger.error(
+          {
+            event: 'streamer_ownership_conflict',
+            streamerId: streamer.id,
+            currentOwnerId: streamer.userId,
+            attemptedOwnerId: user.id,
+            twitchUserId: twitchUser.id,
+          },
+          'Attempted to change Streamer ownership - blocked for security'
+        )
+        throw error
+      }
+
+      // Update existing streamer (same owner)
       streamer.twitchLogin = twitchUser.login
       streamer.twitchDisplayName = twitchUser.displayName
       streamer.profileImageUrl = twitchUser.profile_image_url

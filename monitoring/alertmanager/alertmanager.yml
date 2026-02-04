@@ -1,0 +1,68 @@
+# =============================================================================
+# Alertmanager Configuration - Tumulte
+# =============================================================================
+# Configure ici où envoyer les alertes (Discord, email, Slack, etc.)
+# =============================================================================
+
+global:
+  # Timeout pour les webhooks
+  resolve_timeout: 5m
+
+# Arbre de routage des alertes
+route:
+  # Groupe les alertes par nom d'alerte
+  group_by: ['alertname', 'severity']
+  # Attendre 30s avant d'envoyer le premier groupe
+  group_wait: 30s
+  # Attendre 5m avant d'envoyer un nouveau groupe avec les mêmes labels
+  group_interval: 5m
+  # Répéter l'envoi toutes les 4h si l'alerte n'est pas résolue
+  repeat_interval: 4h
+  # Receiver par défaut
+  receiver: 'discord-notifications'
+
+  # Routes spécifiques par sévérité
+  routes:
+    # Alertes critiques : envoi immédiat
+    - match:
+        severity: critical
+      receiver: 'discord-critical'
+      group_wait: 10s
+      repeat_interval: 1h
+
+    # Alertes warning : groupées
+    - match:
+        severity: warning
+      receiver: 'discord-notifications'
+      group_wait: 1m
+      repeat_interval: 4h
+
+# Receivers (destinations des alertes)
+receivers:
+  # Discord - Notifications normales
+  # Configure ton webhook Discord dans le fichier ou via variable d'environnement
+  - name: 'discord-notifications'
+    # webhook_configs:
+    #   - url: '${DISCORD_WEBHOOK_URL}'
+    #     send_resolved: true
+
+  # Discord - Alertes critiques (channel séparé recommandé)
+  - name: 'discord-critical'
+    # webhook_configs:
+    #   - url: '${DISCORD_CRITICAL_WEBHOOK_URL}'
+    #     send_resolved: true
+
+# Inhibition rules (évite les alertes redondantes)
+inhibit_rules:
+  # Si le service est down, pas besoin des alertes de latence
+  - source_match:
+      alertname: 'TumulteBackendDown'
+    target_match_re:
+      alertname: 'High.*'
+    equal: ['service']
+
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname']

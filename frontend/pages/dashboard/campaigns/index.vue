@@ -107,11 +107,11 @@
         @cancel="showCharacterModal = false"
       />
 
-      <!-- Autorisations de sondages -->
+      <!-- Autorisations Twitch temporaires -->
       <UCard>
         <template #header>
           <div class="flex items-center gap-3">
-            <h2 class="text-xl font-semibold text-primary">Autorisations</h2>
+            <h2 class="text-xl font-semibold text-primary">Autorisations Twitch</h2>
             <UBadge v-if="authorizationStatuses.length > 0" color="primary" variant="soft">
               {{ authorizationStatuses.length }}
             </UBadge>
@@ -132,7 +132,7 @@
           <UIcon name="i-lucide-shield-off" class="size-12 text-neutral-400 mb-4" />
           <p class="text-base font-normal text-neutral-400">Aucune campagne active</p>
           <p class="text-sm text-neutral-400 mt-1">
-            Acceptez une invitation pour gérer vos autorisations de sondages
+            Acceptez une invitation pour gérer vos autorisations Twitch
           </p>
         </div>
 
@@ -335,6 +335,7 @@ const loadAuthorizationStatus = async () => {
       (item): AuthorizationStatus => ({
         campaignId: item.campaign_id,
         campaignName: item.campaign_name,
+        isOwner: item.is_owner,
         isAuthorized: item.is_authorized,
         expiresAt: item.expires_at,
         remainingSeconds: item.remaining_seconds,

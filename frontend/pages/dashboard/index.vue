@@ -26,11 +26,11 @@
         </UAlert>
       </UCard>
 
-      <!-- Autorisations de campagnes -->
+      <!-- Autorisations Twitch temporaires -->
       <UCard>
         <template #header>
           <div class="flex items-center gap-3">
-            <h2 class="heading-card">Autorisations de sondages</h2>
+            <h2 class="heading-card">Autorisations Twitch</h2>
             <UBadge v-if="authorizationStatuses.length > 0" color="primary" variant="soft">
               {{ authorizationStatuses.length }}
             </UBadge>
@@ -51,7 +51,7 @@
           <UIcon name="i-lucide-shield-off" class="size-12 text-muted mb-4" />
           <p class="text-body text-muted">Aucune campagne active</p>
           <p class="text-caption mt-1">
-            Acceptez une invitation pour gérer vos autorisations de sondages
+            Acceptez une invitation pour gérer vos autorisations Twitch
           </p>
         </div>
 
@@ -59,8 +59,8 @@
           <!-- Info text above list -->
           <UAlert color="primary" variant="soft" icon="i-lucide-info">
             <template #description>
-              Autorisez Tumulte à lancer des sondages sur votre chaîne pour ces campagnes pendant 12
-              heures.
+              Accordez un accès temporaire (12h) à Tumulte pour lancer des sondages et des
+              récompenses de points de chaîne sur votre chaîne Twitch.
             </template>
           </UAlert>
 
@@ -70,7 +70,7 @@
               v-for="status in authorizationStatuses"
               :key="status.campaignId"
               class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-lg"
-              :class="status.isOwner || status.isAuthorized ? 'bg-success-100' : ' bg-neutral-100'"
+              :class="status.isAuthorized ? 'bg-success-100' : 'bg-neutral-100'"
             >
               <!-- Campaign name -->
               <div class="flex-1 min-w-0">
@@ -83,9 +83,9 @@
               <div
                 class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto"
               >
-                <!-- Owners are always authorized, members need to authorize -->
+                <!-- Everyone (including owners) needs to authorize -->
                 <UButton
-                  v-if="!status.isOwner && !status.isAuthorized"
+                  v-if="!status.isAuthorized"
                   color="primary"
                   variant="solid"
                   size="lg"
@@ -97,27 +97,8 @@
                   <span class="sm:hidden">Autoriser</span>
                 </UButton>
                 <template v-else>
-                  <!-- Permanent badge for owners -->
-                  <UBadge
-                    v-if="status.isOwner"
-                    color="primary"
-                    variant="soft"
-                    size="lg"
-                    class="px-4 py-2 justify-center"
-                  >
-                    <div class="flex items-center gap-2">
-                      <UIcon name="i-lucide-infinity" class="size-4" />
-                      <span class="font-semibold text-base">Permanent</span>
-                    </div>
-                  </UBadge>
-                  <!-- Countdown timer for members -->
-                  <UBadge
-                    v-else
-                    color="success"
-                    variant="soft"
-                    size="lg"
-                    class="px-4 py-2 justify-center"
-                  >
+                  <!-- Countdown timer for everyone -->
+                  <UBadge color="success" variant="soft" size="lg" class="px-4 py-2 justify-center">
                     <div class="flex items-center gap-2">
                       <UIcon name="i-lucide-clock" class="size-4" />
                       <span class="font-mono text-base">{{
@@ -125,9 +106,8 @@
                       }}</span>
                     </div>
                   </UBadge>
-                  <!-- Hide revoke button for owners -->
+                  <!-- Revoke button for everyone -->
                   <UButton
-                    v-if="!status.isOwner"
                     color="error"
                     variant="solid"
                     size="lg"

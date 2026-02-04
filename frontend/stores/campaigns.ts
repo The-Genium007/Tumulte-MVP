@@ -13,11 +13,15 @@ import {
   storeCampaignDetail,
   getStoredCampaignDetail,
 } from '@/utils/offline-storage'
+import { useAnalytics } from '@/composables/useAnalytics'
 
 /**
  * Store Pinia pour la gestion des campagnes (MJ)
  */
 export const useCampaignsStore = defineStore('campaigns', () => {
+  // Analytics
+  const { track, setUserPropertiesOnce } = useAnalytics()
+
   // State
   const campaigns = ref<Campaign[]>([])
   const selectedCampaign = ref<CampaignDetail | null>(null)
@@ -108,8 +112,25 @@ export const useCampaignsStore = defineStore('campaigns', () => {
     _error.value = null
 
     try {
+      // Vérifier si c'est la première campagne AVANT la création
+      const isFirstCampaign = campaigns.value.length === 0
+
       const newCampaign = await campaignsRepository.create(data)
       campaigns.value.unshift(newCampaign)
+
+      // Track la création de campagne
+      track('campaign_created', {
+        campaign_id: newCampaign.id,
+        campaign_name: newCampaign.name, // eslint-disable-line camelcase
+        is_first_campaign: isFirstCampaign, // eslint-disable-line camelcase
+      })
+
+      // Marquer "first_campaign_at" une seule fois (ne change jamais après)
+      if (isFirstCampaign) {
+        // eslint-disable-next-line camelcase
+        setUserPropertiesOnce({ first_campaign_at: new Date().toISOString() })
+      }
+
       return newCampaign
     } catch (err) {
       _error.value = err instanceof Error ? err.message : 'Failed to create campaign'
@@ -187,6 +208,13 @@ export const useCampaignsStore = defineStore('campaigns', () => {
         }
         selectedCampaign.value.members.push(member)
       }
+
+      // Track l'invitation du streamer
+      track('streamer_invited', {
+        campaign_id: campaignId,
+        campaign_name: selectedCampaign.value?.name, // eslint-disable-line camelcase
+        member_count: selectedCampaign.value?.members?.length ?? 1, // eslint-disable-line camelcase
+      })
 
       return member
     } catch (err) {

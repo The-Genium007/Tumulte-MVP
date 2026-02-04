@@ -346,4 +346,81 @@ describe('Polls Store (new architecture)', () => {
     expect(store.lastLaunchedPollId).toBeNull()
     expect(store.error).toBeNull()
   })
+
+  test('markPollEnded() should set lastPollEndedAt to current date', () => {
+    const store = usePollsStore()
+
+    expect(store.lastPollEndedAt).toBeNull()
+
+    const beforeCall = new Date()
+    store.markPollEnded()
+    const afterCall = new Date()
+
+    expect(store.lastPollEndedAt).not.toBeNull()
+    expect(store.lastPollEndedAt!.getTime()).toBeGreaterThanOrEqual(beforeCall.getTime())
+    expect(store.lastPollEndedAt!.getTime()).toBeLessThanOrEqual(afterCall.getTime())
+  })
+
+  test('setActivePollInstance() with null should clear active poll but not lastLaunchedPollId', () => {
+    const store = usePollsStore()
+    store.activePollInstance = createMockPollInstance({ pollId: 'poll-123' })
+    store.lastLaunchedPollId = 'poll-123'
+
+    store.setActivePollInstance(null)
+
+    expect(store.activePollInstance).toBeNull()
+    expect(store.lastLaunchedPollId).toBe('poll-123') // Should remain unchanged
+  })
+
+  test('createPoll() should track first poll creation', async () => {
+    const newPoll = createMockPoll({
+      id: 'first-poll',
+      question: 'First poll ever?',
+    })
+
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ data: newPoll }),
+    } as Response)
+
+    const store = usePollsStore()
+    // Ensure polls is empty (first poll scenario)
+    store.polls = []
+
+    await store.createPoll('campaign-123', {
+      question: 'First poll ever?',
+      options: ['Yes', 'No'],
+    })
+
+    // Poll should be added
+    expect(store.polls).toHaveLength(1)
+    expect(store.polls[0]!.id).toBe('first-poll')
+  })
+
+  test('launchPoll() should update lastLaunchedAt in polls list', async () => {
+    const poll = createMockPoll({ id: 'poll-1', lastLaunchedAt: null })
+    const pollInstance = createMockPollInstance({
+      id: 'instance-1',
+      pollId: 'poll-1',
+      status: 'RUNNING',
+    })
+
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ data: pollInstance, pollId: 'poll-1' }),
+    } as Response)
+
+    const store = usePollsStore()
+    store.polls = [poll]
+
+    const beforeLaunch = new Date()
+    await store.launchPoll('poll-1')
+
+    // lastLaunchedAt should be updated
+    const updatedPoll = store.polls.find((p) => p.id === 'poll-1')
+    expect(updatedPoll?.lastLaunchedAt).not.toBeNull()
+    expect(new Date(updatedPoll!.lastLaunchedAt!).getTime()).toBeGreaterThanOrEqual(
+      beforeLaunch.getTime()
+    )
+  })
 })

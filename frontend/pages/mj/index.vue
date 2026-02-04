@@ -265,9 +265,6 @@ const selectedCampaignStreamers = computed<StreamerDisplay[]>(() => {
 const _formatAuthTime = (seconds: number | null): string => {
   if (!seconds) return 'Non autorisé'
 
-  // Si l'autorisation est > 1 an (31536000 secondes), c'est "permanent"
-  if (seconds > 31536000) return 'Permanent'
-
   const hours = Math.floor(seconds / 3600)
   const mins = Math.floor((seconds % 3600) / 60)
   const secs = seconds % 60

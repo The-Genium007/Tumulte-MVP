@@ -1,17 +1,8 @@
 <template>
   <div class="flex items-center gap-2">
-    <!-- Owner: Permanent authorization (solid success) -->
+    <!-- Authorized with countdown (same for owner and regular members) -->
     <div
-      v-if="isOwner"
-      class="flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-success-500 text-white"
-    >
-      <UIcon name="i-lucide-infinity" class="size-3.5" />
-      <span>Permanent</span>
-    </div>
-
-    <!-- Authorized with countdown -->
-    <div
-      v-else-if="isPollAuthorized && remainingSeconds !== null && remainingSeconds > 0"
+      v-if="isPollAuthorized && remainingSeconds !== null && remainingSeconds > 0"
       class="flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium"
       :class="urgencyClass"
     >

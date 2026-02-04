@@ -50,7 +50,7 @@ describe('AuthorizationCard Component', () => {
     })
 
     expect(wrapper.text()).toContain(
-      'Autorisez Tumulte à lancer des sondages sur votre chaîne pour cette campagne pendant 12 heures'
+      'Accordez un accès temporaire (12h) à Tumulte pour lancer des sondages'
     )
   })
 
@@ -142,7 +142,7 @@ describe('AuthorizationCard Component', () => {
     expect(wrapper.text()).toContain('01:05')
   })
 
-  test('should display permanent badge for owner', () => {
+  test('should display authorized state for owner', () => {
     const wrapper = mount(AuthorizationCard, {
       props: {
         campaignId: 'campaign-123',
@@ -156,8 +156,9 @@ describe('AuthorizationCard Component', () => {
       },
     })
 
-    expect(wrapper.text()).toContain('Autorisation')
-    expect(wrapper.text()).toContain('Permanent')
+    // Owner sees the same authorized state as regular users
+    expect(wrapper.text()).toContain('Autorisé')
+    expect(wrapper.text()).toContain('Les sondages peuvent être lancés sur votre chaîne')
   })
 
   test('should show revoke button when authorized (non-owner)', () => {
@@ -177,7 +178,7 @@ describe('AuthorizationCard Component', () => {
     expect(wrapper.text()).toContain('Révoquer')
   })
 
-  test('should not show revoke button for owner', () => {
+  test('should show revoke button for owner (same as regular user)', () => {
     const wrapper = mount(AuthorizationCard, {
       props: {
         campaignId: 'campaign-123',
@@ -191,7 +192,8 @@ describe('AuthorizationCard Component', () => {
       },
     })
 
-    expect(wrapper.text()).not.toContain('Révoquer')
+    // Current implementation shows revoke button for all authorized users including owners
+    expect(wrapper.text()).toContain('Révoquer')
   })
 
   test('should show confirm dialog when revoke button clicked', async () => {

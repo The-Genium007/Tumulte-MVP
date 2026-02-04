@@ -75,7 +75,8 @@ const handleIgnore = async () => {
 const groupedCharacters = computed(() => {
   const pcs = characters.value.filter((c) => c.characterType === 'pc')
   const npcs = characters.value.filter((c) => c.characterType === 'npc')
-  return { pcs, npcs }
+  const monsters = characters.value.filter((c) => c.characterType === 'monster')
+  return { pcs, npcs, monsters }
 })
 
 // Format roll result for display
@@ -200,12 +201,34 @@ const formatRollResult = (roll: PendingDiceRoll) => {
             <!-- NPCs -->
             <div v-if="groupedCharacters.npcs.length > 0">
               <p class="text-caption mb-2 flex items-center gap-1">
-                <UIcon name="i-lucide-skull" class="size-3" />
+                <UIcon name="i-lucide-user-round" class="size-3" />
                 Personnages non-joueurs
               </p>
               <div class="grid grid-cols-3 sm:grid-cols-4 gap-2">
                 <button
                   v-for="character in groupedCharacters.npcs"
+                  :key="character.id"
+                  class="flex flex-col items-center gap-2 p-3 rounded-lg transition-colors border bg-elevated border-default hover:border-primary-300 hover:bg-primary-50 dark:hover:bg-primary-900/20"
+                  :disabled="attributing"
+                  @click="handleSelectCharacter(character)"
+                >
+                  <CharacterAvatar :src="character.avatarUrl" :alt="character.name" size="lg" />
+                  <span class="text-xs font-medium text-center truncate w-full">
+                    {{ character.name }}
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Monstres -->
+            <div v-if="groupedCharacters.monsters.length > 0">
+              <p class="text-caption mb-2 flex items-center gap-1">
+                <UIcon name="i-lucide-skull" class="size-3" />
+                Monstres
+              </p>
+              <div class="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                <button
+                  v-for="character in groupedCharacters.monsters"
                   :key="character.id"
                   class="flex flex-col items-center gap-2 p-3 rounded-lg transition-colors border bg-elevated border-default hover:border-primary-300 hover:bg-primary-50 dark:hover:bg-primary-900/20"
                   :disabled="attributing"

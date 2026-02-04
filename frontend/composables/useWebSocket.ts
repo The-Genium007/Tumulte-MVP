@@ -533,7 +533,7 @@ export const useWebSocket = () => {
         clientExists: !!client.value,
         channel,
       })
-      console.error('WebSocket subscribe error:', error)
+      loggers.ws.error('WebSocket subscribe error:', error)
       throw error
     }
 
@@ -586,7 +586,7 @@ export const useWebSocket = () => {
       })
       .catch((error: unknown) => {
         loggers.ws.error(`Failed to create subscription for channel ${channel}:`, error)
-        console.error('WebSocket connect error:', error)
+        loggers.ws.error('WebSocket connect error:', error)
       })
 
     // Retourner une fonction de nettoyage asynchrone
@@ -711,7 +711,7 @@ export const useWebSocket = () => {
       })
       .catch((error: unknown) => {
         loggers.ws.error(`Failed to create subscription for streamer channel ${channel}:`, error)
-        console.error('WebSocket subscribe error:', error)
+        loggers.ws.error('WebSocket subscribe error:', error)
       })
 
     return async () => {
@@ -766,7 +766,7 @@ export const useWebSocket = () => {
       })
       .catch((error: unknown) => {
         loggers.ws.error(`Failed to create subscription for readiness channel ${channel}:`, error)
-        console.error('WebSocket subscribe error:', error)
+        loggers.ws.error('WebSocket subscribe error:', error)
       })
 
     return async () => {

@@ -1,4 +1,4 @@
-import type { PostHog } from 'posthog-js'
+import type { PostHogApi } from '@/plugins/posthog.client'
 
 /**
  * Analytics event types for autocomplete and type safety.
@@ -20,7 +20,7 @@ export type AnalyticsEvent =
   | 'twitch_linked' // User links their Twitch account
 
   // === ACTIVATION ===
-  | 'campaign_created' // GM creates their first campaign
+  | 'campaign_created' // GM creates a campaign
   | 'first_poll_created' // GM creates their first poll
   | 'first_poll_launched' // GM launches their first poll
   | 'streamer_invited' // GM invites a streamer
@@ -47,6 +47,9 @@ export type AnalyticsEvent =
 /**
  * Centralized analytics composable for PostHog.
  *
+ * IMPORTANT: All methods are safe to call even without consent.
+ * They will silently no-op if PostHog is not initialized.
+ *
  * Usage:
  * ```ts
  * const { track, identify } = useAnalytics()
@@ -60,7 +63,7 @@ export type AnalyticsEvent =
  */
 export const useAnalytics = () => {
   const { $posthog } = useNuxtApp()
-  const posthog = $posthog as PostHog | undefined
+  const posthog = $posthog as PostHogApi | undefined
 
   /**
    * Identify a user (call after login).
@@ -70,8 +73,7 @@ export const useAnalytics = () => {
    * @param properties - User properties to store (email, tier, etc.)
    */
   const identify = (userId: string, properties?: Record<string, unknown>) => {
-    if (!posthog) return
-    posthog.identify(userId, properties)
+    posthog?.identify(userId, properties)
   }
 
   /**
@@ -79,8 +81,7 @@ export const useAnalytics = () => {
    * Creates a new anonymous ID for the next session.
    */
   const reset = () => {
-    if (!posthog) return
-    posthog.reset()
+    posthog?.reset()
   }
 
   /**
@@ -90,8 +91,7 @@ export const useAnalytics = () => {
    * @param properties - Event properties (context-specific data)
    */
   const track = (event: AnalyticsEvent | string, properties?: Record<string, unknown>) => {
-    if (!posthog) return
-    posthog.capture(event, properties)
+    posthog?.capture(event, properties)
   }
 
   /**
@@ -101,8 +101,7 @@ export const useAnalytics = () => {
    * @param properties - Properties to set (campaigns_count, tier, etc.)
    */
   const setUserProperties = (properties: Record<string, unknown>) => {
-    if (!posthog) return
-    posthog.people.set(properties)
+    posthog?.setPersonProperties(properties)
   }
 
   /**
@@ -112,8 +111,7 @@ export const useAnalytics = () => {
    * @param properties - Properties to set once
    */
   const setUserPropertiesOnce = (properties: Record<string, unknown>) => {
-    if (!posthog) return
-    posthog.people.set_once(properties)
+    posthog?.setPersonPropertiesOnce(properties)
   }
 
   /**
@@ -124,8 +122,7 @@ export const useAnalytics = () => {
    * @returns true if enabled, false otherwise
    */
   const isFeatureEnabled = (flagKey: string): boolean => {
-    if (!posthog) return false
-    return posthog.isFeatureEnabled(flagKey) ?? false
+    return posthog?.isFeatureEnabled(flagKey) ?? false
   }
 
   /**
@@ -136,8 +133,7 @@ export const useAnalytics = () => {
    * @returns Variant key or undefined if not set
    */
   const getFeatureFlag = (flagKey: string): string | boolean | undefined => {
-    if (!posthog) return undefined
-    return posthog.getFeatureFlag(flagKey)
+    return posthog?.getFeatureFlag(flagKey)
   }
 
   /**
@@ -145,8 +141,7 @@ export const useAnalytics = () => {
    * Useful if you want to record specific flows.
    */
   const startSessionRecording = () => {
-    if (!posthog) return
-    posthog.startSessionRecording()
+    posthog?.startSessionRecording()
   }
 
   /**
@@ -154,8 +149,7 @@ export const useAnalytics = () => {
    * Useful for debugging or linking with backend.
    */
   const getDistinctId = (): string | undefined => {
-    if (!posthog) return undefined
-    return posthog.get_distinct_id()
+    return posthog?.getDistinctId()
   }
 
   return {

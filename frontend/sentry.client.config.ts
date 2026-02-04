@@ -36,10 +36,14 @@ const environment =
   envSuffix === 'prod' ? 'production' : envSuffix === 'staging' ? 'staging' : 'development'
 const isProduction = envSuffix === 'prod'
 
+// Version de l'application pour le tracking des releases
+const appVersion = import.meta.env.VITE_APP_VERSION || '0.3.0'
+
 if (dsn) {
   Sentry.init({
     dsn,
     environment,
+    release: `tumulte-frontend@${appVersion}`,
 
     // Performance monitoring (10% en prod, 50% en staging pour mieux tester)
     tracesSampleRate: isProduction ? 0.1 : environment === 'staging' ? 0.5 : 1.0,
@@ -95,6 +99,18 @@ if (dsn) {
 
       return event
     },
+  })
+}
+
+// Capturer les promesses non gérées (unhandled rejections)
+if (typeof window !== 'undefined') {
+  window.addEventListener('unhandledrejection', (event) => {
+    Sentry.captureException(event.reason, {
+      tags: { type: 'unhandledrejection' },
+      extra: {
+        promise: String(event.promise),
+      },
+    })
   })
 }
 

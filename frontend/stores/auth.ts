@@ -5,12 +5,19 @@ import type { User, LoginCredentials, RegisterData, AuthError } from '@/types'
 import { usePushNotificationsStore } from '@/stores/pushNotifications'
 import { storeUser, getStoredUser, clearUserData } from '@/utils/offline-storage'
 import { useAnalytics } from '@/composables/useAnalytics'
+import { loggers } from '@/utils/logger'
 
 export const useAuthStore = defineStore('auth', () => {
   const _router = useRouter()
   const config = useRuntimeConfig()
   const API_URL = config.public.apiBase
-  const { identify, reset: resetAnalytics, setUserProperties, track } = useAnalytics()
+  const {
+    identify,
+    reset: resetAnalytics,
+    setUserProperties,
+    setUserPropertiesOnce,
+    track,
+  } = useAnalytics()
 
   // State
   const user = ref<User | null>(null)
@@ -32,12 +39,18 @@ export const useAuthStore = defineStore('auth', () => {
   function identifyUserInAnalytics(userData: User): void {
     /* eslint-disable camelcase */
     identify(userData.id, {
+      // Données de base
       email: userData.email,
       display_name: userData.displayName,
       tier: userData.tier,
       has_twitch: !!userData.streamer,
       is_email_verified: !!userData.emailVerifiedAt,
       created_at: userData.createdAt,
+
+      // Données business enrichies
+      is_premium: userData.isPremium,
+      is_admin: userData.isAdmin,
+      locale: typeof navigator !== 'undefined' ? navigator.language : 'unknown',
     })
 
     // Set properties that may change over time
@@ -45,8 +58,25 @@ export const useAuthStore = defineStore('auth', () => {
       tier: userData.tier,
       is_premium: userData.isPremium,
       is_admin: userData.isAdmin,
+      last_seen_at: new Date().toISOString(),
+    })
+
+    // Propriétés "first time" (ne changent jamais après la première définition)
+    setUserPropertiesOnce({
+      first_seen_at: new Date().toISOString(),
+      initial_referrer: typeof document !== 'undefined' ? document.referrer || 'direct' : 'unknown',
+      acquisition_source: getAcquisitionSource(),
     })
     /* eslint-enable camelcase */
+  }
+
+  /**
+   * Récupère la source d'acquisition depuis les UTM params
+   */
+  function getAcquisitionSource(): string {
+    if (typeof window === 'undefined') return 'unknown'
+    const params = new URLSearchParams(window.location.search)
+    return params.get('utm_source') || params.get('ref') || 'organic'
   }
 
   /**
@@ -61,7 +91,7 @@ export const useAuthStore = defineStore('auth', () => {
         isOfflineData.value = true
       }
     } catch (error) {
-      console.warn('[AuthStore] Failed to load from offline storage:', error)
+      loggers.auth.warn('Failed to load from offline storage:', error)
     }
   }
 
@@ -140,7 +170,7 @@ export const useAuthStore = defineStore('auth', () => {
       authError.value = null
       _router.push({ name: 'login' })
     } catch (error) {
-      console.error('Logout failed:', error)
+      loggers.auth.error('Logout failed:', error)
       throw error
     }
   }
@@ -254,7 +284,7 @@ export const useAuthStore = defineStore('auth', () => {
 
       return { success: true }
     } catch (error) {
-      console.error('Forgot password failed:', error)
+      loggers.auth.error('Forgot password failed:', error)
       return { success: false, error: { error: 'Une erreur est survenue.' } }
     } finally {
       loading.value = false
@@ -286,7 +316,7 @@ export const useAuthStore = defineStore('auth', () => {
 
       return { success: true }
     } catch (error) {
-      console.error('Reset password failed:', error)
+      loggers.auth.error('Reset password failed:', error)
       return { success: false, error: { error: 'Une erreur est survenue.' } }
     } finally {
       loading.value = false
@@ -325,7 +355,7 @@ export const useAuthStore = defineStore('auth', () => {
 
       return { success: true }
     } catch (error) {
-      console.error('Resend verification failed:', error)
+      loggers.auth.error('Resend verification failed:', error)
       return { success: false, error: { error: 'Une erreur est survenue.' } }
     }
   }

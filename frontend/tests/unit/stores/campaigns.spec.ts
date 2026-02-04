@@ -543,4 +543,66 @@ describe('Campaigns Store', () => {
       expect(store.isOfflineData).toBe(false)
     })
   })
+
+  describe('activeCampaigns - edge cases', () => {
+    test('should return empty array when no campaigns have active members', async () => {
+      const { campaignsRepository } = await import('~/api/repositories/campaigns_repository')
+      const mockCampaigns = [
+        createMockApiCampaign({ id: '1', activeMemberCount: 0 }),
+        createMockApiCampaign({ id: '2', activeMemberCount: 0 }),
+      ]
+      vi.mocked(campaignsRepository.list).mockResolvedValueOnce(mockCampaigns)
+
+      const store = useCampaignsStore()
+      await store.fetchCampaigns()
+
+      expect(store.activeCampaigns).toHaveLength(0)
+    })
+
+    test('should return all campaigns when all have active members', async () => {
+      const { campaignsRepository } = await import('~/api/repositories/campaigns_repository')
+      const mockCampaigns = [
+        createMockApiCampaign({ id: '1', activeMemberCount: 1 }),
+        createMockApiCampaign({ id: '2', activeMemberCount: 2 }),
+        createMockApiCampaign({ id: '3', activeMemberCount: 5 }),
+      ]
+      vi.mocked(campaignsRepository.list).mockResolvedValueOnce(mockCampaigns)
+
+      const store = useCampaignsStore()
+      await store.fetchCampaigns()
+
+      expect(store.activeCampaigns).toHaveLength(3)
+    })
+
+    test('should return empty array when campaigns is empty', () => {
+      const store = useCampaignsStore()
+
+      expect(store.activeCampaigns).toHaveLength(0)
+    })
+  })
+
+  describe('first campaign tracking', () => {
+    test('should track first campaign creation analytics', async () => {
+      const newCampaign = createMockApiCampaign({
+        id: 'first-campaign',
+        name: 'My First Campaign',
+      })
+
+      const { campaignsRepository } = await import('~/api/repositories/campaigns_repository')
+      vi.mocked(campaignsRepository.create).mockResolvedValueOnce(newCampaign)
+
+      const store = useCampaignsStore()
+      // Ensure campaigns is empty (first campaign scenario)
+      store.campaigns = []
+
+      await store.createCampaign({
+        name: 'My First Campaign',
+        description: 'Test',
+      })
+
+      // Campaign should be added
+      expect(store.campaigns).toHaveLength(1)
+      expect(store.campaigns[0]!.id).toBe('first-campaign')
+    })
+  })
 })

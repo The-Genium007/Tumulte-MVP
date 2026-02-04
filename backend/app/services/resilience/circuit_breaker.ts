@@ -12,6 +12,7 @@
 
 import redis from '@adonisjs/redis/services/main'
 import logger from '@adonisjs/core/services/logger'
+import { Sentry } from '#config/sentry'
 import type { CircuitState, CircuitBreakerConfig } from './types.js'
 import { DEFAULT_CIRCUIT_BREAKER_CONFIG } from './types.js'
 
@@ -154,6 +155,16 @@ export class CircuitBreaker {
             // Atomically transition to half-open (only if still OPEN)
             const transitioned = await this.tryTransitionToHalfOpen(key)
             if (transitioned) {
+              Sentry.addBreadcrumb({
+                category: 'circuit_breaker',
+                message: `Circuit ${key} HALF_OPEN - testing recovery`,
+                level: 'info',
+                data: {
+                  circuitKey: key,
+                  successThreshold: this.config.successThreshold,
+                },
+              })
+
               logger.info(
                 {
                   event: 'circuit_breaker_half_open',
@@ -218,6 +229,19 @@ export class CircuitBreaker {
       )
 
       if (shouldOpen === 1) {
+        // Envoyer un breadcrumb Sentry pour tracer l'ouverture du circuit
+        Sentry.addBreadcrumb({
+          category: 'circuit_breaker',
+          message: `Circuit ${key} OPENED after ${failures} failures`,
+          level: 'warning',
+          data: {
+            circuitKey: key,
+            failures,
+            threshold: this.config.failureThreshold,
+            resetTimeoutMs: this.config.resetTimeoutMs,
+          },
+        })
+
         logger.error(
           {
             event: 'circuit_breaker_opened',
@@ -271,6 +295,16 @@ export class CircuitBreaker {
         )
 
         if (shouldClose === 1) {
+          Sentry.addBreadcrumb({
+            category: 'circuit_breaker',
+            message: `Circuit ${key} CLOSED - recovered`,
+            level: 'info',
+            data: {
+              circuitKey: key,
+              successesRequired: this.config.successThreshold,
+            },
+          })
+
           logger.info(
             {
               event: 'circuit_breaker_closed',

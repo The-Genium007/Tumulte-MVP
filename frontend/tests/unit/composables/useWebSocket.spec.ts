@@ -931,6 +931,205 @@ describe('useWebSocket Composable', () => {
 
       expect(onDiceRollCritical).toHaveBeenCalledWith(critData)
     })
+
+    test('should handle gamification:start events', async () => {
+      const { subscribeToStreamerPolls } = useWebSocket()
+
+      const onGamificationStart = vi.fn()
+
+      let eventSourceInstance: MockEventSource
+      global.EventSource = class extends MockEventSource {
+        constructor(url: string) {
+          super(url)
+          eventSourceInstance = this
+        }
+      } as unknown as typeof EventSource
+
+      subscribeToStreamerPolls('streamer-gam-1', {
+        onGamificationStart,
+      })
+
+      await new Promise((resolve) => setTimeout(resolve, 10))
+      eventSourceInstance!.simulateOpen()
+      await new Promise((resolve) => setTimeout(resolve, 10))
+
+      const gamificationData = {
+        instanceId: 'gam-123',
+        templateId: 'template-1',
+        type: 'collective_goal',
+      }
+
+      eventSourceInstance!.simulateMessage(
+        JSON.stringify({
+          channel: 'streamer:streamer-gam-1:polls',
+          payload: {
+            event: 'gamification:start',
+            data: gamificationData,
+          },
+        })
+      )
+
+      expect(onGamificationStart).toHaveBeenCalledWith(gamificationData)
+    })
+
+    test('should handle gamification:progress events', async () => {
+      const { subscribeToStreamerPolls } = useWebSocket()
+
+      const onGamificationProgress = vi.fn()
+
+      let eventSourceInstance: MockEventSource
+      global.EventSource = class extends MockEventSource {
+        constructor(url: string) {
+          super(url)
+          eventSourceInstance = this
+        }
+      } as unknown as typeof EventSource
+
+      subscribeToStreamerPolls('streamer-gam-2', {
+        onGamificationProgress,
+      })
+
+      await new Promise((resolve) => setTimeout(resolve, 10))
+      eventSourceInstance!.simulateOpen()
+      await new Promise((resolve) => setTimeout(resolve, 10))
+
+      const progressData = {
+        instanceId: 'gam-123',
+        currentValue: 50,
+        targetValue: 100,
+        percentage: 50,
+      }
+
+      eventSourceInstance!.simulateMessage(
+        JSON.stringify({
+          channel: 'streamer:streamer-gam-2:polls',
+          payload: {
+            event: 'gamification:progress',
+            data: progressData,
+          },
+        })
+      )
+
+      expect(onGamificationProgress).toHaveBeenCalledWith(progressData)
+    })
+
+    test('should handle gamification:complete events', async () => {
+      const { subscribeToStreamerPolls } = useWebSocket()
+
+      const onGamificationComplete = vi.fn()
+
+      let eventSourceInstance: MockEventSource
+      global.EventSource = class extends MockEventSource {
+        constructor(url: string) {
+          super(url)
+          eventSourceInstance = this
+        }
+      } as unknown as typeof EventSource
+
+      subscribeToStreamerPolls('streamer-gam-3', {
+        onGamificationComplete,
+      })
+
+      await new Promise((resolve) => setTimeout(resolve, 10))
+      eventSourceInstance!.simulateOpen()
+      await new Promise((resolve) => setTimeout(resolve, 10))
+
+      const completeData = {
+        instanceId: 'gam-123',
+        success: true,
+        reward: 'Achievement unlocked',
+      }
+
+      eventSourceInstance!.simulateMessage(
+        JSON.stringify({
+          channel: 'streamer:streamer-gam-3:polls',
+          payload: {
+            event: 'gamification:complete',
+            data: completeData,
+          },
+        })
+      )
+
+      expect(onGamificationComplete).toHaveBeenCalledWith(completeData)
+    })
+
+    test('should handle gamification:expired events', async () => {
+      const { subscribeToStreamerPolls } = useWebSocket()
+
+      const onGamificationExpired = vi.fn()
+
+      let eventSourceInstance: MockEventSource
+      global.EventSource = class extends MockEventSource {
+        constructor(url: string) {
+          super(url)
+          eventSourceInstance = this
+        }
+      } as unknown as typeof EventSource
+
+      subscribeToStreamerPolls('streamer-gam-4', {
+        onGamificationExpired,
+      })
+
+      await new Promise((resolve) => setTimeout(resolve, 10))
+      eventSourceInstance!.simulateOpen()
+      await new Promise((resolve) => setTimeout(resolve, 10))
+
+      const expiredData = {
+        instanceId: 'gam-123',
+      }
+
+      eventSourceInstance!.simulateMessage(
+        JSON.stringify({
+          channel: 'streamer:streamer-gam-4:polls',
+          payload: {
+            event: 'gamification:expired',
+            data: expiredData,
+          },
+        })
+      )
+
+      expect(onGamificationExpired).toHaveBeenCalledWith(expiredData)
+    })
+
+    test('should handle gamification:action_executed events', async () => {
+      const { subscribeToStreamerPolls } = useWebSocket()
+
+      const onGamificationActionExecuted = vi.fn()
+
+      let eventSourceInstance: MockEventSource
+      global.EventSource = class extends MockEventSource {
+        constructor(url: string) {
+          super(url)
+          eventSourceInstance = this
+        }
+      } as unknown as typeof EventSource
+
+      subscribeToStreamerPolls('streamer-gam-5', {
+        onGamificationActionExecuted,
+      })
+
+      await new Promise((resolve) => setTimeout(resolve, 10))
+      eventSourceInstance!.simulateOpen()
+      await new Promise((resolve) => setTimeout(resolve, 10))
+
+      const actionData = {
+        instanceId: 'gam-123',
+        actionType: 'reward',
+        actionData: { points: 100 },
+      }
+
+      eventSourceInstance!.simulateMessage(
+        JSON.stringify({
+          channel: 'streamer:streamer-gam-5:polls',
+          payload: {
+            event: 'gamification:action_executed',
+            data: actionData,
+          },
+        })
+      )
+
+      expect(onGamificationActionExecuted).toHaveBeenCalledWith(actionData)
+    })
   })
 
   describe('connection state', () => {

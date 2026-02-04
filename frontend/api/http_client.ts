@@ -1,7 +1,9 @@
 import axios, { type AxiosInstance, type AxiosError, type AxiosResponse } from 'axios'
+import * as Sentry from '@sentry/nuxt'
 
 /**
  * HTTP Client centralisé avec interceptors
+ * Capture automatiquement les erreurs 5xx vers Sentry
  */
 class HttpClient {
   private instance: AxiosInstance
@@ -45,24 +47,48 @@ class HttpClient {
         if (error.response) {
           const status = error.response.status
 
+          // Capturer les erreurs 5xx vers Sentry (erreurs serveur)
+          if (status >= 500) {
+            Sentry.captureException(error, {
+              tags: {
+                'http.status': status,
+                'http.method': error.config?.method?.toUpperCase(),
+              },
+              extra: {
+                url: error.config?.url,
+                responseData: error.response.data,
+              },
+            })
+          }
+
           switch (status) {
             case 401:
               // Redirection vers la page de connexion
-              if (process.client) {
+              if (import.meta.client) {
                 window.location.href = '/auth/twitch/redirect'
               }
               break
             case 403:
-              console.error('Accès interdit')
+              console.warn('Accès interdit')
               break
             case 404:
-              console.error('Ressource non trouvée')
+              console.warn('Ressource non trouvée')
               break
             case 500:
               console.error('Erreur serveur:', error)
               break
           }
         } else if (error.request) {
+          // Erreur réseau - pas de réponse du serveur
+          Sentry.captureException(error, {
+            tags: {
+              'http.error_type': 'no_response',
+              'http.method': error.config?.method?.toUpperCase(),
+            },
+            extra: {
+              url: error.config?.url,
+            },
+          })
           console.error('Aucune réponse du serveur:', error)
         } else {
           console.error('Erreur de configuration de la requête:', error.message)
@@ -70,6 +96,16 @@ class HttpClient {
 
         // Log timeout errors
         if (error.code === 'ECONNABORTED') {
+          Sentry.captureException(error, {
+            tags: {
+              'http.error_type': 'timeout',
+              'http.method': error.config?.method?.toUpperCase(),
+            },
+            extra: {
+              url: error.config?.url,
+              timeout: error.config?.timeout,
+            },
+          })
           console.error('Request timeout:', error)
         }
 

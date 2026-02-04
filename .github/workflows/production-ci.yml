@@ -170,6 +170,23 @@ jobs:
           FRONTEND_URL: http://localhost:3000
         run: npm run test:coverage -- --suite=unit
 
+      - name: Upload backend coverage to Codecov
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          files: ./backend/coverage/lcov.info
+          flags: backend-unit
+          name: backend-unit-coverage
+          fail_ci_if_error: false
+
+      - name: Upload backend test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-unit-test-results
+          path: backend/coverage/
+
+
       # Note: c8 outputs coverage to console, coverage threshold is enforced by c8 config
 
   frontend-unit-tests:
@@ -476,6 +493,18 @@ jobs:
         with:
           name: production-build
           path: frontend/.output/
+      # Upload source maps to Sentry for better stack traces
+      - name: Upload source maps to Sentry
+        if: github.event_name == 'push' && env.SENTRY_AUTH_TOKEN != ''
+        working-directory: ./frontend
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        run: |
+          npx @sentry/cli releases new "tumulte-frontend@${{ github.sha }}"
+          npx @sentry/cli releases files "tumulte-frontend@${{ github.sha }}" upload-sourcemaps .output/public --ext map --ext js || true
+          npx @sentry/cli releases finalize "tumulte-frontend@${{ github.sha }}"
 
   # Phase 6 : Tests E2E Frontend (BLOQUANT en production)
   frontend-e2e-tests:

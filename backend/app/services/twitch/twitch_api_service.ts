@@ -1,5 +1,6 @@
 import env from '#start/env'
 import logger from '@adonisjs/core/services/logger'
+import { Sentry } from '#config/sentry'
 import { RetryUtility } from '#services/resilience/retry_utility'
 import { RetryPolicies } from '#services/resilience/types'
 import type { HttpCallResult, RetryResult, RetryContext } from '#services/resilience/types'
@@ -108,6 +109,12 @@ class TwitchApiService {
 
       return this.appAccessToken
     } catch (error) {
+      Sentry.captureException(error, {
+        tags: {
+          service: 'twitch_api',
+          operation: 'getAppAccessToken',
+        },
+      })
       logger.error('Failed to get Twitch app access token:', error)
       throw error
     }
@@ -175,6 +182,13 @@ class TwitchApiService {
       }))
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      Sentry.captureException(error, {
+        tags: {
+          service: 'twitch_api',
+          operation: 'searchUsers',
+        },
+        extra: { query },
+      })
       logger.error(`Failed to search Twitch users: ${errorMessage}`)
       throw error
     }
@@ -278,6 +292,13 @@ class TwitchApiService {
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+        Sentry.captureException(error, {
+          tags: {
+            service: 'twitch_api',
+            operation: 'getStreamsByUserIds',
+          },
+          extra: { userCount: userIds.length },
+        })
         logger.error(`Failed to get Twitch streams: ${errorMessage}`)
         throw error
       }

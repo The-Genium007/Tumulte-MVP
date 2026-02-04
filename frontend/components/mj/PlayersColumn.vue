@@ -18,9 +18,6 @@ const activeMembers = computed(() => props.members.filter((member) => member.sta
 const formatAuthTime = (seconds: number | null): string => {
   if (!seconds) return 'Non autorisé'
 
-  // Si > 1 an, considéré comme permanent
-  if (seconds > 31536000) return 'Permanent'
-
   const hours = Math.floor(seconds / 3600)
   const mins = Math.floor((seconds % 3600) / 60)
   const secs = seconds % 60
@@ -121,14 +118,8 @@ const formatAuthTime = (seconds: number | null): string => {
           />
           <UBadge v-else label="Non affilié" color="info" variant="soft" size="xs" />
 
-          <!-- Badge autorisation -->
-          <UBadge v-if="member.isOwner" color="success" variant="soft" size="xs">
-            <div class="flex items-center gap-1">
-              <UIcon name="i-lucide-infinity" class="size-3" />
-              <span>Permanent</span>
-            </div>
-          </UBadge>
-          <UBadge v-else-if="member.isPollAuthorized" color="success" variant="soft" size="xs">
+          <!-- Badge autorisation (same logic for owner and members) -->
+          <UBadge v-if="member.isPollAuthorized" color="success" variant="soft" size="xs">
             <div class="flex items-center gap-1">
               <UIcon name="i-lucide-shield-check" class="size-3" />
               <span>{{ formatAuthTime(member.authorizationRemainingSeconds) }}</span>

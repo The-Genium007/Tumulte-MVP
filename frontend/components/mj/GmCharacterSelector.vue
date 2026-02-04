@@ -43,7 +43,8 @@ const handleSelectCharacter = async (character: GmCharacter | null) => {
 const groupedCharacters = computed(() => {
   const pcs = characters.value.filter((c) => c.characterType === 'pc')
   const npcs = characters.value.filter((c) => c.characterType === 'npc')
-  return { pcs, npcs }
+  const monsters = characters.value.filter((c) => c.characterType === 'monster')
+  return { pcs, npcs, monsters }
 })
 
 // Personnages à afficher dans la barre (limité)
@@ -127,6 +128,17 @@ const isAssignedToStreamer = (character: GmCharacter) => character.assignedToStr
                   </div>
 
                   <div class="flex items-center gap-2">
+                    <div
+                      class="size-5 rounded-full bg-error-500 flex items-center justify-center text-[10px] font-bold text-white"
+                    >
+                      M
+                    </div>
+                    <span class="text-sm text-secondary"
+                      ><strong>Monstre</strong> — Créature ou adversaire</span
+                    >
+                  </div>
+
+                  <div class="flex items-center gap-2">
                     <div class="size-5 rounded-full bg-info-500 flex items-center justify-center">
                       <UIcon name="i-lucide-user" class="size-3 text-white" />
                     </div>
@@ -178,11 +190,23 @@ const isAssignedToStreamer = (character: GmCharacter) => character.assignedToStr
                 {{ activeCharacter.name }}
               </p>
               <UBadge
-                :color="activeCharacter.characterType === 'pc' ? 'success' : 'warning'"
+                :color="
+                  activeCharacter.characterType === 'pc'
+                    ? 'success'
+                    : activeCharacter.characterType === 'npc'
+                      ? 'warning'
+                      : 'error'
+                "
                 variant="soft"
                 size="xs"
               >
-                {{ activeCharacter.characterType === 'pc' ? 'Joueur' : 'Non-joueur' }}
+                {{
+                  activeCharacter.characterType === 'pc'
+                    ? 'Joueur'
+                    : activeCharacter.characterType === 'npc'
+                      ? 'Non-joueur'
+                      : 'Monstre'
+                }}
               </UBadge>
             </div>
           </template>
@@ -290,13 +314,19 @@ const isAssignedToStreamer = (character: GmCharacter) => character.assignedToStr
               <div
                 v-else
                 class="absolute -bottom-0.5 -right-0.5 size-3.5 rounded-full flex items-center justify-center text-[8px] font-bold"
-                :class="
-                  character.characterType === 'pc'
-                    ? 'bg-success-500 text-white'
-                    : 'bg-warning-500 text-white'
-                "
+                :class="{
+                  'bg-success-500 text-white': character.characterType === 'pc',
+                  'bg-warning-500 text-white': character.characterType === 'npc',
+                  'bg-error-500 text-white': character.characterType === 'monster',
+                }"
               >
-                {{ character.characterType === 'pc' ? 'J' : 'N' }}
+                {{
+                  character.characterType === 'pc'
+                    ? 'J'
+                    : character.characterType === 'npc'
+                      ? 'N'
+                      : 'M'
+                }}
               </div>
             </div>
             <div class="flex flex-col items-start min-w-0">
@@ -452,7 +482,7 @@ const isAssignedToStreamer = (character: GmCharacter) => character.assignedToStr
           <!-- PNJs -->
           <div v-if="groupedCharacters.npcs.length > 0">
             <div class="flex items-center gap-2 mb-3">
-              <UIcon name="i-lucide-skull" class="size-4 text-warning-500" />
+              <UIcon name="i-lucide-user-round" class="size-4 text-warning-500" />
               <span class="text-sm font-semibold text-primary">Personnages non-joueurs (PNJ)</span>
               <UBadge color="warning" variant="soft" size="xs">{{
                 groupedCharacters.npcs.length
@@ -461,6 +491,49 @@ const isAssignedToStreamer = (character: GmCharacter) => character.assignedToStr
             <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
               <button
                 v-for="character in groupedCharacters.npcs"
+                :key="character.id"
+                class="flex flex-col items-center gap-2 p-3 rounded-lg transition-colors border-2"
+                :class="
+                  isActive(character)
+                    ? 'bg-primary-50 dark:bg-primary-900/20 border-primary-300 dark:border-primary-600'
+                    : 'bg-elevated border-default hover:border-muted'
+                "
+                :disabled="updating"
+                @click="handleSelectCharacter(character)"
+              >
+                <div class="relative">
+                  <CharacterAvatar
+                    :src="character.avatarUrl"
+                    :alt="character.name"
+                    size="lg"
+                    :class="isActive(character) ? 'ring-2 ring-primary-500' : ''"
+                  />
+                  <div
+                    v-if="isActive(character)"
+                    class="absolute -bottom-1 -right-1 size-5 rounded-full bg-primary-500 flex items-center justify-center"
+                  >
+                    <UIcon name="i-lucide-check" class="size-3 text-white" />
+                  </div>
+                </div>
+                <span class="text-xs font-medium text-center truncate w-full">
+                  {{ character.name }}
+                </span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Monstres -->
+          <div v-if="groupedCharacters.monsters.length > 0">
+            <div class="flex items-center gap-2 mb-3">
+              <UIcon name="i-lucide-skull" class="size-4 text-error-500" />
+              <span class="text-sm font-semibold text-primary">Monstres</span>
+              <UBadge color="error" variant="soft" size="xs">{{
+                groupedCharacters.monsters.length
+              }}</UBadge>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <button
+                v-for="character in groupedCharacters.monsters"
                 :key="character.id"
                 class="flex flex-col items-center gap-2 p-3 rounded-lg transition-colors border-2"
                 :class="

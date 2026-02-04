@@ -21,6 +21,7 @@ vi.mock('@/composables/useAnalytics', () => ({
     identify: vi.fn(),
     reset: vi.fn(),
     setUserProperties: vi.fn(),
+    setUserPropertiesOnce: vi.fn(),
     track: vi.fn(),
   })),
 }))
@@ -550,6 +551,65 @@ describe('Auth Store - Extended Coverage', () => {
       await store.logout()
 
       expect(store.authError).toBeNull()
+    })
+  })
+
+  // ============================================
+  // Offline data handling tests
+  // ============================================
+
+  describe('offline data handling', () => {
+    test('should keep offline data on network error if isOfflineData is true', async () => {
+      const { getStoredUser } = await import('@/utils/offline-storage')
+      const offlineUser = createMockUser({ displayName: 'Offline User' })
+      vi.mocked(getStoredUser).mockResolvedValueOnce(offlineUser)
+      vi.mocked(fetch).mockRejectedValueOnce(new Error('Network error'))
+
+      const store = useAuthStore()
+
+      try {
+        await store.fetchMe()
+      } catch {
+        // Expected to throw
+      }
+
+      // User should be preserved from offline storage
+      expect(store.user).toEqual(offlineUser)
+      expect(store.isOfflineData).toBe(true)
+    })
+
+    test('should clear user when network error and no offline data', async () => {
+      const { getStoredUser } = await import('@/utils/offline-storage')
+      vi.mocked(getStoredUser).mockResolvedValueOnce(null)
+      vi.mocked(fetch).mockRejectedValueOnce(new Error('Network error'))
+
+      const store = useAuthStore()
+
+      try {
+        await store.fetchMe()
+      } catch {
+        // Expected to throw
+      }
+
+      expect(store.user).toBeNull()
+      expect(store.isOfflineData).toBe(false)
+    })
+
+    test('should set isOfflineData to false after successful fetch', async () => {
+      const { getStoredUser } = await import('@/utils/offline-storage')
+      const offlineUser = createMockUser({ displayName: 'Offline User' })
+      const freshUser = createMockUser({ displayName: 'Fresh User' })
+      vi.mocked(getStoredUser).mockResolvedValueOnce(offlineUser)
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ user: freshUser }),
+      } as Response)
+
+      const store = useAuthStore()
+      await store.fetchMe()
+
+      expect(store.user).toEqual(freshUser)
+      expect(store.isOfflineData).toBe(false)
     })
   })
 

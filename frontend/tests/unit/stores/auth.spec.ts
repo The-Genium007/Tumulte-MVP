@@ -21,6 +21,7 @@ vi.mock('@/composables/useAnalytics', () => ({
     identify: vi.fn(),
     reset: vi.fn(),
     setUserProperties: vi.fn(),
+    setUserPropertiesOnce: vi.fn(),
     track: vi.fn(),
   })),
 }))

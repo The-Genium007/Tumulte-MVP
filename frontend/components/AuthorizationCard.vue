@@ -3,8 +3,8 @@
     <!-- Info text above -->
     <UAlert color="primary" variant="soft" icon="i-lucide-info" class="mb-4">
       <template #description>
-        Autorisez Tumulte à lancer des sondages sur votre chaîne pour cette campagne pendant 12
-        heures.
+        Accordez un accès temporaire (12h) à Tumulte pour lancer des sondages et des récompenses de
+        points de chaîne sur votre chaîne Twitch.
       </template>
     </UAlert>
 
@@ -50,15 +50,8 @@
           </div>
         </div>
 
-        <!-- Countdown Timer or Permanent Badge -->
-        <div
-          v-if="isOwner"
-          class="bg-brand-100 px-4 sm:px-6 py-3 rounded-lg text-center sm:text-left"
-        >
-          <p class="text-xs text-muted mb-1">Autorisation</p>
-          <p class="text-xl sm:text-2xl font-bold text-brand-500">Permanent</p>
-        </div>
-        <div v-else class="bg-info-100 px-4 sm:px-6 py-3 rounded-lg text-center sm:text-left">
+        <!-- Countdown Timer -->
+        <div class="bg-info-100 px-4 sm:px-6 py-3 rounded-lg text-center sm:text-left">
           <p class="text-xs text-muted mb-1">Temps restant</p>
           <p class="text-2xl sm:text-3xl font-bold text-info-500 tabular-nums">
             {{ formatDuration(displaySeconds) }}
@@ -68,7 +61,6 @@
 
       <!-- Zone action Révoquer -->
       <button
-        v-if="!isOwner"
         class="flex items-center justify-center gap-2 px-6 py-4 bg-error-100 hover:bg-error-200 active:bg-error-300 text-error-600 font-medium transition-colors touch-manipulation"
         @click="showRevokeModal = true"
       >

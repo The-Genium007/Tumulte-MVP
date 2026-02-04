@@ -1,0 +1,168 @@
+# =============================================================================
+# Tumulte Monitoring Stack - Prometheus + Grafana + Exporters
+# =============================================================================
+#
+# Ce fichier est fourni comme RÉFÉRENCE pour créer tes containers manuellement.
+# Tu peux aussi l'utiliser directement avec: docker compose up -d
+#
+# Accès:
+#   - Grafana:     http://localhost:3001
+#   - Prometheus:  http://localhost:9090
+#   - Alertmanager: http://localhost:9093
+#
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # PROMETHEUS - Collecte et stockage des métriques
+  # ---------------------------------------------------------------------------
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    container_name: tumulte-prometheus
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--storage.tsdb.retention.size=10GB'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+    ports:
+      - '9090:9090'
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - monitoring
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+
+  # ---------------------------------------------------------------------------
+  # GRAFANA - Visualisation et dashboards
+  # Configure credentials via env_file or docker secrets in production
+  # ---------------------------------------------------------------------------
+  grafana:
+    image: grafana/grafana:10.4.1
+    container_name: tumulte-grafana
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=${GRAFANA_ROOT_URL:-http://localhost:3001}
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-piechart-panel
+    ports:
+      - '3001:3000'
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    networks:
+      - monitoring
+    depends_on:
+      - prometheus
+
+  # ---------------------------------------------------------------------------
+  # ALERTMANAGER - Gestion des alertes (Discord, email, etc.)
+  # ---------------------------------------------------------------------------
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: tumulte-alertmanager
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+    ports:
+      - '9093:9093'
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager_data:/alertmanager
+    networks:
+      - monitoring
+
+  # ---------------------------------------------------------------------------
+  # NODE EXPORTER - Métriques système (CPU, RAM, disque, réseau)
+  # ---------------------------------------------------------------------------
+  node-exporter:
+    image: prom/node-exporter:v1.7.0
+    container_name: tumulte-node-exporter
+    restart: unless-stopped
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--path.rootfs=/rootfs'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    ports:
+      - '9100:9100'
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    networks:
+      - monitoring
+
+  # ---------------------------------------------------------------------------
+  # CADVISOR - Métriques Docker (containers, images)
+  # ---------------------------------------------------------------------------
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    container_name: tumulte-cadvisor
+    restart: unless-stopped
+    privileged: true
+    ports:
+      - '8080:8080'
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    networks:
+      - monitoring
+
+  # ---------------------------------------------------------------------------
+  # POSTGRES EXPORTER - Métriques PostgreSQL
+  # ---------------------------------------------------------------------------
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.15.0
+    container_name: tumulte-postgres-exporter
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - '9187:9187'
+    networks:
+      - monitoring
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+
+  # ---------------------------------------------------------------------------
+  # REDIS EXPORTER - Métriques Redis
+  # ---------------------------------------------------------------------------
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.58.0
+    container_name: tumulte-redis-exporter
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - '9121:9121'
+    networks:
+      - monitoring
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+
+# Volumes persistants
+volumes:
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+  alertmanager_data:
+    driver: local
+
+# Réseau isolé pour le monitoring
+networks:
+  monitoring:
+    driver: bridge

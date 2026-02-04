@@ -1,5 +1,6 @@
 import redis from '@adonisjs/redis/services/main'
 import logger from '@adonisjs/core/services/logger'
+import { Sentry } from '#config/sentry'
 
 /**
  * Service pour gérer le cache Redis
@@ -231,6 +232,10 @@ export class RedisService {
 
       return newCount
     } catch (error) {
+      Sentry.captureException(error, {
+        tags: { service: 'redis', operation: 'incrementChatVote' },
+        extra: { pollInstanceId, streamerId, optionIndex },
+      })
       logger.error(
         { error, pollInstanceId, streamerId, optionIndex },
         'Failed to increment chat vote'
@@ -255,6 +260,10 @@ export class RedisService {
 
       return result
     } catch (error) {
+      Sentry.captureException(error, {
+        tags: { service: 'redis', operation: 'getChatVotes' },
+        extra: { pollInstanceId, streamerId },
+      })
       logger.error({ error, pollInstanceId, streamerId }, 'Failed to get chat votes')
       throw error
     }
@@ -328,6 +337,10 @@ export class RedisService {
 
       logger.debug({ pollInstanceId, streamerId, username, optionIndex }, 'Recorded user vote')
     } catch (error) {
+      Sentry.captureException(error, {
+        tags: { service: 'redis', operation: 'recordUserVote' },
+        extra: { pollInstanceId, streamerId, optionIndex },
+      })
       logger.error(
         { error, pollInstanceId, streamerId, username, optionIndex },
         'Failed to record user vote'
@@ -381,6 +394,10 @@ export class RedisService {
         'Changed user vote'
       )
     } catch (error) {
+      Sentry.captureException(error, {
+        tags: { service: 'redis', operation: 'changeUserVote' },
+        extra: { pollInstanceId, streamerId, oldOptionIndex, newOptionIndex },
+      })
       logger.error(
         { error, pollInstanceId, streamerId, username, oldOptionIndex, newOptionIndex },
         'Failed to change user vote'
@@ -410,6 +427,12 @@ export class RedisService {
     try {
       await redis.ping()
     } catch (error) {
+      Sentry.captureException(error, {
+        tags: {
+          service: 'redis',
+          operation: 'ping',
+        },
+      })
       logger.error({ error }, 'Redis ping failed')
       throw new Error('Redis connection failed')
     }

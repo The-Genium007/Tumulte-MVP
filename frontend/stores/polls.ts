@@ -1,9 +1,11 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { Poll, PollInstance } from '~/types'
+import { useAnalytics } from '@/composables/useAnalytics'
 
 export const usePollsStore = defineStore('polls', () => {
   const config = useRuntimeConfig()
+  const { track, setUserPropertiesOnce } = useAnalytics()
   const API_URL = config.public.apiBase
 
   // State
@@ -61,6 +63,9 @@ export const usePollsStore = defineStore('polls', () => {
       channelPointsAmount?: number | null
     }
   ): Promise<Poll> => {
+    // Vérifier si c'est le premier poll AVANT la création
+    const isFirstPoll = polls.value.length === 0
+
     try {
       const response = await fetch(`${API_URL}/mj/campaigns/${campaignId}/polls`, {
         method: 'POST',
@@ -76,6 +81,19 @@ export const usePollsStore = defineStore('polls', () => {
 
       const data = await response.json()
       polls.value.unshift(data.data)
+
+      // Track la création du poll
+      if (isFirstPoll) {
+        track('first_poll_created', {
+          poll_id: data.data.id,
+          campaign_id: campaignId,
+          options_count: pollData.options.length, // eslint-disable-line camelcase
+        })
+        setUserPropertiesOnce({
+          first_poll_created_at: new Date().toISOString(),
+        })
+      }
+
       return data.data
     } catch (err) {
       console.error('Failed to create poll:', err)
@@ -184,19 +202,31 @@ export const usePollsStore = defineStore('polls', () => {
 
       // Update lastLaunchedAt in the polls list
       const index = polls.value.findIndex((p) => p.id === pollId)
-      if (index !== -1) {
-        const poll = polls.value[index]
-        if (poll) {
-          polls.value[index] = {
-            ...poll,
-            lastLaunchedAt: new Date().toISOString(),
-          }
+      const poll = index !== -1 ? polls.value[index] : null
+      if (index !== -1 && poll) {
+        polls.value[index] = {
+          ...poll,
+          lastLaunchedAt: new Date().toISOString(),
         }
       }
+
+      // Track le lancement du poll
+      track('poll_launched', {
+        poll_id: pollId,
+        poll_instance_id: data.data.id,
+        poll_question: poll?.question, // eslint-disable-line camelcase
+        options_count: poll?.options?.length, // eslint-disable-line camelcase
+        duration_seconds: poll?.durationSeconds, // eslint-disable-line camelcase
+      })
 
       return { pollInstance: data.data, pollId: data.pollId || pollId }
     } catch (err) {
       console.error('Failed to launch poll:', err)
+      // Track l'échec du lancement
+      track('poll_launch_failed', {
+        poll_id: pollId,
+        error: err instanceof Error ? err.message : 'Unknown error',
+      })
       throw err
     } finally {
       launching.value = false

@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-subtle flex flex-col">
+  <div class="min-h-screen bg-page flex flex-col">
     <!-- Main Content (pas de header pour pages publiques) -->
     <main class="flex-1">
       <slot />
