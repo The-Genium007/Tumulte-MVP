@@ -39,6 +39,10 @@ export const useGmCharacters = () => {
     characters.value.filter((c) => c.characterType === 'npc')
   )
 
+  const monsterCharacters = computed(() =>
+    characters.value.filter((c) => c.characterType === 'monster')
+  )
+
   /**
    * Fetch all characters available for GM incarnation
    */
@@ -138,6 +142,7 @@ export const useGmCharacters = () => {
     // Computed
     playerCharacters,
     nonPlayerCharacters,
+    monsterCharacters,
 
     // Methods
     fetchCharacters,
