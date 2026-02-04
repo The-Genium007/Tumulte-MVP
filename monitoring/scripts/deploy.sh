@@ -100,6 +100,24 @@ if [[ ! -f "$ENV_FILE" ]]; then
     ENV_FILE=".env"
 fi
 
+# Générer prometheus.yml à partir du template
+generate_prometheus_config() {
+    log_info "Génération de prometheus.yml pour ENV_SUFFIX=$ENV_SUFFIX..."
+
+    PROMETHEUS_TEMPLATE="prometheus/prometheus.yml.template"
+    PROMETHEUS_CONFIG="prometheus/prometheus.yml"
+
+    if [[ ! -f "$PROMETHEUS_TEMPLATE" ]]; then
+        log_error "Template $PROMETHEUS_TEMPLATE non trouvé!"
+        exit 1
+    fi
+
+    # Remplacer le placeholder par la valeur réelle de ENV_SUFFIX
+    sed "s/ENV_SUFFIX_PLACEHOLDER/${ENV_SUFFIX}/g" "$PROMETHEUS_TEMPLATE" > "$PROMETHEUS_CONFIG"
+
+    log_success "prometheus.yml généré avec ENV_SUFFIX=$ENV_SUFFIX"
+}
+
 # Générer les targets Prometheus dynamiquement
 generate_prometheus_targets() {
     log_info "Génération des targets Prometheus pour ENV_SUFFIX=$ENV_SUFFIX..."
@@ -165,6 +183,7 @@ DOCKER_COMPOSE="docker compose --env-file $ENV_FILE"
 case $ACTION in
     up)
         log_info "Démarrage monitoring (ENV_SUFFIX=$ENV_SUFFIX)..."
+        generate_prometheus_config
         generate_prometheus_targets
         prepare_alertmanager_config
 
@@ -195,6 +214,7 @@ case $ACTION in
         log_info "Redémarrage monitoring (ENV_SUFFIX=$ENV_SUFFIX)..."
         export ENV_SUFFIX
         $DOCKER_COMPOSE down
+        generate_prometheus_config
         generate_prometheus_targets
         prepare_alertmanager_config
         $DOCKER_COMPOSE up -d

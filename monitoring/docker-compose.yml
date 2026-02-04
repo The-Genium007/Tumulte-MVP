@@ -44,7 +44,6 @@ services:
       - ./prometheus/targets:/etc/prometheus/targets:ro
       - prometheus_data:/prometheus
     networks:
-      - monitoring
       - dokploy-network
     extra_hosts:
       - 'host.docker.internal:host-gateway'
@@ -80,7 +79,6 @@ services:
       - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
       - grafana_data:/var/lib/grafana
     networks:
-      - monitoring
       - dokploy-network
     depends_on:
       - prometheus
@@ -112,7 +110,7 @@ services:
       - ./alertmanager/templates:/etc/alertmanager/templates:ro
       - alertmanager_data:/alertmanager
     networks:
-      - monitoring
+      - dokploy-network
     environment:
       - DISCORD_MONITORING_WEBHOOK_URL=${DISCORD_MONITORING_WEBHOOK_URL:-}
       - DISCORD_CRITICAL_WEBHOOK_URL=${DISCORD_CRITICAL_WEBHOOK_URL:-}
@@ -141,7 +139,7 @@ services:
       - /sys:/host/sys:ro
       - /:/rootfs:ro
     networks:
-      - monitoring
+      - dokploy-network
     labels:
       - "tumulte.environment=${ENV_SUFFIX:-prod}"
       - "tumulte.component=node-exporter"
@@ -164,7 +162,7 @@ services:
       - /var/lib/docker/:/var/lib/docker:ro
       - /dev/disk/:/dev/disk:ro
     networks:
-      - monitoring
+      - dokploy-network
     labels:
       - "tumulte.environment=${ENV_SUFFIX:-prod}"
       - "tumulte.component=cadvisor"
@@ -182,7 +180,7 @@ services:
     ports:
       - '9187:9187'
     networks:
-      - monitoring
+      - dokploy-network
     extra_hosts:
       - 'host.docker.internal:host-gateway'
     labels:
@@ -203,7 +201,7 @@ services:
     ports:
       - '9121:9121'
     networks:
-      - monitoring
+      - dokploy-network
     extra_hosts:
       - 'host.docker.internal:host-gateway'
     labels:
@@ -221,9 +219,6 @@ volumes:
 
 # Networks
 networks:
-  # Réseau interne monitoring
-  monitoring:
-    driver: bridge
-  # Dokploy network - pour accéder aux containers backend/frontend
+  # Dokploy network - réseau externe partagé avec tous les services
   dokploy-network:
     external: true
