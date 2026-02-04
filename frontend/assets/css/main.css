@@ -151,7 +151,7 @@
      INTERFACE - BACKGROUNDS
      ========================================================================== */
   --color-bg-page: var(--theme-bg-page);
-  --color-bg-subtle: var(--theme-bg-page);
+  --color-bg-subtle: #F5F3F1;
   --color-bg-muted: #ffffff;
   --color-bg-elevated: #ffffff;
   --color-bg-inverse: #0f172a;
@@ -432,7 +432,7 @@ html.dark {
 
   /* Override des couleurs de page pour le dark mode */
   --color-bg-page: var(--color-dark-bg-base);
-  --color-bg-subtle: var(--color-dark-bg-base);
+  --color-bg-subtle: var(--color-dark-bg-surface);
   --color-bg-muted: var(--color-dark-bg-surface);
   --color-bg-elevated: var(--color-dark-bg-elevated);
   --color-text-primary: var(--color-dark-text-primary);

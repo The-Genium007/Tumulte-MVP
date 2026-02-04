@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-subtle flex flex-col">
+  <div class="min-h-screen bg-page flex flex-col">
     <!-- PWA Install Prompt - DISABLED for Safari debugging -->
     <!-- <PwaInstallPrompt /> -->
 
