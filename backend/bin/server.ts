@@ -9,6 +9,9 @@
 |
 */
 
+// Initialize Sentry FIRST before any other imports to capture early errors
+import '#config/sentry'
+
 import 'reflect-metadata'
 import { Ignitor, prettyPrintError } from '@adonisjs/core'
 import type { RedisClientType } from 'redis'

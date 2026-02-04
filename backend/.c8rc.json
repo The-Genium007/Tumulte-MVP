@@ -1,0 +1,21 @@
+{
+  "all": true,
+  "src": ["app", "start", "config"],
+  "exclude": [
+    "node_modules/**",
+    "tests/**",
+    "database/**",
+    "bin/**",
+    "scripts/**",
+    "providers/**",
+    "**/*.d.ts",
+    "coverage/**"
+  ],
+  "reporter": ["text", "text-summary", "lcov", "json"],
+  "report-dir": "coverage",
+  "check-coverage": false,
+  "lines": 0,
+  "functions": 0,
+  "branches": 0,
+  "statements": 0
+}
