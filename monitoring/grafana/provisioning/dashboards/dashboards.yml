@@ -1,0 +1,22 @@
+# =============================================================================
+# Grafana Dashboard Provisioning
+# =============================================================================
+# Ce fichier indique à Grafana où trouver les fichiers JSON des dashboards.
+# Les dashboards sont chargés automatiquement au démarrage.
+# =============================================================================
+
+apiVersion: 1
+
+providers:
+  - name: 'Tumulte Dashboards'
+    orgId: 1
+    folder: 'Tumulte'
+    folderUid: 'tumulte'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      # Chemin vers les fichiers JSON des dashboards
+      # Monte ce dossier dans ton container Grafana
+      path: /var/lib/grafana/dashboards

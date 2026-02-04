@@ -11,7 +11,13 @@ export const useAuthStore = defineStore('auth', () => {
   const _router = useRouter()
   const config = useRuntimeConfig()
   const API_URL = config.public.apiBase
-  const { identify, reset: resetAnalytics, setUserProperties, track } = useAnalytics()
+  const {
+    identify,
+    reset: resetAnalytics,
+    setUserProperties,
+    setUserPropertiesOnce,
+    track,
+  } = useAnalytics()
 
   // State
   const user = ref<User | null>(null)
@@ -33,12 +39,18 @@ export const useAuthStore = defineStore('auth', () => {
   function identifyUserInAnalytics(userData: User): void {
     /* eslint-disable camelcase */
     identify(userData.id, {
+      // Données de base
       email: userData.email,
       display_name: userData.displayName,
       tier: userData.tier,
       has_twitch: !!userData.streamer,
       is_email_verified: !!userData.emailVerifiedAt,
       created_at: userData.createdAt,
+
+      // Données business enrichies
+      is_premium: userData.isPremium,
+      is_admin: userData.isAdmin,
+      locale: typeof navigator !== 'undefined' ? navigator.language : 'unknown',
     })
 
     // Set properties that may change over time
@@ -46,8 +58,25 @@ export const useAuthStore = defineStore('auth', () => {
       tier: userData.tier,
       is_premium: userData.isPremium,
       is_admin: userData.isAdmin,
+      last_seen_at: new Date().toISOString(),
+    })
+
+    // Propriétés "first time" (ne changent jamais après la première définition)
+    setUserPropertiesOnce({
+      first_seen_at: new Date().toISOString(),
+      initial_referrer: typeof document !== 'undefined' ? document.referrer || 'direct' : 'unknown',
+      acquisition_source: getAcquisitionSource(),
     })
     /* eslint-enable camelcase */
+  }
+
+  /**
+   * Récupère la source d'acquisition depuis les UTM params
+   */
+  function getAcquisitionSource(): string {
+    if (typeof window === 'undefined') return 'unknown'
+    const params = new URLSearchParams(window.location.search)
+    return params.get('utm_source') || params.get('ref') || 'organic'
   }
 
   /**

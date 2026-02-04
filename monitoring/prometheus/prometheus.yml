@@ -1,0 +1,109 @@
+# =============================================================================
+# Prometheus Configuration - Tumulte
+# =============================================================================
+# Ce fichier configure les cibles (targets) que Prometheus va scraper
+# pour collecter les métriques.
+#
+# En production, remplace les adresses localhost par les vraies adresses
+# de tes services (IPs, hostnames Docker, etc.)
+# =============================================================================
+
+global:
+  # Intervalle de scrape par défaut (toutes les 15 secondes)
+  scrape_interval: 15s
+  # Intervalle d'évaluation des règles d'alerte
+  evaluation_interval: 15s
+  # Labels ajoutés à toutes les métriques
+  external_labels:
+    environment: 'production'
+    project: 'tumulte'
+
+# Règles d'alertes
+rule_files:
+  - 'alerts.yml'
+
+# Configuration Alertmanager (si tu l'utilises)
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - 'alertmanager:9093'
+
+# =============================================================================
+# SCRAPE CONFIGS - Les sources de métriques
+# =============================================================================
+scrape_configs:
+  # ---------------------------------------------------------------------------
+  # Prometheus lui-même (pour monitorer Prometheus)
+  # ---------------------------------------------------------------------------
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          service: 'prometheus'
+
+  # ---------------------------------------------------------------------------
+  # TUMULTE BACKEND - Métriques applicatives AdonisJS
+  # ---------------------------------------------------------------------------
+  # Ton backend expose /metrics avec prom-client
+  # Adapte l'adresse selon ton setup (localhost en dev, nom du container en prod)
+  - job_name: 'tumulte-backend'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['host.docker.internal:3333']
+        labels:
+          service: 'backend'
+          app: 'tumulte'
+    # Si ton endpoint /metrics nécessite une auth, décommente :
+    # basic_auth:
+    #   username: 'prometheus'
+    #   password_file: '/etc/prometheus/backend_auth'
+
+  # ---------------------------------------------------------------------------
+  # TUMULTE FRONTEND - Métriques Nuxt SSR
+  # ---------------------------------------------------------------------------
+  - job_name: 'tumulte-frontend'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['host.docker.internal:3000']
+        labels:
+          service: 'frontend'
+          app: 'tumulte'
+
+  # ---------------------------------------------------------------------------
+  # NODE EXPORTER - Métriques système (CPU, RAM, disque, réseau)
+  # ---------------------------------------------------------------------------
+  # Lance node_exporter sur ta machine hôte ou dans un container
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+        labels:
+          service: 'node'
+
+  # ---------------------------------------------------------------------------
+  # CADVISOR - Métriques Docker (containers)
+  # ---------------------------------------------------------------------------
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+        labels:
+          service: 'docker'
+
+  # ---------------------------------------------------------------------------
+  # POSTGRES EXPORTER - Métriques PostgreSQL
+  # ---------------------------------------------------------------------------
+  - job_name: 'postgres-exporter'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+        labels:
+          service: 'postgresql'
+          database: 'twitch_polls'
+
+  # ---------------------------------------------------------------------------
+  # REDIS EXPORTER - Métriques Redis
+  # ---------------------------------------------------------------------------
+  - job_name: 'redis-exporter'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+        labels:
+          service: 'redis'

@@ -6,6 +6,7 @@ import type {
   StreamerSearchResult,
   LiveStatusMap,
 } from '@/types'
+import { useAnalytics } from '@/composables/useAnalytics'
 
 export interface CampaignMember {
   id: string
@@ -30,6 +31,7 @@ export interface CampaignMember {
 export const useCampaigns = () => {
   const config = useRuntimeConfig()
   const API_URL = config.public.apiBase
+  const { track } = useAnalytics()
 
   const campaigns = ref<Campaign[]>([])
   const selectedCampaign = ref<Campaign | null>(null)
@@ -275,6 +277,11 @@ export const useCampaigns = () => {
         credentials: 'include',
       })
       if (!response.ok) throw new Error('Failed to accept invitation')
+
+      // Track l'acceptation de l'invitation
+      track('invitation_accepted', {
+        invitation_id: id,
+      })
     } catch (error) {
       console.error('Failed to accept invitation:', error)
       throw error

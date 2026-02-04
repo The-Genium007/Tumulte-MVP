@@ -84,7 +84,8 @@
                   <div class="flex-1 min-w-0 pr-4">
                     <p class="font-medium text-primary">Cookies analytiques</p>
                     <p class="text-xs text-muted">
-                      Nous aident a comprendre comment vous utilisez le site (PostHog)
+                      Nous aident a comprendre comment vous utilisez le site, incluant
+                      l'enregistrement anonymise de votre navigation (PostHog)
                     </p>
                   </div>
                   <USwitch v-model="localAnalytics" />

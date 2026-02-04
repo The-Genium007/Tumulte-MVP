@@ -2,7 +2,11 @@ import { useCookieConsent } from './useCookieConsent'
 import type { AnalyticsEvent } from './useAnalytics'
 
 /**
- * Composable de tracking unifie avec respect du consentement RGPD
+ * Composable de tracking unifié avec respect du consentement RGPD
+ *
+ * @deprecated Préférer `useAnalytics()` pour le tracking PostHog.
+ * Ce composable est conservé pour une future intégration GTM (campagnes marketing).
+ * GTM n'est actuellement pas utilisé dans l'application.
  *
  * Fournit une API unique pour tracker vers:
  * - PostHog (analytics) - si consentement analytics
