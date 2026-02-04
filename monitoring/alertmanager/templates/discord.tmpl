@@ -1,0 +1,23 @@
+{{ define "discord.title" }}
+{{ if eq .Status "firing" }}🚨 ALERTE{{ else }}✅ RÉSOLUE{{ end }} - {{ .GroupLabels.alertname }}
+{{ end }}
+
+{{ define "discord.text" }}
+{{ range .Alerts }}
+**{{ .Labels.alertname }}** ({{ .Labels.severity | toUpper }})
+{{ .Annotations.summary }}
+
+{{ if .Annotations.description }}
+> {{ .Annotations.description }}
+{{ end }}
+
+**Environnement:** {{ .Labels.environment | default "unknown" }}
+**Service:** {{ .Labels.service | default "N/A" }}
+{{ if eq .Status "firing" }}
+**Depuis:** {{ .StartsAt.Format "15:04:05 02/01/2006" }}
+{{ else }}
+**Résolu à:** {{ .EndsAt.Format "15:04:05 02/01/2006" }}
+{{ end }}
+---
+{{ end }}
+{{ end }}

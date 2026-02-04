@@ -10,7 +10,7 @@ import CampaignGamificationConfig from '#models/campaign_gamification_config'
 // TYPES
 // ========================================
 
-export type TwitchRewardStatus = 'not_created' | 'active' | 'paused' | 'deleted'
+export type TwitchRewardStatus = 'not_created' | 'active' | 'paused' | 'deleted' | 'orphaned'
 
 /**
  * StreamerGamificationConfig - Configuration des événements de gamification par streamer
@@ -53,6 +53,22 @@ class StreamerGamificationConfig extends BaseModel {
   /** Statut du reward Twitch */
   @column()
   declare twitchRewardStatus: TwitchRewardStatus
+
+  // ========================================
+  // TRACKING DES ORPHELINS
+  // ========================================
+
+  /** Timestamp de la première tentative de suppression échouée */
+  @column.dateTime({ columnName: 'deletion_failed_at' })
+  declare deletionFailedAt: DateTime | null
+
+  /** Compteur de tentatives de suppression (pour backoff exponentiel) */
+  @column({ columnName: 'deletion_retry_count' })
+  declare deletionRetryCount: number
+
+  /** Prochaine tentative de suppression planifiée */
+  @column.dateTime({ columnName: 'next_deletion_retry_at' })
+  declare nextDeletionRetryAt: DateTime | null
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
@@ -118,7 +134,27 @@ class StreamerGamificationConfig extends BaseModel {
    * Vérifie si le reward peut être créé
    */
   get canCreateTwitchReward(): boolean {
-    return this.twitchRewardStatus === 'not_created' || this.twitchRewardStatus === 'deleted'
+    return (
+      this.twitchRewardStatus === 'not_created' ||
+      this.twitchRewardStatus === 'deleted' ||
+      this.twitchRewardStatus === 'orphaned'
+    )
+  }
+
+  /**
+   * Vérifie si le reward est orphelin (suppression échouée)
+   */
+  get isOrphaned(): boolean {
+    return this.twitchRewardStatus === 'orphaned' && this.twitchRewardId !== null
+  }
+
+  /**
+   * Vérifie si une tentative de nettoyage est due
+   */
+  get isCleanupDue(): boolean {
+    if (!this.isOrphaned) return false
+    if (!this.nextDeletionRetryAt) return true
+    return this.nextDeletionRetryAt <= DateTime.now()
   }
 }
 

@@ -191,7 +191,7 @@ export class TwitchRewardService {
   }
 
   /**
-   * Supprime une récompense
+   * Supprime une récompense (sans retry)
    */
   async deleteReward(streamer: Streamer, rewardId: string): Promise<boolean> {
     const accessToken = await streamer.getDecryptedAccessToken()
@@ -223,6 +223,84 @@ export class TwitchRewardService {
       'Échec de suppression de récompense'
     )
     return false
+  }
+
+  /**
+   * Supprime une récompense avec retry automatique
+   *
+   * Utilisé par le système de cleanup pour les rewards orphelins.
+   * Gère automatiquement les erreurs 429 (rate limit) et 5xx (erreurs serveur)
+   * avec backoff exponentiel.
+   *
+   * @returns Object avec success, et isAlreadyDeleted pour les 404
+   */
+  async deleteRewardWithRetry(
+    streamer: Streamer,
+    rewardId: string,
+    retryContext?: RetryContext
+  ): Promise<{ success: boolean; isAlreadyDeleted: boolean }> {
+    const accessToken = await streamer.getDecryptedAccessToken()
+    if (!accessToken) {
+      logger.warn(
+        { streamerId: streamer.id, rewardId, event: 'delete_reward_no_token' },
+        'Pas de token pour supprimer la récompense'
+      )
+      return { success: false, isAlreadyDeleted: false }
+    }
+
+    const context = retryContext || {
+      service: 'TwitchRewardService',
+      operation: 'deleteRewardWithRetry',
+      metadata: { streamerId: streamer.id, rewardId },
+    }
+
+    const result = await this.retryUtility.execute(
+      () => this.deleteRewardHttp(streamer.twitchUserId, accessToken, rewardId),
+      { ...RetryPolicies.TWITCH_API, context }
+    )
+
+    // Get the last attempt's status code for error handling
+    const lastAttempt = result.attemptDetails[result.attemptDetails.length - 1]
+    const lastStatusCode = lastAttempt?.statusCode
+
+    if (result.success) {
+      logger.info(
+        {
+          event: 'reward_deleted_with_retry',
+          streamerId: streamer.id,
+          rewardId,
+          attempts: result.attempts,
+        },
+        'Récompense supprimée (avec retry)'
+      )
+      return { success: true, isAlreadyDeleted: false }
+    }
+
+    // 404 = reward déjà supprimé sur Twitch, on considère ça comme un succès
+    if (lastStatusCode === 404) {
+      logger.info(
+        {
+          event: 'reward_already_deleted',
+          streamerId: streamer.id,
+          rewardId,
+        },
+        'Récompense déjà supprimée sur Twitch (404)'
+      )
+      return { success: true, isAlreadyDeleted: true }
+    }
+
+    logger.error(
+      {
+        event: 'reward_deletion_failed_after_retries',
+        streamerId: streamer.id,
+        rewardId,
+        error: result.error?.message,
+        attempts: result.attempts,
+        statusCode: lastStatusCode,
+      },
+      'Échec de suppression de récompense après retries'
+    )
+    return { success: false, isAlreadyDeleted: false }
   }
 
   /**

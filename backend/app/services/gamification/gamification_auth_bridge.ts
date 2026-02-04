@@ -1,5 +1,6 @@
 import { inject } from '@adonisjs/core'
 import logger from '@adonisjs/core/services/logger'
+import { DateTime } from 'luxon'
 import { streamer as Streamer } from '#models/streamer'
 import { RewardManagerService } from '#services/gamification/reward_manager_service'
 import { StreamerGamificationConfigRepository } from '#repositories/streamer_gamification_config_repository'
@@ -191,18 +192,34 @@ export class GamificationAuthBridge {
             '[GamificationAuthBridge] Reward deleted successfully'
           )
         } else {
-          // Twitch deletion failed, but still mark as deleted locally
-          // The reward may be orphaned on Twitch
-          config.twitchRewardId = null
-          config.twitchRewardStatus = 'deleted'
+          // Twitch deletion failed - mark as orphaned but KEEP twitchRewardId
+          // This allows the cleanup system to retry deletion later
+          config.twitchRewardStatus = 'orphaned'
           config.isEnabled = false
+          config.deletionFailedAt = DateTime.now()
+          config.deletionRetryCount = (config.deletionRetryCount || 0) + 1
+          // Schedule next retry with exponential backoff (1h, 2h, 4h, max 24h)
+          const backoffHours = Math.min(Math.pow(2, config.deletionRetryCount - 1), 24)
+          config.nextDeletionRetryAt = DateTime.now().plus({ hours: backoffHours })
           await config.save()
 
           result.failed++
           result.errors.push({
             eventId: config.eventId,
-            error: 'Twitch API deletion failed, reward may be orphaned',
+            error: `Twitch API deletion failed, marked as orphaned. Next retry in ${backoffHours}h`,
           })
+
+          logger.warn(
+            {
+              campaignId,
+              streamerId: streamer.id,
+              eventId: config.eventId,
+              twitchRewardId: config.twitchRewardId,
+              retryCount: config.deletionRetryCount,
+              nextRetryAt: config.nextDeletionRetryAt?.toISO(),
+            },
+            '[GamificationAuthBridge] Reward deletion failed, marked as orphaned for cleanup'
+          )
         }
       } catch (error) {
         result.failed++

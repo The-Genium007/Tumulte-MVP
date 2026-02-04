@@ -1,0 +1,28 @@
+# =============================================================================
+# Prometheus Targets - Applications Tumulte
+# =============================================================================
+#
+# CE FICHIER EST GÉNÉRÉ AUTOMATIQUEMENT par scripts/deploy.sh
+# Ne pas modifier manuellement - les changements seront écrasés
+#
+# Pour changer l'environnement, relancez:
+#   ./scripts/deploy.sh staging
+#   ./scripts/deploy.sh prod
+#
+# =============================================================================
+
+# Backend - sera remplacé par tumulte-backend-{ENV_SUFFIX}:3333
+- targets:
+    - 'tumulte-backend-prod:3333'
+  labels:
+    service: 'backend'
+    app: 'tumulte'
+    environment: 'prod'
+
+# Frontend - sera remplacé par tumulte-frontend-{ENV_SUFFIX}:3000
+- targets:
+    - 'tumulte-frontend-prod:3000'
+  labels:
+    service: 'frontend'
+    app: 'tumulte'
+    environment: 'prod'

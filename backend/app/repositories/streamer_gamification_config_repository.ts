@@ -1,3 +1,4 @@
+import { DateTime } from 'luxon'
 import StreamerGamificationConfig from '#models/streamer_gamification_config'
 import type { TwitchRewardStatus } from '#models/streamer_gamification_config'
 
@@ -173,6 +174,91 @@ export class StreamerGamificationConfigRepository {
       .whereNotNull('twitchRewardId')
       .preload('event')
       .preload('streamer')
+  }
+
+  // ========================================
+  // CLEANUP & ORPHAN DETECTION
+  // ========================================
+
+  /**
+   * Find all orphaned configs (deletion failed, reward may still exist on Twitch)
+   * These are configs where status='orphaned' and twitchRewardId is not null
+   */
+  async findOrphanedConfigs(): Promise<StreamerGamificationConfig[]> {
+    return StreamerGamificationConfig.query()
+      .where('twitchRewardStatus', 'orphaned')
+      .whereNotNull('twitchRewardId')
+      .preload('streamer')
+      .preload('event')
+  }
+
+  /**
+   * Find orphaned configs that are due for cleanup retry
+   * Based on nextDeletionRetryAt timestamp
+   */
+  async findOrphanedConfigsDueForRetry(): Promise<StreamerGamificationConfig[]> {
+    return StreamerGamificationConfig.query()
+      .where('twitchRewardStatus', 'orphaned')
+      .whereNotNull('twitchRewardId')
+      .where((query) => {
+        query
+          .whereNull('nextDeletionRetryAt')
+          .orWhere('nextDeletionRetryAt', '<=', DateTime.now().toSQL())
+      })
+      .preload('streamer')
+      .preload('event')
+  }
+
+  /**
+   * Find all configs for a streamer that have a twitchRewardId
+   * Used for full reconciliation (comparing DB state with Twitch state)
+   */
+  async findByStreamerWithAnyReward(streamerId: string): Promise<StreamerGamificationConfig[]> {
+    return StreamerGamificationConfig.query()
+      .where('streamerId', streamerId)
+      .whereNotNull('twitchRewardId')
+      .preload('event')
+  }
+
+  /**
+   * Find all streamers that have active gamification configs
+   * Returns unique streamer IDs
+   */
+  async findStreamersWithActiveConfigs(): Promise<string[]> {
+    const configs = await StreamerGamificationConfig.query()
+      .where('twitchRewardStatus', 'active')
+      .whereNotNull('twitchRewardId')
+      .select('streamerId')
+      .distinct('streamerId')
+
+    return configs.map((c) => c.streamerId)
+  }
+
+  /**
+   * Mark a config as successfully cleaned up (orphan resolved)
+   */
+  async markAsDeleted(id: string): Promise<void> {
+    const config = await StreamerGamificationConfig.find(id)
+    if (!config) return
+
+    config.twitchRewardId = null
+    config.twitchRewardStatus = 'deleted'
+    config.deletionFailedAt = null
+    config.deletionRetryCount = 0
+    config.nextDeletionRetryAt = null
+    await config.save()
+  }
+
+  /**
+   * Update orphan retry tracking after a failed cleanup attempt
+   */
+  async updateOrphanRetry(id: string, nextRetryAt: DateTime): Promise<void> {
+    const config = await StreamerGamificationConfig.find(id)
+    if (!config) return
+
+    config.deletionRetryCount = (config.deletionRetryCount || 0) + 1
+    config.nextDeletionRetryAt = nextRetryAt
+    await config.save()
   }
 }
 

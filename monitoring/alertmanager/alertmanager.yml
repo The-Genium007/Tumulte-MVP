@@ -2,16 +2,30 @@
 # Alertmanager Configuration - Tumulte
 # =============================================================================
 # Configure ici où envoyer les alertes (Discord, email, Slack, etc.)
+#
+# IMPORTANT: Les webhooks Discord doivent être configurés dans le fichier .env
+#   - DISCORD_MONITORING_WEBHOOK_URL : Alertes normales (warnings)
+#   - DISCORD_CRITICAL_WEBHOOK_URL   : Alertes critiques (channel séparé)
+#
+# Pour créer un webhook Discord:
+#   1. Server Settings > Integrations > Webhooks > New Webhook
+#   2. Copier l'URL du webhook
+#   3. Coller dans le fichier .env correspondant
+#
 # =============================================================================
 
 global:
   # Timeout pour les webhooks
   resolve_timeout: 5m
 
+# Templates pour les messages Discord
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
 # Arbre de routage des alertes
 route:
-  # Groupe les alertes par nom d'alerte
-  group_by: ['alertname', 'severity']
+  # Groupe les alertes par nom d'alerte et environnement
+  group_by: ['alertname', 'severity', 'environment']
   # Attendre 30s avant d'envoyer le premier groupe
   group_wait: 30s
   # Attendre 5m avant d'envoyer un nouveau groupe avec les mêmes labels
@@ -39,18 +53,30 @@ route:
 
 # Receivers (destinations des alertes)
 receivers:
-  # Discord - Notifications normales
-  # Configure ton webhook Discord dans le fichier ou via variable d'environnement
+  # ---------------------------------------------------------------------------
+  # Discord - Notifications normales (warnings)
+  # ---------------------------------------------------------------------------
   - name: 'discord-notifications'
-    # webhook_configs:
-    #   - url: '${DISCORD_WEBHOOK_URL}'
-    #     send_resolved: true
+    webhook_configs:
+      - url: 'DISCORD_MONITORING_WEBHOOK_PLACEHOLDER'
+        send_resolved: true
+        http_config:
+          follow_redirects: true
 
+  # ---------------------------------------------------------------------------
   # Discord - Alertes critiques (channel séparé recommandé)
+  # ---------------------------------------------------------------------------
   - name: 'discord-critical'
-    # webhook_configs:
-    #   - url: '${DISCORD_CRITICAL_WEBHOOK_URL}'
-    #     send_resolved: true
+    webhook_configs:
+      - url: 'DISCORD_CRITICAL_WEBHOOK_PLACEHOLDER'
+        send_resolved: true
+        http_config:
+          follow_redirects: true
+
+  # ---------------------------------------------------------------------------
+  # Fallback - Aucune notification (utilisé si les webhooks ne sont pas configurés)
+  # ---------------------------------------------------------------------------
+  - name: 'null'
 
 # Inhibition rules (évite les alertes redondantes)
 inhibit_rules:
@@ -62,7 +88,25 @@ inhibit_rules:
     equal: ['service']
 
   - source_match:
+      alertname: 'TumulteFrontendDown'
+    target_match_re:
+      alertname: 'High.*'
+    equal: ['service']
+
+  - source_match:
       severity: 'critical'
     target_match:
       severity: 'warning'
     equal: ['alertname']
+
+  # Si PostgreSQL est down, ignorer les alertes de connexions
+  - source_match:
+      alertname: 'PostgresDown'
+    target_match_re:
+      alertname: 'Postgres.*'
+
+  # Si Redis est down, ignorer les alertes de mémoire Redis
+  - source_match:
+      alertname: 'RedisDown'
+    target_match_re:
+      alertname: 'Redis.*'
