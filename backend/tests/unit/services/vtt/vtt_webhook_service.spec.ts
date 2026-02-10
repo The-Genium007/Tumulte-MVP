@@ -10,6 +10,7 @@ import {
 import Character from '#models/character'
 import CharacterAssignment from '#models/character_assignment'
 import DiceRoll from '#models/dice_roll'
+import { campaign as Campaign } from '#models/campaign'
 import { DateTime } from 'luxon'
 
 test.group('VttWebhookService - processDiceRoll', (group) => {
