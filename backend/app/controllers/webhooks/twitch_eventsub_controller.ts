@@ -77,7 +77,15 @@ export default class TwitchEventSubController {
     // Vérifier la signature
     const isValid = this.verifySignature(request)
     if (!isValid) {
-      logger.warn({ event: 'eventsub_invalid_signature' }, 'Signature EventSub invalide')
+      logger.warn(
+        {
+          event: 'eventsub_invalid_signature',
+          hasRawBody: !!request.raw(),
+          hasSecret: !!this.webhookSecret,
+          messageType: request.header('Twitch-Eventsub-Message-Type'),
+        },
+        'Signature EventSub invalide'
+      )
       return response.forbidden({ error: 'Invalid signature' })
     }
 
@@ -184,20 +192,43 @@ export default class TwitchEventSubController {
     const streamerConfig = await this.streamerConfigRepository.findByTwitchRewardId(event.reward.id)
 
     if (streamerConfig) {
-      // Nouveau flux: reward créé par un streamer
+      logger.info(
+        {
+          event: 'redemption_config_matched',
+          rewardId: event.reward.id,
+          streamerConfigId: streamerConfig.id,
+          eventId: streamerConfig.eventId,
+          campaignId: streamerConfig.campaignId,
+        },
+        'Config streamer trouvée pour ce reward ID'
+      )
       await this.handleStreamerRedemption(event, streamer.id, streamerConfig)
       return
     }
 
+    logger.warn(
+      {
+        event: 'redemption_no_streamer_config',
+        rewardId: event.reward.id,
+        rewardTitle: event.reward.title,
+        streamerId: streamer.id,
+        broadcasterId: event.broadcaster_user_id,
+      },
+      'Aucune StreamerGamificationConfig trouvée pour ce reward ID — fallback ancien système'
+    )
+
     // Fallback: ancien système avec CampaignGamificationConfig
     const config = await this.configRepository.findByTwitchRewardId(event.reward.id)
     if (!config) {
-      logger.debug(
+      logger.warn(
         {
           event: 'redemption_not_gamification',
           rewardId: event.reward.id,
+          rewardTitle: event.reward.title,
+          broadcasterId: event.broadcaster_user_id,
+          streamerId: streamer.id,
         },
-        'Redemption pour un reward non lié à la gamification'
+        'Redemption pour un reward non lié à la gamification — aucune config trouvée pour ce reward ID'
       )
       return
     }
