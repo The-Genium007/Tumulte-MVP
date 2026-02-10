@@ -17,6 +17,7 @@ services:
     environment:
       # Application
       NODE_ENV: ${NODE_ENV:-production}
+      ENV_SUFFIX: ${ENV_SUFFIX:-prod}
       PORT: 3333
       HOST: 0.0.0.0
       APP_KEY: ${APP_KEY}
@@ -44,6 +45,7 @@ services:
       TWITCH_CLIENT_ID: ${TWITCH_CLIENT_ID}
       TWITCH_CLIENT_SECRET: ${TWITCH_CLIENT_SECRET}
       TWITCH_REDIRECT_URI: ${TWITCH_REDIRECT_URI}
+      TWITCH_EVENTSUB_SECRET: ${TWITCH_EVENTSUB_SECRET}
 
       # Google OAuth
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
