@@ -9,6 +9,7 @@ import type {
   GamificationInstanceEvent,
   GamificationProgressEvent,
   GamificationCompleteEvent,
+  GamificationArmedEvent,
   GamificationActionExecutedEvent,
 } from '@/types'
 import { loggers } from '@/utils/logger'
@@ -616,6 +617,7 @@ export const useWebSocket = () => {
       onGamificationStart?: (data: GamificationInstanceEvent) => void
       onGamificationProgress?: (data: GamificationProgressEvent) => void
       onGamificationComplete?: (data: GamificationCompleteEvent) => void
+      onGamificationArmed?: (data: GamificationArmedEvent) => void
       onGamificationExpired?: (data: { instanceId: string }) => void
       onGamificationActionExecuted?: (data: GamificationActionExecutedEvent) => void
     }
@@ -687,6 +689,11 @@ export const useWebSocket = () => {
         case 'gamification:complete':
           if (callbacks.onGamificationComplete) {
             callbacks.onGamificationComplete(message.data as GamificationCompleteEvent)
+          }
+          break
+        case 'gamification:armed':
+          if (callbacks.onGamificationArmed) {
+            callbacks.onGamificationArmed(message.data as GamificationArmedEvent)
           }
           break
         case 'gamification:expired':

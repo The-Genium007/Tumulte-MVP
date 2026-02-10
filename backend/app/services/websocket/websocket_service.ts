@@ -4,6 +4,78 @@ import type { PollAggregatedVotes } from '#services/polls/poll_aggregation_servi
 import { pollInstance as PollInstance } from '#models/poll_instance'
 import { campaignMembership as CampaignMembership } from '#models/campaign_membership'
 
+// ========================================
+// GAMIFICATION EVENT INTERFACES
+// ========================================
+
+interface GamificationStartEvent {
+  id: string
+  campaignId: string
+  eventId: string
+  event: {
+    id: string
+    slug: string
+    name: string
+    type: 'individual' | 'group'
+    actionType: string
+    rewardColor: string
+  }
+  type: 'individual' | 'group'
+  status: string
+  objectiveTarget: number
+  currentProgress: number
+  progressPercentage: number
+  isObjectiveReached: boolean
+  duration: number
+  startsAt: string
+  expiresAt: string
+  completedAt: string | null
+  streamerId: string | null
+  viewerCountAtStart: number | null
+  triggerData: Record<string, unknown> | null
+}
+
+interface GamificationProgressData {
+  instanceId: string
+  campaignId: string
+  currentProgress: number
+  objectiveTarget: number
+  progressPercentage: number
+  isObjectiveReached: boolean
+  contributorUsername: string
+}
+
+interface GamificationArmedData {
+  instanceId: string
+  campaignId: string
+  armedAt: string | null
+  streamerId: string | null
+  eventId: string
+}
+
+interface GamificationCompleteData {
+  instanceId: string
+  campaignId: string
+  success: boolean
+  message?: string
+}
+
+interface GamificationExpiredData {
+  instanceId: string
+  campaignId: string
+}
+
+interface GamificationActionExecutedData {
+  instanceId: string
+  campaignId: string
+  eventName: string
+  actionType: string
+  success: boolean
+  message?: string
+  originalValue?: number
+  invertedValue?: number
+}
+
 interface PollStartEvent {
   pollInstanceId: string
   title: string
@@ -25,10 +97,11 @@ interface PollUpdateEvent {
 
 interface PollEndEvent {
   pollInstanceId: string
-  finalVotes: Record<string, number>
+  votesByOption: Record<string, number>
   totalVotes: number
   percentages: Record<string, number>
   winnerIndex: number | null
+  cancelled: boolean
   [key: string]: any
 }
 
@@ -167,7 +240,11 @@ class WebSocketService {
   /**
    * Émet l'événement de fin d'un sondage
    */
-  async emitPollEnd(pollInstanceId: string, aggregated: PollAggregatedVotes): Promise<void> {
+  async emitPollEnd(
+    pollInstanceId: string,
+    aggregated: PollAggregatedVotes,
+    cancelled: boolean = false
+  ): Promise<void> {
     const channel = `poll:${pollInstanceId}`
 
     logger.info({
@@ -190,13 +267,13 @@ class WebSocketService {
     }
 
     // Préparer des données sérialisables
-    const finalVotes = this.makeSerializable(aggregated.votesByOption)
+    const votesByOption = this.makeSerializable(aggregated.votesByOption)
     const percentages = this.makeSerializable(aggregated.percentages)
 
     logger.info({
       event: 'websocket_poll_end_data_prepared',
       pollInstanceId,
-      finalVotes,
+      votesByOption,
       percentages,
       totalVotes: aggregated.totalVotes,
       winnerIndex,
@@ -204,10 +281,11 @@ class WebSocketService {
 
     const data: PollEndEvent = {
       pollInstanceId: pollInstanceId,
-      finalVotes: finalVotes,
+      votesByOption: votesByOption,
       totalVotes: aggregated.totalVotes,
       percentages: percentages,
       winnerIndex: winnerIndex,
+      cancelled: cancelled,
     }
 
     logger.info({
@@ -242,10 +320,11 @@ class WebSocketService {
         // S'assurer que toutes les données sont sérialisables
         const serializableData = {
           pollInstanceId: String(data.pollInstanceId),
-          finalVotes: finalVotes,
+          votesByOption: votesByOption,
           totalVotes: data.totalVotes,
           percentages: percentages,
           winnerIndex: data.winnerIndex,
+          cancelled: data.cancelled,
           campaign_id: String(pollInstance.campaignId),
         }
 
@@ -313,6 +392,81 @@ class WebSocketService {
     logger.info(
       `WebSocket: ${isReady ? 'streamer:ready' : 'streamer:not-ready'} emitted for ${streamerName} on campaign ${campaignId}`
     )
+  }
+
+  // ========================================
+  // GAMIFICATION - Streamer overlay broadcasts
+  // ========================================
+
+  /**
+   * Résout les streamers actifs d'une campagne et broadcast un message vers leurs canaux overlay
+   */
+  private async broadcastToStreamerOverlays(
+    campaignId: string,
+    eventName: string,
+    payload: object
+  ): Promise<void> {
+    try {
+      const memberships = await CampaignMembership.query()
+        .where('campaignId', campaignId)
+        .where('status', 'ACTIVE')
+
+      for (const membership of memberships) {
+        transmit.broadcast(`streamer:${membership.streamerId}:polls`, {
+          event: eventName,
+          data: payload,
+        } as any)
+      }
+
+      logger.debug(
+        `WebSocket: ${eventName} emitted to ${memberships.length} streamers for campaign ${campaignId}`
+      )
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      logger.error(`WebSocket: failed to emit ${eventName} to streamers: ${errorMessage}`)
+    }
+  }
+
+  /**
+   * Émet le démarrage d'une instance de gamification vers les overlays streamer
+   */
+  async emitGamificationStart(data: GamificationStartEvent): Promise<void> {
+    await this.broadcastToStreamerOverlays(data.campaignId, 'gamification:start', data)
+  }
+
+  /**
+   * Émet la progression d'une instance de gamification vers les overlays streamer
+   */
+  async emitGamificationProgress(data: GamificationProgressData): Promise<void> {
+    await this.broadcastToStreamerOverlays(data.campaignId, 'gamification:progress', data)
+  }
+
+  /**
+   * Émet le passage en état "armed" d'une instance vers les overlays streamer
+   */
+  async emitGamificationArmed(data: GamificationArmedData): Promise<void> {
+    await this.broadcastToStreamerOverlays(data.campaignId, 'gamification:armed', data)
+  }
+
+  /**
+   * Émet la complétion d'une instance de gamification vers les overlays streamer
+   */
+  async emitGamificationComplete(data: GamificationCompleteData): Promise<void> {
+    await this.broadcastToStreamerOverlays(data.campaignId, 'gamification:complete', data)
+  }
+
+  /**
+   * Émet l'expiration d'une instance de gamification vers les overlays streamer
+   */
+  async emitGamificationExpired(data: GamificationExpiredData): Promise<void> {
+    await this.broadcastToStreamerOverlays(data.campaignId, 'gamification:expired', data)
+  }
+
+  /**
+   * Émet l'exécution d'une action de gamification vers les overlays streamer
+   */
+  async emitGamificationActionExecuted(data: GamificationActionExecutedData): Promise<void> {
+    await this.broadcastToStreamerOverlays(data.campaignId, 'gamification:action_executed', data)
   }
 }
 

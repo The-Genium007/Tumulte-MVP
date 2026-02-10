@@ -22,6 +22,13 @@ function createMockPollInstance(overrides: Partial<PollInstance> = {}): Partial<
   }
 }
 
+function createMockChannelLinkRepository() {
+  return {
+    completeAllByPollInstance: async () => 0,
+    terminateAllByPollInstance: async () => 0,
+  }
+}
+
 test.group('PollLifecycleService - launchPoll', () => {
   test('should launch a pending poll successfully', async ({ assert }) => {
     // Arrange
@@ -79,6 +86,7 @@ test.group('PollLifecycleService - launchPoll', () => {
 
     const service = new PollLifecycleService(
       mockRepository as any,
+      createMockChannelLinkRepository() as any,
       mockCreationService as any,
       mockPollingService as any,
       mockAggregationService as any,
@@ -137,6 +145,7 @@ test.group('PollLifecycleService - launchPoll', () => {
 
     const service = new PollLifecycleService(
       mockRepository as any,
+      createMockChannelLinkRepository() as any,
       mockCreationService as any,
       mockPollingService as any,
       mockAggregationService as any,
@@ -192,6 +201,7 @@ test.group('PollLifecycleService - launchPoll', () => {
 
     const service = new PollLifecycleService(
       mockRepository as any,
+      createMockChannelLinkRepository() as any,
       mockCreationService as any,
       mockPollingService as any,
       mockAggregationService as any,
@@ -250,6 +260,7 @@ test.group('PollLifecycleService - launchPoll', () => {
 
     const service = new PollLifecycleService(
       mockRepository as any,
+      createMockChannelLinkRepository() as any,
       mockCreationService as any,
       mockPollingService as any,
       mockAggregationService as any,
@@ -329,6 +340,7 @@ test.group('PollLifecycleService - endPoll', () => {
 
     const service = new PollLifecycleService(
       mockRepository as any,
+      createMockChannelLinkRepository() as any,
       mockCreationService as any,
       mockPollingService as any,
       mockAggregationService as any,
@@ -400,6 +412,7 @@ test.group('PollLifecycleService - removeStreamerFromCampaign', () => {
 
     const service = new PollLifecycleService(
       mockRepository as any,
+      createMockChannelLinkRepository() as any,
       mockCreationService as any,
       mockPollingService as any,
       mockAggregationService as any,

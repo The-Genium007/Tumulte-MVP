@@ -1,4 +1,5 @@
 import { inject } from '@adonisjs/core'
+import app from '@adonisjs/core/services/app'
 import logger from '@adonisjs/core/services/logger'
 import transmit from '@adonisjs/transmit/services/main'
 import GamificationEvent from '#models/gamification_event'
@@ -9,6 +10,7 @@ import { TriggerEvaluator, type DiceRollData } from './trigger_evaluator.js'
 import { InstanceManager, type ContributionData } from './instance_manager.js'
 // ObjectiveCalculator is used by InstanceManager, not directly here
 import { ActionExecutor, type FoundryCommandService } from './action_executor.js'
+import type { webSocketService as WebSocketServiceClass } from '#services/websocket/websocket_service'
 
 /**
  * Données de redemption Twitch Channel Points (ancien système)
@@ -53,11 +55,23 @@ export interface StreamerRedemptionData {
  */
 @inject()
 export class GamificationService {
+  private _webSocketService: InstanceType<typeof WebSocketServiceClass> | null = null
+
   constructor(
     private triggerEvaluator: TriggerEvaluator,
     private instanceManager: InstanceManager,
     private actionExecutor: ActionExecutor
   ) {}
+
+  /**
+   * Résout le WebSocketService depuis le container (lazy)
+   */
+  private async getWebSocketService(): Promise<InstanceType<typeof WebSocketServiceClass>> {
+    if (!this._webSocketService) {
+      this._webSocketService = await app.container.make('webSocketService')
+    }
+    return this._webSocketService
+  }
 
   /**
    * Injecte le service Foundry pour l'exécution des actions
@@ -520,7 +534,7 @@ export class GamificationService {
       await this.instanceManager.addContribution(instance.id, contribution)
 
     // Broadcast la progression
-    this.broadcastProgress(updatedInstance)
+    this.broadcastProgress(updatedInstance, redemption.twitchUsername)
 
     // Si l'objectif est atteint, compléter l'instance
     if (objectiveReached) {
@@ -682,7 +696,7 @@ export class GamificationService {
       await this.instanceManager.addContribution(instance.id, contribution)
 
     // Broadcast la progression
-    this.broadcastProgress(updatedInstance)
+    this.broadcastProgress(updatedInstance, redemption.twitchUsername)
 
     // Si l'objectif est atteint, passer en état "armed" (PAS completed)
     if (objectiveReached && updatedInstance.status === 'active') {
@@ -872,6 +886,42 @@ export class GamificationService {
       },
     })
 
+    // Broadcast vers les overlays streamer
+    this.getWebSocketService()
+      .then((ws) =>
+        ws.emitGamificationStart({
+          id: instance.id,
+          campaignId: instance.campaignId,
+          eventId: instance.eventId,
+          event: {
+            id: event.id,
+            slug: event.slug,
+            name: event.name,
+            type: event.type,
+            actionType: event.actionType,
+            rewardColor: event.rewardColor,
+          },
+          type: instance.type,
+          status: instance.status,
+          objectiveTarget: instance.objectiveTarget,
+          currentProgress: instance.currentProgress,
+          progressPercentage: instance.progressPercentage,
+          isObjectiveReached: instance.isObjectiveReached,
+          duration: instance.duration,
+          startsAt: instance.startsAt.toISO() ?? '',
+          expiresAt: instance.expiresAt.toISO() ?? '',
+          completedAt: instance.completedAt?.toISO() ?? null,
+          streamerId: instance.streamerId,
+          viewerCountAtStart: instance.viewerCountAtStart,
+          triggerData: instance.triggerData
+            ? JSON.parse(JSON.stringify(instance.triggerData))
+            : null,
+        })
+      )
+      .catch((err) => {
+        logger.error({ err }, 'Failed to emit gamification:start to streamer overlays')
+      })
+
     logger.debug(
       {
         event: 'broadcast_instance_created',
@@ -885,7 +935,10 @@ export class GamificationService {
   /**
    * Broadcast la progression d'une instance
    */
-  private broadcastProgress(instance: GamificationInstance): void {
+  private broadcastProgress(
+    instance: GamificationInstance,
+    contributorUsername: string = 'anonymous'
+  ): void {
     const channel = `gamification/${instance.campaignId}/progress`
 
     transmit.broadcast(channel, {
@@ -898,6 +951,23 @@ export class GamificationService {
         remainingSeconds: instance.remainingSeconds,
       },
     })
+
+    // Broadcast vers les overlays streamer
+    this.getWebSocketService()
+      .then((ws) =>
+        ws.emitGamificationProgress({
+          instanceId: instance.id,
+          campaignId: instance.campaignId,
+          currentProgress: instance.currentProgress,
+          objectiveTarget: instance.objectiveTarget,
+          progressPercentage: instance.progressPercentage,
+          isObjectiveReached: instance.isObjectiveReached,
+          contributorUsername,
+        })
+      )
+      .catch((err) => {
+        logger.error({ err }, 'Failed to emit gamification:progress to streamer overlays')
+      })
   }
 
   /**
@@ -914,6 +984,20 @@ export class GamificationService {
         cooldownEndsAt: instance.cooldownEndsAt?.toISO() ?? null,
       },
     })
+
+    // Broadcast vers les overlays streamer
+    this.getWebSocketService()
+      .then((ws) =>
+        ws.emitGamificationComplete({
+          instanceId: instance.id,
+          campaignId: instance.campaignId,
+          success: instance.resultData?.success ?? true,
+          message: instance.resultData?.message,
+        })
+      )
+      .catch((err) => {
+        logger.error({ err }, 'Failed to emit gamification:complete to streamer overlays')
+      })
   }
 
   /**
@@ -928,6 +1012,18 @@ export class GamificationService {
         instanceId: instance.id,
       },
     })
+
+    // Broadcast vers les overlays streamer (expire = cancelled pour l'overlay)
+    this.getWebSocketService()
+      .then((ws) =>
+        ws.emitGamificationExpired({
+          instanceId: instance.id,
+          campaignId: instance.campaignId,
+        })
+      )
+      .catch((err) => {
+        logger.error({ err }, 'Failed to emit gamification:expired to streamer overlays')
+      })
   }
 
   /**
@@ -948,6 +1044,21 @@ export class GamificationService {
         eventId: instance.eventId,
       },
     })
+
+    // Broadcast vers les overlays streamer
+    this.getWebSocketService()
+      .then((ws) =>
+        ws.emitGamificationArmed({
+          instanceId: instance.id,
+          campaignId: instance.campaignId,
+          armedAt: instance.armedAt?.toISO() ?? null,
+          streamerId: instance.streamerId,
+          eventId: instance.eventId,
+        })
+      )
+      .catch((err) => {
+        logger.error({ err }, 'Failed to emit gamification:armed to streamer overlays')
+      })
 
     logger.debug(
       {
@@ -980,7 +1091,6 @@ export class GamificationService {
         completedAt: instance.completedAt?.toISO() ?? null,
         cooldownEndsAt: instance.cooldownEndsAt?.toISO() ?? null,
         resultData: instance.resultData ? JSON.parse(JSON.stringify(instance.resultData)) : null,
-        // Données du dé qui a déclenché la consommation
         diceRoll: {
           characterName: diceRollData.characterName,
           formula: diceRollData.formula,
@@ -989,6 +1099,29 @@ export class GamificationService {
         },
       },
     })
+
+    // Broadcast vers les overlays streamer
+    this.getWebSocketService()
+      .then((ws) =>
+        ws.emitGamificationActionExecuted({
+          instanceId: instance.id,
+          campaignId: instance.campaignId,
+          eventName: instance.event?.name ?? 'Gamification',
+          actionType: instance.event?.actionType ?? 'custom',
+          success: instance.resultData?.success ?? true,
+          message: instance.resultData?.message,
+          originalValue: diceRollData.result,
+          invertedValue:
+            diceRollData.result !== undefined
+              ? instance.event?.actionConfig?.diceInvert
+                ? 21 - diceRollData.result
+                : undefined
+              : undefined,
+        })
+      )
+      .catch((err) => {
+        logger.error({ err }, 'Failed to emit gamification:action_executed to streamer overlays')
+      })
 
     logger.info(
       {

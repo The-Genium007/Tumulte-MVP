@@ -331,9 +331,9 @@ describe('PollControlCard Component', () => {
         countdown: 30,
         results: {
           results: [
-            { option: 'Red', votes: 10 },
-            { option: 'Blue', votes: 5 },
-            { option: 'Green', votes: 3 },
+            { optionIndex: 0, votes: 10 },
+            { optionIndex: 1, votes: 5 },
+            { optionIndex: 2, votes: 3 },
           ],
           totalVotes: 18,
         },
@@ -362,9 +362,9 @@ describe('PollControlCard Component', () => {
         countdown: 0,
         results: {
           results: [
-            { option: 'Red', votes: 15 }, // Winner
-            { option: 'Blue', votes: 5 },
-            { option: 'Green', votes: 3 },
+            { optionIndex: 0, votes: 15 }, // Winner
+            { optionIndex: 1, votes: 5 },
+            { optionIndex: 2, votes: 3 },
           ],
           totalVotes: 23,
         },
@@ -388,9 +388,9 @@ describe('PollControlCard Component', () => {
         countdown: 0,
         results: {
           results: [
-            { option: 'Red', votes: 10 }, // Tied
-            { option: 'Blue', votes: 10 }, // Tied
-            { option: 'Green', votes: 5 },
+            { optionIndex: 0, votes: 10 }, // Tied
+            { optionIndex: 1, votes: 10 }, // Tied
+            { optionIndex: 2, votes: 5 },
           ],
           totalVotes: 25,
         },
@@ -413,7 +413,7 @@ describe('PollControlCard Component', () => {
         status: 'cancelled',
         countdown: 0,
         results: {
-          results: [{ option: 'Red', votes: 10 }],
+          results: [{ optionIndex: 0, votes: 10 }],
           totalVotes: 10,
         },
       },

@@ -2,6 +2,7 @@ import app from '@adonisjs/core/services/app'
 import logger from '@adonisjs/core/services/logger'
 import { pollInstance as PollInstance } from '#models/poll_instance'
 import { PollInstanceRepository } from '#repositories/poll_instance_repository'
+import { PollChannelLinkRepository } from '#repositories/poll_channel_link_repository'
 import { PollCreationService } from './poll_creation_service.js'
 import { PollPollingService } from './poll_polling_service.js'
 import { PollAggregationService } from './poll_aggregation_service.js'
@@ -16,6 +17,7 @@ import { pollResultsAnnouncementService as PollResultsAnnouncementService } from
 export class PollLifecycleService {
   constructor(
     private pollInstanceRepository: PollInstanceRepository,
+    private pollChannelLinkRepository: PollChannelLinkRepository,
     private pollCreationService: PollCreationService,
     private pollPollingService: PollPollingService,
     private pollAggregationService: PollAggregationService,
@@ -93,6 +95,11 @@ export class PollLifecycleService {
     // Mettre à jour le statut
     await this.pollInstanceRepository.setCancelled(pollInstanceId)
 
+    // Marquer tous les channel links comme TERMINATED
+    const terminatedCount =
+      await this.pollChannelLinkRepository.terminateAllByPollInstance(pollInstanceId)
+    logger.info({ pollInstanceId, terminatedCount }, 'Channel links terminated')
+
     // Récupérer les résultats finaux
     const aggregated = await this.pollAggregationService.getAggregatedVotes(pollInstanceId)
 
@@ -103,8 +110,8 @@ export class PollLifecycleService {
       aggregated.votesByOption
     )
 
-    // Émettre l'événement WebSocket de fin
-    this.webSocketService.emitPollEnd(pollInstanceId, aggregated)
+    // Émettre l'événement WebSocket de fin (avec flag cancelled)
+    this.webSocketService.emitPollEnd(pollInstanceId, aggregated, true)
 
     logger.info(
       { pollInstanceId, totalVotes: aggregated.totalVotes },
@@ -125,6 +132,11 @@ export class PollLifecycleService {
 
     // Mettre à jour le statut
     await this.pollInstanceRepository.setEnded(pollInstanceId)
+
+    // Marquer tous les channel links comme COMPLETED
+    const completedCount =
+      await this.pollChannelLinkRepository.completeAllByPollInstance(pollInstanceId)
+    logger.info({ pollInstanceId, completedCount }, 'Channel links completed')
 
     // Récupérer les résultats finaux
     const aggregated = await this.pollAggregationService.getAggregatedVotes(pollInstanceId)

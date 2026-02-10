@@ -205,7 +205,7 @@ interface SimplePoll {
 }
 
 interface PollResult {
-  option: string
+  optionIndex: number
   votes: number
 }
 
@@ -238,12 +238,12 @@ defineEmits<{
   close: []
 }>()
 
-// Computed: Toutes les options avec leurs votes
+// Computed: Toutes les options avec leurs votes (matching par index, pas par label)
 const allOptions = computed(() => {
   if (!props.poll) return []
 
-  return props.poll.options.map((optionLabel) => {
-    const resultForOption = props.results?.results.find((r) => r.option === optionLabel)
+  return props.poll.options.map((optionLabel, index) => {
+    const resultForOption = props.results?.results.find((r) => r.optionIndex === index)
     const votes = resultForOption?.votes || 0
     const percentage =
       props.results && props.results.totalVotes > 0 ? (votes / props.results.totalVotes) * 100 : 0

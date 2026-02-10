@@ -37,6 +37,25 @@ const isGamification = computed(() => {
 })
 
 /**
+ * Sondage annulé
+ */
+const isCancelled = computed(() => {
+  return props.event && isPollMetadata(props.event.metadata) && props.event.metadata.isCancelled
+})
+
+/**
+ * Sondage sans votes (non annulé)
+ */
+const hasNoVotes = computed(() => {
+  return (
+    !isCancelled.value &&
+    props.event &&
+    isPollMetadata(props.event.metadata) &&
+    props.event.metadata.totalVotes === 0
+  )
+})
+
+/**
  * Calcule le pourcentage pour une option de sondage
  */
 const getOptionPercentage = (option: string): number => {
@@ -47,43 +66,60 @@ const getOptionPercentage = (option: string): number => {
 }
 
 /**
- * Vérifie si une option est gagnante
+ * Vérifie si une option est gagnante (jamais vrai quand annulé)
  */
 const isWinningOption = (option: string): boolean => {
+  if (isCancelled.value) return false
   if (!props.event || !isPollMetadata(props.event.metadata)) return false
   return props.event.metadata.winningOptions.includes(option)
+}
+
+/**
+ * Classe CSS pour la barre de progression d'une option
+ */
+const getBarClass = (option: string): string => {
+  if (isCancelled.value) return 'bg-muted-foreground/30'
+  if (isWinningOption(option)) return 'bg-success-500'
+  return 'bg-primary/30'
 }
 </script>
 
 <template>
-  <UModal v-model:open="isOpen" :title="event?.name || 'Détails'" class="max-w-lg">
+  <UModal v-model:open="isOpen" class="w-full max-w-lg mx-4">
+    <!-- Header avec icône type + nom + sous-texte -->
+    <template #header>
+      <div class="flex items-center gap-3">
+        <div
+          class="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
+          :class="[
+            event?.type === 'poll' ? 'bg-success-light' : 'bg-orange-100 dark:bg-orange-900/30',
+          ]"
+        >
+          <UIcon :name="typeConfig.icon" class="size-5" :class="typeConfig.iconColor" />
+        </div>
+        <div class="min-w-0">
+          <h3 class="text-lg font-semibold text-primary truncate">{{ event?.name }}</h3>
+          <p class="text-sm text-muted">
+            {{ typeConfig.label }} • {{ event ? formatRelativeDate(event.completedAt) : '' }}
+          </p>
+        </div>
+      </div>
+    </template>
+
     <template #body>
       <div v-if="event" class="space-y-6">
-        <!-- Header avec icône et type -->
-        <div class="flex items-center gap-4">
-          <div
-            class="shrink-0 w-12 h-12 rounded-lg flex items-center justify-center"
-            :class="[
-              event.type === 'poll' ? 'bg-success-light' : 'bg-orange-100 dark:bg-orange-900/30',
-            ]"
-          >
-            <UIcon :name="typeConfig.icon" class="size-6" :class="typeConfig.iconColor" />
-          </div>
-          <div>
-            <h3 class="font-semibold text-primary text-lg">{{ event.name }}</h3>
-            <p class="text-sm text-muted">
-              {{ typeConfig.label }} • {{ formatRelativeDate(event.completedAt) }}
-            </p>
-          </div>
-        </div>
-
-        <!-- Résultat principal -->
-        <div class="p-4 rounded-lg bg-muted">
+        <!-- Encart résultat conditionnel -->
+        <div
+          class="p-4 rounded-lg"
+          :class="[
+            isCancelled ? 'bg-error-50 dark:bg-error-900/20' : hasNoVotes ? 'bg-muted' : 'bg-muted',
+          ]"
+        >
           <div class="flex items-center gap-3">
             <span v-if="event.primaryResult.emoji" class="text-2xl">
               {{ event.primaryResult.emoji }}
             </span>
-            <div>
+            <div class="flex-1 min-w-0">
               <p class="text-sm text-muted">Résultat</p>
               <p class="font-semibold text-primary">
                 {{ event.primaryResult.text }}
@@ -93,8 +129,9 @@ const isWinningOption = (option: string): boolean => {
               </p>
             </div>
             <UIcon
+              v-if="!isCancelled"
               :name="event.primaryResult.success ? 'i-lucide-check-circle' : 'i-lucide-x-circle'"
-              class="size-6 ml-auto"
+              class="size-6 shrink-0"
               :class="event.primaryResult.success ? 'text-success-500' : 'text-error-500'"
             />
           </div>
@@ -104,11 +141,12 @@ const isWinningOption = (option: string): boolean => {
         <template v-if="isPoll && isPollMetadata(event.metadata)">
           <div class="space-y-3">
             <h4 class="font-medium text-primary text-sm">
-              Résultats ({{ event.metadata.totalVotes }} votes)
+              Résultats ({{ event.metadata.totalVotes }}
+              {{ event.metadata.totalVotes <= 1 ? 'vote' : 'votes' }})
             </h4>
 
-            <!-- Barre de progression pour chaque option -->
-            <div v-for="option in event.metadata.options" :key="option" class="space-y-1">
+            <!-- Options avec barres de progression -->
+            <div v-for="option in event.metadata.options" :key="option" class="space-y-1.5">
               <div class="flex justify-between text-sm">
                 <span
                   :class="[isWinningOption(option) ? 'font-semibold text-primary' : 'text-muted']"
@@ -120,18 +158,35 @@ const isWinningOption = (option: string): boolean => {
                     class="size-3.5 inline ml-1 text-warning-500"
                   />
                 </span>
-                <span class="text-muted">
-                  {{ event.metadata.votesByOption[option] || 0 }} ({{
-                    getOptionPercentage(option)
-                  }}%)
+                <span class="text-muted tabular-nums">
+                  {{ event.metadata.votesByOption[option] || 0 }}
+                  ({{ getOptionPercentage(option) }}%)
                 </span>
               </div>
               <div class="h-2 bg-default rounded-full overflow-hidden">
                 <div
-                  class="h-full rounded-full transition-all"
-                  :class="[isWinningOption(option) ? 'bg-success-500' : 'bg-primary/30']"
+                  class="h-full rounded-full transition-all duration-300"
+                  :class="getBarClass(option)"
                   :style="{ width: `${getOptionPercentage(option)}%` }"
                 />
+              </div>
+            </div>
+
+            <!-- Résultats par chaîne (si disponibles) -->
+            <div
+              v-if="event.metadata.channelResults && event.metadata.channelResults.length > 1"
+              class="pt-4 border-t border-default"
+            >
+              <h4 class="text-sm font-medium text-muted mb-3">Par chaîne</h4>
+              <div class="space-y-2">
+                <div
+                  v-for="channel in event.metadata.channelResults"
+                  :key="channel.streamerName"
+                  class="flex items-center justify-between text-sm p-2 bg-muted rounded"
+                >
+                  <span class="font-medium text-primary">{{ channel.streamerName }}</span>
+                  <span class="text-muted">{{ channel.totalVotes }} vote(s)</span>
+                </div>
               </div>
             </div>
           </div>
@@ -248,8 +303,14 @@ const isWinningOption = (option: string): boolean => {
     </template>
 
     <template #footer>
-      <div class="flex justify-end">
-        <UButton color="neutral" variant="ghost" @click="isOpen = false"> Fermer </UButton>
+      <div class="flex justify-end w-full">
+        <UButton
+          color="primary"
+          variant="solid"
+          label="Fermer"
+          class="w-full sm:w-auto"
+          @click="isOpen = false"
+        />
       </div>
     </template>
   </UModal>

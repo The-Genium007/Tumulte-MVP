@@ -136,7 +136,7 @@ export class CampaignEventsService {
 
     if (type === 'poll') {
       const poll = await this.pollInstanceRepository.findById(id)
-      if (!poll || poll.status !== 'ENDED') {
+      if (!poll || (poll.status !== 'ENDED' && poll.status !== 'CANCELLED')) {
         return null
       }
       return CampaignEventDto.fromPollInstance(poll, {

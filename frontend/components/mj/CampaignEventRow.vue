@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { CampaignEvent } from '@/types/campaign-events'
-import { CAMPAIGN_EVENT_TYPE_CONFIG } from '@/types/campaign-events'
+import { CAMPAIGN_EVENT_TYPE_CONFIG, isPollMetadata } from '@/types/campaign-events'
 
 const props = defineProps<{
   event: CampaignEvent
@@ -40,6 +40,17 @@ const resultIconClass = computed(() => {
 const resultIcon = computed(() => {
   return props.event.primaryResult.success ? 'i-lucide-check-circle' : 'i-lucide-x-circle'
 })
+
+/**
+ * Sondage annulé — on masque l'icône succès/échec (l'emoji ❌ suffit)
+ */
+const isCancelled = computed(() => {
+  return (
+    props.event.type === 'poll' &&
+    isPollMetadata(props.event.metadata) &&
+    props.event.metadata.isCancelled
+  )
+})
 </script>
 
 <template>
@@ -78,12 +89,17 @@ const resultIcon = computed(() => {
       </span>
 
       <!-- Texte du résultat (tronqué si trop long) -->
-      <span class="text-xs font-medium text-primary max-w-24 truncate">
+      <span class="text-xs font-medium text-primary max-w-40 truncate">
         {{ resultText }}
       </span>
 
-      <!-- Icône succès/échec -->
-      <UIcon :name="resultIcon" class="size-4 shrink-0" :class="resultIconClass" />
+      <!-- Icône succès/échec (masquée si annulé — l'emoji ❌ suffit) -->
+      <UIcon
+        v-if="!isCancelled"
+        :name="resultIcon"
+        class="size-4 shrink-0"
+        :class="resultIconClass"
+      />
     </div>
 
     <!-- Chevron pour indiquer qu'on peut cliquer -->

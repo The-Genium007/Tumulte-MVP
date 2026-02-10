@@ -14,7 +14,10 @@
         :element="element"
         :poll-data="activePoll"
         :percentages="percentages"
+        :votes-by-option="votesByOption"
+        :total-votes="totalVotes"
         :is-ending="isEnding"
+        :is-cancelled="isCancelled"
         @state-change="handlePollStateChange"
       />
       <!-- DiceBox pour les éléments de type dice -->
@@ -203,7 +206,10 @@ const activePoll = ref<
   | null
 >(null)
 const percentages = ref<Record<number, number>>({})
+const votesByOption = ref<Record<number, number>>({})
+const totalVotes = ref(0)
 const isEnding = ref(false)
+const isCancelled = ref(false)
 
 // =============================================
 // Système de queue unifiée pour les dice rolls
@@ -278,13 +284,16 @@ const handlePollStateChange = (newState: string) => {
   console.log('[Overlay] Poll state changed to:', newState)
 
   // Quand le poll passe en hidden, nettoyer l'état pour le prochain poll
+  // IMPORTANT: On met activePoll à null EN PREMIER pour que le watcher pollData
+  // ne réagisse pas aux changements intermédiaires de isEnding/percentages
   if (newState === 'hidden') {
-    setTimeout(() => {
-      activePoll.value = null
-      percentages.value = {}
-      isEnding.value = false
-      console.log('[Overlay] Poll state cleared, ready for next poll')
-    }, 100)
+    activePoll.value = null
+    percentages.value = {}
+    votesByOption.value = {}
+    totalVotes.value = 0
+    isEnding.value = false
+    isCancelled.value = false
+    console.log('[Overlay] Poll state cleared, ready for next poll')
   }
 }
 
@@ -428,18 +437,24 @@ const fetchActivePoll = async () => {
     if (response.ok) {
       const data = await response.json()
       if (data.data && !activePoll.value) {
-        console.log('[Overlay] Fetched active poll from API:', data.data.pollInstanceId)
         const pollData = data.data
         const startTime = new Date(pollData.startedAt).getTime()
-        const endsAt = new Date(startTime + pollData.durationSeconds * 1000).toISOString()
+        const endsAt = new Date(startTime + pollData.durationSeconds * 1000)
 
+        // Ignorer les polls déjà expirés temporellement (liens stale en DB)
+        if (endsAt.getTime() <= Date.now()) {
+          console.log('[Overlay] Ignoring expired poll from API:', pollData.pollInstanceId)
+          return
+        }
+
+        console.log('[Overlay] Fetched active poll from API:', pollData.pollInstanceId)
         activePoll.value = {
           pollInstanceId: pollData.pollInstanceId,
           title: pollData.title,
           options: pollData.options,
           durationSeconds: pollData.durationSeconds,
           startedAt: pollData.startedAt,
-          endsAt,
+          endsAt: endsAt.toISOString(),
           totalDuration: pollData.durationSeconds,
         }
         percentages.value = pollData.percentages || {}
@@ -485,18 +500,29 @@ const setupWebSocketSubscription = () => {
 
       const totalDuration = data.durationSeconds || 60
       activePoll.value = { ...data, totalDuration }
+      percentages.value = {}
+      votesByOption.value = {}
+      totalVotes.value = 0
       isEnding.value = false
+      isCancelled.value = false
     },
 
     onPollUpdate: (data) => {
+      // Ignorer les updates si le poll est déjà en phase de fin
+      if (isEnding.value) return
       if (activePoll.value?.pollInstanceId === data.pollInstanceId) {
         percentages.value = data.percentages
+        votesByOption.value = data.votesByOption || {}
+        totalVotes.value = data.totalVotes || 0
       }
     },
 
     onPollEnd: (data) => {
       if (activePoll.value?.pollInstanceId === data.pollInstanceId) {
         percentages.value = data.percentages
+        votesByOption.value = data.votesByOption || {}
+        totalVotes.value = data.totalVotes || 0
+        isCancelled.value = data.cancelled === true
         isEnding.value = true
       }
     },
@@ -553,6 +579,9 @@ const setupWebSocketSubscription = () => {
           component.reset()
           activePoll.value = null
           percentages.value = {}
+          votesByOption.value = {}
+          totalVotes.value = 0
+          isCancelled.value = false
           break
       }
     },
@@ -608,6 +637,17 @@ const setupWebSocketSubscription = () => {
           currentProgress: data.currentProgress,
           progressPercentage: data.progressPercentage,
           isObjectiveReached: data.isObjectiveReached,
+        }
+      }
+    },
+
+    onGamificationArmed: (data) => {
+      console.log('[Overlay] Gamification armed:', data)
+      if (activeGamificationInstance.value?.id === data.instanceId) {
+        activeGamificationInstance.value = {
+          ...activeGamificationInstance.value,
+          status: 'armed',
+          isObjectiveReached: true,
         }
       }
     },

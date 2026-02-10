@@ -1,5 +1,7 @@
 import { inject } from '@adonisjs/core'
+import logger from '@adonisjs/core/services/logger'
 import type { HttpContext } from '@adonisjs/core/http'
+import { DateTime } from 'luxon'
 import { StreamerRepository } from '#repositories/streamer_repository'
 import { PollInstanceRepository } from '#repositories/poll_instance_repository'
 import { PollChannelLinkRepository } from '#repositories/poll_channel_link_repository'
@@ -64,6 +66,19 @@ export default class OverlayController {
 
     if (!pollInstance || pollInstance.status !== 'RUNNING') {
       return response.ok({ data: null })
+    }
+
+    // Vérifier si le poll est temporellement expiré (liens stale non nettoyés)
+    if (pollInstance.startedAt) {
+      const endsAt = pollInstance.startedAt.plus({ seconds: pollInstance.durationSeconds })
+      if (DateTime.now() >= endsAt) {
+        logger.warn(
+          { pollInstanceId: pollInstance.id },
+          'Detected stale active poll in overlay endpoint, cleaning up channel links'
+        )
+        await this.pollChannelLinkRepository.completeAllByPollInstance(pollInstance.id)
+        return response.ok({ data: null })
+      }
     }
 
     // Récupérer les résultats agrégés

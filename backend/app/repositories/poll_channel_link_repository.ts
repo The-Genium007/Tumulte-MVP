@@ -78,6 +78,30 @@ export class PollChannelLinkRepository {
       .whereIn('status', ['CREATED', 'RUNNING'])
       .preload('streamer')
   }
+
+  /**
+   * Passe tous les channel links d'un poll instance à COMPLETED
+   * Utilisé quand le poll expire ou se termine normalement
+   */
+  async completeAllByPollInstance(pollInstanceId: string): Promise<number> {
+    const updated = await PollChannelLink.query()
+      .where('pollInstanceId', pollInstanceId)
+      .whereIn('status', ['CREATED', 'RUNNING'])
+      .update({ status: 'COMPLETED' })
+    return updated[0] ?? 0
+  }
+
+  /**
+   * Passe tous les channel links d'un poll instance à TERMINATED
+   * Utilisé quand le poll est annulé
+   */
+  async terminateAllByPollInstance(pollInstanceId: string): Promise<number> {
+    const updated = await PollChannelLink.query()
+      .where('pollInstanceId', pollInstanceId)
+      .whereIn('status', ['CREATED', 'RUNNING'])
+      .update({ status: 'TERMINATED' })
+    return updated[0] ?? 0
+  }
 }
 
 export default PollChannelLinkRepository

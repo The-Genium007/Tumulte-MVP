@@ -230,6 +230,7 @@ export interface PollEndEvent {
   percentages: { [optionIndex: string]: number }
   winningOptionIndex: number | null
   endedAt: string
+  cancelled?: boolean
 }
 
 // Live status types (snake_case from Twitch API response)

@@ -44,6 +44,8 @@ export interface PollEventMetadata {
   votesByOption: Record<string, number>
   /** Options gagnantes (peut y en avoir plusieurs si ex-æquo) */
   winningOptions: string[]
+  /** Sondage annulé avant la fin */
+  isCancelled: boolean
   /** Résultats par chaîne */
   channelResults?: Array<{
     streamerName: string
@@ -141,20 +143,64 @@ export class CampaignEventDto {
   ): CampaignEventDto {
     const config = this.typeConfig.poll
 
-    // Calculer les résultats
-    const votesByOption = aggregatedResults?.votesByOption || {}
-    const totalVotes = aggregatedResults?.totalVotes || 0
+    const options: string[] = Array.isArray(poll.options)
+      ? poll.options
+      : JSON.parse((poll.options as unknown as string) || '[]')
 
-    // Trouver le(s) gagnant(s)
+    // Convertir les clés numériques ("0", "1") en texte d'option ("Bonjour", "Au revoir")
+    const rawVotes = aggregatedResults?.votesByOption || {}
+    const votesByOption: Record<string, number> = {}
+    for (const [index, votes] of Object.entries(rawVotes)) {
+      const optionName = options[Number.parseInt(index)] || `Option ${Number.parseInt(index) + 1}`
+      votesByOption[optionName] = votes
+    }
+
+    const totalVotes = aggregatedResults?.totalVotes || 0
+    const isCancelled = poll.status === 'CANCELLED'
+
+    // Trouver le(s) gagnant(s) — seulement pertinent si des votes existent
     const maxVotes = Math.max(...Object.values(votesByOption), 0)
     const winningOptions =
       maxVotes > 0
         ? Object.entries(votesByOption)
             .filter(([, votes]) => votes === maxVotes)
             .map(([option]) => option)
-        : poll.options.slice(0, 1) // Si aucun vote, prendre la première option
+        : []
 
     const isExAequo = winningOptions.length > 1
+
+    // Déterminer le résultat principal selon l'état
+    let primaryResult: CampaignEventPrimaryResult
+
+    if (isCancelled) {
+      primaryResult = {
+        emoji: '❌',
+        text: 'Annulé',
+        success: false,
+        isExAequo: false,
+      }
+    } else if (totalVotes === 0) {
+      primaryResult = {
+        emoji: '📊',
+        text: 'Aucun vote',
+        success: false,
+        isExAequo: false,
+      }
+    } else if (isExAequo) {
+      primaryResult = {
+        emoji: '📊',
+        text: 'Égalité',
+        success: true,
+        isExAequo: true,
+      }
+    } else {
+      primaryResult = {
+        emoji: '📊',
+        text: winningOptions[0] || 'Aucun résultat',
+        success: true,
+        isExAequo: false,
+      }
+    }
 
     return {
       id: `poll_${poll.id}`,
@@ -163,18 +209,14 @@ export class CampaignEventDto {
       completedAt: poll.endedAt?.toISO() || poll.updatedAt.toISO() || '',
       icon: config.icon,
       iconColor: config.iconColor,
-      primaryResult: {
-        emoji: '📊',
-        text: winningOptions[0] || 'Aucun résultat',
-        success: totalVotes > 0,
-        isExAequo,
-      },
+      primaryResult,
       metadata: {
         pollInstanceId: poll.id,
-        options: poll.options,
+        options,
         totalVotes,
         votesByOption,
         winningOptions,
+        isCancelled,
       } as PollEventMetadata,
     }
   }

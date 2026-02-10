@@ -149,6 +149,7 @@ app.container.singleton('pollPollingService', async () => {
 app.container.singleton('pollLifecycleService', async () => {
   const mod = await import('#services/polls/poll_lifecycle_service')
   const pollInstanceRepository = await app.container.make('pollInstanceRepository')
+  const pollChannelLinkRepository = await app.container.make('pollChannelLinkRepository')
   const pollCreationService = await app.container.make('pollCreationService')
   const pollPollingService = await app.container.make('pollPollingService')
   const pollAggregationService = await app.container.make('pollAggregationService')
@@ -156,6 +157,7 @@ app.container.singleton('pollLifecycleService', async () => {
   const pollResultsAnnouncementService = await app.container.make('pollResultsAnnouncementService')
   return new mod.pollLifecycleService(
     pollInstanceRepository,
+    pollChannelLinkRepository,
     pollCreationService,
     pollPollingService,
     pollAggregationService,

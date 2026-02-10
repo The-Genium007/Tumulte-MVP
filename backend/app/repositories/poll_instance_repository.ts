@@ -32,7 +32,7 @@ export class PollInstanceRepository {
   async findCompletedByCampaign(campaignId: string): Promise<PollInstance[]> {
     return await PollInstance.query()
       .where('campaignId', campaignId)
-      .where('status', 'ENDED')
+      .whereIn('status', ['ENDED', 'CANCELLED'])
       .orderBy('ended_at', 'desc')
   }
 
@@ -88,7 +88,7 @@ export class PollInstanceRepository {
 
   async setCancelled(pollId: string): Promise<void> {
     await PollInstance.query().where('id', pollId).update({
-      status: 'ENDED',
+      status: 'CANCELLED',
       ended_at: new Date(),
     })
   }

@@ -8,7 +8,7 @@ const EXPIRY_HOURS = 24
 const HEARTBEAT_INTERVAL_MS = 30000 // 30 secondes
 
 interface PollResult {
-  option: string
+  optionIndex: number
   votes: number
 }
 
@@ -293,7 +293,7 @@ export const usePollControlStore = defineStore('pollControl', () => {
         // Récupérer les résultats finaux s'ils existent
         if (pollInstance.finalVotesByOption) {
           const results = Object.entries(pollInstance.finalVotesByOption).map(([index, votes]) => ({
-            option: pollInstance.options[parseInt(index)] || `Option ${parseInt(index) + 1}`,
+            optionIndex: parseInt(index),
             votes: votes as number,
           }))
 

@@ -7,7 +7,7 @@ import { pollChannelLink as PollChannelLink } from './poll_channel_link.js'
 import { campaign as Campaign } from './campaign.js'
 import { poll as Poll } from './poll.js'
 
-export type PollInstanceStatus = 'PENDING' | 'RUNNING' | 'ENDED'
+export type PollInstanceStatus = 'PENDING' | 'RUNNING' | 'ENDED' | 'CANCELLED'
 export type PollInstanceType = 'STANDARD' | 'UNIQUE'
 
 class PollInstance extends BaseModel {

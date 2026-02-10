@@ -88,8 +88,8 @@ describe('Poll Control Store', () => {
     store.pollStatus = 'running'
     store.pollResults = {
       results: [
-        { option: 'Option 1', votes: 10 },
-        { option: 'Option 2', votes: 5 },
+        { optionIndex: 0, votes: 10 },
+        { optionIndex: 1, votes: 5 },
       ],
       totalVotes: 15,
     }
@@ -109,8 +109,8 @@ describe('Poll Control Store', () => {
     expect(savedData.pollStatus).toBe('running')
     expect(savedData.pollResults).toEqual({
       results: [
-        { option: 'Option 1', votes: 10 },
-        { option: 'Option 2', votes: 5 },
+        { optionIndex: 0, votes: 10 },
+        { optionIndex: 1, votes: 5 },
       ],
       totalVotes: 15,
     })
@@ -126,7 +126,7 @@ describe('Poll Control Store', () => {
       pollStatus: 'sent',
       countdown: 0,
       pollResults: {
-        results: [{ option: 'Option A', votes: 20 }],
+        results: [{ optionIndex: 0, votes: 20 }],
         totalVotes: 20,
       },
       launchedPolls: [0, 1],
@@ -155,7 +155,7 @@ describe('Poll Control Store', () => {
     expect(store.currentPollIndex).toBe(2)
     expect(store.pollStatus).toBe('sent')
     expect(store.pollResults).toEqual({
-      results: [{ option: 'Option A', votes: 20 }],
+      results: [{ optionIndex: 0, votes: 20 }],
       totalVotes: 20,
     })
     expect(store.launchedPolls).toEqual([0, 1])
@@ -196,7 +196,7 @@ describe('Poll Control Store', () => {
     store.activeSession = { id: 'session-123' }
     store.pollStatus = 'running'
     store.pollResults = {
-      results: [{ option: 'Option 1', votes: 10 }],
+      results: [{ optionIndex: 0, votes: 10 }],
       totalVotes: 10,
     }
 
@@ -226,7 +226,7 @@ describe('Poll Control Store', () => {
     store.currentPollIndex = 0
     store.pollStatus = 'running'
     store.pollResults = {
-      results: [{ option: 'Option 1', votes: 5 }],
+      results: [{ optionIndex: 0, votes: 5 }],
       totalVotes: 5,
     }
     store.currentPollInstanceId = 'instance-123'
@@ -238,7 +238,7 @@ describe('Poll Control Store', () => {
     expect(store.pollStates[0]).toEqual({
       status: 'running',
       results: {
-        results: [{ option: 'Option 1', votes: 5 }],
+        results: [{ optionIndex: 0, votes: 5 }],
         totalVotes: 5,
       },
       instanceId: 'instance-123',
@@ -255,7 +255,7 @@ describe('Poll Control Store', () => {
       1: {
         status: 'sent',
         results: {
-          results: [{ option: 'Option A', votes: 15 }],
+          results: [{ optionIndex: 0, votes: 15 }],
           totalVotes: 15,
         },
         instanceId: 'instance-456',
@@ -269,7 +269,7 @@ describe('Poll Control Store', () => {
 
     expect(store.pollStatus).toBe('sent')
     expect(store.pollResults).toEqual({
-      results: [{ option: 'Option A', votes: 15 }],
+      results: [{ optionIndex: 0, votes: 15 }],
       totalVotes: 15,
     })
     expect(store.currentPollInstanceId).toBe('instance-456')
@@ -282,7 +282,7 @@ describe('Poll Control Store', () => {
     // Set some current state
     store.pollStatus = 'running'
     store.pollResults = {
-      results: [{ option: 'Option 1', votes: 10 }],
+      results: [{ optionIndex: 0, votes: 10 }],
       totalVotes: 10,
     }
 
@@ -372,8 +372,8 @@ describe('Poll Control Store', () => {
       expect(store.pollDuration).toBeNull()
       expect(store.pollResults).toEqual({
         results: [
-          { option: 'Option A', votes: 10 },
-          { option: 'Option B', votes: 5 },
+          { optionIndex: 0, votes: 10 },
+          { optionIndex: 1, votes: 5 },
         ],
         totalVotes: 15,
       })
@@ -830,7 +830,7 @@ describe('Poll Control Store', () => {
       store.currentPollIndex = 0
       store.pollStatus = 'sent'
       store.pollResults = {
-        results: [{ option: 'A', votes: 10 }],
+        results: [{ optionIndex: 0, votes: 10 }],
         totalVotes: 10,
       }
       store.saveCurrentPollState()
@@ -839,7 +839,7 @@ describe('Poll Control Store', () => {
       store.currentPollIndex = 1
       store.pollStatus = 'running'
       store.pollResults = {
-        results: [{ option: 'B', votes: 5 }],
+        results: [{ optionIndex: 1, votes: 5 }],
         totalVotes: 5,
       }
       store.saveCurrentPollState()

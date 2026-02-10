@@ -648,8 +648,7 @@ const sendPollInternal = async () => {
             (pollStatus.value === 'sending' || pollStatus.value === 'running')
           ) {
             const results = Object.entries(data.votesByOption).map(([index, votes]) => ({
-              option:
-                currentPoll.value?.options?.[parseInt(index)] || `Option ${parseInt(index) + 1}`,
+              optionIndex: parseInt(index),
               votes: votes as number,
             }))
 
@@ -674,8 +673,7 @@ const sendPollInternal = async () => {
 
           if (votesData) {
             const results = Object.entries(votesData).map(([index, votes]) => ({
-              option:
-                currentPoll.value?.options?.[parseInt(index)] || `Option ${parseInt(index) + 1}`,
+              optionIndex: parseInt(index),
               votes: votes as number,
             }))
 
@@ -871,8 +869,7 @@ onMounted(async () => {
           (pollStatus.value === 'sending' || pollStatus.value === 'running')
         ) {
           const results = Object.entries(data.votesByOption).map(([index, votes]) => ({
-            option:
-              currentPoll.value?.options?.[parseInt(index)] || `Option ${parseInt(index) + 1}`,
+            optionIndex: parseInt(index),
             votes: votes as number,
           }))
 
@@ -896,8 +893,7 @@ onMounted(async () => {
 
         if (votesData) {
           const results = Object.entries(votesData).map(([index, votes]) => ({
-            option:
-              currentPoll.value?.options?.[parseInt(index)] || `Option ${parseInt(index) + 1}`,
+            optionIndex: parseInt(index),
             votes: votes as number,
           }))
 

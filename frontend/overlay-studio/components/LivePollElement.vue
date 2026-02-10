@@ -14,14 +14,18 @@
         <div class="poll-header">
           <div class="poll-question" :style="questionStyle">
             <template v-if="state === 'result'">
-              {{
-                leaderIndices.length > 1 && gamification?.tieBreaker.showAllWinners
-                  ? gamification.tieBreaker.titleText
-                  : '🎉 RÉSULTAT 🎉'
-              }}
+              <template v-if="effectiveIsCancelled"> ❌ Sondage annulé </template>
+              <template v-else-if="!hasVotes"> Aucun vote ! </template>
+              <template v-else>
+                {{
+                  leaderIndices.length > 1 && gamification?.tieBreaker.showAllWinners
+                    ? gamification.tieBreaker.titleText
+                    : '🎉 RÉSULTAT 🎉'
+                }}
+              </template>
             </template>
             <template v-else>
-              {{ pollData?.title || 'Question du sondage' }}
+              {{ effectivePollData?.title || 'Question du sondage' }}
             </template>
           </div>
 
@@ -55,7 +59,7 @@
         <!-- Options -->
         <div class="poll-options" :style="{ gap: `${config.optionSpacing}px` }">
           <div
-            v-for="(option, index) in pollData?.options || []"
+            v-for="(option, index) in effectivePollData?.options || []"
             :key="index"
             class="poll-option"
             :class="{
@@ -83,7 +87,7 @@
                 </span>
               </span>
               <span
-                class="option-percentage"
+                class="option-stats"
                 :style="[
                   optionPercentageStyle,
                   state === 'result' && isWinner(index)
@@ -91,7 +95,10 @@
                     : {},
                 ]"
               >
-                {{ percentages[index] || 0 }}%
+                <span class="option-percentage">{{ effectivePercentages[index] || 0 }}%</span>
+                <span v-if="state === 'result'" class="option-votes">
+                  ({{ effectiveVotesByOption[index] || 0 }})
+                </span>
               </span>
             </div>
             <div class="option-bar-container">
@@ -106,7 +113,7 @@
 
         <!-- Barre de progression du temps (legacy, si gamification désactivée) -->
         <div
-          v-if="!gamification?.timeBar.enabled"
+          v-if="!gamification?.timeBar.enabled && state !== 'result'"
           class="poll-progress"
           :style="progressContainerStyle"
         >
@@ -116,6 +123,20 @@
           <span v-if="config.progressBar.showTimeText" class="progress-time" :style="timeTextStyle">
             {{ remainingTime }}s
           </span>
+        </div>
+
+        <!-- Total des votes (affiché en résultat) -->
+        <div v-if="state === 'result'" class="result-total-votes" :style="optionPercentageStyle">
+          {{ effectiveTotalVotes }} vote{{ effectiveTotalVotes > 1 ? 's' : '' }}
+        </div>
+
+        <!-- Barre de cooldown inversé des résultats (0% → 100%) -->
+        <div v-if="state === 'result'" class="result-cooldown-bar">
+          <div
+            class="result-cooldown-fill"
+            :class="{ cancelled: effectiveIsCancelled }"
+            :style="{ width: `${resultCooldownPercent}%` }"
+          />
         </div>
       </div>
     </div>
@@ -139,7 +160,10 @@ const props = defineProps<{
   element: OverlayElement
   pollData: PollData | null
   percentages: Record<number, number>
+  votesByOption: Record<number, number>
+  totalVotes: number
   isEnding: boolean
+  isCancelled?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -155,8 +179,62 @@ const remainingTime = ref(0)
 const shakeIntensity = ref(0)
 const previousLeaderIndex = ref<number | null>(null)
 
+// Snapshot des données gelées lors du poll:end
+// Gelées une seule fois au moment de endPoll() pour garantir un affichage stable
+const frozenPercentages = ref<Record<number, number>>({})
+const frozenPollData = ref<PollData | null>(null)
+const frozenVotesByOption = ref<Record<number, number>>({})
+const frozenTotalVotes = ref(0)
+const frozenIsCancelled = ref(false)
+
+// Percentages effectifs : gelés pendant result/exiting, live sinon
+const effectivePercentages = computed(() => {
+  if (state.value === 'result' || state.value === 'exiting') {
+    return frozenPercentages.value
+  }
+  return props.percentages
+})
+
+// PollData effectif : gelé pendant result/exiting, live sinon
+const effectivePollData = computed(() => {
+  if (state.value === 'result' || state.value === 'exiting') {
+    return frozenPollData.value
+  }
+  return props.pollData
+})
+
+// VotesByOption effectifs : gelés pendant result/exiting, live sinon
+const effectiveVotesByOption = computed(() => {
+  if (state.value === 'result' || state.value === 'exiting') {
+    return frozenVotesByOption.value
+  }
+  return props.votesByOption
+})
+
+// TotalVotes effectif : gelé pendant result/exiting, live sinon
+const effectiveTotalVotes = computed(() => {
+  if (state.value === 'result' || state.value === 'exiting') {
+    return frozenTotalVotes.value
+  }
+  return props.totalVotes
+})
+
+// IsCancelled effectif : gelé pendant result/exiting, live sinon
+const effectiveIsCancelled = computed(() => {
+  if (state.value === 'result' || state.value === 'exiting') {
+    return frozenIsCancelled.value
+  }
+  return props.isCancelled ?? false
+})
+
+// Cooldown inversé pour l'affichage des résultats (0 → 100%)
+const resultCooldownPercent = ref(0)
+let resultCooldownStartTime = 0
+let resultCooldownDuration = 0
+
 // Worker timer pour résister au throttling OBS
 const workerTimer = useWorkerTimer()
+const resultCooldownTimer = useWorkerTimer()
 let currentEndsAt: string | null = null
 
 // Flag pour éviter le double déclenchement (contrôle externe vs watch)
@@ -192,12 +270,14 @@ const clearAllTimers = () => {
 const config = computed(() => props.element.properties as PollProperties)
 
 // Calcul des rankings avec gestion des ex-aequo
+// Utilise Object.entries() pour garder l'association clé (optionIndex) → valeur (percentage)
+// car Object.values() perd les clés originales quand certaines options n'ont pas de votes
 const rankings = computed(() => {
-  const percs = Object.values(props.percentages)
-  if (percs.length === 0) return {}
+  const entries = Object.entries(effectivePercentages.value)
+  if (entries.length === 0) return {}
 
-  const sorted = percs
-    .map((p, i) => ({ percentage: p, index: i }))
+  const sorted = entries
+    .map(([key, percentage]) => ({ percentage, optionIndex: Number(key) }))
     .sort((a, b) => b.percentage - a.percentage)
 
   const ranks: Record<number, number> = {}
@@ -207,18 +287,26 @@ const rankings = computed(() => {
     const current = sorted[i]
     const previous = sorted[i - 1]
     if (current && i > 0 && previous && current.percentage < previous.percentage) {
-      currentRank = i + 1
+      currentRank = currentRank + 1
     }
     if (current) {
-      ranks[current.index] = currentRank
+      ranks[current.optionIndex] = currentRank
     }
   }
 
   return ranks
 })
 
-// Vérifier si une option est gagnante (rang 1)
+// Vérifier si au moins un vote a été reçu
+const hasVotes = computed(() => {
+  const values = Object.values(effectivePercentages.value)
+  return values.length > 0 && values.some((p) => p > 0)
+})
+
+// Vérifier si une option est gagnante (rang 1, uniquement si des votes existent et pas annulé)
 const isWinner = (index: number): boolean => {
+  if (!hasVotes.value) return false
+  if (effectiveIsCancelled.value) return false
   return rankings.value[index] === 1
 }
 
@@ -231,9 +319,9 @@ const isUrgent = computed(() => {
 })
 
 const leaderIndices = computed(() => {
-  const maxPercent = Math.max(...Object.values(props.percentages))
+  const maxPercent = Math.max(...Object.values(effectivePercentages.value))
   if (maxPercent === 0) return []
-  return Object.entries(props.percentages)
+  return Object.entries(effectivePercentages.value)
     .filter(([, percent]) => percent === maxPercent)
     .map(([index]) => parseInt(index))
 })
@@ -278,7 +366,7 @@ const formatTime = (seconds: number): string => {
 
 // Time percent for gamified bar
 const timePercent = computed(() => {
-  const totalDuration = props.pollData?.totalDuration || 60
+  const totalDuration = effectivePollData.value?.totalDuration || 60
   if (totalDuration === 0) return 100
   return (remainingTime.value / totalDuration) * 100
 })
@@ -413,8 +501,8 @@ const getOptionStyle = (index: number) => {
     padding: `${box.padding.top}px ${box.padding.right}px ${box.padding.bottom}px ${box.padding.left}px`,
   }
 
-  // Animation de résultat avec gamification
-  if (state.value === 'result') {
+  // Animation de résultat avec gamification (pas de célébration si annulé)
+  if (state.value === 'result' && !effectiveIsCancelled.value) {
     const gam = gamification.value
     if (isWinner(index)) {
       const winnerColor = gam?.result.winnerColor || '#FFD700'
@@ -444,7 +532,7 @@ const getOptionStyle = (index: number) => {
 const getBarStyle = (index: number) => {
   const rank = rankings.value[index] || 4
   const medalColor = getMedalColor(rank)
-  const percentage = props.percentages[index] || 0
+  const percentage = effectivePercentages.value[index] || 0
 
   return {
     width: `${percentage}%`,
@@ -469,7 +557,7 @@ const progressBarStyle = computed(() => {
 
 const progressFillStyle = computed(() => {
   const pb = config.value.progressBar
-  const totalDuration = props.pollData?.totalDuration || 60
+  const totalDuration = effectivePollData.value?.totalDuration || 60
   const fillPercent = (remainingTime.value / totalDuration) * 100
 
   const background = pb.fillGradient?.enabled
@@ -636,6 +724,17 @@ const transitionTo = (newState: PollState) => {
 const startPoll = async () => {
   if (!props.pollData) return
 
+  // Nettoyer complètement l'état d'un précédent poll (y compris résultats affichés)
+  stopTimer()
+  stopResultCooldown()
+  clearAllTimers()
+  cleanupAudio()
+  frozenPercentages.value = {}
+  frozenPollData.value = null
+  frozenVotesByOption.value = {}
+  frozenTotalVotes.value = 0
+  frozenIsCancelled.value = false
+
   initAudio()
 
   // 1. Jouer le son d'entrée
@@ -658,24 +757,70 @@ const startPoll = async () => {
   }, entryAnim.soundLeadTime * 1000)
 }
 
+// Démarrer le cooldown inversé des résultats (barre 0% → 100%)
+const startResultCooldown = (durationMs: number) => {
+  resultCooldownPercent.value = 0
+  resultCooldownStartTime = Date.now()
+  resultCooldownDuration = durationMs
+
+  resultCooldownTimer.stop()
+  resultCooldownTimer.onTick(() => {
+    const elapsed = Date.now() - resultCooldownStartTime
+    resultCooldownPercent.value = Math.min(100, (elapsed / resultCooldownDuration) * 100)
+    if (resultCooldownPercent.value >= 100) {
+      resultCooldownTimer.stop()
+    }
+  })
+  resultCooldownTimer.start(50) // 50ms pour une animation fluide
+}
+
+const stopResultCooldown = () => {
+  resultCooldownTimer.stop()
+  resultCooldownPercent.value = 0
+}
+
 // Terminer le poll (appelé quand isEnding devient true)
+// Les données sont gelées une seule fois pour éviter les glitches,
+// puis l'overlay se masque automatiquement après displayDuration
 const endPoll = () => {
+  // Geler les données finales de poll:end une seule fois
+  // C'est la source de vérité unique pour l'affichage des résultats
+  frozenPercentages.value = { ...props.percentages }
+  frozenPollData.value = props.pollData ? { ...props.pollData } : null
+  frozenVotesByOption.value = { ...props.votesByOption }
+  frozenTotalVotes.value = props.totalVotes
+  frozenIsCancelled.value = props.isCancelled ?? false
+
+  stopTimer()
   stopLoop()
-  playResult()
+  // Pas de son de résultat si le sondage est annulé
+  if (!frozenIsCancelled.value) {
+    playResult()
+  }
   transitionTo('result')
 
-  // Après le délai d'affichage des résultats, sortir
+  // Démarrer le cooldown inversé des résultats
   const resultAnim = config.value.animations.result
+  const displayDurationMs = resultAnim.displayDuration * 1000
+  startResultCooldown(displayDurationMs)
+
+  // Auto-hide après la durée d'affichage des résultats
   safeSetTimeout(() => {
+    stopResultCooldown()
     transitionTo('exiting')
 
-    // Après l'animation de sortie, cacher
     const exitAnim = config.value.animations.exit
     safeSetTimeout(() => {
       transitionTo('hidden')
+      // Nettoyer les données gelées après masquage complet
+      frozenPercentages.value = {}
+      frozenPollData.value = null
+      frozenVotesByOption.value = {}
+      frozenTotalVotes.value = 0
+      frozenIsCancelled.value = false
       cleanupAudio()
     }, exitAnim.animation.duration * 1000)
-  }, resultAnim.displayDuration * 1000)
+  }, displayDurationMs)
 }
 
 // ==========================================
@@ -730,7 +875,15 @@ const publicPlayExit = async () => {
 
 const publicReset = () => {
   stopTimer()
+  stopResultCooldown()
   cleanupAudio()
+  clearAllTimers()
+  // Nettoyer les données gelées
+  frozenPercentages.value = {}
+  frozenPollData.value = null
+  frozenVotesByOption.value = {}
+  frozenTotalVotes.value = 0
+  frozenIsCancelled.value = false
   transitionTo('hidden')
   // Réinitialiser le flag de contrôle externe
   isExternalControl = false
@@ -786,7 +939,11 @@ watch(
         startPoll()
       }
     } else if (!newData && oldData) {
-      // Poll terminé sans données (cleanup forcé)
+      // Poll supprimé (données vidées par le parent)
+      // Ne PAS interférer si le composant gère déjà sa propre séquence de fin
+      if (state.value === 'result' || state.value === 'exiting' || state.value === 'hidden') {
+        return
+      }
       transitionTo('hidden')
       cleanupAudio()
     }
@@ -838,6 +995,7 @@ onMounted(() => {
 onUnmounted(() => {
   clearAllTimers()
   stopTimer()
+  stopResultCooldown()
   cleanupAudio()
   if (shakeInterval) {
     clearInterval(shakeInterval)
@@ -1133,6 +1291,47 @@ onUnmounted(() => {
   transition: left 0.3s ease-out;
   opacity: 0.6;
   pointer-events: none;
+}
+
+/* Result stats display */
+.option-stats {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.option-votes {
+  font-size: 0.8em;
+  opacity: 0.7;
+}
+
+.result-total-votes {
+  text-align: center;
+  margin-top: 12px;
+  opacity: 0.6;
+  font-size: 0.85em;
+}
+
+/* Result cooldown bar (inverse progress: 0% → 100%) */
+.result-cooldown-bar {
+  position: relative;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  margin-top: 16px;
+  overflow: hidden;
+}
+
+.result-cooldown-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ffd700, #f59e0b);
+  border-radius: 3px;
+  transition: width 0.1s linear;
+  will-change: width;
+}
+
+.result-cooldown-fill.cancelled {
+  background: linear-gradient(90deg, #6b7280, #9ca3af);
 }
 
 /* Shake animation */

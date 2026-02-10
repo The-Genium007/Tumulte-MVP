@@ -50,6 +50,8 @@ export interface PollEventMetadata {
   votesByOption: Record<string, number>
   /** Options gagnantes (peut y en avoir plusieurs si ex-æquo) */
   winningOptions: string[]
+  /** Sondage annulé avant la fin */
+  isCancelled: boolean
   /** Résultats par chaîne */
   channelResults?: Array<{
     streamerName: string
