@@ -1053,6 +1053,48 @@ describe('useWebSocket Composable', () => {
       expect(onGamificationComplete).toHaveBeenCalledWith(completeData)
     })
 
+    test('should handle gamification:armed events', async () => {
+      const { subscribeToStreamerPolls } = useWebSocket()
+
+      const onGamificationArmed = vi.fn()
+
+      let eventSourceInstance: MockEventSource
+      global.EventSource = class extends MockEventSource {
+        constructor(url: string) {
+          super(url)
+          eventSourceInstance = this
+        }
+      } as unknown as typeof EventSource
+
+      subscribeToStreamerPolls('streamer-gam-armed', {
+        onGamificationArmed,
+      })
+
+      await new Promise((resolve) => setTimeout(resolve, 10))
+      eventSourceInstance!.simulateOpen()
+      await new Promise((resolve) => setTimeout(resolve, 10))
+
+      const armedData = {
+        instanceId: 'gam-123',
+        campaignId: 'campaign-456',
+        armedAt: '2024-01-01T00:03:00.000Z',
+        streamerId: 'streamer-1',
+        eventId: 'evt-1',
+      }
+
+      eventSourceInstance!.simulateMessage(
+        JSON.stringify({
+          channel: 'streamer:streamer-gam-armed:polls',
+          payload: {
+            event: 'gamification:armed',
+            data: armedData,
+          },
+        })
+      )
+
+      expect(onGamificationArmed).toHaveBeenCalledWith(armedData)
+    })
+
     test('should handle gamification:expired events', async () => {
       const { subscribeToStreamerPolls } = useWebSocket()
 
