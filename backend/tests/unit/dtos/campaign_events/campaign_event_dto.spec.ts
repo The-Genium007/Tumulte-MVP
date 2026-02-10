@@ -2,8 +2,8 @@ import { test } from '@japa/runner'
 import { DateTime } from 'luxon'
 import {
   CampaignEventDto,
-  type CampaignEventType,
   type GamificationEventMetadata,
+  type PollEventMetadata,
 } from '#dtos/campaign_events/campaign_event_dto'
 import type { pollInstance as PollInstance } from '#models/poll_instance'
 import type GamificationInstance from '#models/gamification_instance'
@@ -161,12 +161,13 @@ test.group('CampaignEventDto - fromPollInstance', () => {
     assert.isFalse(dto.primaryResult.isExAequo)
 
     // Metadata
-    assert.equal(dto.metadata.pollInstanceId, 'poll-123')
-    assert.deepEqual(dto.metadata.options, ['Attack', 'Flee', 'Negotiate'])
-    assert.equal(dto.metadata.totalVotes, 0)
-    assert.deepEqual(dto.metadata.votesByOption, {})
-    assert.deepEqual(dto.metadata.winningOptions, [])
-    assert.isFalse(dto.metadata.isCancelled)
+    const meta = dto.metadata as PollEventMetadata
+    assert.equal(meta.pollInstanceId, 'poll-123')
+    assert.deepEqual(meta.options, ['Attack', 'Flee', 'Negotiate'])
+    assert.equal(meta.totalVotes, 0)
+    assert.deepEqual(meta.votesByOption, {})
+    assert.deepEqual(meta.winningOptions, [])
+    assert.isFalse(meta.isCancelled)
   })
 
   test('should convert poll instance with votes showing winner', async ({ assert }) => {
@@ -185,13 +186,14 @@ test.group('CampaignEventDto - fromPollInstance', () => {
     assert.isFalse(dto.primaryResult.isExAequo)
 
     // Metadata with mapped vote counts
-    assert.equal(dto.metadata.totalVotes, 30)
-    assert.deepEqual(dto.metadata.votesByOption, {
+    const meta = dto.metadata as PollEventMetadata
+    assert.equal(meta.totalVotes, 30)
+    assert.deepEqual(meta.votesByOption, {
       Attack: 15,
       Flee: 5,
       Negotiate: 10,
     })
-    assert.deepEqual(dto.metadata.winningOptions, ['Attack'])
+    assert.deepEqual(meta.winningOptions, ['Attack'])
   })
 
   test('should convert poll instance with ex-aequo (tie)', async ({ assert }) => {
@@ -210,9 +212,10 @@ test.group('CampaignEventDto - fromPollInstance', () => {
     assert.isTrue(dto.primaryResult.isExAequo)
 
     // Metadata shows both winning options
-    assert.equal(dto.metadata.totalVotes, 25)
-    assert.lengthOf(dto.metadata.winningOptions, 2)
-    assert.includeMembers(dto.metadata.winningOptions, ['Attack', 'Flee'])
+    const meta = dto.metadata as PollEventMetadata
+    assert.equal(meta.totalVotes, 25)
+    assert.lengthOf(meta.winningOptions, 2)
+    assert.includeMembers(meta.winningOptions, ['Attack', 'Flee'])
   })
 
   test('should convert cancelled poll instance', async ({ assert }) => {
@@ -231,8 +234,9 @@ test.group('CampaignEventDto - fromPollInstance', () => {
     assert.isFalse(dto.primaryResult.isExAequo)
 
     // Metadata still contains vote data
-    assert.isTrue(dto.metadata.isCancelled)
-    assert.equal(dto.metadata.totalVotes, 10)
+    const meta = dto.metadata as PollEventMetadata
+    assert.isTrue(meta.isCancelled)
+    assert.equal(meta.totalVotes, 10)
   })
 
   test('should handle poll with options as stringified JSON', async ({ assert }) => {
@@ -247,8 +251,9 @@ test.group('CampaignEventDto - fromPollInstance', () => {
     const dto = CampaignEventDto.fromPollInstance(poll as PollInstance, aggregatedResults)
 
     // Should correctly parse and map options
-    assert.deepEqual(dto.metadata.options, ['Option A', 'Option B', 'Option C'])
-    assert.deepEqual(dto.metadata.votesByOption, {
+    const meta = dto.metadata as PollEventMetadata
+    assert.deepEqual(meta.options, ['Option A', 'Option B', 'Option C'])
+    assert.deepEqual(meta.votesByOption, {
       'Option A': 20,
       'Option B': 10,
       'Option C': 5,
@@ -281,9 +286,10 @@ test.group('CampaignEventDto - fromPollInstance', () => {
     const poll = createMockPollInstance({ options: [] })
     const dto = CampaignEventDto.fromPollInstance(poll as PollInstance)
 
-    assert.deepEqual(dto.metadata.options, [])
-    assert.deepEqual(dto.metadata.votesByOption, {})
-    assert.deepEqual(dto.metadata.winningOptions, [])
+    const meta = dto.metadata as PollEventMetadata
+    assert.deepEqual(meta.options, [])
+    assert.deepEqual(meta.votesByOption, {})
+    assert.deepEqual(meta.winningOptions, [])
   })
 
   test('should handle votes with missing option indices', async ({ assert }) => {
@@ -296,7 +302,8 @@ test.group('CampaignEventDto - fromPollInstance', () => {
     const dto = CampaignEventDto.fromPollInstance(poll as PollInstance, aggregatedResults)
 
     // Should create fallback option name
-    assert.deepEqual(dto.metadata.votesByOption, {
+    const meta = dto.metadata as PollEventMetadata
+    assert.deepEqual(meta.votesByOption, {
       'Option 6': 10,
     })
   })
