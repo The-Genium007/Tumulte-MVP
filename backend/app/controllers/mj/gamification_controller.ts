@@ -365,8 +365,10 @@ export default class GamificationController {
       return response.notFound({ error: 'Instance non trouvée' })
     }
 
-    if (instance.status !== 'active') {
-      return response.badRequest({ error: "L'instance n'est pas active" })
+    if (instance.status !== 'active' && instance.status !== 'armed') {
+      return response.badRequest({
+        error: "L'instance doit être active ou armée pour être annulée",
+      })
     }
 
     const gamificationService = await this.getGamificationService()

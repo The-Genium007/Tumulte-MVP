@@ -7,7 +7,10 @@
 
     <!-- Loading state -->
     <div v-if="loading" class="flex items-center justify-center py-12">
-      <UIcon name="i-lucide-loader-2" class="size-8 animate-spin text-primary" />
+      <UIcon
+        name="i-game-icons-dice-twenty-faces-twenty"
+        class="size-8 animate-spin-slow text-primary"
+      />
     </div>
 
     <!-- Error state -->

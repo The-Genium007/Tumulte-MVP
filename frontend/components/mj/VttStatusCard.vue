@@ -59,7 +59,7 @@ const statusConfig = computed(() => {
       }
     case 'connecting':
       return {
-        icon: 'i-lucide-loader',
+        icon: 'i-game-icons-dice-twenty-faces-twenty',
         color: 'warning',
         bgClass: 'bg-warning-light',
         iconClass: 'text-warning-500 animate-spin',

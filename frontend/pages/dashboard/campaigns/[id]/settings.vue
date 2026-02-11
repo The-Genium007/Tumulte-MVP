@@ -438,7 +438,10 @@ const handleOverlayCancel = () => {
 
           <!-- Loading -->
           <div v-if="gamificationLoading" class="flex items-center justify-center py-8">
-            <UIcon name="i-lucide-loader-2" class="size-8 text-primary animate-spin" />
+            <UIcon
+              name="i-game-icons-dice-twenty-faces-twenty"
+              class="size-8 text-primary animate-spin-slow"
+            />
           </div>
 
           <!-- Pas d'événements disponibles -->

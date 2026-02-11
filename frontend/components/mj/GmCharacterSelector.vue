@@ -237,7 +237,10 @@ const isAssignedToStreamer = (character: GmCharacter) => character.assignedToStr
           v-if="loading"
           class="flex items-center justify-center py-6 rounded-lg border border-dashed border-default bg-subtle"
         >
-          <UIcon name="i-lucide-loader-2" class="size-5 animate-spin text-muted" />
+          <UIcon
+            name="i-game-icons-dice-twenty-faces-twenty"
+            class="size-5 animate-spin-slow text-muted"
+          />
           <span class="ml-2 text-sm text-muted">Chargement des personnages...</span>
         </div>
 
@@ -360,7 +363,7 @@ const isAssignedToStreamer = (character: GmCharacter) => character.assignedToStr
 
         <!-- Indicateur de mise à jour -->
         <div v-if="updating" class="flex items-center gap-2 mt-2 text-xs text-muted">
-          <UIcon name="i-lucide-loader-2" class="size-4 animate-spin" />
+          <UIcon name="i-game-icons-dice-twenty-faces-twenty" class="size-4 animate-spin" />
           <span>Changement en cours...</span>
         </div>
       </div>

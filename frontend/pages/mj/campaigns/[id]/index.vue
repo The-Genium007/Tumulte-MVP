@@ -386,7 +386,7 @@
             v-else-if="campaign.vttConnection.tunnelStatus === 'connecting'"
             color="warning"
             variant="soft"
-            icon="i-lucide-loader-circle"
+            icon="i-game-icons-dice-twenty-faces-twenty"
             title="Connexion en cours"
             description="Le tunnel est en cours d'établissement avec votre VTT."
           />

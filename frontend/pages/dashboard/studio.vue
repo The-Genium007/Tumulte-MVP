@@ -159,7 +159,10 @@
         <!-- Indicateur de sauvegarde -->
         <div v-if="isDirty || isAutoSaving" class="save-indicator">
           <template v-if="isAutoSaving">
-            <UIcon name="i-lucide-loader-2" class="size-4 animate-spin text-primary-500" />
+            <UIcon
+              name="i-game-icons-dice-twenty-faces-twenty"
+              class="size-4 animate-spin text-primary-500"
+            />
             <span class="save-indicator-text">Sauvegarde...</span>
           </template>
           <template v-else>

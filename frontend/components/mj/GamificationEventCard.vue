@@ -325,7 +325,7 @@ const handleResetToDefaults = () => {
           >
             <UIcon
               v-if="loading"
-              name="i-lucide-loader-2"
+              name="i-game-icons-dice-twenty-faces-twenty"
               class="size-3.5 animate-spin text-gray-400"
             />
           </span>

@@ -13,8 +13,8 @@
           >
             <UIcon
               v-if="verificationStatus === 'loading'"
-              name="i-lucide-loader-2"
-              class="size-8 text-primary animate-spin"
+              name="i-game-icons-dice-twenty-faces-twenty"
+              class="size-8 text-primary animate-spin-slow"
             />
             <UIcon
               v-else-if="verificationStatus === 'success'"

@@ -33,7 +33,10 @@
 
       <!-- Loading State -->
       <div v-if="loading" class="flex justify-center py-12">
-        <UIcon name="i-lucide-loader-circle" class="size-8 animate-spin text-primary" />
+        <UIcon
+          name="i-game-icons-dice-twenty-faces-twenty"
+          class="size-8 animate-spin-slow text-primary"
+        />
       </div>
 
       <template v-else>

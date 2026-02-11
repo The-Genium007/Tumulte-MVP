@@ -118,7 +118,10 @@ const formatRollResult = (roll: PendingDiceRoll) => {
           v-if="pendingLoading || charactersLoading"
           class="flex items-center justify-center py-8"
         >
-          <UIcon name="i-lucide-loader-2" class="size-8 animate-spin text-muted" />
+          <UIcon
+            name="i-game-icons-dice-twenty-faces-twenty"
+            class="size-8 animate-spin-slow text-muted"
+          />
         </div>
 
         <!-- No pending rolls -->
