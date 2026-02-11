@@ -92,6 +92,13 @@ app.container.singleton('twitchChatCountdownService', async () => {
   return new mod.twitchChatCountdownService(chatService)
 })
 
+// Singleton pour réutiliser les subscriptions EventSub entre les requêtes
+app.container.singleton('twitchEventSubService', async () => {
+  const mod = await import('#services/twitch/twitch_eventsub_service')
+  const twitchApiService = await app.container.make('twitchApiService')
+  return new mod.TwitchEventSubService(twitchApiService)
+})
+
 // WebSocket Service
 app.container.singleton('webSocketService', async () => {
   const mod = await import('#services/websocket/websocket_service')
@@ -109,6 +116,18 @@ app.container.singleton('foundryCommandAdapter', async () => {
   const mod = await import('#services/gamification/foundry_command_adapter')
   const vttWebSocketService = await app.container.make('vttWebSocketService')
   return new mod.FoundryCommandAdapter(vttWebSocketService)
+})
+
+// RewardManagerService avec injection du TwitchEventSubService
+app.container.bind('rewardManagerService', async () => {
+  const mod = await import('#services/gamification/reward_manager_service')
+  const rewardManager = await app.container.make(mod.RewardManagerService)
+
+  // Injecter le TwitchEventSubService
+  const twitchEventSubService = await app.container.make('twitchEventSubService')
+  rewardManager.setEventSubService(twitchEventSubService)
+
+  return rewardManager
 })
 
 app.container.singleton('gamificationService', async () => {
@@ -272,6 +291,12 @@ declare module '@adonisjs/core/types' {
     vttWebSocketService: InstanceType<typeof import('#services/vtt/vtt_websocket_service').default>
     foundryCommandAdapter: InstanceType<
       typeof import('#services/gamification/foundry_command_adapter').FoundryCommandAdapter
+    >
+    twitchEventSubService: InstanceType<
+      typeof import('#services/twitch/twitch_eventsub_service').TwitchEventSubService
+    >
+    rewardManagerService: InstanceType<
+      typeof import('#services/gamification/reward_manager_service').RewardManagerService
     >
     gamificationService: InstanceType<
       typeof import('#services/gamification/gamification_service').GamificationService

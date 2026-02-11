@@ -1,11 +1,13 @@
 import { inject } from '@adonisjs/core'
 import logger from '@adonisjs/core/services/logger'
+import * as Sentry from '@sentry/node'
 import { DateTime } from 'luxon'
 import { streamer as Streamer } from '#models/streamer'
 import { RewardManagerService } from '#services/gamification/reward_manager_service'
 import { StreamerGamificationConfigRepository } from '#repositories/streamer_gamification_config_repository'
 import { GamificationConfigRepository } from '#repositories/gamification_config_repository'
 import { TwitchRewardService } from '#services/twitch/twitch_reward_service'
+import type { TwitchEventSubService } from '#services/twitch/twitch_eventsub_service'
 
 export interface AuthorizationGrantResult {
   created: number
@@ -24,16 +26,26 @@ export interface AuthorizationRevokeResult {
  * GamificationAuthBridge - Bridge between authorization and gamification systems
  *
  * This service orchestrates the creation/deletion of Twitch Channel Points rewards
- * when a streamer grants or loses their 12h authorization on a campaign.
+ * and EventSub subscriptions when a streamer grants or loses their 12h authorization
+ * on a campaign.
  */
 @inject()
 export class GamificationAuthBridge {
+  private eventSubService: TwitchEventSubService | null = null
+
   constructor(
     private rewardManager: RewardManagerService,
     private streamerConfigRepo: StreamerGamificationConfigRepository,
     private campaignConfigRepo: GamificationConfigRepository,
     private twitchRewardService: TwitchRewardService
   ) {}
+
+  /**
+   * Injecte le service EventSub (optionnel, setter injection)
+   */
+  setEventSubService(service: TwitchEventSubService): void {
+    this.eventSubService = service
+  }
 
   /**
    * Called when authorization is granted to a streamer (or MJ)
@@ -239,6 +251,9 @@ export class GamificationAuthBridge {
       }
     }
 
+    // Nettoyer les subscriptions EventSub pour ce broadcaster
+    await this.cleanupEventSubSubscriptions(streamer, campaignId)
+
     logger.info(
       {
         campaignId,
@@ -250,6 +265,58 @@ export class GamificationAuthBridge {
     )
 
     return result
+  }
+
+  /**
+   * Supprime les subscriptions EventSub pour un broadcaster lors de la révocation
+   *
+   * Méthode résiliente : un échec de cleanup EventSub ne bloque pas la
+   * révocation d'autorisation. Les subscriptions orphelines seront nettoyées
+   * par Twitch automatiquement (elles échoueront et seront révoquées).
+   */
+  private async cleanupEventSubSubscriptions(
+    streamer: Streamer,
+    campaignId: string
+  ): Promise<void> {
+    if (!this.eventSubService) {
+      return
+    }
+
+    try {
+      const cleanupResult = await this.eventSubService.deleteSubscriptionsForBroadcaster(
+        streamer.twitchUserId,
+        'channel.channel_points_custom_reward_redemption.add'
+      )
+
+      logger.info(
+        {
+          event: 'eventsub_cleanup_on_revoke',
+          campaignId,
+          streamerId: streamer.id,
+          broadcasterId: streamer.twitchUserId,
+          deleted: cleanupResult.deleted,
+          failed: cleanupResult.failed,
+        },
+        '[GamificationAuthBridge] EventSub subscriptions cleanup completed'
+      )
+    } catch (error) {
+      logger.error(
+        {
+          event: 'eventsub_cleanup_error',
+          campaignId,
+          streamerId: streamer.id,
+          error: error instanceof Error ? error.message : String(error),
+        },
+        '[GamificationAuthBridge] Failed to cleanup EventSub subscriptions'
+      )
+      Sentry.captureException(error, {
+        tags: {
+          service: 'gamification_auth_bridge',
+          operation: 'cleanupEventSubSubscriptions',
+        },
+        extra: { campaignId, streamerId: streamer.id },
+      })
+    }
   }
 }
 

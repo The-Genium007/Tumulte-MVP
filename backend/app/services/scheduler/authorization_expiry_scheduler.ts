@@ -1,5 +1,6 @@
 import cron from 'node-cron'
 import logger from '@adonisjs/core/services/logger'
+import app from '@adonisjs/core/services/app'
 import { CampaignMembershipRepository } from '#repositories/campaign_membership_repository'
 import { GamificationAuthBridge } from '#services/gamification/gamification_auth_bridge'
 
@@ -48,12 +49,26 @@ export class AuthorizationExpiryScheduler {
       twitchRewardService
     )
 
+    // Injecter le TwitchEventSubService si disponible dans le container
+    let twitchEventSubService = null
+    try {
+      twitchEventSubService = await app.container.make('twitchEventSubService')
+      rewardManager.setEventSubService(twitchEventSubService)
+    } catch {
+      // EventSub non disponible dans ce contexte — pas bloquant
+    }
+
     this.gamificationBridge = new GamificationAuthBridge(
       rewardManager,
       streamerConfigRepo,
       campaignConfigRepo,
       twitchRewardService
     )
+
+    // Injecter le TwitchEventSubService dans le bridge aussi
+    if (twitchEventSubService) {
+      this.gamificationBridge.setEventSubService(twitchEventSubService)
+    }
   }
 
   /**

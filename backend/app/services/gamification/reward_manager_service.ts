@@ -1,5 +1,6 @@
 import { inject } from '@adonisjs/core'
 import logger from '@adonisjs/core/services/logger'
+import * as Sentry from '@sentry/node'
 import { streamer as Streamer } from '#models/streamer'
 import GamificationEvent from '#models/gamification_event'
 import CampaignGamificationConfig from '#models/campaign_gamification_config'
@@ -7,22 +8,36 @@ import StreamerGamificationConfig from '#models/streamer_gamification_config'
 import { StreamerGamificationConfigRepository } from '#repositories/streamer_gamification_config_repository'
 import { GamificationConfigRepository } from '#repositories/gamification_config_repository'
 import { TwitchRewardService, type CreateRewardData } from '#services/twitch/twitch_reward_service'
+import type { TwitchEventSubService } from '#services/twitch/twitch_eventsub_service'
 
 /**
  * RewardManagerService - Orchestration de la création/gestion des rewards Twitch
  *
  * Ce service gère le cycle de vie des Channel Points Rewards pour la gamification :
  * - Création du reward quand un streamer active un événement
+ * - Création de la subscription EventSub pour recevoir les rédemptions
  * - Mise à jour du coût quand le streamer le modifie
  * - Suppression/désactivation en cascade quand le MJ désactive
  */
 @inject()
 export class RewardManagerService {
+  private eventSubService: TwitchEventSubService | null = null
+
   constructor(
     private streamerConfigRepo: StreamerGamificationConfigRepository,
     private campaignConfigRepo: GamificationConfigRepository,
     private twitchRewardService: TwitchRewardService
   ) {}
+
+  /**
+   * Injecte le service EventSub (optionnel, setter injection)
+   *
+   * Permet d'ajouter le support EventSub sans modifier le constructeur
+   * ni casser les appelants existants. Appelé par le container IoC.
+   */
+  setEventSubService(service: TwitchEventSubService): void {
+    this.eventSubService = service
+  }
 
   /**
    * Active un événement pour un streamer et crée le reward Twitch
@@ -86,6 +101,13 @@ export class RewardManagerService {
           },
           'Reward Twitch créé pour le streamer'
         )
+
+        // Créer la subscription EventSub pour recevoir les rédemptions de ce reward
+        await this.ensureEventSubSubscription(streamer, reward.id, {
+          streamerId: streamer.id,
+          campaignId,
+          eventId,
+        })
       } else {
         logger.error(
           {
@@ -102,6 +124,13 @@ export class RewardManagerService {
       await this.twitchRewardService.enableReward(streamer, streamerConfig.twitchRewardId!)
       streamerConfig.twitchRewardStatus = 'active'
       await streamerConfig.save()
+
+      // S'assurer que la subscription EventSub existe toujours
+      await this.ensureEventSubSubscription(streamer, streamerConfig.twitchRewardId!, {
+        streamerId: streamer.id,
+        campaignId,
+        eventId,
+      })
     }
 
     await streamerConfig.load('event')
@@ -267,6 +296,96 @@ export class RewardManagerService {
     const coefficient = campaignConfig?.objectiveCoefficient ?? event.defaultObjectiveCoefficient
     const percentage = Math.round(coefficient * 100)
     return `${percentage}% des viewers doivent cliquer`
+  }
+
+  /**
+   * S'assure qu'une subscription EventSub existe pour recevoir les rédemptions
+   *
+   * Méthode résiliente : si le service EventSub n'est pas injecté ou si la
+   * création échoue, le reward reste fonctionnel — les rédemptions ne seront
+   * simplement pas reçues automatiquement (diagnostic via logs Sentry).
+   *
+   * @param streamer - Le streamer dont la chaîne doit être surveillée
+   * @param rewardId - L'ID du reward Twitch (pour filtrer les rédemptions)
+   * @param metadata - Contexte métier pour le tracking Sentry
+   */
+  private async ensureEventSubSubscription(
+    streamer: Streamer,
+    rewardId: string,
+    metadata: { streamerId: string; campaignId: string; eventId: string }
+  ): Promise<void> {
+    if (!this.eventSubService) {
+      logger.warn(
+        {
+          event: 'eventsub_service_not_available',
+          ...metadata,
+          rewardId,
+        },
+        'TwitchEventSubService non injecté — subscription EventSub non créée'
+      )
+      return
+    }
+
+    try {
+      // eslint-disable-next-line camelcase
+      const condition = { broadcaster_user_id: streamer.twitchUserId, reward_id: rewardId }
+      const subscription = await this.eventSubService.createSubscription({
+        type: 'channel.channel_points_custom_reward_redemption.add',
+        condition,
+        metadata: {
+          streamerId: metadata.streamerId,
+          campaignId: metadata.campaignId,
+          eventId: metadata.eventId,
+        },
+      })
+
+      if (subscription) {
+        logger.info(
+          {
+            event: 'eventsub_subscription_ensured',
+            subscriptionId: subscription.id,
+            subscriptionStatus: subscription.status,
+            rewardId,
+            ...metadata,
+          },
+          'Subscription EventSub assurée pour le reward'
+        )
+      } else {
+        logger.error(
+          {
+            event: 'eventsub_subscription_ensure_failed',
+            rewardId,
+            ...metadata,
+          },
+          'Échec de création de la subscription EventSub — les rédemptions ne seront pas reçues'
+        )
+        Sentry.captureMessage('EventSub subscription creation failed for reward', {
+          level: 'error',
+          tags: {
+            service: 'reward_manager',
+            operation: 'ensureEventSubSubscription',
+          },
+          extra: { rewardId, ...metadata },
+        })
+      }
+    } catch (error) {
+      logger.error(
+        {
+          event: 'eventsub_subscription_ensure_error',
+          rewardId,
+          error: error instanceof Error ? error.message : String(error),
+          ...metadata,
+        },
+        'Erreur lors de la création de la subscription EventSub'
+      )
+      Sentry.captureException(error, {
+        tags: {
+          service: 'reward_manager',
+          operation: 'ensureEventSubSubscription',
+        },
+        extra: { rewardId, ...metadata },
+      })
+    }
   }
 
   /**
