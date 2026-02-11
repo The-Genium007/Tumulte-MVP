@@ -1,6 +1,7 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import { inject } from '@adonisjs/core'
 import crypto from 'node:crypto'
+import * as Sentry from '@sentry/node'
 import env from '#start/env'
 import logger from '@adonisjs/core/services/logger'
 import { GamificationService } from '#services/gamification/gamification_service'
@@ -230,6 +231,19 @@ export default class TwitchEventSubController {
         },
         'Redemption pour un reward non lié à la gamification — aucune config trouvée pour ce reward ID'
       )
+      Sentry.captureMessage('Redemption reçue mais aucune config gamification trouvée', {
+        level: 'warning',
+        tags: {
+          service: 'twitch_eventsub',
+          operation: 'handleRedemption',
+        },
+        extra: {
+          rewardId: event.reward.id,
+          rewardTitle: event.reward.title,
+          broadcasterId: event.broadcaster_user_id,
+          streamerId: streamer.id,
+        },
+      })
       return
     }
 
@@ -264,6 +278,18 @@ export default class TwitchEventSubController {
         },
         'Erreur lors du traitement de la redemption'
       )
+      Sentry.captureException(error, {
+        tags: {
+          service: 'twitch_eventsub',
+          operation: 'handleRedemption',
+        },
+        extra: {
+          redemptionId: event.id,
+          rewardId: event.reward.id,
+          broadcasterId: event.broadcaster_user_id,
+          streamerId: streamer.id,
+        },
+      })
     }
   }
 
@@ -313,10 +339,27 @@ export default class TwitchEventSubController {
         {
           event: 'streamer_redemption_error',
           redemptionId: event.id,
+          streamerConfigId: streamerConfig.id,
+          campaignId: streamerConfig.campaignId,
+          eventId: streamerConfig.eventId,
           error: error instanceof Error ? error.message : String(error),
         },
         'Erreur lors du traitement de la redemption streamer'
       )
+      Sentry.captureException(error, {
+        tags: {
+          service: 'twitch_eventsub',
+          operation: 'handleStreamerRedemption',
+        },
+        extra: {
+          redemptionId: event.id,
+          rewardId: event.reward.id,
+          streamerId,
+          streamerConfigId: streamerConfig.id,
+          campaignId: streamerConfig.campaignId,
+          eventId: streamerConfig.eventId,
+        },
+      })
     }
   }
 

@@ -439,7 +439,7 @@ test.group('GamificationService - forceCompleteInstance', () => {
       eventId: 'event-123',
       event: createMockGamificationEvent() as any,
     })
-    mockInstance.save = async () => mockInstance
+    mockInstance.save = async () => mockInstance as any
 
     const service = createService({
       instanceManager: {
