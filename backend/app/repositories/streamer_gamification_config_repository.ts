@@ -176,6 +176,23 @@ export class StreamerGamificationConfigRepository {
       .preload('streamer')
   }
 
+  /**
+   * Find ALL configs with a twitchRewardId for a streamer in a campaign
+   * regardless of status (active, paused, orphaned).
+   * Used during authorization revoke to ensure complete Twitch cleanup.
+   */
+  async findWithRewardIdByStreamerAndCampaign(
+    streamerId: string,
+    campaignId: string
+  ): Promise<StreamerGamificationConfig[]> {
+    return StreamerGamificationConfig.query()
+      .where('streamerId', streamerId)
+      .where('campaignId', campaignId)
+      .whereNotNull('twitchRewardId')
+      .preload('event')
+      .preload('streamer')
+  }
+
   // ========================================
   // CLEANUP & ORPHAN DETECTION
   // ========================================

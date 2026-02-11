@@ -42,6 +42,11 @@ export class RewardManagerService {
 
   /**
    * Active un événement pour un streamer et crée le reward Twitch
+   *
+   * Stratégie "delete-before-recreate" :
+   * On supprime TOUJOURS l'ancien reward Twitch avant d'en créer un nouveau.
+   * Cela garantit le badge "Nouveau" sur Twitch (plus visible pour les viewers)
+   * et évite les erreurs DUPLICATE_REWARD.
    */
   async enableForStreamer(
     streamer: Streamer,
@@ -49,12 +54,12 @@ export class RewardManagerService {
     eventId: string,
     costOverride?: number
   ): Promise<StreamerGamificationConfig> {
+    const logCtx = { streamerId: streamer.id, campaignId, eventId }
+
     logger.info(
       {
         event: 'reward_enable_for_streamer',
-        streamerId: streamer.id,
-        campaignId,
-        eventId,
+        ...logCtx,
         hasEventSubService: !!this.eventSubService,
       },
       '[RewardManager] enableForStreamer called'
@@ -92,57 +97,36 @@ export class RewardManagerService {
       await streamerConfig.save()
     }
 
-    // 3. Créer le reward Twitch si nécessaire
-    if (streamerConfig.canCreateTwitchReward) {
-      const effectiveCost = streamerConfig.getEffectiveCost(campaignConfig, event)
-      const reward = await this.createTwitchReward(streamer, event, effectiveCost)
+    logger.info(
+      {
+        event: 'reward_config_state',
+        ...logCtx,
+        twitchRewardId: streamerConfig.twitchRewardId,
+        twitchRewardStatus: streamerConfig.twitchRewardStatus,
+        canCreate: streamerConfig.canCreateTwitchReward,
+      },
+      '[RewardManager] Current config state before reward creation'
+    )
 
-      if (reward) {
-        streamerConfig.twitchRewardId = reward.id
-        streamerConfig.twitchRewardStatus = 'active'
-        await streamerConfig.save()
+    // 3. Supprimer l'ancien reward Twitch s'il existe (delete-before-recreate)
+    //    On supprime toujours pour garantir le badge "Nouveau" sur Twitch
+    if (streamerConfig.twitchRewardId) {
+      await this.deleteExistingReward(streamer, streamerConfig, logCtx)
+    }
 
-        logger.info(
-          {
-            event: 'reward_created_for_streamer',
-            streamerId: streamer.id,
-            campaignId,
-            eventId,
-            rewardId: reward.id,
-            cost: effectiveCost,
-          },
-          'Reward Twitch créé pour le streamer'
-        )
+    // 4. Créer un nouveau reward Twitch frais
+    const effectiveCost = streamerConfig.getEffectiveCost(campaignConfig, event)
+    const reward = await this.createFreshReward(
+      streamer,
+      streamerConfig,
+      event,
+      effectiveCost,
+      logCtx
+    )
 
-        // Créer la subscription EventSub pour recevoir les rédemptions de ce reward
-        await this.ensureEventSubSubscription(streamer, reward.id, {
-          streamerId: streamer.id,
-          campaignId,
-          eventId,
-        })
-      } else {
-        logger.error(
-          {
-            event: 'reward_creation_failed',
-            streamerId: streamer.id,
-            campaignId,
-            eventId,
-          },
-          'Échec de création du reward Twitch'
-        )
-      }
-    } else if (streamerConfig.twitchRewardStatus === 'paused') {
-      // Réactiver le reward existant
-      await this.twitchRewardService.enableReward(streamer, streamerConfig.twitchRewardId!)
-      streamerConfig.twitchRewardStatus = 'active'
-      await streamerConfig.save()
-
-      // S'assurer que la subscription EventSub existe toujours
-      await this.ensureEventSubSubscription(streamer, streamerConfig.twitchRewardId!, {
-        streamerId: streamer.id,
-        campaignId,
-        eventId,
-      })
+    if (reward) {
+      // 5. Créer la subscription EventSub pour recevoir les rédemptions
+      await this.ensureEventSubSubscription(streamer, reward.id, logCtx)
     }
 
     await streamerConfig.load('event')
@@ -308,6 +292,247 @@ export class RewardManagerService {
     const coefficient = campaignConfig?.objectiveCoefficient ?? event.defaultObjectiveCoefficient
     const percentage = Math.round(coefficient * 100)
     return `${percentage}% des viewers doivent cliquer`
+  }
+
+  /**
+   * Supprime un reward Twitch existant avant recréation
+   *
+   * Tente la suppression par ID connu. Si le reward n'existe plus sur Twitch (404),
+   * on considère ça comme un succès. En cas d'échec, on tente un cleanup par titre
+   * via listRewards() pour gérer les DUPLICATE_REWARD.
+   */
+  private async deleteExistingReward(
+    streamer: Streamer,
+    config: StreamerGamificationConfig,
+    logCtx: { streamerId: string; campaignId: string; eventId: string }
+  ): Promise<void> {
+    const oldRewardId = config.twitchRewardId
+
+    logger.info(
+      {
+        event: 'reward_delete_before_recreate',
+        ...logCtx,
+        oldRewardId,
+        oldStatus: config.twitchRewardStatus,
+      },
+      '[RewardManager] Deleting existing reward before recreate'
+    )
+
+    if (oldRewardId) {
+      const deleteResult = await this.twitchRewardService.deleteRewardWithRetry(
+        streamer,
+        oldRewardId
+      )
+
+      if (deleteResult.success) {
+        logger.info(
+          {
+            event: 'reward_deleted_before_recreate',
+            ...logCtx,
+            oldRewardId,
+            wasAlreadyDeleted: deleteResult.isAlreadyDeleted,
+          },
+          '[RewardManager] Old reward deleted successfully'
+        )
+      } else {
+        logger.warn(
+          {
+            event: 'reward_delete_failed_before_recreate',
+            ...logCtx,
+            oldRewardId,
+          },
+          '[RewardManager] Failed to delete old reward by ID, will try cleanup by title'
+        )
+      }
+    }
+
+    // Reset DB state regardless — we'll create a fresh reward next
+    config.twitchRewardId = null
+    config.twitchRewardStatus = 'not_created'
+    config.deletionFailedAt = null
+    config.deletionRetryCount = 0
+    config.nextDeletionRetryAt = null
+    await config.save()
+  }
+
+  /**
+   * Crée un reward Twitch frais avec gestion de DUPLICATE_REWARD
+   *
+   * Si la création échoue avec DUPLICATE_REWARD, on tente de supprimer
+   * le reward conflictuel par titre via listRewards(), puis on réessaie.
+   */
+  private async createFreshReward(
+    streamer: Streamer,
+    config: StreamerGamificationConfig,
+    event: GamificationEvent,
+    cost: number,
+    logCtx: { streamerId: string; campaignId: string; eventId: string }
+  ): Promise<{ id: string } | null> {
+    const title = this.getRewardTitle(event)
+
+    logger.info(
+      {
+        event: 'reward_create_fresh',
+        ...logCtx,
+        title,
+        cost,
+      },
+      '[RewardManager] Creating fresh reward'
+    )
+
+    // Première tentative de création
+    let reward = await this.createTwitchReward(streamer, event, cost)
+
+    // Si la création échoue, c'est probablement un DUPLICATE_REWARD
+    // On tente un cleanup par titre et on réessaie
+    if (!reward) {
+      logger.warn(
+        {
+          event: 'reward_create_failed_trying_cleanup',
+          ...logCtx,
+          title,
+        },
+        '[RewardManager] First create attempt failed, attempting cleanup by title'
+      )
+
+      const cleaned = await this.cleanupDuplicateByTitle(streamer, title, logCtx)
+
+      if (cleaned) {
+        logger.info(
+          {
+            event: 'reward_duplicate_cleaned',
+            ...logCtx,
+            title,
+          },
+          '[RewardManager] Duplicate reward cleaned up, retrying create'
+        )
+
+        // Deuxième tentative après cleanup
+        reward = await this.createTwitchReward(streamer, event, cost)
+      }
+    }
+
+    if (reward) {
+      config.twitchRewardId = reward.id
+      config.twitchRewardStatus = 'active'
+      await config.save()
+
+      logger.info(
+        {
+          event: 'reward_created_fresh',
+          ...logCtx,
+          rewardId: reward.id,
+          cost,
+        },
+        '[RewardManager] Fresh reward created successfully'
+      )
+    } else {
+      logger.error(
+        {
+          event: 'reward_create_fresh_failed',
+          ...logCtx,
+          title,
+        },
+        '[RewardManager] Failed to create fresh reward after all attempts'
+      )
+      Sentry.captureMessage('Failed to create fresh Twitch reward after cleanup', {
+        level: 'error',
+        tags: {
+          service: 'reward_manager',
+          operation: 'createFreshReward',
+        },
+        extra: { ...logCtx, title, cost },
+      })
+    }
+
+    return reward
+  }
+
+  /**
+   * Supprime un reward Twitch conflictuel trouvé par titre
+   *
+   * Utilisé quand createReward échoue avec DUPLICATE_REWARD.
+   * Liste tous les rewards manageables du streamer, trouve celui avec
+   * le même titre, et le supprime.
+   */
+  private async cleanupDuplicateByTitle(
+    streamer: Streamer,
+    title: string,
+    logCtx: { streamerId: string; campaignId: string; eventId: string }
+  ): Promise<boolean> {
+    try {
+      const rewards = await this.twitchRewardService.listRewards(streamer)
+
+      logger.info(
+        {
+          event: 'reward_list_for_cleanup',
+          ...logCtx,
+          totalRewards: rewards.length,
+          rewardTitles: rewards.map((r) => r.title),
+          targetTitle: title,
+        },
+        '[RewardManager] Listed rewards for duplicate cleanup'
+      )
+
+      const duplicate = rewards.find((r) => r.title === title)
+
+      if (!duplicate) {
+        logger.warn(
+          {
+            event: 'reward_duplicate_not_found',
+            ...logCtx,
+            title,
+          },
+          '[RewardManager] No duplicate found by title'
+        )
+        return false
+      }
+
+      logger.info(
+        {
+          event: 'reward_deleting_duplicate',
+          ...logCtx,
+          duplicateRewardId: duplicate.id,
+          title,
+        },
+        '[RewardManager] Found and deleting duplicate reward'
+      )
+
+      const deleted = await this.twitchRewardService.deleteReward(streamer, duplicate.id)
+
+      if (deleted) {
+        logger.info(
+          {
+            event: 'reward_duplicate_deleted',
+            ...logCtx,
+            duplicateRewardId: duplicate.id,
+          },
+          '[RewardManager] Duplicate reward deleted'
+        )
+      } else {
+        logger.error(
+          {
+            event: 'reward_duplicate_delete_failed',
+            ...logCtx,
+            duplicateRewardId: duplicate.id,
+          },
+          '[RewardManager] Failed to delete duplicate reward'
+        )
+      }
+
+      return deleted
+    } catch (error) {
+      logger.error(
+        {
+          event: 'reward_cleanup_by_title_error',
+          ...logCtx,
+          title,
+          error: error instanceof Error ? error.message : String(error),
+        },
+        '[RewardManager] Error during cleanup by title'
+      )
+      return false
+    }
   }
 
   /**

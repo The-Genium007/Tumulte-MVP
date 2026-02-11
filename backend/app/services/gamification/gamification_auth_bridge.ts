@@ -157,7 +157,8 @@ export class GamificationAuthBridge {
 
   /**
    * Called when authorization is revoked (manual or expiry)
-   * Deletes all active Twitch rewards for this streamer-campaign pair
+   * Deletes ALL Twitch rewards for this streamer-campaign pair
+   * regardless of their status (active, paused, orphaned).
    */
   async onAuthorizationRevoked(
     campaignId: string,
@@ -169,58 +170,73 @@ export class GamificationAuthBridge {
       errors: [],
     }
 
-    // Get all active rewards for this streamer in this campaign
-    const activeConfigs = await this.streamerConfigRepo.findActiveByStreamerAndCampaign(
+    // Find ALL configs with a twitchRewardId (not just active ones)
+    // This ensures we clean up paused, orphaned, etc. rewards too
+    const configs = await this.streamerConfigRepo.findWithRewardIdByStreamerAndCampaign(
       streamer.id,
       campaignId
     )
 
-    if (activeConfigs.length === 0) {
+    if (configs.length === 0) {
       logger.info(
         { campaignId, streamerId: streamer.id },
-        '[GamificationAuthBridge] No active rewards to delete'
+        '[GamificationAuthBridge] No rewards with twitchRewardId to delete'
       )
       return result
     }
 
     logger.info(
-      { campaignId, streamerId: streamer.id, rewardCount: activeConfigs.length },
-      '[GamificationAuthBridge] Deleting rewards on authorization revoke'
+      {
+        campaignId,
+        streamerId: streamer.id,
+        rewardCount: configs.length,
+        statuses: configs.map((c) => ({
+          eventId: c.eventId,
+          status: c.twitchRewardStatus,
+          rewardId: c.twitchRewardId,
+        })),
+      },
+      '[GamificationAuthBridge] Deleting ALL rewards on authorization revoke'
     )
 
-    // Delete each active reward
-    for (const config of activeConfigs) {
+    // Delete each reward from Twitch using deleteRewardWithRetry for resilience
+    for (const config of configs) {
       try {
         if (!config.twitchRewardId) {
           continue
         }
 
-        // Delete the reward from Twitch
-        const deleteSuccess = await this.twitchRewardService.deleteReward(
+        const deleteResult = await this.twitchRewardService.deleteRewardWithRetry(
           streamer,
           config.twitchRewardId
         )
 
-        if (deleteSuccess) {
-          // Update local config to reflect deletion
+        if (deleteResult.success) {
+          // Clean DB state completely
           config.twitchRewardId = null
           config.twitchRewardStatus = 'deleted'
           config.isEnabled = false
+          config.deletionFailedAt = null
+          config.deletionRetryCount = 0
+          config.nextDeletionRetryAt = null
           await config.save()
 
           result.deleted++
-          logger.debug(
-            { campaignId, streamerId: streamer.id, eventId: config.eventId },
+          logger.info(
+            {
+              campaignId,
+              streamerId: streamer.id,
+              eventId: config.eventId,
+              wasAlreadyDeleted: deleteResult.isAlreadyDeleted,
+            },
             '[GamificationAuthBridge] Reward deleted successfully'
           )
         } else {
-          // Twitch deletion failed - mark as orphaned but KEEP twitchRewardId
-          // This allows the cleanup system to retry deletion later
+          // Mark as orphaned for cleanup system
           config.twitchRewardStatus = 'orphaned'
           config.isEnabled = false
           config.deletionFailedAt = DateTime.now()
           config.deletionRetryCount = (config.deletionRetryCount || 0) + 1
-          // Schedule next retry with exponential backoff (1h, 2h, 4h, max 24h)
           const backoffHours = Math.min(Math.pow(2, config.deletionRetryCount - 1), 24)
           config.nextDeletionRetryAt = DateTime.now().plus({ hours: backoffHours })
           await config.save()
