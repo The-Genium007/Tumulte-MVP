@@ -1,8 +1,9 @@
 import { inject } from '@adonisjs/core'
+import app from '@adonisjs/core/services/app'
 import type { HttpContext } from '@adonisjs/core/http'
 import { DateTime } from 'luxon'
 import logger from '@adonisjs/core/services/logger'
-import { AuthorizationService } from '#services/campaigns/authorization_service'
+import type { AuthorizationService } from '#services/campaigns/authorization_service'
 import { StreamerRepository } from '#repositories/streamer_repository'
 import { CampaignMembershipRepository } from '#repositories/campaign_membership_repository'
 import { twitchAuthService as TwitchAuthService } from '#services/auth/twitch_auth_service'
@@ -22,12 +23,24 @@ function isValidUuid(value: unknown): value is string {
  */
 @inject()
 export default class AuthorizationController {
+  private _authorizationService!: AuthorizationService
+
   constructor(
-    private authorizationService: AuthorizationService,
     private streamerRepository: StreamerRepository,
     private membershipRepository: CampaignMembershipRepository,
     private twitchAuthService: TwitchAuthService
   ) {}
+
+  /**
+   * Résout AuthorizationService depuis le container IoC
+   * pour garantir l'injection du TwitchEventSubService dans toute la chaîne
+   */
+  private async getAuthorizationService(): Promise<AuthorizationService> {
+    if (!this._authorizationService) {
+      this._authorizationService = await app.container.make('authorizationService')
+    }
+    return this._authorizationService
+  }
 
   /**
    * Accorde l'autorisation pour 12 heures
@@ -46,10 +59,8 @@ export default class AuthorizationController {
     }
 
     try {
-      const expiresAt = await this.authorizationService.grantAuthorization(
-        params.campaignId,
-        streamer.id
-      )
+      const authService = await this.getAuthorizationService()
+      const expiresAt = await authService.grantAuthorization(params.campaignId, streamer.id)
 
       return response.ok({
         message: 'Authorization granted for 12 hours',
@@ -82,7 +93,8 @@ export default class AuthorizationController {
     }
 
     try {
-      await this.authorizationService.revokeAuthorization(params.campaignId, streamer.id)
+      const authService = await this.getAuthorizationService()
+      await authService.revokeAuthorization(params.campaignId, streamer.id)
 
       return response.ok({ message: 'Authorization revoked' })
     } catch (error) {

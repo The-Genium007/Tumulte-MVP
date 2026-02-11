@@ -130,6 +130,47 @@ app.container.bind('rewardManagerService', async () => {
   return rewardManager
 })
 
+// GamificationAuthBridge avec injection du TwitchEventSubService
+app.container.bind('gamificationAuthBridge', async () => {
+  const mod = await import('#services/gamification/gamification_auth_bridge')
+  const streamerConfigMod = await import('#repositories/streamer_gamification_config_repository')
+  const campaignConfigMod = await import('#repositories/gamification_config_repository')
+  const twitchRewardMod = await import('#services/twitch/twitch_reward_service')
+
+  const rewardManager = await app.container.make('rewardManagerService')
+  const streamerConfigRepo = await app.container.make(
+    streamerConfigMod.StreamerGamificationConfigRepository
+  )
+  const campaignConfigRepo = await app.container.make(
+    campaignConfigMod.GamificationConfigRepository
+  )
+  const twitchRewardService = await app.container.make(twitchRewardMod.TwitchRewardService)
+
+  const bridge = new mod.GamificationAuthBridge(
+    rewardManager,
+    streamerConfigRepo,
+    campaignConfigRepo,
+    twitchRewardService
+  )
+
+  // Injecter le TwitchEventSubService
+  const twitchEventSubService = await app.container.make('twitchEventSubService')
+  bridge.setEventSubService(twitchEventSubService)
+
+  return bridge
+})
+
+// AuthorizationService avec bridge correctement injectée
+app.container.bind('authorizationService', async () => {
+  const mod = await import('#services/campaigns/authorization_service')
+  const membershipMod = await import('#repositories/campaign_membership_repository')
+
+  const membershipRepo = await app.container.make(membershipMod.CampaignMembershipRepository)
+  const gamificationBridge = await app.container.make('gamificationAuthBridge')
+
+  return new mod.AuthorizationService(membershipRepo, gamificationBridge)
+})
+
 app.container.singleton('gamificationService', async () => {
   const mod = await import('#services/gamification/gamification_service')
   const gamificationService = await app.container.make(mod.GamificationService)
@@ -300,6 +341,12 @@ declare module '@adonisjs/core/types' {
     >
     gamificationService: InstanceType<
       typeof import('#services/gamification/gamification_service').GamificationService
+    >
+    gamificationAuthBridge: InstanceType<
+      typeof import('#services/gamification/gamification_auth_bridge').GamificationAuthBridge
+    >
+    authorizationService: InstanceType<
+      typeof import('#services/campaigns/authorization_service').AuthorizationService
     >
 
     // Repositories

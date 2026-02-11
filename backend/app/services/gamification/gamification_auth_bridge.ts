@@ -45,6 +45,7 @@ export class GamificationAuthBridge {
    */
   setEventSubService(service: TwitchEventSubService): void {
     this.eventSubService = service
+    logger.info('[GamificationAuthBridge] TwitchEventSubService injected successfully')
   }
 
   /**
@@ -55,6 +56,15 @@ export class GamificationAuthBridge {
     campaignId: string,
     streamer: Streamer
   ): Promise<AuthorizationGrantResult> {
+    logger.info(
+      {
+        campaignId,
+        streamerId: streamer.id,
+        hasEventSubService: !!this.eventSubService,
+      },
+      '[GamificationAuthBridge] onAuthorizationGranted called'
+    )
+
     const result: AuthorizationGrantResult = {
       created: 0,
       enabled: 0,

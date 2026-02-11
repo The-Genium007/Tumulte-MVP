@@ -37,6 +37,7 @@ export class RewardManagerService {
    */
   setEventSubService(service: TwitchEventSubService): void {
     this.eventSubService = service
+    logger.info('[RewardManager] TwitchEventSubService injected successfully')
   }
 
   /**
@@ -48,6 +49,17 @@ export class RewardManagerService {
     eventId: string,
     costOverride?: number
   ): Promise<StreamerGamificationConfig> {
+    logger.info(
+      {
+        event: 'reward_enable_for_streamer',
+        streamerId: streamer.id,
+        campaignId,
+        eventId,
+        hasEventSubService: !!this.eventSubService,
+      },
+      '[RewardManager] enableForStreamer called'
+    )
+
     // 1. Vérifier que l'événement est activé par le MJ
     const campaignConfig = await this.campaignConfigRepo.findByCampaignAndEvent(campaignId, eventId)
     if (!campaignConfig || !campaignConfig.isEnabled) {
