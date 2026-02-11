@@ -10,10 +10,13 @@
 
       <!-- VTT Connection Alert Banner -->
       <MjVttAlertBanner
-        v-if="selectedCampaignId && vttHasIssue"
+        v-if="selectedCampaignId && (vttHasIssue || isModuleOutdated)"
         :status="vttHealthStatus"
         :campaign-id="selectedCampaignId"
         :campaign-name="currentCampaign?.name"
+        :is-module-outdated="isModuleOutdated"
+        :current-module-version="vttConnectionHealth?.moduleVersion"
+        :latest-module-version="vttConnectionHealth?.latestModuleVersion"
       />
 
       <!-- Carte 2: Dashboard de la campagne sélectionnée -->
@@ -229,6 +232,8 @@ const currentCampaign = computed(
 const {
   healthStatus: vttHealthStatus,
   hasIssue: vttHasIssue,
+  isModuleOutdated,
+  vttConnection: vttConnectionHealth,
   startPolling: startVttPolling,
   stopPolling: _stopVttPolling,
 } = useVttHealth(selectedCampaignId)

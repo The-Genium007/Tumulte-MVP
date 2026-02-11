@@ -1,5 +1,6 @@
 import type { campaign as Campaign } from '#models/campaign'
 import { StreamerDto } from '#dtos/auth/streamer_dto'
+import env from '#start/env'
 
 /**
  * DTO for VTT connection status information
@@ -12,6 +13,7 @@ export class VttConnectionStatusDto {
   lastHeartbeatAt!: string | null
   worldName!: string | null
   moduleVersion!: string | null
+  latestModuleVersion!: string | null
 
   static fromModel(connection: any): VttConnectionStatusDto | null {
     if (!connection) return null
@@ -23,6 +25,7 @@ export class VttConnectionStatusDto {
       lastHeartbeatAt: connection.lastHeartbeatAt?.toISO() || null,
       worldName: connection.worldName || null,
       moduleVersion: connection.moduleVersion || null,
+      latestModuleVersion: env.get('FOUNDRY_MODULE_LATEST_VERSION') || null,
     }
   }
 }

@@ -80,6 +80,7 @@ export interface VttConnectionStatus {
   lastHeartbeatAt: string | null
   worldName: string | null
   moduleVersion: string | null
+  latestModuleVersion?: string | null
 }
 
 /**
@@ -95,6 +96,7 @@ export type VttHealthStatus =
   | 'revoked' // Connexion révoquée par l'utilisateur
   | 'error' // Erreur générique (token invalide, etc.)
   | 'not_paired' // Jamais appairé à Foundry
+  | 'module_outdated' // Version du module Foundry obsolète
 
 export interface CampaignMembership {
   id: string

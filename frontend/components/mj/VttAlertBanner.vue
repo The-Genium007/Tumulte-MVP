@@ -5,6 +5,9 @@ const props = defineProps<{
   status: VttHealthStatus
   campaignId: string
   campaignName?: string
+  isModuleOutdated?: boolean
+  currentModuleVersion?: string | null
+  latestModuleVersion?: string | null
 }>()
 
 // Only show banner for critical issues
@@ -86,4 +89,15 @@ const bannerConfig = computed(() => {
       />
     </template>
   </UAlert>
+
+  <!-- Module outdated banner (independent from health status) -->
+  <UAlert
+    v-if="isModuleOutdated"
+    icon="i-lucide-download"
+    color="warning"
+    :title="`Module Foundry obsolète (v${currentModuleVersion})`"
+    :description="`La version ${latestModuleVersion} est disponible. Mettez à jour le module dans Foundry pour bénéficier de toutes les fonctionnalités.`"
+    variant="subtle"
+    class="mb-4"
+  />
 </template>
