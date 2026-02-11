@@ -35,6 +35,14 @@ export default class MetricsService {
   public cacheHitsTotal!: Counter
   public cacheMissesTotal!: Counter
 
+  // PreFlight metrics
+  public preflightRunsTotal!: Counter
+  public preflightCheckDuration!: Histogram
+
+  // Gamification metrics
+  public gamificationTriggersTotal!: Counter
+  public gamificationActionsTotal!: Counter
+
   constructor() {
     this.registry = new Registry()
     this.initializeMetrics()
@@ -128,6 +136,37 @@ export default class MetricsService {
       labelNames: ['cache_type'],
       registers: [this.registry],
     })
+
+    // PreFlight metrics
+    this.preflightRunsTotal = new Counter({
+      name: 'tumulte_preflight_runs_total',
+      help: 'Total number of pre-flight runs',
+      labelNames: ['event_type', 'result'],
+      registers: [this.registry],
+    })
+
+    this.preflightCheckDuration = new Histogram({
+      name: 'tumulte_preflight_check_duration_seconds',
+      help: 'Pre-flight individual check duration in seconds',
+      labelNames: ['check_name'],
+      buckets: [0.01, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5],
+      registers: [this.registry],
+    })
+
+    // Gamification metrics
+    this.gamificationTriggersTotal = new Counter({
+      name: 'tumulte_gamification_triggers_total',
+      help: 'Total number of gamification trigger evaluations',
+      labelNames: ['event_slug', 'result'],
+      registers: [this.registry],
+    })
+
+    this.gamificationActionsTotal = new Counter({
+      name: 'tumulte_gamification_actions_total',
+      help: 'Total number of gamification action executions',
+      labelNames: ['action_type', 'result'],
+      registers: [this.registry],
+    })
   }
 
   /**
@@ -197,6 +236,38 @@ export default class MetricsService {
   recordCacheMiss(cacheType: string): void {
     // eslint-disable-next-line camelcase
     this.cacheMissesTotal.inc({ cache_type: cacheType })
+  }
+
+  /**
+   * Record a pre-flight run result
+   */
+  recordPreflightRun(eventType: string, result: 'pass' | 'warn' | 'fail'): void {
+    // eslint-disable-next-line camelcase
+    this.preflightRunsTotal.inc({ event_type: eventType, result })
+  }
+
+  /**
+   * Record individual pre-flight check duration
+   */
+  recordPreflightCheckDuration(checkName: string, durationSeconds: number): void {
+    // eslint-disable-next-line camelcase
+    this.preflightCheckDuration.observe({ check_name: checkName }, durationSeconds)
+  }
+
+  /**
+   * Record a gamification trigger evaluation
+   */
+  recordGamificationTrigger(eventSlug: string, result: 'triggered' | 'blocked' | 'error'): void {
+    // eslint-disable-next-line camelcase
+    this.gamificationTriggersTotal.inc({ event_slug: eventSlug, result })
+  }
+
+  /**
+   * Record a gamification action execution
+   */
+  recordGamificationAction(actionType: string, result: 'executed' | 'failed'): void {
+    // eslint-disable-next-line camelcase
+    this.gamificationActionsTotal.inc({ action_type: actionType, result })
   }
 
   /**

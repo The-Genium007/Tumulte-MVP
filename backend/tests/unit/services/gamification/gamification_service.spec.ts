@@ -376,6 +376,7 @@ test.group('GamificationService - triggerManualEvent', () => {
     }
     ;(service as any).getCampaignConfig = async () => mockConfig
     ;(service as any).broadcastInstanceCreated = () => {}
+    ;(service as any).getPreFlightRunner = async () => null
 
     const originalModule = await import('#models/campaign')
     const origFindOrFail = originalModule.campaign.findOrFail

@@ -197,11 +197,83 @@ import { UserDto } from '#dtos/user_dto'
 import { createUserValidator } from '#validators/auth/create_user'
 ```
 
+### PreFlight System
+
+Extensible, auto-discovering health check system that validates system health before launching polls, gamification events, or any future feature.
+
+**File structure:**
+```
+app/services/preflight/
+├── types.ts                          # Core interfaces (PreFlightCheck, CheckContext, CheckResult, PreFlightReport)
+├── preflight_registry.ts             # Dynamic check registry (singleton)
+├── preflight_runner.ts               # Orchestrator: runs checks, short-circuits, tracks in Sentry/DB/Prometheus
+└── checks/
+    ├── redis_check.ts                # Priority 0 — Redis connectivity
+    ├── websocket_check.ts            # Priority 0 — WebSocket (Transmit) readiness
+    ├── twitch_api_check.ts           # Priority 5 — Twitch API availability
+    ├── token_check.ts                # Priority 10 — Streamer OAuth tokens
+    ├── vtt_connection_check.ts       # Priority 15 — VTT connection active
+    ├── cooldown_check.ts             # Priority 20 — Event not on cooldown
+    └── gamification_config_check.ts  # Priority 20 — Event enabled in config
+```
+
+**Priority system** (lower = runs first, short-circuits on failure):
+- `0`: Infrastructure (Redis, WebSocket) — if these fail, nothing works
+- `5`: External APIs (Twitch API availability)
+- `10`: Authentication (streamer tokens, OAuth)
+- `15`: Connections (VTT connection)
+- `20`: Business rules (cooldowns, config enabled)
+
+**Execution modes:**
+- `full`: Blocking, runs all checks. Used for MJ-initiated launches (polls, manual gamification triggers).
+- `light`: Non-blocking, runs only priority ≤ 10 checks. Used for automatic events (dice rolls, redemptions) — observability only.
+
+**To add a new pre-flight check:**
+1. Create a class implementing `PreFlightCheck` in `services/preflight/checks/`
+2. Register it in `start/container.ts` boot sequence via `preFlightRegistry.register()`
+3. Done — the runner auto-discovers and executes it
+
+**Observability:** Every run produces a `PreFlightReport` that is:
+- Tracked as a Sentry breadcrumb (failures also generate a Sentry event)
+- Persisted to `preflight_reports` table (JSONB checks column)
+- Recorded in Prometheus (`tumulte_preflight_runs_total`, `tumulte_preflight_check_duration_seconds`)
+
+### Gamification Handler Registries
+
+Registry-based handler system for gamification triggers and actions. Eliminates switch statements — adding a new handler type requires only one file.
+
+**File structure:**
+```
+app/services/gamification/handlers/
+├── types.ts                              # TriggerHandler, ActionHandler interfaces
+├── trigger_handler_registry.ts           # Registry for trigger handlers
+├── action_handler_registry.ts            # Registry for action handlers
+├── triggers/
+│   ├── dice_critical_trigger.ts          # dice_critical trigger type
+│   ├── manual_trigger.ts                 # manual trigger type
+│   └── custom_trigger.ts                # custom trigger type
+└── actions/
+    ├── dice_invert_action.ts             # dice_invert action type
+    ├── chat_message_action.ts            # chat_message action type
+    ├── stat_modify_action.ts             # stat_modify action type
+    └── custom_action.ts                  # custom action type
+```
+
+**To add a new gamification event type:**
+1. Create a trigger handler in `handlers/triggers/` implementing `TriggerHandler`
+2. Create an action handler in `handlers/actions/` implementing `ActionHandler`
+3. Register both in `start/container.ts` (`triggerHandlerRegistry.register()`, `actionHandlerRegistry.register()`)
+4. Add a `preFlightCheck?()` method on either handler to auto-register a health check (discovered automatically via `app.booted()`)
+5. Create the event seed data in a migration
+6. Done — `TriggerEvaluator` and `ActionExecutor` delegate to handlers via registry lookup
+
+**Admin monitoring:** `/admin/monitoring` page shows pre-flight stats, most-failed checks, and expandable recent reports with auto-refresh.
+
 ---
 
 ## Database
 
-### Models (27 models)
+### Models (28 models)
 
 **Core Domain:**
 
@@ -254,6 +326,7 @@ import { createUserValidator } from '#validators/auth/create_user'
 | `NotificationPreference` | Per-user notification settings |
 | `RetryEvent` | Failed operation retry tracking |
 | `Subscription` | User subscription (future monetization) |
+| `PreflightReport` | Pre-flight health check reports (JSONB checks) |
 
 ### Database Conventions
 
@@ -265,7 +338,7 @@ import { createUserValidator } from '#validators/auth/create_user'
 
 ### Migration Count
 
-69 migrations as of v0.6.x. Migrations include both schema changes and data migrations (seeds, backfills). See the "Database Migration Safety" section above before creating new ones.
+70 migrations as of v0.6.x. Migrations include both schema changes and data migrations (seeds, backfills). See the "Database Migration Safety" section above before creating new ones.
 
 ---
 
@@ -296,7 +369,7 @@ import { createUserValidator } from '#validators/auth/create_user'
 | **Overlay Studio** | `CRUD /streamer/overlay-studio/configs`, activate, preview commands |
 | **Notifications** | VAPID key, subscribe/unsubscribe, preferences |
 | **Support** | `POST /support/report`, `POST /support/suggestion` |
-| **Admin** | `GET /admin/metrics/*` (admin middleware) |
+| **Admin** | `GET /admin/metrics/*`, `GET /admin/preflight/reports`, `GET /admin/preflight/reports/:id`, `GET /admin/preflight/stats` (admin middleware) |
 | **Account** | `DELETE /account/delete` |
 
 ### Rate Limiting
@@ -528,10 +601,12 @@ app/services/
 ├── cache/             # Redis service
 ├── campaigns/         # Campaign + membership logic
 ├── core/              # Health checks, database seeder
-├── gamification/      # Gamification engine (events, rewards, tracking)
+├── gamification/      # Gamification engine (events, rewards, handler registries)
+├── monitoring/        # Prometheus metrics service
 ├── mail/              # Email sending (welcome, verification)
 ├── notifications/     # Push notifications
 ├── polls/             # Poll lifecycle (creation, polling, aggregation, results)
+├── preflight/         # Pre-flight health checks (registry, runner, checks/)
 ├── resilience/        # Circuit breaker, retry, backoff
 ├── scheduler/         # Scheduled tasks (token refresh, expiry checks)
 ├── twitch/            # Twitch API, polls, chat, countdown

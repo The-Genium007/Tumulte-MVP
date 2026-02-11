@@ -11,6 +11,7 @@ import { InstanceManager, type ContributionData } from './instance_manager.js'
 // ObjectiveCalculator is used by InstanceManager, not directly here
 import { ActionExecutor, type FoundryCommandService } from './action_executor.js'
 import type { webSocketService as WebSocketServiceClass } from '#services/websocket/websocket_service'
+import type { PreFlightRunner } from '#services/preflight/preflight_runner'
 
 /**
  * Données de redemption Twitch Channel Points (ancien système)
@@ -71,6 +72,18 @@ export class GamificationService {
       this._webSocketService = await app.container.make('webSocketService')
     }
     return this._webSocketService
+  }
+
+  /**
+   * Résout le PreFlightRunner depuis le container.
+   * Returns null if the container binding is not available (e.g. in unit tests).
+   */
+  private async getPreFlightRunner(): Promise<PreFlightRunner | null> {
+    try {
+      return await app.container.make('preFlightRunner')
+    } catch {
+      return null
+    }
   }
 
   /**
@@ -222,6 +235,19 @@ export class GamificationService {
     viewerCount: number,
     diceRollData: DiceRollData
   ): Promise<GamificationInstance | null> {
+    // Pre-flight light mode (non-blocking, observability only)
+    this.getPreFlightRunner()
+      .then((runner) =>
+        runner?.run({
+          campaignId,
+          userId: streamerId,
+          eventType: 'gamification',
+          mode: 'light',
+          metadata: { streamerId, source: 'dice_roll' },
+        })
+      )
+      .catch((err) => logger.debug({ err }, 'Light pre-flight skipped'))
+
     // === ÉTAPE 1: Vérifier s'il y a une instance armed à consommer ===
     if (diceRollData.isCritical && diceRollData.criticalType) {
       const consumedInstance = await this.tryConsumeArmedInstance(
@@ -423,8 +449,37 @@ export class GamificationService {
 
     await config.load('event')
 
-    // En mode test, ignorer le cooldown
+    // En mode test, ignorer le cooldown et le pre-flight
     const isTestMode = (customData as { isTest?: boolean })?.isTest === true
+
+    // Pre-flight full mode (blocking) — skip in test mode
+    if (!isTestMode) {
+      try {
+        const runner = await this.getPreFlightRunner()
+        const report = await runner?.run({
+          campaignId,
+          userId: streamerId,
+          eventType: 'gamification',
+          mode: 'full',
+          metadata: { eventId, eventSlug: config.event.slug, source: 'manual_trigger' },
+        })
+
+        if (report && !report.healthy) {
+          logger.warn(
+            {
+              event: 'manual_trigger_preflight_failed',
+              campaignId,
+              eventId,
+              failedChecks: report.checks.filter((c) => c.status === 'fail').map((c) => c.name),
+            },
+            'Pre-flight failed for manual trigger'
+          )
+          return null
+        }
+      } catch (err) {
+        logger.warn({ err }, 'Pre-flight runner unavailable, proceeding without check')
+      }
+    }
 
     if (!isTestMode) {
       // Vérifier le cooldown uniquement si ce n'est pas un test
@@ -580,6 +635,19 @@ export class GamificationService {
     objectiveReached?: boolean
     isArmed?: boolean
   }> {
+    // Pre-flight light mode (non-blocking, observability only)
+    this.getPreFlightRunner()
+      .then((runner) =>
+        runner?.run({
+          campaignId: redemption.campaignId,
+          userId: redemption.streamerId,
+          eventType: 'gamification',
+          mode: 'light',
+          metadata: { streamerId: redemption.streamerId, source: 'streamer_redemption' },
+        })
+      )
+      .catch((err) => logger.debug({ err }, 'Light pre-flight skipped'))
+
     // Récupérer la config MJ pour les paramètres de l'événement
     const campaignConfig = await this.getCampaignConfig(redemption.campaignId, redemption.eventId)
     if (!campaignConfig || !campaignConfig.isEnabled) {

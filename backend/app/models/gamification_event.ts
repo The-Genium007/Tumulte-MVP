@@ -23,12 +23,20 @@ export interface TriggerConfig {
     threshold?: number
     /** Ex: 'd20' */
     diceType?: string
+    /** Filtrer par gravité. Ex: ['major', 'extreme'] */
+    severityFilter?: ('minor' | 'major' | 'extreme')[]
+    /** Filtrer par catégorie système. Ex: ['nat20', 'triumph', 'ace'] */
+    categoryFilter?: string[]
   }
   criticalFailure?: {
     enabled: boolean
     /** Ex: pour D20, valeur <= 1 */
     threshold?: number
     diceType?: string
+    /** Filtrer par gravité. Ex: ['major', 'extreme'] */
+    severityFilter?: ('minor' | 'major' | 'extreme')[]
+    /** Filtrer par catégorie système. Ex: ['nat1', 'fumble', 'glitch'] */
+    categoryFilter?: string[]
   }
   /** Pour custom: règles personnalisées */
   customRules?: Record<string, unknown>

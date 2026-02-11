@@ -60,6 +60,16 @@ export default class DiceRoll extends BaseModel {
   @column()
   declare modifiers: string[] | null
 
+  // Criticality enrichment V2
+  @column()
+  declare severity: 'minor' | 'major' | 'extreme' | null
+
+  @column()
+  declare criticalLabel: string | null
+
+  @column()
+  declare criticalCategory: string | null
+
   @column.dateTime({ autoCreate: true })
   declare rolledAt: DateTime
 

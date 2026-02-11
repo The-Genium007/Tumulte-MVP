@@ -118,6 +118,43 @@ app.container.singleton('foundryCommandAdapter', async () => {
   return new mod.FoundryCommandAdapter(vttWebSocketService)
 })
 
+// Gamification Handler Registries (singletons — live for app lifetime)
+app.container.singleton('triggerHandlerRegistry', async () => {
+  const mod = await import('#services/gamification/handlers/trigger_handler_registry')
+  const registry = new mod.TriggerHandlerRegistry()
+
+  const { DiceCriticalTrigger } =
+    await import('#services/gamification/handlers/triggers/dice_critical_trigger')
+  const { ManualTrigger } = await import('#services/gamification/handlers/triggers/manual_trigger')
+  const { CustomTrigger } = await import('#services/gamification/handlers/triggers/custom_trigger')
+
+  registry.register(new DiceCriticalTrigger())
+  registry.register(new ManualTrigger())
+  registry.register(new CustomTrigger())
+
+  return registry
+})
+
+app.container.singleton('actionHandlerRegistry', async () => {
+  const mod = await import('#services/gamification/handlers/action_handler_registry')
+  const registry = new mod.ActionHandlerRegistry()
+
+  const { DiceInvertAction } =
+    await import('#services/gamification/handlers/actions/dice_invert_action')
+  const { ChatMessageAction } =
+    await import('#services/gamification/handlers/actions/chat_message_action')
+  const { StatModifyAction } =
+    await import('#services/gamification/handlers/actions/stat_modify_action')
+  const { CustomAction } = await import('#services/gamification/handlers/actions/custom_action')
+
+  registry.register(new DiceInvertAction())
+  registry.register(new ChatMessageAction())
+  registry.register(new StatModifyAction())
+  registry.register(new CustomAction())
+
+  return registry
+})
+
 // RewardManagerService avec injection du TwitchEventSubService
 app.container.bind('rewardManagerService', async () => {
   const mod = await import('#services/gamification/reward_manager_service')
@@ -172,14 +209,96 @@ app.container.bind('authorizationService', async () => {
 })
 
 app.container.singleton('gamificationService', async () => {
-  const mod = await import('#services/gamification/gamification_service')
-  const gamificationService = await app.container.make(mod.GamificationService)
+  const { TriggerEvaluator } = await import('#services/gamification/trigger_evaluator')
+  const { ActionExecutor } = await import('#services/gamification/action_executor')
+  const { InstanceManager } = await import('#services/gamification/instance_manager')
+  const { ObjectiveCalculator } = await import('#services/gamification/objective_calculator')
+  const { ExecutionTracker } = await import('#services/gamification/execution_tracker')
+  const { GamificationService } = await import('#services/gamification/gamification_service')
+
+  // Wire registries into evaluator/executor
+  const triggerRegistry = await app.container.make('triggerHandlerRegistry')
+  const actionRegistry = await app.container.make('actionHandlerRegistry')
+
+  const triggerEvaluator = new TriggerEvaluator(triggerRegistry)
+  const actionExecutor = new ActionExecutor(actionRegistry)
+  const objectiveCalculator = new ObjectiveCalculator()
+  const executionTracker = new ExecutionTracker()
+  const instanceManager = new InstanceManager(objectiveCalculator, actionExecutor, executionTracker)
+
+  const gamificationService = new GamificationService(
+    triggerEvaluator,
+    instanceManager,
+    actionExecutor
+  )
 
   // Injecter le FoundryCommandAdapter
   const foundryCommandAdapter = await app.container.make('foundryCommandAdapter')
   gamificationService.setFoundryCommandService(foundryCommandAdapter)
 
   return gamificationService
+})
+
+// PreFlight Services
+app.container.singleton('preFlightRegistry', async () => {
+  const mod = await import('#services/preflight/preflight_registry')
+  const registry = new mod.PreFlightRegistry()
+
+  // Register core checks (priority 0-10: infra + tokens)
+  const { RedisCheck } = await import('#services/preflight/checks/redis_check')
+  const { WebSocketCheck } = await import('#services/preflight/checks/websocket_check')
+  const { TwitchApiCheck } = await import('#services/preflight/checks/twitch_api_check')
+  const { TokenCheck } = await import('#services/preflight/checks/token_check')
+
+  registry.register(new RedisCheck())
+  registry.register(new WebSocketCheck())
+  registry.register(new TwitchApiCheck())
+  registry.register(new TokenCheck())
+
+  // Register gamification-specific checks (priority 15-20: connections + business rules)
+  const { VttConnectionCheck } = await import('#services/preflight/checks/vtt_connection_check')
+  const { CooldownCheck } = await import('#services/preflight/checks/cooldown_check')
+  const { GamificationConfigCheck } =
+    await import('#services/preflight/checks/gamification_config_check')
+
+  registry.register(new VttConnectionCheck())
+  registry.register(new CooldownCheck())
+  registry.register(new GamificationConfigCheck())
+
+  return registry
+})
+
+// Auto-discover PreFlight checks from handler registries
+// Handlers that declare a preFlightCheck() method are automatically registered
+app.booted(async () => {
+  try {
+    const preFlightRegistry = await app.container.make('preFlightRegistry')
+    const triggerRegistry = await app.container.make('triggerHandlerRegistry')
+    const actionRegistry = await app.container.make('actionHandlerRegistry')
+
+    const allHandlers = [...triggerRegistry.all(), ...actionRegistry.all()]
+
+    for (const handler of allHandlers) {
+      if ('preFlightCheck' in handler && typeof handler.preFlightCheck === 'function') {
+        preFlightRegistry.register({
+          name: `handler:${handler.type}`,
+          appliesTo: ['gamification'],
+          priority: 20,
+          execute: handler.preFlightCheck.bind(handler),
+        })
+      }
+    }
+
+    console.log(`[Container] PreFlight auto-discovery: ${preFlightRegistry.size} checks registered`)
+  } catch (error) {
+    console.error('[Container] PreFlight auto-discovery failed:', error)
+  }
+})
+
+app.container.bind('preFlightRunner', async () => {
+  const mod = await import('#services/preflight/preflight_runner')
+  const registry = await app.container.make('preFlightRegistry')
+  return new mod.PreFlightRunner(registry)
 })
 
 // Poll Services
@@ -280,6 +399,19 @@ app.container.bind('pollResultRepository', async () => {
   return new mod.pollResultRepository()
 })
 
+// Criticality Rule Repository
+app.container.bind('criticalityRuleRepository', async () => {
+  const mod = await import('#repositories/campaign_criticality_rule_repository')
+  return new mod.CampaignCriticalityRuleRepository()
+})
+
+// Criticality Rule Service
+app.container.bind('criticalityRuleService', async () => {
+  const mod = await import('#services/campaigns/criticality_rule_service')
+  const repository = await app.container.make('criticalityRuleRepository')
+  return new mod.CriticalityRuleService(repository)
+})
+
 /*
 |--------------------------------------------------------------------------
 | Export helpers pour typage
@@ -348,6 +480,18 @@ declare module '@adonisjs/core/types' {
     authorizationService: InstanceType<
       typeof import('#services/campaigns/authorization_service').AuthorizationService
     >
+    triggerHandlerRegistry: InstanceType<
+      typeof import('#services/gamification/handlers/trigger_handler_registry').TriggerHandlerRegistry
+    >
+    actionHandlerRegistry: InstanceType<
+      typeof import('#services/gamification/handlers/action_handler_registry').ActionHandlerRegistry
+    >
+    preFlightRegistry: InstanceType<
+      typeof import('#services/preflight/preflight_registry').PreFlightRegistry
+    >
+    preFlightRunner: InstanceType<
+      typeof import('#services/preflight/preflight_runner').PreFlightRunner
+    >
 
     // Repositories
     userRepository: InstanceType<typeof import('#repositories/user_repository').UserRepository>
@@ -369,6 +513,12 @@ declare module '@adonisjs/core/types' {
     >
     pollResultRepository: InstanceType<
       typeof import('#repositories/poll_result_repository').PollResultRepository
+    >
+    criticalityRuleRepository: InstanceType<
+      typeof import('#repositories/campaign_criticality_rule_repository').CampaignCriticalityRuleRepository
+    >
+    criticalityRuleService: InstanceType<
+      typeof import('#services/campaigns/criticality_rule_service').CriticalityRuleService
     >
   }
 }

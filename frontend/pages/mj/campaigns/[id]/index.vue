@@ -600,6 +600,29 @@
         </Transition>
       </UCard>
 
+      <!-- Criticality Rules Section -->
+      <UCard class="mt-8">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <UIcon name="i-lucide-dice-5" class="size-6 text-primary" />
+            <div>
+              <h2 class="text-lg font-bold text-primary">Règles de criticité</h2>
+              <p class="text-sm text-muted">
+                Définissez des règles personnalisées pour la détection de critiques
+              </p>
+            </div>
+          </div>
+          <UButton
+            color="primary"
+            variant="soft"
+            icon="i-lucide-settings"
+            :to="`/mj/campaigns/${campaignId}/criticality-rules`"
+          >
+            Configurer
+          </UButton>
+        </div>
+      </UCard>
+
       <!-- Danger Zone -->
       <UCard class="mt-8">
         <template #header>

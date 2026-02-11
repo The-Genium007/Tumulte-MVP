@@ -29,6 +29,10 @@ interface DiceRollPayload {
   ability?: string | null
   abilityRaw?: string | null
   modifiers?: string[] | null
+  // Criticality enrichment V2
+  severity?: 'minor' | 'major' | 'extreme' | null
+  criticalLabel?: string | null
+  criticalCategory?: string | null
 }
 
 export default class VttWebhookService {
@@ -97,6 +101,22 @@ export default class VttWebhookService {
       ability: payload.ability || null,
       abilityRaw: payload.abilityRaw || null,
       modifiers: payload.modifiers || null,
+      // Criticality enrichment V2 (fallback for older Foundry modules)
+      severity: payload.severity || (payload.isCritical ? 'major' : null),
+      criticalLabel:
+        payload.criticalLabel ||
+        (payload.isCritical && payload.criticalType === 'success'
+          ? 'Critical Success'
+          : payload.isCritical && payload.criticalType === 'failure'
+            ? 'Critical Failure'
+            : null),
+      criticalCategory:
+        payload.criticalCategory ||
+        (payload.isCritical && payload.criticalType === 'success'
+          ? 'generic_success'
+          : payload.isCritical && payload.criticalType === 'failure'
+            ? 'generic_failure'
+            : null),
       pendingAttribution,
     })
 
@@ -111,6 +131,10 @@ export default class VttWebhookService {
         diceResults: payload.diceResults,
         isCritical: payload.isCritical,
         criticalType: payload.criticalType ?? null,
+        // Criticality enrichment V2
+        severity: diceRoll.severity ?? null,
+        criticalLabel: diceRoll.criticalLabel ?? null,
+        criticalCategory: diceRoll.criticalCategory ?? null,
       }
 
       try {

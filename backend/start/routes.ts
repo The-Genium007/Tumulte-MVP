@@ -200,6 +200,24 @@ router
       '#controllers/mj/gm_characters_controller.attributeRoll'
     )
 
+    // Criticality Rules (custom dice criticality rules per campaign)
+    router.get(
+      '/campaigns/:campaignId/criticality-rules',
+      '#controllers/mj/criticality_rules_controller.index'
+    )
+    router.post(
+      '/campaigns/:campaignId/criticality-rules',
+      '#controllers/mj/criticality_rules_controller.store'
+    )
+    router.put(
+      '/campaigns/:campaignId/criticality-rules/:ruleId',
+      '#controllers/mj/criticality_rules_controller.update'
+    )
+    router.delete(
+      '/campaigns/:campaignId/criticality-rules/:ruleId',
+      '#controllers/mj/criticality_rules_controller.destroy'
+    )
+
     // Polls (templates liés directement aux campagnes)
     // CRUD des polls (templates de sondages)
     router.get('/campaigns/:campaignId/polls', '#controllers/mj/polls_controller.indexByCampaign')
@@ -683,6 +701,11 @@ router
     router.get('/metrics', '#controllers/admin/metrics_controller.overview')
     router.get('/metrics/growth', '#controllers/admin/metrics_controller.growth')
     router.get('/metrics/subscriptions', '#controllers/admin/metrics_controller.subscriptions')
+
+    // Pre-flight monitoring
+    router.get('/preflight/reports', '#controllers/admin/preflight_controller.list')
+    router.get('/preflight/reports/:id', '#controllers/admin/preflight_controller.show')
+    router.get('/preflight/stats', '#controllers/admin/preflight_controller.stats')
   })
   .prefix('/admin')
   .use(middleware.auth({ guards: ['web', 'api'] }))

@@ -123,6 +123,48 @@
                 jeu supportes :
               </p>
 
+              <!-- Barre de compatibilité d'inversion de dés -->
+              <div class="inversion-ratio-card mt-6">
+                <div class="flex items-center justify-between mb-2">
+                  <div class="flex items-center gap-2">
+                    <UIcon name="i-lucide-refresh-cw" class="size-4 text-secondary-500" />
+                    <span class="text-sm font-semibold text-primary"
+                      >Compatibilite de l'inversion de des</span
+                    >
+                  </div>
+                  <span class="text-sm font-bold text-secondary-500">
+                    {{ inversionStats.ratioSupported }}%
+                  </span>
+                </div>
+                <div class="inversion-bar">
+                  <div
+                    class="inversion-bar-full"
+                    :style="{ width: inversionStats.ratioFull + '%' }"
+                  />
+                  <div
+                    class="inversion-bar-partial"
+                    :style="{ width: inversionStats.ratioSupported - inversionStats.ratioFull + '%' }"
+                  />
+                </div>
+                <div class="flex items-center justify-between mt-2 text-xs text-muted">
+                  <div class="flex items-center gap-3">
+                    <span class="flex items-center gap-1">
+                      <span class="inline-block size-2.5 rounded-full bg-green-500" />
+                      Complet ({{ inversionStats.full }})
+                    </span>
+                    <span class="flex items-center gap-1">
+                      <span class="inline-block size-2.5 rounded-full bg-yellow-500" />
+                      Partiel ({{ inversionStats.partial }})
+                    </span>
+                    <span class="flex items-center gap-1">
+                      <span class="inline-block size-2.5 rounded-full bg-gray-400" />
+                      Non supporte ({{ inversionStats.none }})
+                    </span>
+                  </div>
+                  <span>{{ inversionStats.total }} systemes</span>
+                </div>
+              </div>
+
               <!-- Légende -->
               <div class="flex flex-wrap gap-4 mt-6 mb-4">
                 <div class="flex items-center gap-2 text-sm">
@@ -186,8 +228,18 @@
                         <tbody>
                           <tr v-for="system in group.systems" :key="system.id">
                             <td class="td-system">
-                              <span class="system-name">{{ system.name }}</span>
-                              <span class="system-id">{{ system.id }}</span>
+                              <span class="system-name">
+                                <UIcon
+                                  v-if="system.id === 'custom'"
+                                  name="i-lucide-settings"
+                                  class="size-4 text-secondary-500 inline-block mr-1 align-text-bottom"
+                                />
+                                {{ system.name }}
+                              </span>
+                              <span v-if="system.id !== 'custom'" class="system-id">{{
+                                system.id
+                              }}</span>
+                              <span v-else class="system-id">Configurable par le MJ</span>
                             </td>
                             <td class="td-feature">
                               <span :class="getStatusClass(system.characters)">
@@ -219,8 +271,10 @@
 
               <p class="text-sm text-muted mt-6">
                 <UIcon name="i-lucide-info" class="size-4 inline-block mr-1" />
-                Les systemes avec support "partiel" utilisent une detection generique basee sur le
-                D20. L'inversion de des necessite une detection de critique fonctionnelle.
+                Les systemes avec support "partiel" utilisent une detection generique ou les
+                <strong>regles de criticite personnalisees du MJ</strong>. L'inversion de des
+                necessite une detection de critique fonctionnelle. Les systemes homebrew sont
+                configurables via les regles custom dans les parametres de campagne.
               </p>
             </div>
           </article>
@@ -445,8 +499,8 @@ const systemGroups: Record<string, SystemGroup> = {
         id: 'wod5e',
         name: 'World of Darkness 5e',
         characters: 'full',
-        criticals: 'partial',
-        inversion: 'none',
+        criticals: 'full',
+        inversion: 'full',
         stats: 'partial',
       },
       {
@@ -454,7 +508,7 @@ const systemGroups: Record<string, SystemGroup> = {
         name: 'Chronicles of Darkness',
         characters: 'full',
         criticals: 'partial',
-        inversion: 'none',
+        inversion: 'partial',
         stats: 'partial',
       },
       {
@@ -462,7 +516,7 @@ const systemGroups: Record<string, SystemGroup> = {
         name: 'Monster of the Week',
         characters: 'full',
         criticals: 'partial',
-        inversion: 'none',
+        inversion: 'partial',
         stats: 'partial',
       },
     ],
@@ -491,16 +545,16 @@ const systemGroups: Record<string, SystemGroup> = {
         id: 'shadowrun6-eden',
         name: 'Shadowrun 6e',
         characters: 'full',
-        criticals: 'partial',
-        inversion: 'none',
+        criticals: 'full',
+        inversion: 'full',
         stats: 'partial',
       },
       {
         id: 'shadowrun5e',
         name: 'Shadowrun 5e',
         characters: 'full',
-        criticals: 'partial',
-        inversion: 'none',
+        criticals: 'full',
+        inversion: 'full',
         stats: 'partial',
       },
       {
@@ -523,16 +577,16 @@ const systemGroups: Record<string, SystemGroup> = {
         id: 'starwarsffg',
         name: 'Star Wars FFG',
         characters: 'full',
-        criticals: 'partial',
-        inversion: 'none',
+        criticals: 'full',
+        inversion: 'partial',
         stats: 'partial',
       },
       {
         id: 'genesys',
         name: 'Genesys',
         characters: 'full',
-        criticals: 'partial',
-        inversion: 'none',
+        criticals: 'full',
+        inversion: 'partial',
         stats: 'partial',
       },
       {
@@ -594,7 +648,7 @@ const systemGroups: Record<string, SystemGroup> = {
         name: 'Dungeon World',
         characters: 'full',
         criticals: 'partial',
-        inversion: 'none',
+        inversion: 'partial',
         stats: 'partial',
       },
       {
@@ -666,7 +720,7 @@ const systemGroups: Record<string, SystemGroup> = {
         name: 'Legend of the Five Rings',
         characters: 'full',
         criticals: 'partial',
-        inversion: 'none',
+        inversion: 'partial',
         stats: 'partial',
       },
       {
@@ -696,15 +750,15 @@ const systemGroups: Record<string, SystemGroup> = {
         name: 'Powered by the Apocalypse',
         characters: 'full',
         criticals: 'partial',
-        inversion: 'none',
+        inversion: 'partial',
         stats: 'partial',
       },
       {
         id: 'fate-core-official',
         name: 'FATE Core',
         characters: 'full',
-        criticals: 'partial',
-        inversion: 'none',
+        criticals: 'full',
+        inversion: 'partial',
         stats: 'partial',
       },
       {
@@ -712,7 +766,7 @@ const systemGroups: Record<string, SystemGroup> = {
         name: 'Ironsworn / Starforged',
         characters: 'full',
         criticals: 'partial',
-        inversion: 'none',
+        inversion: 'partial',
         stats: 'partial',
       },
       {
@@ -720,7 +774,7 @@ const systemGroups: Record<string, SystemGroup> = {
         name: 'City of Mist',
         characters: 'full',
         criticals: 'partial',
-        inversion: 'none',
+        inversion: 'partial',
         stats: 'partial',
       },
       {
@@ -728,7 +782,7 @@ const systemGroups: Record<string, SystemGroup> = {
         name: 'Masks: A New Generation',
         characters: 'full',
         criticals: 'partial',
-        inversion: 'none',
+        inversion: 'partial',
         stats: 'partial',
       },
       {
@@ -736,7 +790,7 @@ const systemGroups: Record<string, SystemGroup> = {
         name: 'Avatar Legends',
         characters: 'full',
         criticals: 'partial',
-        inversion: 'none',
+        inversion: 'partial',
         stats: 'partial',
       },
       {
@@ -744,7 +798,7 @@ const systemGroups: Record<string, SystemGroup> = {
         name: 'Root RPG',
         characters: 'full',
         criticals: 'partial',
-        inversion: 'none',
+        inversion: 'partial',
         stats: 'partial',
       },
       {
@@ -752,7 +806,7 @@ const systemGroups: Record<string, SystemGroup> = {
         name: 'Kids on Bikes',
         characters: 'full',
         criticals: 'partial',
-        inversion: 'none',
+        inversion: 'partial',
         stats: 'partial',
       },
       {
@@ -760,7 +814,7 @@ const systemGroups: Record<string, SystemGroup> = {
         name: 'Daggerheart',
         characters: 'full',
         criticals: 'partial',
-        inversion: 'none',
+        inversion: 'partial',
         stats: 'partial',
       },
       {
@@ -768,7 +822,7 @@ const systemGroups: Record<string, SystemGroup> = {
         name: 'Quest RPG',
         characters: 'full',
         criticals: 'partial',
-        inversion: 'none',
+        inversion: 'partial',
         stats: 'partial',
       },
       {
@@ -866,7 +920,7 @@ const systemGroups: Record<string, SystemGroup> = {
         name: 'Wrath & Glory',
         characters: 'full',
         criticals: 'partial',
-        inversion: 'none',
+        inversion: 'partial',
         stats: 'partial',
       },
     ],
@@ -907,9 +961,35 @@ const systemGroups: Record<string, SystemGroup> = {
         inversion: 'partial',
         stats: 'partial',
       },
+      {
+        id: 'custom',
+        name: 'Custom / Homebrew',
+        characters: 'full',
+        criticals: 'partial',
+        inversion: 'partial',
+        stats: 'none',
+      },
     ],
   },
 }
+
+// Statistiques de compatibilité d'inversion de dés
+const inversionStats = computed(() => {
+  const allSystems = Object.values(systemGroups).flatMap((g) => g.systems)
+  // Exclure l'entrée "custom" du calcul de ratio (ce n'est pas un vrai système)
+  const countable = allSystems.filter((s) => s.id !== 'custom')
+  const full = countable.filter((s) => s.inversion === 'full').length
+  const partial = countable.filter((s) => s.inversion === 'partial').length
+  const total = countable.length
+  return {
+    full,
+    partial,
+    none: total - full - partial,
+    total,
+    ratioFull: Math.round((full / total) * 100),
+    ratioSupported: Math.round(((full + partial) / total) * 100),
+  }
+})
 </script>
 
 <style scoped>
@@ -993,6 +1073,32 @@ const systemGroups: Record<string, SystemGroup> = {
   color: rgb(107, 114, 128);
   font-size: 0.75rem;
   font-weight: 600;
+}
+
+/* Barre de compatibilité d'inversion */
+.inversion-ratio-card {
+  padding: 1rem 1.25rem;
+  border-radius: 0.75rem;
+  background-color: var(--theme-bg-elevated);
+  border: 1px solid var(--theme-border-muted);
+}
+
+.inversion-bar {
+  display: flex;
+  height: 0.5rem;
+  border-radius: 9999px;
+  overflow: hidden;
+  background-color: rgba(107, 114, 128, 0.2);
+}
+
+.inversion-bar-full {
+  background-color: rgb(34, 197, 94);
+  transition: width 0.5s ease;
+}
+
+.inversion-bar-partial {
+  background-color: rgb(234, 179, 8);
+  transition: width 0.5s ease;
 }
 
 /* Groupes de systèmes */
