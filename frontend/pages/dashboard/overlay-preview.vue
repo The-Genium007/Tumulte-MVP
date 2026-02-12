@@ -77,7 +77,7 @@
 
           <!-- Loading indicator -->
           <div v-if="loading" class="loading-overlay">
-            <UIcon name="i-heroicons-arrow-path" class="loading-icon" />
+            <UIcon name="i-game-icons-dice-twenty-faces-twenty" class="loading-icon" />
             <p>Chargement de la configuration...</p>
           </div>
 

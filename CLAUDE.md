@@ -269,6 +269,39 @@ app/services/gamification/handlers/
 
 **Admin monitoring:** `/admin/monitoring` page shows pre-flight stats, most-failed checks, and expandable recent reports with auto-refresh.
 
+### System Presets Architecture
+
+When a campaign is connected to Foundry VTT, the game system is detected automatically via `game.system.id`. If the system is recognized, criticality rules and gamification recommendations are auto-configured.
+
+**Fallback chain for criticality detection:**
+1. **System Adapter** (module Foundry) — Enriches dice rolls with system-specific criticality
+2. **System Preset** (backend registry) — Auto-generates criticality rules in DB
+3. **Custom Rules** (MJ) — Override presets with higher priority
+
+**Key files:**
+- `backend/app/services/campaigns/system_preset_registry.ts` — TypeScript registry of all presets (code-defined, no DB table)
+- `backend/app/services/campaigns/system_preset_service.ts` — Applies/clears presets per campaign
+- `modules-vtt/foundry/scripts/utils/system-adapters.js` — 15 system adapters (client-side)
+
+**Detection points** (3-point chain, by preference order):
+1. **Pairing** — `gameSystemId` sent from `pairing-manager.js` → stored on campaign creation
+2. **First dice roll** — `metadata.system` detected in `vtt_webhook_service.ts` → lazy application
+3. **Campaign sync** — `gameSystemId` sent in sync payload
+
+**Adding a new system preset:**
+1. Add the adapter in `system-adapters.js` (Foundry module) if not already present
+2. Add the entry in `system_preset_registry.ts` (backend) with `CriticalityRulePreset[]` and `SystemCapabilities`
+3. No migration needed — presets are defined in code
+4. Presets are applied lazily at first system detection via `applyPresetsIfNeeded()`
+
+**Supported systems (15):** dnd5e, pf2e, CoC7, wfrp4e, swade, cyberpunk-red-core, alienrpg, forbidden-lands, vaesen, blades-in-the-dark, vtm5e/wod5e, shadowrun5e/6e, starwarsffg/genesys, fate-core-official
+
+**Idempotence:** Presets use a partial unique index `(campaign_id, preset_key) WHERE preset_key IS NOT NULL` to prevent duplicate rows. The `preset_key` format is `{systemId}:{ruleSlug}` (e.g. `dnd5e:nat20`).
+
+**Protection:** System preset rules (`is_system_preset = true`) cannot be deleted or fully edited. Only `isEnabled` can be toggled by the MJ. The frontend shows these with a lock icon and "Auto" badge.
+
+**SystemCapabilities:** Each preset declares its capabilities (`hasSpells`, `hasTraditionalCriticals`, `hasDicePool`, `hasPercentile`, etc.). The frontend uses these flags to display smart recommendations for gamification events.
+
 ---
 
 ## Database
@@ -591,6 +624,23 @@ frontend-quality ──► frontend-unit-tests
 - Twitch OAuth properties (`access_token`, `client_id`)
 - Twitch API responses
 - PostgreSQL query results
+
+### Loading Icons
+
+**All loading/spinner indicators MUST use the branded D20 dice icon.** Never use generic spinners (`i-lucide-loader-2`, `i-heroicons-arrow-path`, SVG circle spinners, etc.).
+
+```vue
+<!-- Standard loading indicator -->
+<UIcon name="i-game-icons-dice-twenty-faces-twenty" class="size-8 text-primary animate-spin-slow" />
+
+<!-- Small inline loading (buttons, compact areas) -->
+<UIcon name="i-game-icons-dice-twenty-faces-twenty" class="size-4 animate-spin-slow" />
+```
+
+- **Icon**: `i-game-icons-dice-twenty-faces-twenty`
+- **Animation**: `animate-spin-slow` (4.5s rotation, defined in `main.css`) — preferred for most cases. Use `animate-spin` (1s) only for very short micro-interactions.
+- **Color**: `text-primary` for prominent loaders, `text-muted` for subtle inline ones.
+- **Full-page loading**: Use the `<LoadingScreen />` component (`components/ui/loading/LoadingScreen.vue`).
 
 ### File Organization
 
