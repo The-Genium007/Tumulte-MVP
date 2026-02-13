@@ -217,6 +217,42 @@ router
       '/campaigns/:campaignId/criticality-rules/:ruleId',
       '#controllers/mj/criticality_rules_controller.destroy'
     )
+    router.get(
+      '/campaigns/:campaignId/system-info',
+      '#controllers/mj/criticality_rules_controller.systemInfo'
+    )
+
+    // Item Introspection (aggregated item tree for visual explorer)
+    router.get(
+      '/campaigns/:campaignId/item-introspection',
+      '#controllers/mj/item_introspection_controller.index'
+    )
+
+    // Item Category Rules (spell/feature/inventory categories per campaign)
+    router.get(
+      '/campaigns/:campaignId/item-category-rules',
+      '#controllers/mj/item_category_rules_controller.index'
+    )
+    router.post(
+      '/campaigns/:campaignId/item-category-rules',
+      '#controllers/mj/item_category_rules_controller.store'
+    )
+    router.post(
+      '/campaigns/:campaignId/item-category-rules/detect',
+      '#controllers/mj/item_category_rules_controller.detect'
+    )
+    router.post(
+      '/campaigns/:campaignId/item-category-rules/sync',
+      '#controllers/mj/item_category_rules_controller.sync'
+    )
+    router.put(
+      '/campaigns/:campaignId/item-category-rules/:ruleId',
+      '#controllers/mj/item_category_rules_controller.update'
+    )
+    router.delete(
+      '/campaigns/:campaignId/item-category-rules/:ruleId',
+      '#controllers/mj/item_category_rules_controller.destroy'
+    )
 
     // Polls (templates liés directement aux campagnes)
     // CRUD des polls (templates de sondages)
@@ -298,10 +334,18 @@ router
       '#controllers/mj/gamification_controller.simulateRedemption'
     )
 
-    // Reset cooldowns (DEV/STAGING only - for testing)
+    // Outils de maintenance MJ (production-safe)
     router.post(
       '/campaigns/:id/gamification/reset-cooldowns',
       '#controllers/mj/gamification_controller.resetCooldowns'
+    )
+    router.post(
+      '/campaigns/:id/gamification/reset-state',
+      '#controllers/mj/gamification_controller.resetState'
+    )
+    router.post(
+      '/campaigns/:id/gamification/cleanup-foundry',
+      '#controllers/mj/gamification_controller.cleanupFoundry'
     )
 
     // Statistiques gamification

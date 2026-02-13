@@ -272,6 +272,115 @@ export class FoundryCommandAdapter implements FoundryCommandService {
       return { success: false, error: errorMessage }
     }
   }
+  /**
+   * Applique un effet de sort sur un acteur dans Foundry
+   */
+  async applySpellEffect(
+    connectionId: string,
+    data: {
+      actorId: string
+      spellId: string
+      spellName: string
+      effect: {
+        type: 'disable' | 'buff' | 'debuff'
+        durationSeconds?: number
+        buffType?: 'advantage' | 'bonus'
+        debuffType?: 'disadvantage' | 'penalty'
+        bonusValue?: number
+        penaltyValue?: number
+        highlightColor?: string
+        message?: string
+        triggeredBy?: string
+      }
+    }
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      const connection = await VttConnection.find(connectionId)
+      if (!connection || connection.tunnelStatus !== 'connected') {
+        return {
+          success: false,
+          error: 'Connexion VTT non disponible ou déconnectée',
+        }
+      }
+
+      const result = await this.sendCommand(connectionId, 'apply_spell_effect', data)
+
+      if (result.success) {
+        logger.info(
+          {
+            event: 'foundry_spell_effect_applied',
+            connectionId,
+            actorId: data.actorId,
+            spellId: data.spellId,
+            spellName: data.spellName,
+            effectType: data.effect.type,
+          },
+          'Effet de sort appliqué dans Foundry'
+        )
+      }
+
+      return result
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      logger.error(
+        {
+          event: 'foundry_spell_effect_error',
+          connectionId,
+          actorId: data.actorId,
+          spellId: data.spellId,
+          error: errorMessage,
+        },
+        "Erreur lors de l'application de l'effet de sort"
+      )
+      return { success: false, error: errorMessage }
+    }
+  }
+  /**
+   * Envoie une commande de nettoyage global à Foundry
+   * Supprime tous les flags Tumulte, restaure les sorts, annule les timers
+   */
+  async cleanupAllEffects(
+    connectionId: string,
+    options?: { cleanChat?: boolean }
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      const connection = await VttConnection.find(connectionId)
+      if (!connection || connection.tunnelStatus !== 'connected') {
+        return {
+          success: false,
+          error: 'Connexion VTT non disponible ou déconnectée',
+        }
+      }
+
+      const result = await this.sendCommand(connectionId, 'cleanup_all_effects', {
+        cleanChat: options?.cleanChat ?? false,
+      })
+
+      if (result.success) {
+        logger.info(
+          {
+            event: 'foundry_cleanup_all_effects_sent',
+            connectionId,
+            cleanChat: options?.cleanChat ?? false,
+          },
+          'Commande de nettoyage global envoyée à Foundry'
+        )
+      }
+
+      return result
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      logger.error(
+        {
+          event: 'foundry_cleanup_all_effects_error',
+          connectionId,
+          error: errorMessage,
+        },
+        "Erreur lors de l'envoi du nettoyage global"
+      )
+      return { success: false, error: errorMessage }
+    }
+  }
 }
 
 export default FoundryCommandAdapter

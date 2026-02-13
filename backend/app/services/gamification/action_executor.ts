@@ -62,6 +62,11 @@ export interface FoundryCommandService {
       }
     }
   ): Promise<{ success: boolean; error?: string }>
+
+  cleanupAllEffects(
+    connectionId: string,
+    options?: { cleanChat?: boolean }
+  ): Promise<{ success: boolean; error?: string }>
 }
 
 /**

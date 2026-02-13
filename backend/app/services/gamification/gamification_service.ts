@@ -766,8 +766,78 @@ export class GamificationService {
     // Broadcast la progression
     this.broadcastProgress(updatedInstance, redemption.twitchUsername)
 
-    // Si l'objectif est atteint, passer en état "armed" (PAS completed)
+    // Si l'objectif est atteint
     if (objectiveReached && updatedInstance.status === 'active') {
+      // Spell actions execute immediately (no ARMED phase)
+      const immediateActionTypes = ['spell_disable', 'spell_buff', 'spell_debuff']
+
+      if (immediateActionTypes.includes(gamificationEvent.actionType)) {
+        const connectionId = await this.getVttConnectionId(redemption.campaignId)
+        if (connectionId) {
+          await this.instanceManager.complete(
+            updatedInstance,
+            gamificationEvent,
+            campaignConfig,
+            connectionId,
+            true
+          )
+
+          // Broadcast spell action result to overlay
+          const actionResult = updatedInstance.resultData?.actionResult as
+            | Record<string, unknown>
+            | undefined
+          this.getWebSocketService()
+            .then((ws) =>
+              ws.emitGamificationActionExecuted({
+                instanceId: updatedInstance.id,
+                campaignId: redemption.campaignId,
+                eventName: gamificationEvent.name,
+                actionType: gamificationEvent.actionType,
+                success: updatedInstance.resultData?.success ?? false,
+                message: updatedInstance.resultData?.message,
+                spellName: actionResult?.spellName as string | undefined,
+                spellImg: actionResult?.spellImg as string | undefined,
+                effectDuration: actionResult?.effectDuration as number | undefined,
+                buffType: actionResult?.buffType as string | undefined,
+                debuffType: actionResult?.debuffType as string | undefined,
+                bonusValue: actionResult?.bonusValue as number | undefined,
+                penaltyValue: actionResult?.penaltyValue as number | undefined,
+              })
+            )
+            .catch((err) => {
+              logger.error({ err }, 'Failed to emit gamification:action_executed for spell action')
+            })
+
+          logger.info(
+            {
+              event: 'streamer_redemption_immediate_execute',
+              instanceId: updatedInstance.id,
+              campaignId: redemption.campaignId,
+              actionType: gamificationEvent.actionType,
+            },
+            'Action spell exécutée immédiatement (pas de phase armed)'
+          )
+        } else {
+          logger.warn(
+            {
+              event: 'streamer_redemption_no_vtt_connection',
+              instanceId: updatedInstance.id,
+              campaignId: redemption.campaignId,
+            },
+            "Pas de connexion VTT pour exécuter l'action spell"
+          )
+        }
+
+        return {
+          processed: true,
+          instance: updatedInstance,
+          isNewInstance,
+          objectiveReached: true,
+          isArmed: false,
+        }
+      }
+
+      // Default flow: arm and wait for critical roll
       await this.instanceManager.armInstance(updatedInstance)
 
       // Broadcast l'état armed
@@ -898,6 +968,95 @@ export class GamificationService {
       },
       'Cooldowns réinitialisés au lancement de session'
     )
+  }
+
+  /**
+   * Reset les cooldowns encore actifs (production-safe, outils MJ)
+   * Filtre optionnel par streamer
+   */
+  async resetCooldownsForMj(campaignId: string, streamerId?: string): Promise<number> {
+    const count = await this.instanceManager.resetCooldownsFiltered(campaignId, streamerId)
+
+    logger.info(
+      {
+        event: 'gamification_cooldowns_reset_mj',
+        campaignId,
+        streamerId: streamerId || 'all',
+        count,
+      },
+      'Cooldowns réinitialisés par le MJ'
+    )
+
+    return count
+  }
+
+  /**
+   * Annule toutes les instances actives/armées (production-safe, outils MJ)
+   * Boucle individuellement pour émettre un broadcast WebSocket par instance
+   */
+  async cancelAllActiveInstances(campaignId: string, streamerId?: string): Promise<number> {
+    const query = GamificationInstance.query()
+      .where('campaignId', campaignId)
+      .whereIn('status', ['active', 'armed'])
+
+    if (streamerId) {
+      query.where('streamerId', streamerId)
+    }
+
+    const instances = await query
+
+    for (const instance of instances) {
+      const cancelled = await this.instanceManager.cancel(instance)
+      this.broadcastInstanceCancelled(cancelled)
+    }
+
+    logger.info(
+      {
+        event: 'gamification_instances_bulk_cancelled',
+        campaignId,
+        streamerId: streamerId || 'all',
+        count: instances.length,
+      },
+      'Instances annulées en masse par le MJ'
+    )
+
+    return instances.length
+  }
+
+  /**
+   * Envoie une commande de nettoyage global à Foundry VTT
+   * Supprime tous les flags Tumulte (sorts désactivés, buffs/debuffs), restaure les sorts,
+   * annule les timers, et optionnellement nettoie les messages chat.
+   *
+   * Commande fire-and-forget : le backend envoie et retourne immédiatement.
+   */
+  async cleanupFoundryEffects(
+    campaignId: string,
+    cleanChat: boolean
+  ): Promise<{ success: boolean; error?: string }> {
+    const connectionId = await this.getVttConnectionId(campaignId)
+    if (!connectionId) {
+      return {
+        success: false,
+        error: 'Aucune connexion VTT active pour cette campagne',
+      }
+    }
+
+    const foundryAdapter = await app.container.make('foundryCommandAdapter')
+    const result = await foundryAdapter.cleanupAllEffects(connectionId, { cleanChat })
+
+    logger.info(
+      {
+        event: 'foundry_cleanup_requested',
+        campaignId,
+        connectionId,
+        cleanChat,
+        success: result.success,
+      },
+      'Nettoyage Foundry demandé par le MJ'
+    )
+
+    return result
   }
 
   // ========================================
