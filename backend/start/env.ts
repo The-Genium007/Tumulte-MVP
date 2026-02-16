@@ -133,4 +133,11 @@ export default await Env.create(new URL('../', import.meta.url), {
   RESEND_API_KEY: Env.schema.string.optional(),
   MAIL_FROM_ADDRESS: Env.schema.string.optional(),
   MAIL_FROM_NAME: Env.schema.string.optional(),
+
+  /*
+  |----------------------------------------------------------
+  | Foundry VTT Module (latest known version for update notifications)
+  |----------------------------------------------------------
+  */
+  FOUNDRY_MODULE_LATEST_VERSION: Env.schema.string.optional(),
 })

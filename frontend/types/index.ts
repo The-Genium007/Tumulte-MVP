@@ -58,6 +58,30 @@ export interface AuthError {
   errors?: Record<string, string[]>
 }
 
+// VTT System capabilities (mirrors backend SystemCapabilities)
+export interface SystemCapabilities {
+  hasSpells: boolean
+  hasTraditionalCriticals: boolean
+  hasDicePool: boolean
+  hasPercentile: boolean
+  hasFudgeDice: boolean
+  hasNarrativeDice: boolean
+  primaryDie: string | null
+}
+
+// VTT enrichment data (detail view only)
+export interface VttEnrichmentInfo {
+  gameSystemId: string | null
+  gameSystemName: string | null
+  isKnownSystem: boolean
+  primaryDie: string | null
+  systemCapabilities: SystemCapabilities | null
+  characterCounts: { pc: number; npc: number; monster: number; total: number }
+  diceRollCount: number
+  lastVttSyncAt: string | null
+  connectedSince: string | null
+}
+
 // Campaign types
 export interface Campaign {
   id: string
@@ -70,6 +94,7 @@ export interface Campaign {
   createdAt: string
   isOwner?: boolean
   vttConnection?: VttConnectionStatus | null
+  vttInfo?: VttEnrichmentInfo | null
 }
 
 // VTT Connection types
@@ -80,6 +105,7 @@ export interface VttConnectionStatus {
   lastHeartbeatAt: string | null
   worldName: string | null
   moduleVersion: string | null
+  latestModuleVersion?: string | null
 }
 
 /**
@@ -95,6 +121,7 @@ export type VttHealthStatus =
   | 'revoked' // Connexion révoquée par l'utilisateur
   | 'error' // Erreur générique (token invalide, etc.)
   | 'not_paired' // Jamais appairé à Foundry
+  | 'module_outdated' // Version du module Foundry obsolète
 
 export interface CampaignMembership {
   id: string
@@ -528,6 +555,44 @@ export interface GamificationRefundedEvent {
  * This can happen minutes/hours after the gauge was completed
  */
 export interface GamificationActionExecutedEvent {
+  instanceId: string
+  eventName: string
+  actionType:
+    | 'dice_invert'
+    | 'chat_message'
+    | 'stat_modify'
+    | 'spell_disable'
+    | 'spell_buff'
+    | 'spell_debuff'
+    | 'monster_buff'
+    | 'monster_debuff'
+  success: boolean
+  message?: string
+  // For dice_invert specifically
+  originalValue?: number
+  invertedValue?: number
+  // For spell_* actions
+  spellName?: string
+  spellImg?: string
+  effectDuration?: number
+  buffType?: string
+  debuffType?: string
+  bonusValue?: number
+  penaltyValue?: number
+  // For monster_* actions
+  monsterName?: string
+  monsterImg?: string
+  acBonus?: number
+  acPenalty?: number
+  tempHp?: number
+  maxHpReduction?: number
+}
+
+/**
+ * Data passed to the DiceRollOverlay when a dice inversion impact occurs.
+ * Contains the action result to display (original → inverted value).
+ */
+export interface ImpactData {
   instanceId: string
   eventName: string
   actionType: 'dice_invert' | 'chat_message' | 'stat_modify'

@@ -34,16 +34,39 @@ docs/
 ├── architecture/
 │   ├── overview.md               # System design
 │   ├── backend.md                # AdonisJS patterns
-│   └── frontend.md               # Nuxt patterns
+│   ├── frontend.md               # Nuxt patterns
+│   ├── preflight.md              # PreFlight health check system
+│   ├── security.md               # Security architecture
+│   └── system-presets.md         # Foundry VTT system presets
 ├── api/
 │   ├── reference.md              # All endpoints
 │   └── authentication.md         # Twitch OAuth flow
+├── gamification/
+│   ├── README.md                 # Gamification overview + reading guide
+│   ├── architecture.md           # Complete technical documentation
+│   └── code-patterns.md          # Implementation patterns
 ├── guides/
 │   ├── contributing.md           # Developer guide
-│   └── deployment.md             # Docker/Dokploy setup
-└── reference/
-    ├── models.md                 # Database schema
-    └── services.md               # Business logic
+│   ├── deployment.md             # Docker/Dokploy setup
+│   └── testing.md                # Backend + frontend testing guide
+├── infrastructure/
+│   ├── README.md                 # Infrastructure overview
+│   ├── ci-cd.md                  # GitHub Actions workflows
+│   ├── branch-protection.md      # Branch protection rules
+│   └── monitoring.md             # Prometheus, Grafana, Docker setup
+├── overlay-studio/
+│   ├── overview.md               # Overlay Studio features
+│   └── customization.md          # CSS, animations, branding
+├── reference/
+│   ├── models.md                 # Database schema (28+ models)
+│   ├── services.md               # Business logic
+│   └── design-system.md          # Frontend visual consistency
+└── vtt-integration/
+    ├── overview.md               # VTT platforms and architecture
+    ├── quick-start.md            # Testing without VTT setup
+    ├── complete-guide.md         # Full technical guide
+    ├── foundry-module.md         # Foundry VTT module setup
+    └── api-reference.md          # VTT webhook API
 ```
 
 ---

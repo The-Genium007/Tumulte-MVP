@@ -41,7 +41,11 @@ export default class DiceRoll extends BaseModel {
   @column()
   declare rollType: string | null
 
-  @column()
+  @column({
+    prepare: (value: object | null) => (value ? JSON.stringify(value) : null),
+    consume: (value: string | object | null) =>
+      typeof value === 'string' ? JSON.parse(value) : value,
+  })
   declare vttData: object | null
 
   // Enriched flavor data from FlavorParser
@@ -59,6 +63,16 @@ export default class DiceRoll extends BaseModel {
 
   @column()
   declare modifiers: string[] | null
+
+  // Criticality enrichment V2
+  @column()
+  declare severity: 'minor' | 'major' | 'extreme' | null
+
+  @column()
+  declare criticalLabel: string | null
+
+  @column()
+  declare criticalCategory: string | null
 
   @column.dateTime({ autoCreate: true })
   declare rolledAt: DateTime

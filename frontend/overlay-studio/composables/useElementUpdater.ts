@@ -1,11 +1,16 @@
 import type { ComputedRef } from 'vue'
 import type {
   OverlayElement,
+  OverlayElementType,
   DiceProperties,
   PollProperties,
   DiceReverseProperties,
   DiceReverseGoalBarProperties,
   DiceReverseImpactHudProperties,
+  SpellGoalBarProperties,
+  SpellImpactHudProperties,
+  MonsterGoalBarProperties,
+  MonsterImpactHudProperties,
   TypographySettings,
   BoxStyleSettings,
   MedalColors,
@@ -30,7 +35,7 @@ export function useElementUpdater(
   function updatePropertyByPath(
     path: string,
     value: unknown,
-    elementType: 'dice' | 'poll' | 'diceReverse' | 'diceReverseGoalBar' | 'diceReverseImpactHud'
+    elementType: OverlayElementType
   ): void {
     if (!selectedElement.value || selectedElement.value.type !== elementType) return
 
@@ -312,6 +317,207 @@ export function useElementUpdater(
     updateImpactHudProperty('width', value)
   }
 
+  // ===== Spell Goal Bar Updates =====
+
+  function updateSpellGoalBarProperty(path: string, value: unknown): void {
+    updatePropertyByPath(path, value, 'spellGoalBar')
+  }
+
+  function updateSpellGoalBarContainer(key: string, value: string | number): void {
+    if (!selectedElement.value) return
+    const props = selectedElement.value.properties as SpellGoalBarProperties
+    updateSpellGoalBarProperty('container', { ...props.container, [key]: value })
+  }
+
+  function updateSpellGoalBarProgressBar(key: string, value: string | number | boolean): void {
+    if (!selectedElement.value) return
+    const props = selectedElement.value.properties as SpellGoalBarProperties
+    updateSpellGoalBarProperty('progressBar', { ...props.progressBar, [key]: value })
+  }
+
+  function updateSpellGoalBarShake(key: string, value: number): void {
+    if (!selectedElement.value) return
+    const props = selectedElement.value.properties as SpellGoalBarProperties
+    updateSpellGoalBarProperty('shake', { ...props.shake, [key]: value })
+  }
+
+  function updateSpellGoalBarMockData(key: string, value: string | number | boolean): void {
+    if (!selectedElement.value) return
+    const props = selectedElement.value.properties as SpellGoalBarProperties
+    updateSpellGoalBarProperty('mockData', { ...props.mockData, [key]: value })
+  }
+
+  function updateSpellGoalBarTypography(
+    section: string,
+    key: string,
+    value: string | number
+  ): void {
+    if (!selectedElement.value) return
+    const props = selectedElement.value.properties as SpellGoalBarProperties
+    const currentTypography = props.typography[section as keyof typeof props.typography]
+    updateSpellGoalBarProperty('typography', {
+      ...props.typography,
+      [section]: { ...currentTypography, [key]: value },
+    })
+  }
+
+  function updateSpellGoalBarWidth(value: number): void {
+    updateSpellGoalBarProperty('width', value)
+  }
+
+  function updateSpellGoalBarAudio(key: string, value: { enabled: boolean; volume: number }): void {
+    if (!selectedElement.value) return
+    const props = selectedElement.value.properties as SpellGoalBarProperties
+    updateSpellGoalBarProperty('audio', { ...props.audio, [key]: value })
+  }
+
+  // ===== Spell Impact HUD Updates =====
+
+  function updateSpellImpactHudProperty(path: string, value: unknown): void {
+    updatePropertyByPath(path, value, 'spellImpactHud')
+  }
+
+  function updateSpellImpactHudContainer(key: string, value: string | number): void {
+    if (!selectedElement.value) return
+    const props = selectedElement.value.properties as SpellImpactHudProperties
+    updateSpellImpactHudProperty('container', { ...props.container, [key]: value })
+  }
+
+  function updateSpellImpactHudAnimations(key: string, value: number): void {
+    if (!selectedElement.value) return
+    const props = selectedElement.value.properties as SpellImpactHudProperties
+    updateSpellImpactHudProperty('animations', { ...props.animations, [key]: value })
+  }
+
+  function updateSpellImpactHudAudio(
+    key: string,
+    value: { enabled: boolean; volume: number }
+  ): void {
+    if (!selectedElement.value) return
+    const props = selectedElement.value.properties as SpellImpactHudProperties
+    updateSpellImpactHudProperty('audio', { ...props.audio, [key]: value })
+  }
+
+  function updateSpellImpactHudTypography(
+    section: string,
+    key: string,
+    value: string | number
+  ): void {
+    if (!selectedElement.value) return
+    const props = selectedElement.value.properties as SpellImpactHudProperties
+    const currentTypography = props.typography[section as keyof typeof props.typography]
+    updateSpellImpactHudProperty('typography', {
+      ...props.typography,
+      [section]: { ...currentTypography, [key]: value },
+    })
+  }
+
+  function updateSpellImpactHudWidth(value: number): void {
+    updateSpellImpactHudProperty('width', value)
+  }
+
+  // ===== Monster Goal Bar Updates =====
+
+  function updateMonsterGoalBarProperty(path: string, value: unknown): void {
+    updatePropertyByPath(path, value, 'monsterGoalBar')
+  }
+
+  function updateMonsterGoalBarContainer(key: string, value: string | number): void {
+    if (!selectedElement.value) return
+    const props = selectedElement.value.properties as MonsterGoalBarProperties
+    updateMonsterGoalBarProperty('container', { ...props.container, [key]: value })
+  }
+
+  function updateMonsterGoalBarProgressBar(key: string, value: string | number | boolean): void {
+    if (!selectedElement.value) return
+    const props = selectedElement.value.properties as MonsterGoalBarProperties
+    updateMonsterGoalBarProperty('progressBar', { ...props.progressBar, [key]: value })
+  }
+
+  function updateMonsterGoalBarShake(key: string, value: number): void {
+    if (!selectedElement.value) return
+    const props = selectedElement.value.properties as MonsterGoalBarProperties
+    updateMonsterGoalBarProperty('shake', { ...props.shake, [key]: value })
+  }
+
+  function updateMonsterGoalBarMockData(key: string, value: string | number | boolean): void {
+    if (!selectedElement.value) return
+    const props = selectedElement.value.properties as MonsterGoalBarProperties
+    updateMonsterGoalBarProperty('mockData', { ...props.mockData, [key]: value })
+  }
+
+  function updateMonsterGoalBarTypography(
+    section: string,
+    key: string,
+    value: string | number
+  ): void {
+    if (!selectedElement.value) return
+    const props = selectedElement.value.properties as MonsterGoalBarProperties
+    const currentTypography = props.typography[section as keyof typeof props.typography]
+    updateMonsterGoalBarProperty('typography', {
+      ...props.typography,
+      [section]: { ...currentTypography, [key]: value },
+    })
+  }
+
+  function updateMonsterGoalBarWidth(value: number): void {
+    updateMonsterGoalBarProperty('width', value)
+  }
+
+  function updateMonsterGoalBarAudio(
+    key: string,
+    value: { enabled: boolean; volume: number }
+  ): void {
+    if (!selectedElement.value) return
+    const props = selectedElement.value.properties as MonsterGoalBarProperties
+    updateMonsterGoalBarProperty('audio', { ...props.audio, [key]: value })
+  }
+
+  // ===== Monster Impact HUD Updates =====
+
+  function updateMonsterImpactHudProperty(path: string, value: unknown): void {
+    updatePropertyByPath(path, value, 'monsterImpactHud')
+  }
+
+  function updateMonsterImpactHudContainer(key: string, value: string | number): void {
+    if (!selectedElement.value) return
+    const props = selectedElement.value.properties as MonsterImpactHudProperties
+    updateMonsterImpactHudProperty('container', { ...props.container, [key]: value })
+  }
+
+  function updateMonsterImpactHudAnimations(key: string, value: number): void {
+    if (!selectedElement.value) return
+    const props = selectedElement.value.properties as MonsterImpactHudProperties
+    updateMonsterImpactHudProperty('animations', { ...props.animations, [key]: value })
+  }
+
+  function updateMonsterImpactHudAudio(
+    key: string,
+    value: { enabled: boolean; volume: number }
+  ): void {
+    if (!selectedElement.value) return
+    const props = selectedElement.value.properties as MonsterImpactHudProperties
+    updateMonsterImpactHudProperty('audio', { ...props.audio, [key]: value })
+  }
+
+  function updateMonsterImpactHudTypography(
+    section: string,
+    key: string,
+    value: string | number
+  ): void {
+    if (!selectedElement.value) return
+    const props = selectedElement.value.properties as MonsterImpactHudProperties
+    const currentTypography = props.typography[section as keyof typeof props.typography]
+    updateMonsterImpactHudProperty('typography', {
+      ...props.typography,
+      [section]: { ...currentTypography, [key]: value },
+    })
+  }
+
+  function updateMonsterImpactHudWidth(value: number): void {
+    updateMonsterImpactHudProperty('width', value)
+  }
+
   return {
     // Dice
     updateDiceProperty,
@@ -356,5 +562,33 @@ export function useElementUpdater(
     updateImpactHudAudio,
     updateImpactHudTypography,
     updateImpactHudWidth,
+    // Spell Goal Bar
+    updateSpellGoalBarContainer,
+    updateSpellGoalBarProgressBar,
+    updateSpellGoalBarShake,
+    updateSpellGoalBarMockData,
+    updateSpellGoalBarTypography,
+    updateSpellGoalBarWidth,
+    updateSpellGoalBarAudio,
+    // Spell Impact HUD
+    updateSpellImpactHudContainer,
+    updateSpellImpactHudAnimations,
+    updateSpellImpactHudAudio,
+    updateSpellImpactHudTypography,
+    updateSpellImpactHudWidth,
+    // Monster Goal Bar
+    updateMonsterGoalBarContainer,
+    updateMonsterGoalBarProgressBar,
+    updateMonsterGoalBarShake,
+    updateMonsterGoalBarMockData,
+    updateMonsterGoalBarTypography,
+    updateMonsterGoalBarWidth,
+    updateMonsterGoalBarAudio,
+    // Monster Impact HUD
+    updateMonsterImpactHudContainer,
+    updateMonsterImpactHudAnimations,
+    updateMonsterImpactHudAudio,
+    updateMonsterImpactHudTypography,
+    updateMonsterImpactHudWidth,
   }
 }

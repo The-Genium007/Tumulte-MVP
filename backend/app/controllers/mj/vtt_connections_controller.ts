@@ -18,6 +18,7 @@ interface PendingPairing {
   worldName: string
   gmUserId: string
   moduleVersion: string
+  gameSystemId?: string | null
   createdAt: number
   expiresAt: number
 }
@@ -504,11 +505,29 @@ export default class VttConnectionsController {
           vttConnectionId: connection.id,
           vttCampaignId: pending.worldId,
           vttCampaignName: pending.worldName,
+          gameSystemId: pending.gameSystemId || null,
           lastVttSyncAt: DateTime.now(),
         })
 
         // Ajouter le propriétaire comme membre avec autorisation permanente
         await this.campaignService.addOwnerAsMember(campaign.id, user.id)
+
+        // Apply system presets if game system is known at pairing time
+        if (pending.gameSystemId) {
+          const { SystemPresetService } = await import('#services/campaigns/system_preset_service')
+          const presetService = new SystemPresetService()
+          await presetService.applyPresetsIfNeeded(campaign.id, pending.gameSystemId)
+
+          // Auto-detect item categories (spells, features, inventory)
+          const { ItemCategoryDetectionService } =
+            await import('#services/campaigns/item_category_detection_service')
+          const { CampaignItemCategoryRuleRepository } =
+            await import('#repositories/campaign_item_category_rule_repository')
+          const detectionService = new ItemCategoryDetectionService(
+            new CampaignItemCategoryRuleRepository()
+          )
+          await detectionService.detectAndSeedCategories(campaign.id, pending.gameSystemId)
+        }
       }
 
       return response.created({

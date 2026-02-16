@@ -1,7 +1,11 @@
 import { inject } from '@adonisjs/core'
 import logger from '@adonisjs/core/services/logger'
+import * as Sentry from '@sentry/node'
+import { DateTime } from 'luxon'
 import StreamerGamificationConfig from '#models/streamer_gamification_config'
 import { StreamerGamificationConfigRepository } from '#repositories/streamer_gamification_config_repository'
+
+const STALE_ORPHAN_THRESHOLD_DAYS = 3
 
 /**
  * OrphanDetector - Détecte les rewards orphelins dans la base de données
@@ -77,6 +81,42 @@ export class OrphanDetector {
     const config = await this.configRepo.findById(configId)
     if (!config) return false
     return config.twitchRewardStatus === 'orphaned' && config.twitchRewardId !== null
+  }
+
+  /**
+   * Détecte les orphelins stale (bloqués depuis plus de N jours)
+   * et émet une alerte Sentry pour visibilité opérationnelle
+   */
+  async detectStaleOrphans(): Promise<StreamerGamificationConfig[]> {
+    const threshold = DateTime.now().minus({ days: STALE_ORPHAN_THRESHOLD_DAYS })
+    const staleOrphans = await this.configRepo.findStaleOrphans(threshold)
+
+    if (staleOrphans.length > 0) {
+      logger.error(
+        {
+          event: 'stale_orphans_detected',
+          count: staleOrphans.length,
+          orphans: staleOrphans.map((o) => ({
+            configId: o.id,
+            streamerId: o.streamerId,
+            retryCount: o.deletionRetryCount,
+            failedSince: o.deletionFailedAt?.toISO(),
+          })),
+        },
+        `[OrphanDetector] Stale orphans detected (stuck > ${STALE_ORPHAN_THRESHOLD_DAYS} days)`
+      )
+
+      Sentry.captureMessage(`${staleOrphans.length} stale orphan rewards detected`, {
+        level: 'warning',
+        tags: { service: 'OrphanDetector' },
+        extra: {
+          count: staleOrphans.length,
+          thresholdDays: STALE_ORPHAN_THRESHOLD_DAYS,
+        },
+      })
+    }
+
+    return staleOrphans
   }
 }
 

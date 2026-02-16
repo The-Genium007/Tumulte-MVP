@@ -254,6 +254,10 @@ export default class OverlayStudioController {
       dice: () => OverlayConfig.getDefaultDiceProperties(),
       diceReverseGoalBar: () => OverlayConfig.getDefaultGoalBarProperties(),
       diceReverseImpactHud: () => OverlayConfig.getDefaultImpactHudProperties(),
+      spellGoalBar: () => OverlayConfig.getDefaultSpellGoalBarProperties(),
+      spellImpactHud: () => OverlayConfig.getDefaultSpellImpactHudProperties(),
+      monsterGoalBar: () => OverlayConfig.getDefaultMonsterGoalBarProperties(),
+      monsterImpactHud: () => OverlayConfig.getDefaultMonsterImpactHudProperties(),
     }
 
     const getDefaults = defaultsMap[type]

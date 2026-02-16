@@ -1,5 +1,23 @@
 import type { campaign as Campaign } from '#models/campaign'
+import type { SystemCapabilities } from '#services/campaigns/system_preset_registry'
 import { StreamerDto } from '#dtos/auth/streamer_dto'
+import env from '#start/env'
+
+/**
+ * VTT enrichment data gathered from multiple sources (preset registry, character/dice counts).
+ * Only computed for the detail view (show endpoint), never for the list.
+ */
+export interface VttEnrichmentData {
+  gameSystemId: string | null
+  gameSystemName: string | null
+  isKnownSystem: boolean
+  primaryDie: string | null
+  systemCapabilities: SystemCapabilities | null
+  characterCounts: { pc: number; npc: number; monster: number; total: number }
+  diceRollCount: number
+  lastVttSyncAt: string | null
+  connectedSince: string | null
+}
 
 /**
  * DTO for VTT connection status information
@@ -12,6 +30,7 @@ export class VttConnectionStatusDto {
   lastHeartbeatAt!: string | null
   worldName!: string | null
   moduleVersion!: string | null
+  latestModuleVersion!: string | null
 
   static fromModel(connection: any): VttConnectionStatusDto | null {
     if (!connection) return null
@@ -23,6 +42,7 @@ export class VttConnectionStatusDto {
       lastHeartbeatAt: connection.lastHeartbeatAt?.toISO() || null,
       worldName: connection.worldName || null,
       moduleVersion: connection.moduleVersion || null,
+      latestModuleVersion: env.get('FOUNDRY_MODULE_LATEST_VERSION') || null,
     }
   }
 }
@@ -63,8 +83,9 @@ export class CampaignDto {
 export class CampaignDetailDto extends CampaignDto {
   members!: CampaignMemberDto[]
   declare vttConnection: VttConnectionStatusDto | null
+  vttInfo!: VttEnrichmentData | null
 
-  static override fromModel(campaign: Campaign): CampaignDetailDto {
+  static fromDetailModel(campaign: Campaign, vttEnrichment?: VttEnrichmentData): CampaignDetailDto {
     const base = CampaignDto.fromModel(campaign)
 
     // Cast to access vttConnection relation (may be preloaded)
@@ -78,6 +99,7 @@ export class CampaignDetailDto extends CampaignDto {
           )
         : [],
       vttConnection: VttConnectionStatusDto.fromModel(campaignWithVtt.vttConnection),
+      vttInfo: vttEnrichment ?? null,
     }
   }
 }

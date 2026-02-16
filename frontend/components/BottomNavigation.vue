@@ -77,6 +77,9 @@
                 <span>Support</span>
               </button>
 
+              <!-- Color mode toggle -->
+              <ColorModeToggle />
+
               <!-- Divider -->
               <div class="my-1 border-t border-default"></div>
 

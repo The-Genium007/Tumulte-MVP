@@ -11,7 +11,16 @@ export type GamificationEventType = 'individual' | 'group'
 
 export type GamificationTriggerType = 'dice_critical' | 'manual' | 'custom'
 
-export type GamificationActionType = 'dice_invert' | 'chat_message' | 'stat_modify' | 'custom'
+export type GamificationActionType =
+  | 'dice_invert'
+  | 'chat_message'
+  | 'stat_modify'
+  | 'custom'
+  | 'spell_disable'
+  | 'spell_buff'
+  | 'spell_debuff'
+  | 'monster_buff'
+  | 'monster_debuff'
 
 export type GamificationCooldownType = 'time' | 'gm_validation' | 'event_complete'
 
@@ -23,12 +32,20 @@ export interface TriggerConfig {
     threshold?: number
     /** Ex: 'd20' */
     diceType?: string
+    /** Filtrer par gravité. Ex: ['major', 'extreme'] */
+    severityFilter?: ('minor' | 'major' | 'extreme')[]
+    /** Filtrer par catégorie système. Ex: ['nat20', 'triumph', 'ace'] */
+    categoryFilter?: string[]
   }
   criticalFailure?: {
     enabled: boolean
     /** Ex: pour D20, valeur <= 1 */
     threshold?: number
     diceType?: string
+    /** Filtrer par gravité. Ex: ['major', 'extreme'] */
+    severityFilter?: ('minor' | 'major' | 'extreme')[]
+    /** Filtrer par catégorie système. Ex: ['nat1', 'fumble', 'glitch'] */
+    categoryFilter?: string[]
   }
   /** Pour custom: règles personnalisées */
   customRules?: Record<string, unknown>
@@ -54,6 +71,40 @@ export interface ActionConfig {
   }
   /** Pour custom: actions personnalisées */
   customActions?: Record<string, unknown>
+  /** Pour spell_disable: blocage temporaire d'un sort */
+  spellDisable?: {
+    durationSeconds?: number
+    disableMessage?: string
+    enableMessage?: string
+  }
+  /** Pour spell_buff: amplification d'un sort */
+  spellBuff?: {
+    buffType?: 'advantage' | 'bonus'
+    bonusValue?: number
+    highlightColor?: string
+    buffMessage?: string
+  }
+  /** Pour spell_debuff: malédiction d'un sort */
+  spellDebuff?: {
+    debuffType?: 'disadvantage' | 'penalty'
+    penaltyValue?: number
+    highlightColor?: string
+    debuffMessage?: string
+  }
+  /** Pour monster_buff: renforcement d'un monstre hostile en combat */
+  monsterBuff?: {
+    acBonus?: number
+    tempHp?: number
+    highlightColor?: string
+    buffMessage?: string
+  }
+  /** Pour monster_debuff: affaiblissement d'un monstre hostile en combat */
+  monsterDebuff?: {
+    acPenalty?: number
+    maxHpReduction?: number
+    highlightColor?: string
+    debuffMessage?: string
+  }
 }
 
 export interface CooldownConfig {

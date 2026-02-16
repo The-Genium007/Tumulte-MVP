@@ -200,6 +200,60 @@ router
       '#controllers/mj/gm_characters_controller.attributeRoll'
     )
 
+    // Criticality Rules (custom dice criticality rules per campaign)
+    router.get(
+      '/campaigns/:campaignId/criticality-rules',
+      '#controllers/mj/criticality_rules_controller.index'
+    )
+    router.post(
+      '/campaigns/:campaignId/criticality-rules',
+      '#controllers/mj/criticality_rules_controller.store'
+    )
+    router.put(
+      '/campaigns/:campaignId/criticality-rules/:ruleId',
+      '#controllers/mj/criticality_rules_controller.update'
+    )
+    router.delete(
+      '/campaigns/:campaignId/criticality-rules/:ruleId',
+      '#controllers/mj/criticality_rules_controller.destroy'
+    )
+    router.get(
+      '/campaigns/:campaignId/system-info',
+      '#controllers/mj/criticality_rules_controller.systemInfo'
+    )
+
+    // Item Introspection (aggregated item tree for visual explorer)
+    router.get(
+      '/campaigns/:campaignId/item-introspection',
+      '#controllers/mj/item_introspection_controller.index'
+    )
+
+    // Item Category Rules (spell/feature/inventory categories per campaign)
+    router.get(
+      '/campaigns/:campaignId/item-category-rules',
+      '#controllers/mj/item_category_rules_controller.index'
+    )
+    router.post(
+      '/campaigns/:campaignId/item-category-rules',
+      '#controllers/mj/item_category_rules_controller.store'
+    )
+    router.post(
+      '/campaigns/:campaignId/item-category-rules/detect',
+      '#controllers/mj/item_category_rules_controller.detect'
+    )
+    router.post(
+      '/campaigns/:campaignId/item-category-rules/sync',
+      '#controllers/mj/item_category_rules_controller.sync'
+    )
+    router.put(
+      '/campaigns/:campaignId/item-category-rules/:ruleId',
+      '#controllers/mj/item_category_rules_controller.update'
+    )
+    router.delete(
+      '/campaigns/:campaignId/item-category-rules/:ruleId',
+      '#controllers/mj/item_category_rules_controller.destroy'
+    )
+
     // Polls (templates liés directement aux campagnes)
     // CRUD des polls (templates de sondages)
     router.get('/campaigns/:campaignId/polls', '#controllers/mj/polls_controller.indexByCampaign')
@@ -280,10 +334,18 @@ router
       '#controllers/mj/gamification_controller.simulateRedemption'
     )
 
-    // Reset cooldowns (DEV/STAGING only - for testing)
+    // Outils de maintenance MJ (production-safe)
     router.post(
       '/campaigns/:id/gamification/reset-cooldowns',
       '#controllers/mj/gamification_controller.resetCooldowns'
+    )
+    router.post(
+      '/campaigns/:id/gamification/reset-state',
+      '#controllers/mj/gamification_controller.resetState'
+    )
+    router.post(
+      '/campaigns/:id/gamification/cleanup-foundry',
+      '#controllers/mj/gamification_controller.cleanupFoundry'
     )
 
     // Statistiques gamification
@@ -683,6 +745,11 @@ router
     router.get('/metrics', '#controllers/admin/metrics_controller.overview')
     router.get('/metrics/growth', '#controllers/admin/metrics_controller.growth')
     router.get('/metrics/subscriptions', '#controllers/admin/metrics_controller.subscriptions')
+
+    // Pre-flight monitoring
+    router.get('/preflight/reports', '#controllers/admin/preflight_controller.list')
+    router.get('/preflight/reports/:id', '#controllers/admin/preflight_controller.show')
+    router.get('/preflight/stats', '#controllers/admin/preflight_controller.stats')
   })
   .prefix('/admin')
   .use(middleware.auth({ guards: ['web', 'api'] }))

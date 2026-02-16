@@ -656,6 +656,146 @@ describe('useVttHealth Composable', () => {
     })
   })
 
+  describe('isModuleOutdated', () => {
+    test('should be false when no VTT connection', async () => {
+      const { isModuleOutdated } = await setupWithCampaign()
+
+      expect(isModuleOutdated.value).toBe(false)
+    })
+
+    test('should be false when latestModuleVersion is null', async () => {
+      const { checkHealth, isModuleOutdated } = await setupWithCampaign()
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: {
+            vttConnection: createMockConnection({
+              moduleVersion: '2.0.0',
+            }),
+          },
+        }),
+      })
+      await checkHealth()
+
+      expect(isModuleOutdated.value).toBe(false)
+    })
+
+    test('should be false when moduleVersion is null', async () => {
+      const { checkHealth, isModuleOutdated } = await setupWithCampaign()
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: {
+            vttConnection: createMockConnection({
+              moduleVersion: null,
+              latestModuleVersion: '2.2.0',
+            }),
+          },
+        }),
+      })
+      await checkHealth()
+
+      expect(isModuleOutdated.value).toBe(false)
+    })
+
+    test('should be true when moduleVersion is less than latestModuleVersion', async () => {
+      const { checkHealth, isModuleOutdated } = await setupWithCampaign()
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: {
+            vttConnection: createMockConnection({
+              moduleVersion: '2.0.7',
+              latestModuleVersion: '2.2.0',
+            }),
+          },
+        }),
+      })
+      await checkHealth()
+
+      expect(isModuleOutdated.value).toBe(true)
+    })
+
+    test('should be false when versions are equal', async () => {
+      const { checkHealth, isModuleOutdated } = await setupWithCampaign()
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: {
+            vttConnection: createMockConnection({
+              moduleVersion: '2.2.0',
+              latestModuleVersion: '2.2.0',
+            }),
+          },
+        }),
+      })
+      await checkHealth()
+
+      expect(isModuleOutdated.value).toBe(false)
+    })
+
+    test('should be false when current version is higher (dev)', async () => {
+      const { checkHealth, isModuleOutdated } = await setupWithCampaign()
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: {
+            vttConnection: createMockConnection({
+              moduleVersion: '3.0.0',
+              latestModuleVersion: '2.2.0',
+            }),
+          },
+        }),
+      })
+      await checkHealth()
+
+      expect(isModuleOutdated.value).toBe(false)
+    })
+
+    test('should detect major version difference', async () => {
+      const { checkHealth, isModuleOutdated } = await setupWithCampaign()
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: {
+            vttConnection: createMockConnection({
+              moduleVersion: '1.9.9',
+              latestModuleVersion: '2.0.0',
+            }),
+          },
+        }),
+      })
+      await checkHealth()
+
+      expect(isModuleOutdated.value).toBe(true)
+    })
+
+    test('should detect patch version difference', async () => {
+      const { checkHealth, isModuleOutdated } = await setupWithCampaign()
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: {
+            vttConnection: createMockConnection({
+              moduleVersion: '2.2.0',
+              latestModuleVersion: '2.2.1',
+            }),
+          },
+        }),
+      })
+      await checkHealth()
+
+      expect(isModuleOutdated.value).toBe(true)
+    })
+  })
+
   describe('Edge Cases', () => {
     test('should handle connected without heartbeat', async () => {
       const { checkHealth, healthStatus } = await setupWithCampaign()

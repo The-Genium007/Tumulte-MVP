@@ -597,6 +597,36 @@ export class InstanceManager {
   }
 
   /**
+   * Reset les cooldowns encore actifs, avec filtre optionnel par streamer
+   * Utilisé par les outils de maintenance MJ (production-safe)
+   */
+  async resetCooldownsFiltered(campaignId: string, streamerId?: string): Promise<number> {
+    const query = GamificationInstance.query()
+      .where('campaignId', campaignId)
+      .where('status', 'completed')
+      .whereNotNull('cooldownEndsAt')
+      .where('cooldownEndsAt', '>', DateTime.now().toSQL()!)
+
+    if (streamerId) {
+      query.where('streamerId', streamerId)
+    }
+
+    const result = await query.update({ cooldownEndsAt: null })
+
+    logger.info(
+      {
+        event: 'cooldowns_reset_filtered',
+        campaignId,
+        streamerId: streamerId || 'all',
+        count: result[0],
+      },
+      'Cooldowns réinitialisés (filtrés)'
+    )
+
+    return result[0] as number
+  }
+
+  /**
    * Vérifie et expire les instances dont le temps est écoulé
    * Appelé périodiquement par un job
    */

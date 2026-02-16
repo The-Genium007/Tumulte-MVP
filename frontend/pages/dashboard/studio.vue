@@ -284,6 +284,10 @@
               :title="elementType.label"
               @click="addElement(elementType.type)"
             >
+              <span
+                class="element-status-dot"
+                :class="elementTypePresence[elementType.type] ? 'status-active' : 'status-inactive'"
+              />
               <UIcon :name="elementType.icon" class="size-6" />
               <span>{{ elementType.label }}</span>
             </button>
@@ -326,6 +330,12 @@
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- Avertissement de complétude (non bloquant) -->
+        <div v-if="!isOverlayComplete && elements.length > 0" class="sidebar-completeness-hint">
+          <UIcon name="i-lucide-info" class="size-4 shrink-0" />
+          <p>Ajoutez tous les types d'éléments pour un overlay complet.</p>
         </div>
       </aside>
 
@@ -452,6 +462,74 @@
               @update-width="updateImpactHudWidth"
             />
           </template>
+
+          <template v-else-if="selectedElement.type === 'spellGoalBar'">
+            <DiceReverseGoalBarInspector
+              :container="(selectedElement.properties as SpellGoalBarProperties).container"
+              :progress-bar="(selectedElement.properties as SpellGoalBarProperties).progressBar"
+              :shake="(selectedElement.properties as SpellGoalBarProperties).shake"
+              :typography="(selectedElement.properties as SpellGoalBarProperties).typography"
+              :audio="(selectedElement.properties as SpellGoalBarProperties).audio"
+              :width="(selectedElement.properties as SpellGoalBarProperties).width"
+              :mock-data="(selectedElement.properties as SpellGoalBarProperties).mockData"
+              @update-container="updateSpellGoalBarContainer"
+              @update-progress-bar="updateSpellGoalBarProgressBar"
+              @update-shake="updateSpellGoalBarShake"
+              @update-typography="updateSpellGoalBarTypography"
+              @update-audio="updateSpellGoalBarAudio"
+              @update-width="updateSpellGoalBarWidth"
+              @update-mock-data="updateSpellGoalBarMockData"
+            />
+          </template>
+
+          <template v-else-if="selectedElement.type === 'spellImpactHud'">
+            <DiceReverseImpactHudInspector
+              :container="(selectedElement.properties as SpellImpactHudProperties).container"
+              :animations="(selectedElement.properties as SpellImpactHudProperties).animations"
+              :audio="(selectedElement.properties as SpellImpactHudProperties).audio"
+              :typography="(selectedElement.properties as SpellImpactHudProperties).typography"
+              :width="(selectedElement.properties as SpellImpactHudProperties).width"
+              @update-container="updateSpellImpactHudContainer"
+              @update-animations="updateSpellImpactHudAnimations"
+              @update-audio="updateSpellImpactHudAudio"
+              @update-typography="updateSpellImpactHudTypography"
+              @update-width="updateSpellImpactHudWidth"
+            />
+          </template>
+
+          <template v-else-if="selectedElement.type === 'monsterGoalBar'">
+            <DiceReverseGoalBarInspector
+              :container="(selectedElement.properties as MonsterGoalBarProperties).container"
+              :progress-bar="(selectedElement.properties as MonsterGoalBarProperties).progressBar"
+              :shake="(selectedElement.properties as MonsterGoalBarProperties).shake"
+              :typography="(selectedElement.properties as MonsterGoalBarProperties).typography"
+              :audio="(selectedElement.properties as MonsterGoalBarProperties).audio"
+              :width="(selectedElement.properties as MonsterGoalBarProperties).width"
+              :mock-data="(selectedElement.properties as MonsterGoalBarProperties).mockData"
+              @update-container="updateMonsterGoalBarContainer"
+              @update-progress-bar="updateMonsterGoalBarProgressBar"
+              @update-shake="updateMonsterGoalBarShake"
+              @update-typography="updateMonsterGoalBarTypography"
+              @update-audio="updateMonsterGoalBarAudio"
+              @update-width="updateMonsterGoalBarWidth"
+              @update-mock-data="updateMonsterGoalBarMockData"
+            />
+          </template>
+
+          <template v-else-if="selectedElement.type === 'monsterImpactHud'">
+            <DiceReverseImpactHudInspector
+              :container="(selectedElement.properties as MonsterImpactHudProperties).container"
+              :animations="(selectedElement.properties as MonsterImpactHudProperties).animations"
+              :audio="(selectedElement.properties as MonsterImpactHudProperties).audio"
+              :typography="(selectedElement.properties as MonsterImpactHudProperties).typography"
+              :width="(selectedElement.properties as MonsterImpactHudProperties).width"
+              @update-container="updateMonsterImpactHudContainer"
+              @update-animations="updateMonsterImpactHudAnimations"
+              @update-audio="updateMonsterImpactHudAudio"
+              @update-typography="updateMonsterImpactHudTypography"
+              @update-width="updateMonsterImpactHudWidth"
+            />
+          </template>
         </div>
 
         <div v-else class="inspector-empty">
@@ -485,6 +563,10 @@ import type {
   DiceReverseProperties,
   DiceReverseGoalBarProperties,
   DiceReverseImpactHudProperties,
+  SpellGoalBarProperties,
+  SpellImpactHudProperties,
+  MonsterGoalBarProperties,
+  MonsterImpactHudProperties,
 } from '~/overlay-studio/types'
 
 definePageMeta({
@@ -580,7 +662,36 @@ const elementTypes = [
   { type: 'poll' as const, label: 'Sondage', icon: 'i-lucide-bar-chart-3' },
   { type: 'dice' as const, label: 'Dés 3D', icon: 'i-lucide-dice-5' },
   { type: 'diceReverse' as const, label: 'Inversion', icon: 'i-lucide-refresh-ccw' },
+  { type: 'spellEffect' as const, label: 'Sorts', icon: 'i-lucide-sparkles' },
+  { type: 'monsterEffect' as const, label: 'Combat', icon: 'i-lucide-swords' },
 ]
+
+// Mapping types sidebar → types enfants dans store.elements
+// Les types composites (diceReverse, spellEffect, monsterEffect) créent 2 éléments enfants
+const ELEMENT_TYPE_CHILDREN: Record<string, OverlayElementType[]> = {
+  poll: ['poll'],
+  dice: ['dice'],
+  diceReverse: ['diceReverseGoalBar', 'diceReverseImpactHud'],
+  spellEffect: ['spellGoalBar', 'spellImpactHud'],
+  monsterEffect: ['monsterGoalBar', 'monsterImpactHud'],
+}
+
+// Badge de présence : true si au moins un élément de ce type existe
+const elementTypePresence = computed<Record<string, boolean>>(() => {
+  const result: Record<string, boolean> = {}
+  for (const sidebarType of elementTypes) {
+    const childTypes = ELEMENT_TYPE_CHILDREN[sidebarType.type] || [sidebarType.type]
+    result[sidebarType.type] = childTypes.some((childType) =>
+      elements.value.some((el) => el.type === childType)
+    )
+  }
+  return result
+})
+
+// true quand tous les 5 types sont présents
+const isOverlayComplete = computed(() => {
+  return elementTypes.every((t) => elementTypePresence.value[t.type])
+})
 
 // Auto-save: surveiller les modifications et sauvegarder automatiquement
 watch(
@@ -599,6 +710,10 @@ const getElementIcon = (type: OverlayElementType): string => {
   const iconMap: Partial<Record<OverlayElementType, string>> = {
     diceReverseGoalBar: 'i-lucide-goal',
     diceReverseImpactHud: 'i-lucide-zap',
+    spellGoalBar: 'i-lucide-sparkles',
+    spellImpactHud: 'i-lucide-zap',
+    monsterGoalBar: 'i-lucide-swords',
+    monsterImpactHud: 'i-lucide-zap',
   }
   if (iconMap[type]) return iconMap[type]!
 
@@ -612,6 +727,20 @@ const addElement = (type: OverlayElementType) => {
   if (type === 'diceReverse') {
     store.addDiceReverseElements()
     pushSnapshot('Ajouter Inversion (Goal Bar + Impact HUD)')
+    return
+  }
+
+  // Pour "Sorts", créer les deux éléments séparés (Spell Goal Bar + Spell Impact HUD)
+  if (type === 'spellEffect') {
+    store.addSpellElements()
+    pushSnapshot('Ajouter Sorts (Spell Goal Bar + Spell Impact HUD)')
+    return
+  }
+
+  // Pour "Combat", créer les deux éléments séparés (Monster Goal Bar + Monster Impact HUD)
+  if (type === 'monsterEffect') {
+    store.addMonsterElements()
+    pushSnapshot('Ajouter Combat (Monster Goal Bar + Monster Impact HUD)')
     return
   }
 
@@ -690,6 +819,34 @@ const {
   updateImpactHudAudio,
   updateImpactHudTypography,
   updateImpactHudWidth,
+  // Spell Goal Bar
+  updateSpellGoalBarContainer,
+  updateSpellGoalBarProgressBar,
+  updateSpellGoalBarShake,
+  updateSpellGoalBarMockData,
+  updateSpellGoalBarTypography,
+  updateSpellGoalBarWidth,
+  updateSpellGoalBarAudio,
+  // Spell Impact HUD
+  updateSpellImpactHudContainer,
+  updateSpellImpactHudAnimations,
+  updateSpellImpactHudAudio,
+  updateSpellImpactHudTypography,
+  updateSpellImpactHudWidth,
+  // Monster Goal Bar
+  updateMonsterGoalBarContainer,
+  updateMonsterGoalBarProgressBar,
+  updateMonsterGoalBarShake,
+  updateMonsterGoalBarMockData,
+  updateMonsterGoalBarTypography,
+  updateMonsterGoalBarWidth,
+  updateMonsterGoalBarAudio,
+  // Monster Impact HUD
+  updateMonsterImpactHudContainer,
+  updateMonsterImpactHudAnimations,
+  updateMonsterImpactHudAudio,
+  updateMonsterImpactHudTypography,
+  updateMonsterImpactHudWidth,
 } = useElementUpdater(selectedElement, store.updateElement, debouncedPushSnapshot)
 
 // Prévisualisation du sondage
@@ -742,6 +899,16 @@ const handleNewCanvas = () => {
 
 // Sauvegarde
 const handleSave = async () => {
+  // Avertissement informatif (non bloquant) si overlay incomplet
+  if (!isOverlayComplete.value) {
+    toast.add({
+      title: 'Overlay incomplet',
+      description: "Certains types d'éléments sont manquants.",
+      color: 'warning',
+      icon: 'i-lucide-alert-triangle',
+    })
+  }
+
   try {
     const configData = store.getCurrentConfig()
 
@@ -1159,6 +1326,7 @@ onUnmounted(() => {
 }
 
 .element-item {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1177,6 +1345,42 @@ onUnmounted(() => {
   background: var(--ui-bg-elevated);
   border-color: var(--ui-primary);
   color: var(--ui-text);
+}
+
+/* Badge de statut (présence d'élément) */
+.element-status-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  transition:
+    background-color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.status-active {
+  background-color: #22c55e;
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.5);
+}
+
+.status-inactive {
+  background-color: var(--ui-text-dimmed);
+  opacity: 0.4;
+}
+
+/* Bandeau de complétude */
+.sidebar-completeness-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: rgba(59, 130, 246, 0.1);
+  border-top: 1px solid var(--ui-border);
+  color: var(--ui-text-muted);
+  font-size: 0.75rem;
+  line-height: 1.25;
 }
 
 /* Layers */

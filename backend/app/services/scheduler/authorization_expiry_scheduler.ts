@@ -3,6 +3,8 @@ import logger from '@adonisjs/core/services/logger'
 import app from '@adonisjs/core/services/app'
 import { CampaignMembershipRepository } from '#repositories/campaign_membership_repository'
 import { GamificationAuthBridge } from '#services/gamification/gamification_auth_bridge'
+import { TokenRefreshService } from '#services/auth/token_refresh_service'
+import { webSocketService as WebSocketService } from '#services/websocket/websocket_service'
 
 // Run every 5 minutes to check for expired authorizations
 const CRON_EXPRESSION = '*/5 * * * *'
@@ -19,9 +21,11 @@ export class AuthorizationExpiryScheduler {
   private job: cron.ScheduledTask | null = null
   private membershipRepository: CampaignMembershipRepository
   private gamificationBridge: GamificationAuthBridge
+  private tokenRefreshService: TokenRefreshService
 
   constructor() {
     this.membershipRepository = new CampaignMembershipRepository()
+    this.tokenRefreshService = new TokenRefreshService()
     // GamificationAuthBridge has dependencies, we need to instantiate them
     // Using dynamic import to avoid circular dependencies
     this.gamificationBridge = null as unknown as GamificationAuthBridge
@@ -142,6 +146,20 @@ export class AuthorizationExpiryScheduler {
             continue
           }
 
+          // Refresh token BEFORE attempting Twitch API calls for cleanup
+          // The access token may have expired since the last TokenRefreshScheduler run,
+          // because that scheduler excludes streamers whose authorization has already expired.
+          const refreshSuccess = await this.tokenRefreshService.refreshStreamerToken(streamer)
+          if (!refreshSuccess) {
+            logger.warn(
+              {
+                membershipId: membership.id,
+                streamerId: streamer.id,
+              },
+              '[Scheduler] Token refresh failed before cleanup, attempting cleanup anyway'
+            )
+          }
+
           // Delete gamification rewards
           const result = await this.gamificationBridge.onAuthorizationRevoked(
             membership.campaignId,
@@ -161,6 +179,15 @@ export class AuthorizationExpiryScheduler {
 
           // Clear the authorization timestamps
           await this.membershipRepository.clearPollAuthorization(membership)
+
+          // Broadcast readiness change via WebSocket (streamer is no longer ready)
+          const wsService = new WebSocketService()
+          wsService.emitStreamerReadinessChange(
+            membership.campaignId,
+            streamer.id,
+            false,
+            streamer.twitchDisplayName
+          )
 
           processed++
         } catch (error) {

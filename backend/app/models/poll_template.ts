@@ -20,7 +20,10 @@ class PollTemplate extends BaseModel {
   @column()
   declare title: string
 
-  @column()
+  @column({
+    prepare: (value: string[]) => JSON.stringify(value),
+    consume: (value: string | string[]) => (typeof value === 'string' ? JSON.parse(value) : value),
+  })
   declare options: string[]
 
   @column()

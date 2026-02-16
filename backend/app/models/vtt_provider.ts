@@ -19,7 +19,11 @@ export default class VttProvider extends BaseModel {
   @column()
   declare isActive: boolean
 
-  @column()
+  @column({
+    prepare: (value: object | null) => (value ? JSON.stringify(value) : null),
+    consume: (value: string | object | null) =>
+      typeof value === 'string' ? JSON.parse(value) : value,
+  })
   declare configSchema: object | null
 
   @column.dateTime({ autoCreate: true })

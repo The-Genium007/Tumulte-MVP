@@ -72,8 +72,26 @@ interface GamificationActionExecutedData {
   actionType: string
   success: boolean
   message?: string
+  // Dice inversion fields
   originalValue?: number
   invertedValue?: number
+  // Spell action fields
+  spellName?: string
+  spellImg?: string
+  effectDuration?: number
+  buffType?: string
+  debuffType?: string
+  bonusValue?: number
+  penaltyValue?: number
+  // Monster action fields
+  monsterName?: string
+  monsterImg?: string
+  effectType?: string
+  acBonus?: number
+  acPenalty?: number
+  tempHp?: number
+  maxHpReduction?: number
+  highlightColor?: string
 }
 
 interface PollStartEvent {

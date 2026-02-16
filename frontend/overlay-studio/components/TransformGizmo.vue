@@ -35,11 +35,19 @@ import type {
   PollProperties,
   DiceReverseGoalBarProperties,
   DiceReverseImpactHudProperties,
+  SpellGoalBarProperties,
+  SpellImpactHudProperties,
+  MonsterGoalBarProperties,
+  MonsterImpactHudProperties,
 } from '../types'
 import {
   calculatePollGizmoSize,
   calculateGoalBarGizmoSize,
   calculateImpactHudGizmoSize,
+  calculateSpellGoalBarGizmoSize,
+  calculateSpellImpactHudGizmoSize,
+  calculateMonsterGoalBarGizmoSize,
+  calculateMonsterImpactHudGizmoSize,
   HUD_BASE_SIZE,
   HUD_CSS_TO_CANVAS,
   GIZMO_PADDING,
@@ -127,6 +135,26 @@ const baseSize = computed(() => {
   if (props.element.type === 'diceReverseImpactHud') {
     const impactHudProps = props.element.properties as DiceReverseImpactHudProperties
     return calculateImpactHudGizmoSize(impactHudProps)
+  }
+
+  if (props.element.type === 'spellGoalBar') {
+    const spellGoalBarProps = props.element.properties as SpellGoalBarProperties
+    return calculateSpellGoalBarGizmoSize(spellGoalBarProps)
+  }
+
+  if (props.element.type === 'spellImpactHud') {
+    const spellImpactHudProps = props.element.properties as SpellImpactHudProperties
+    return calculateSpellImpactHudGizmoSize(spellImpactHudProps)
+  }
+
+  if (props.element.type === 'monsterGoalBar') {
+    const monsterGoalBarProps = props.element.properties as MonsterGoalBarProperties
+    return calculateMonsterGoalBarGizmoSize(monsterGoalBarProps)
+  }
+
+  if (props.element.type === 'monsterImpactHud') {
+    const monsterImpactHudProps = props.element.properties as MonsterImpactHudProperties
+    return calculateMonsterImpactHudGizmoSize(monsterImpactHudProps)
   }
 
   return DEFAULT_GIZMO_SIZE

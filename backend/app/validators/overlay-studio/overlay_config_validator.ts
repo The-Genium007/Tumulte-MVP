@@ -14,7 +14,16 @@ const vector3Schema = z.object({
  */
 const overlayElementSchema = z.object({
   id: z.string().max(36), // UUID max 36 chars
-  type: z.enum(['poll', 'dice']),
+  type: z.enum([
+    'poll',
+    'dice',
+    'diceReverseGoalBar',
+    'diceReverseImpactHud',
+    'spellGoalBar',
+    'spellImpactHud',
+    'monsterGoalBar',
+    'monsterImpactHud',
+  ]),
   name: z.string().max(100),
   position: vector3Schema,
   rotation: vector3Schema,

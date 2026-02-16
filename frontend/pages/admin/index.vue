@@ -1,10 +1,5 @@
 <template>
   <div class="space-y-6">
-    <div class="flex items-center justify-between">
-      <h1 class="text-2xl font-bold">Dashboard Admin</h1>
-      <UBadge color="error" variant="subtle">Admin</UBadge>
-    </div>
-
     <!-- Loading state -->
     <div v-if="loading" class="flex items-center justify-center py-12">
       <UIcon
@@ -236,19 +231,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useAuth } from '@/composables/useAuth'
-
-definePageMeta({
-  layout: 'authenticated' as const,
-  middleware: 'auth',
-})
-
-useHead({
-  title: 'Admin - Tumulte',
-})
-
-useSeoMeta({
-  robots: 'noindex, nofollow',
-})
 
 interface AdminMetrics {
   users: {

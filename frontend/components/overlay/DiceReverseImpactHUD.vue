@@ -1,16 +1,9 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onUnmounted } from 'vue'
+import type { ImpactData } from '@/types'
 
-export interface ImpactData {
-  instanceId: string
-  eventName: string
-  actionType: 'dice_invert' | 'chat_message' | 'stat_modify'
-  success: boolean
-  message?: string
-  // For dice_invert specifically
-  originalValue?: number
-  invertedValue?: number
-}
+// Re-export for backward compatibility
+export type { ImpactData }
 
 const props = defineProps<{
   data: ImpactData | null

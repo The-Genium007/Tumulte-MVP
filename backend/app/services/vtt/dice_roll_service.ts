@@ -23,6 +23,10 @@ interface CreateDiceRollData {
   ability: string | null
   abilityRaw: string | null
   modifiers: string[] | null
+  // Criticality enrichment V2
+  severity: 'minor' | 'major' | 'extreme' | null
+  criticalLabel: string | null
+  criticalCategory: string | null
   // GM attribution
   pendingAttribution?: boolean
 }
@@ -51,6 +55,10 @@ export default class DiceRollService {
       ability: data.ability,
       abilityRaw: data.abilityRaw,
       modifiers: data.modifiers,
+      // Criticality enrichment V2
+      severity: data.severity,
+      criticalLabel: data.criticalLabel,
+      criticalCategory: data.criticalCategory,
       // GM attribution
       pendingAttribution: data.pendingAttribution ?? false,
     })
@@ -98,6 +106,9 @@ export default class DiceRollService {
           diceResults: diceRoll.diceResults,
           isCritical: diceRoll.isCritical,
           criticalType: diceRoll.criticalType,
+          severity: diceRoll.severity,
+          criticalLabel: diceRoll.criticalLabel,
+          criticalCategory: diceRoll.criticalCategory,
           isHidden: diceRoll.isHidden,
           rollType: diceRoll.rollType,
           rolledAt: diceRoll.rolledAt.toISO(),
@@ -123,6 +134,9 @@ export default class DiceRollService {
       diceResults: diceRoll.diceResults,
       isCritical: diceRoll.isCritical,
       criticalType: diceRoll.criticalType,
+      severity: diceRoll.severity,
+      criticalLabel: diceRoll.criticalLabel,
+      criticalCategory: diceRoll.criticalCategory,
       isHidden: diceRoll.isHidden,
       rollType: diceRoll.rollType,
       rolledAt: diceRoll.rolledAt.toISO(),

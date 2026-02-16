@@ -24,8 +24,8 @@ const openResultsModal = (poll: PollInstance) => {
 
 <template>
   <div class="space-y-4">
-    <!-- Carte d'incarnation de personnage (au-dessus, indépendante) -->
-    <MjGmCharacterSelector :campaign-id="campaign.id" />
+    <!-- Carte d'incarnation de personnage (VTT only — characters come from Foundry) -->
+    <MjGmCharacterSelector v-if="campaign.vttConnection" :campaign-id="campaign.id" />
 
     <!-- Carte principale du dashboard -->
     <UCard>
@@ -37,7 +37,7 @@ const openResultsModal = (poll: PollInstance) => {
           </div>
           <UButton
             color="primary"
-            variant="outline"
+            variant="soft"
             icon="i-lucide-settings"
             label="Réglages"
             :to="`/mj/campaigns/${campaign.id}`"

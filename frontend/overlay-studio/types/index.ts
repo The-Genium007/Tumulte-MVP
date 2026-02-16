@@ -18,6 +18,12 @@ export type OverlayElementType =
   | 'diceReverse' // Legacy/parent type (kept for backward compatibility)
   | 'diceReverseGoalBar' // Goal Bar - barre de progression style Twitch
   | 'diceReverseImpactHud' // Impact HUD - animation slam
+  | 'spellEffect' // Parent type for spell elements (Goal Bar + Impact HUD created together)
+  | 'spellGoalBar' // Spell Goal Bar - barre de progression pour sorts
+  | 'spellImpactHud' // Spell Impact HUD - animation slam pour sorts
+  | 'monsterEffect' // Parent type for monster elements (Goal Bar + Impact HUD created together)
+  | 'monsterGoalBar' // Monster Goal Bar - barre de progression pour combat influence
+  | 'monsterImpactHud' // Monster Impact HUD - animation slam pour combat influence
 
 /**
  * Position 3D d'un élément
@@ -678,6 +684,62 @@ export interface DiceReverseImpactHudProperties {
 }
 
 /**
+ * Propriétés pour l'élément Spell Goal Bar
+ * Réutilise les mêmes interfaces de style que DiceReverse (même structure de customisation)
+ */
+export interface SpellGoalBarProperties {
+  container: DiceReverseContainerStyle
+  progressBar: DiceReverseProgressBarStyle
+  shake: DiceReverseShakeConfig
+  animations: DiceReverseGoalBarAnimationsConfig
+  audio: DiceReverseGoalBarAudioConfig
+  typography: DiceReverseGoalBarTypography
+  width: number
+  height: number
+  mockData: DiceReverseMockData
+}
+
+/**
+ * Propriétés pour l'élément Spell Impact HUD
+ */
+export interface SpellImpactHudProperties {
+  container: DiceReverseImpactContainerStyle
+  animations: DiceReverseImpactAnimationsConfig
+  audio: DiceReverseImpactAudioConfig
+  typography: DiceReverseImpactTypography
+  width: number
+  height: number
+}
+
+/**
+ * Propriétés pour l'élément Monster Goal Bar
+ * Réutilise les mêmes interfaces de style que DiceReverse (même structure de customisation)
+ */
+export interface MonsterGoalBarProperties {
+  container: DiceReverseContainerStyle
+  progressBar: DiceReverseProgressBarStyle
+  shake: DiceReverseShakeConfig
+  animations: DiceReverseGoalBarAnimationsConfig
+  audio: DiceReverseGoalBarAudioConfig
+  typography: DiceReverseGoalBarTypography
+  width: number
+  height: number
+  mockData: DiceReverseMockData
+}
+
+/**
+ * Propriétés pour l'élément Monster Impact HUD
+ */
+export interface MonsterImpactHudProperties {
+  container: DiceReverseImpactContainerStyle
+  animations: DiceReverseImpactAnimationsConfig
+  audio: DiceReverseImpactAudioConfig
+  typography: DiceReverseImpactTypography
+  width: number
+  height: number
+}
+
+/**
  * Union des propriétés possibles
  * NOTE: Ajouter de nouveaux types de propriétés ici
  */
@@ -687,6 +749,10 @@ export type ElementProperties =
   | DiceReverseProperties
   | DiceReverseGoalBarProperties
   | DiceReverseImpactHudProperties
+  | SpellGoalBarProperties
+  | SpellImpactHudProperties
+  | MonsterGoalBarProperties
+  | MonsterImpactHudProperties
 
 /**
  * Élément dans l'overlay

@@ -297,24 +297,91 @@ export const useGamification = () => {
   }
 
   /**
-   * Réinitialise les cooldowns d'une campagne (DEV/STAGING uniquement)
+   * Réinitialise les cooldowns actifs d'une campagne
+   * Filtre optionnel par streamerId
    */
-  const resetCooldowns = async (campaignId: string): Promise<{ count: number }> => {
+  const resetCooldowns = async (
+    campaignId: string,
+    streamerId?: string
+  ): Promise<{ count: number; message: string }> => {
     try {
       const response = await fetch(
         `${API_URL}/mj/campaigns/${campaignId}/gamification/reset-cooldowns`,
         {
           method: 'POST',
           credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(streamerId ? { streamerId } : {}),
         }
       )
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
         throw new Error(errorData.error || 'Failed to reset cooldowns')
       }
-      return { count: 1 }
+      const data = await response.json()
+      return data.data
     } catch (err) {
       console.error('Failed to reset cooldowns:', err)
+      throw err
+    }
+  }
+
+  /**
+   * Annule toutes les instances actives/armées d'une campagne
+   * Filtre optionnel par streamerId
+   */
+  const resetState = async (
+    campaignId: string,
+    streamerId?: string
+  ): Promise<{ count: number; message: string }> => {
+    try {
+      const response = await fetch(
+        `${API_URL}/mj/campaigns/${campaignId}/gamification/reset-state`,
+        {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(streamerId ? { streamerId } : {}),
+        }
+      )
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || 'Failed to reset state')
+      }
+      const data = await response.json()
+      return data.data
+    } catch (err) {
+      console.error('Failed to reset state:', err)
+      throw err
+    }
+  }
+
+  /**
+   * Envoie une commande de nettoyage global à Foundry VTT
+   * Supprime tous les flags Tumulte, restaure les sorts, nettoie optionnellement le chat
+   */
+  const cleanupFoundry = async (
+    campaignId: string,
+    cleanChat?: boolean
+  ): Promise<{ message: string; success: boolean }> => {
+    try {
+      const response = await fetch(
+        `${API_URL}/mj/campaigns/${campaignId}/gamification/cleanup-foundry`,
+        {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cleanChat: cleanChat ?? false }),
+        }
+      )
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || 'Failed to cleanup Foundry effects')
+      }
+      const data = await response.json()
+      return data.data
+    } catch (err) {
+      console.error('Failed to cleanup Foundry effects:', err)
       throw err
     }
   }
@@ -325,7 +392,10 @@ export const useGamification = () => {
    * Simule une redemption Channel Points via le vrai pipeline EventSub
    * Envoie un self HTTP call signé HMAC au webhook /webhooks/twitch/eventsub
    */
-  const simulateRedemption = async (campaignId: string, eventId: string): Promise<void> => {
+  const simulateRedemption = async (
+    campaignId: string,
+    eventId: string
+  ): Promise<Record<string, unknown>> => {
     try {
       const response = await fetch(
         `${API_URL}/mj/campaigns/${campaignId}/gamification/events/${eventId}/simulate-redemption`,
@@ -338,6 +408,7 @@ export const useGamification = () => {
         const errorData = await response.json().catch(() => ({}))
         throw new Error(errorData.error || 'Failed to simulate redemption')
       }
+      return response.json()
     } catch (err) {
       console.error('Failed to simulate redemption:', err)
       throw err
@@ -415,9 +486,11 @@ export const useGamification = () => {
     cancelInstance,
     triggerEvent,
 
-    // Cooldown
+    // Cooldown & maintenance
     checkCooldown,
     resetCooldowns,
+    resetState,
+    cleanupFoundry,
 
     // Test (DEV/STAGING only)
     simulateRedemption,

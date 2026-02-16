@@ -6,6 +6,27 @@ const HEALTH_CHECK_INTERVAL = 30000 // 30 seconds
 const HEARTBEAT_TIMEOUT = 120000 // 2 minutes - connection considered disconnected after this
 
 /**
+ * Simple semver comparison: returns true if current < latest.
+ * Returns false if either version is missing or unparseable.
+ */
+function isVersionOutdated(
+  current: string | null | undefined,
+  latest: string | null | undefined
+): boolean {
+  if (!current || !latest) return false
+  const parse = (v: string): [number, number, number] => {
+    const parts = v.split('.').map(Number)
+    return [parts[0] ?? 0, parts[1] ?? 0, parts[2] ?? 0]
+  }
+  const [cMaj, cMin, cPatch] = parse(current)
+  const [lMaj, lMin, lPatch] = parse(latest)
+  if (Number.isNaN(cMaj) || Number.isNaN(lMaj)) return false
+  if (cMaj !== lMaj) return cMaj < lMaj
+  if (cMin !== lMin) return cMin < lMin
+  return cPatch < lPatch
+}
+
+/**
  * Composable for monitoring VTT connection health within a campaign context.
  * Provides polling, health status computation, and real-time updates.
  */
@@ -153,6 +174,17 @@ export const useVttHealth = (campaignId: MaybeRef<string | null>) => {
   })
 
   /**
+   * Check if the Foundry module version is outdated compared to latest known version.
+   * Independent from health status — a connection can be healthy but have an outdated module.
+   */
+  const isModuleOutdated = computed(() => {
+    return isVersionOutdated(
+      vttConnection.value?.moduleVersion,
+      vttConnection.value?.latestModuleVersion
+    )
+  })
+
+  /**
    * Get human-readable status message
    */
   const statusMessage = computed(() => {
@@ -171,6 +203,8 @@ export const useVttHealth = (campaignId: MaybeRef<string | null>) => {
         return 'Connexion révoquée'
       case 'error':
         return 'Erreur de connexion'
+      case 'module_outdated':
+        return 'Module Foundry obsolète'
       case 'not_paired':
       default:
         return 'Non connecté à Foundry'
@@ -207,6 +241,7 @@ export const useVttHealth = (campaignId: MaybeRef<string | null>) => {
     // Computed
     hasIssue,
     needsRepairing,
+    isModuleOutdated,
     statusMessage,
 
     // Methods
