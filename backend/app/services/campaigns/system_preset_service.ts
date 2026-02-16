@@ -14,7 +14,6 @@ import {
   getSystemDisplayName,
   hasSystemPreset,
   type SystemCapabilities,
-  type SystemPreset,
 } from '#services/campaigns/system_preset_registry'
 
 export class SystemPresetService {

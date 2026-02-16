@@ -206,7 +206,7 @@ describe('useItemCategoryRules Composable', () => {
       'http://localhost:3333/mj/campaigns/campaign-123/item-category-rules/rule-1',
       expect.objectContaining({ method: 'PUT' })
     )
-    expect(rules.value[0].label).toBe('New Label')
+    expect(rules.value[0]!.label).toBe('New Label')
   })
 
   // ========================================

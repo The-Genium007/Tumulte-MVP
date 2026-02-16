@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import type {
-  ItemCategoryRule,
-  CreateItemCategoryRuleData,
-  UpdateItemCategoryRuleData,
+import {
+  useItemCategoryRules,
+  type ItemCategoryRule,
+  type CreateItemCategoryRuleData,
+  type UpdateItemCategoryRuleData,
 } from '~/composables/useItemCategoryRules'
-import type { ItemGroup, ItemSource } from '~/composables/useItemIntrospection'
+import { useItemIntrospection, type ItemGroup } from '~/composables/useItemIntrospection'
 
 definePageMeta({
   layout: 'authenticated' as const,
@@ -178,7 +179,11 @@ const handleSubmit = async () => {
 
   try {
     if (editingRule.value) {
-      await updateRule(campaignId.value, editingRule.value.id, form.value as UpdateItemCategoryRuleData)
+      await updateRule(
+        campaignId.value,
+        editingRule.value.id,
+        form.value as UpdateItemCategoryRuleData
+      )
       toast.add({
         title: 'Catégorie mise à jour',
         description: `La catégorie "${form.value.label}" a été modifiée.`,
@@ -359,7 +364,8 @@ onMounted(async () => {
             <div>
               <h1 class="text-xl sm:text-3xl font-bold text-primary">Catégories d'items</h1>
               <p class="text-sm text-muted">
-                Explorez les données de vos personnages et associez-les aux catégories de gamification
+                Explorez les données de vos personnages et associez-les aux catégories de
+                gamification
               </p>
             </div>
           </div>
@@ -398,11 +404,12 @@ onMounted(async () => {
           <div class="text-sm text-muted space-y-1">
             <p>
               L'arbre ci-dessous affiche les items de vos personnages, regroupés par propriété.
-              Cliquez sur un groupe pour voir des exemples, puis <strong>renseignez la catégorie</strong> pour
-              l'associer à la gamification.
+              Cliquez sur un groupe pour voir des exemples, puis
+              <strong>renseignez la catégorie</strong> pour l'associer à la gamification.
             </p>
             <p>
-              Utilisez <strong>Auto-détecter</strong> pour pré-configurer automatiquement les catégories si votre système de jeu est reconnu.
+              Utilisez <strong>Auto-détecter</strong> pour pré-configurer automatiquement les
+              catégories si votre système de jeu est reconnu.
             </p>
           </div>
         </div>
@@ -425,7 +432,10 @@ onMounted(async () => {
 
             <!-- Loading -->
             <div v-if="treeLoading" class="flex justify-center py-12">
-              <UIcon name="i-game-icons-dice-twenty-faces-twenty" class="size-8 text-primary animate-spin-slow" />
+              <UIcon
+                name="i-game-icons-dice-twenty-faces-twenty"
+                class="size-8 text-primary animate-spin-slow"
+              />
             </div>
 
             <!-- Empty state: no character data -->
@@ -461,13 +471,19 @@ onMounted(async () => {
                     v-if="source.groups.filter((g) => g.existingRule).length > 0"
                     class="text-xs text-success-500"
                   >
-                    {{ source.groups.filter((g) => g.existingRule).length }}/{{ source.groups.length }} configurés
+                    {{ source.groups.filter((g) => g.existingRule).length }}/{{
+                      source.groups.length
+                    }}
+                    configurés
                   </span>
                 </button>
 
                 <!-- Group rows -->
                 <div v-if="expandedSources.has(source.key)" class="pl-6 space-y-1">
-                  <div v-if="source.groups.length === 0" class="py-3 pl-4 text-sm text-muted italic">
+                  <div
+                    v-if="source.groups.length === 0"
+                    class="py-3 pl-4 text-sm text-muted italic"
+                  >
                     Aucun item dans cette catégorie
                   </div>
                   <button
@@ -475,8 +491,7 @@ onMounted(async () => {
                     :key="group.groupKey"
                     class="flex items-center gap-2 w-full px-3 py-2.5 rounded-lg text-left transition-colors"
                     :class="
-                      selectedGroup?.groupKey === group.groupKey &&
-                      selectedSourceKey === source.key
+                      selectedGroup?.groupKey === group.groupKey && selectedSourceKey === source.key
                         ? 'bg-primary/10 ring-1 ring-primary/30'
                         : 'hover:bg-accented'
                     "
@@ -496,12 +511,7 @@ onMounted(async () => {
                     <span class="flex-1" />
 
                     <!-- Status badge -->
-                    <UBadge
-                      v-if="group.existingRule"
-                      color="success"
-                      variant="subtle"
-                      size="xs"
-                    >
+                    <UBadge v-if="group.existingRule" color="success" variant="subtle" size="xs">
                       <UIcon name="i-lucide-check" class="size-3 mr-0.5" />
                       Configuré
                     </UBadge>
@@ -538,8 +548,8 @@ onMounted(async () => {
               <!-- Group metadata -->
               <div class="text-xs text-muted space-y-1">
                 <p>
-                  Propriété : <span class="font-mono">{{ selectedGroup.groupProperty }}</span>
-                  = <span class="font-mono">{{ selectedGroup.groupKey }}</span>
+                  Propriété : <span class="font-mono">{{ selectedGroup.groupProperty }}</span> =
+                  <span class="font-mono">{{ selectedGroup.groupKey }}</span>
                 </p>
                 <p v-if="selectedSourceKey">
                   Source : <UIcon :name="sourceIcon(selectedSourceKey)" class="size-3 inline" />
@@ -573,7 +583,8 @@ onMounted(async () => {
                             v-if="value !== null && value !== undefined && value !== ''"
                             class="text-xs px-1.5 py-0.5 rounded bg-accented text-muted"
                           >
-                            {{ propertyLabel(String(key)) }}: {{ formatProperty(String(key), value) }}
+                            {{ propertyLabel(String(key)) }}:
+                            {{ formatProperty(String(key), value) }}
                           </span>
                         </template>
                       </div>
@@ -588,10 +599,14 @@ onMounted(async () => {
               <!-- Action -->
               <div>
                 <div v-if="selectedGroup.existingRule" class="space-y-2">
-                  <div class="flex items-center gap-2 p-3 rounded-lg bg-success-50 dark:bg-success-950/20">
+                  <div
+                    class="flex items-center gap-2 p-3 rounded-lg bg-success-50 dark:bg-success-950/20"
+                  >
                     <UIcon name="i-lucide-check-circle" class="size-5 text-success-500 shrink-0" />
                     <div class="min-w-0">
-                      <p class="text-sm font-medium text-success-700 dark:text-success-400">Déjà configuré</p>
+                      <p class="text-sm font-medium text-success-700 dark:text-success-400">
+                        Déjà configuré
+                      </p>
                       <p class="text-xs text-success-600 dark:text-success-500 truncate">
                         Règle : {{ selectedGroup.existingRule.label }}
                       </p>
@@ -619,7 +634,8 @@ onMounted(async () => {
               <div>
                 <p class="text-sm font-medium text-muted">Sélectionnez un groupe</p>
                 <p class="text-xs text-muted mt-1">
-                  Cliquez sur un élément dans l'arbre pour voir les exemples et renseigner la catégorie
+                  Cliquez sur un élément dans l'arbre pour voir les exemples et renseigner la
+                  catégorie
                 </p>
               </div>
             </div>
@@ -660,12 +676,18 @@ onMounted(async () => {
 
         <!-- Loading -->
         <div v-if="rulesLoading && rules.length === 0" class="flex justify-center py-8">
-          <UIcon name="i-game-icons-dice-twenty-faces-twenty" class="size-6 text-primary animate-spin-slow" />
+          <UIcon
+            name="i-game-icons-dice-twenty-faces-twenty"
+            class="size-6 text-primary animate-spin-slow"
+          />
         </div>
 
         <!-- Empty State -->
         <div v-else-if="filteredRules.length === 0" class="text-center py-8 space-y-3">
-          <UIcon :name="tabs.find((t) => t.key === activeTab)?.icon ?? 'i-lucide-box'" class="size-10 text-muted mx-auto" />
+          <UIcon
+            :name="tabs.find((t) => t.key === activeTab)?.icon ?? 'i-lucide-box'"
+            class="size-10 text-muted mx-auto"
+          />
           <p class="text-sm text-muted">
             Aucune règle dans cette catégorie. Utilisez l'explorateur ci-dessus pour en créer.
           </p>
@@ -690,9 +712,7 @@ onMounted(async () => {
                 <UBadge v-if="rule.isTargetable" color="success" variant="subtle" size="sm">
                   Ciblable
                 </UBadge>
-                <UBadge v-else color="neutral" variant="subtle" size="sm">
-                  Non ciblable
-                </UBadge>
+                <UBadge v-else color="neutral" variant="subtle" size="sm"> Non ciblable </UBadge>
                 <UBadge v-if="!rule.isEnabled" color="neutral" variant="subtle" size="sm">
                   Désactivée
                 </UBadge>
@@ -700,7 +720,8 @@ onMounted(async () => {
               <p class="text-xs text-muted">
                 Type: <span class="font-mono">{{ rule.itemType }}</span>
                 <span v-if="rule.matchField">
-                  &middot; {{ rule.matchField }} = <span class="font-mono">{{ rule.matchValue }}</span>
+                  &middot; {{ rule.matchField }} =
+                  <span class="font-mono">{{ rule.matchValue }}</span>
                 </span>
                 <span v-if="rule.weight !== 1"> &middot; Poids {{ rule.weight }}</span>
                 <span v-if="rule.priority > 0"> &middot; Priorité {{ rule.priority }}</span>
@@ -782,7 +803,9 @@ onMounted(async () => {
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-primary pl-2 mb-1">Sous-catégorie (identifiant)</label>
+          <label class="block text-sm font-medium text-primary pl-2 mb-1"
+            >Sous-catégorie (identifiant)</label
+          >
           <UInput
             v-model="form.subcategory"
             placeholder="Ex: evocation, feat, weapon..."
@@ -796,7 +819,9 @@ onMounted(async () => {
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-primary pl-2 mb-1">Type d'item Foundry VTT</label>
+          <label class="block text-sm font-medium text-primary pl-2 mb-1"
+            >Type d'item Foundry VTT</label
+          >
           <UInput
             v-model="form.itemType"
             placeholder="Ex: spell, feat, weapon..."
@@ -847,7 +872,9 @@ onMounted(async () => {
           <div v-if="showAdvanced" class="mt-3 space-y-4 pl-2">
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <label class="block text-sm font-medium text-primary mb-1">Champ de correspondance</label>
+                <label class="block text-sm font-medium text-primary mb-1"
+                  >Champ de correspondance</label
+                >
                 <UInput
                   v-model="form.matchField"
                   placeholder="Ex: system.school"
@@ -971,9 +998,7 @@ onMounted(async () => {
           <strong class="text-primary">"{{ deletingRule?.label }}"</strong> ?
         </p>
         <div class="bg-error-light border border-error-light rounded-lg p-4">
-          <p class="text-sm text-error-500">
-            Cette action est irréversible.
-          </p>
+          <p class="text-sm text-error-500">Cette action est irréversible.</p>
         </div>
       </div>
     </template>
@@ -983,7 +1008,12 @@ onMounted(async () => {
         <UButton color="neutral" variant="soft" @click="showDeleteConfirm = false">
           Annuler
         </UButton>
-        <UButton color="error" icon="i-lucide-trash-2" :loading="isSubmitting" @click="handleDelete">
+        <UButton
+          color="error"
+          icon="i-lucide-trash-2"
+          :loading="isSubmitting"
+          @click="handleDelete"
+        >
           Supprimer
         </UButton>
       </div>

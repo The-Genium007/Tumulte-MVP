@@ -818,10 +818,11 @@ const setupWebSocketSubscription = () => {
     // Gamification events — route to spell or dice reverse based on action type
     onGamificationStart: (data) => {
       console.log('[Overlay] Gamification started:', data)
-      if (SPELL_ACTION_TYPES.includes(data.event?.actionType)) {
+      const actionType = data.event?.actionType ?? ''
+      if (SPELL_ACTION_TYPES.includes(actionType)) {
         activeSpellInstance.value = data
         isSpellVisible.value = true
-      } else if (MONSTER_ACTION_TYPES.includes(data.event?.actionType)) {
+      } else if (MONSTER_ACTION_TYPES.includes(actionType)) {
         activeMonsterInstance.value = data
         isMonsterVisible.value = true
       } else {

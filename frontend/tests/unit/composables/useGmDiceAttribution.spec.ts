@@ -209,7 +209,7 @@ describe('useGmDiceAttribution Composable', () => {
     addPendingRoll(roll)
 
     expect(pendingRolls.value).toHaveLength(1)
-    expect(pendingRolls.value[0].id).toBe('roll-ws-1')
+    expect(pendingRolls.value[0]!.id).toBe('roll-ws-1')
     expect(hasPendingRolls.value).toBe(true)
   })
 
@@ -236,7 +236,7 @@ describe('useGmDiceAttribution Composable', () => {
 
     removePendingRoll('roll-1')
     expect(pendingRolls.value).toHaveLength(1)
-    expect(pendingRolls.value[0].id).toBe('roll-2')
+    expect(pendingRolls.value[0]!.id).toBe('roll-2')
   })
 
   test('removePendingRoll() should be no-op for non-existent roll', () => {

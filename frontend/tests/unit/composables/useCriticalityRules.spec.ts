@@ -172,7 +172,7 @@ describe('useCriticalityRules Composable', () => {
       json: async () => {
         throw new Error('parse error')
       },
-    } as Response)
+    } as unknown as Response)
 
     const { createRule } = useCriticalityRules()
 
@@ -214,7 +214,7 @@ describe('useCriticalityRules Composable', () => {
       'http://localhost:3333/mj/campaigns/campaign-123/criticality-rules/rule-1',
       expect.objectContaining({ method: 'PUT' })
     )
-    expect(rules.value[0].label).toBe('New')
+    expect(rules.value[0]!.label).toBe('New')
   })
 
   test('updateRule() should handle error', async () => {

@@ -15,12 +15,12 @@ import type {
 // HELPERS
 // ========================================
 
-function createMockEvent(overrides: Partial<GamificationEvent> = {}): GamificationEvent {
+function createMockEvent(overrides: Record<string, unknown> = {}): GamificationEvent {
   return {
     id: 'event-1',
     actionType: 'dice_invert',
     actionConfig: null,
-    triggerType: 'critical_success',
+    triggerType: 'dice_critical',
     triggerConfig: null,
     ...overrides,
   } as GamificationEvent

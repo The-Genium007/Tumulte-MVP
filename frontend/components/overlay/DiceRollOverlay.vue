@@ -54,7 +54,9 @@
             v-if="impactData?.originalValue != null && impactData?.invertedValue != null"
             class="inversion-hud-detail"
             :style="{
-              fontFamily: impactConfig?.typography?.detail?.fontFamily ?? `'JetBrains Mono', 'Fira Code', monospace`,
+              fontFamily:
+                impactConfig?.typography?.detail?.fontFamily ??
+                `'JetBrains Mono', 'Fira Code', monospace`,
               fontSize: `${impactConfig?.typography?.detail?.fontSize ?? 42}px`,
               fontWeight: impactConfig?.typography?.detail?.fontWeight ?? 800,
               color: impactConfig?.typography?.detail?.color ?? '#ffffff',
@@ -68,7 +70,10 @@
         <div v-if="crackActive" class="crack-overlay">
           <svg class="crack-svg" viewBox="0 0 400 300" preserveAspectRatio="none">
             <!-- Main crack from top center -->
-            <path class="crack-line crack-line-1" d="M200,0 L195,40 L205,80 L190,120 L210,160 L195,200" />
+            <path
+              class="crack-line crack-line-1"
+              d="M200,0 L195,40 L205,80 L190,120 L210,160 L195,200"
+            />
             <!-- Left branch -->
             <path class="crack-line crack-line-2" d="M120,0 L125,30 L115,70 L130,100 L118,140" />
             <!-- Right branch -->
@@ -123,7 +128,10 @@
           </div>
 
           <!-- Dice Breakdown (if available) -->
-          <div v-if="diceRoll?.diceResults && diceRoll.diceResults.length > 0" class="dice-breakdown">
+          <div
+            v-if="diceRoll?.diceResults && diceRoll.diceResults.length > 0"
+            class="dice-breakdown"
+          >
             <span
               v-for="(die, index) in diceRoll.diceResults"
               :key="index"
@@ -180,9 +188,20 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted, type CSSProperties } from 'vue'
 import type { DiceRollEvent, ImpactData } from '@/types'
-import type { DiceHudConfig, DiceCriticalColors, DiceReverseImpactHudProperties } from '~/overlay-studio/types'
+import type {
+  DiceHudConfig,
+  DiceCriticalColors,
+  DiceReverseImpactHudProperties,
+} from '~/overlay-studio/types'
 
-type ImpactPhase = 'idle' | 'anticipation' | 'dropping' | 'impact' | 'flip' | 'transformed' | 'exiting'
+type ImpactPhase =
+  | 'idle'
+  | 'anticipation'
+  | 'dropping'
+  | 'impact'
+  | 'flip'
+  | 'transformed'
+  | 'exiting'
 
 const props = defineProps<{
   diceRoll: DiceRollEvent | null
@@ -303,20 +322,23 @@ const spawnParticles = () => {
     const dx = Math.cos(angle) * distance
     const dy = Math.sin(angle) * distance
 
-    const animation = particle.animate([
+    const animation = particle.animate(
+      [
+        {
+          transform: 'translate(-50%, -50%) scale(1)',
+          opacity: '1',
+        },
+        {
+          transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(0)`,
+          opacity: '0',
+        },
+      ],
       {
-        transform: 'translate(-50%, -50%) scale(1)',
-        opacity: '1',
-      },
-      {
-        transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(0)`,
-        opacity: '0',
-      },
-    ], {
-      duration: 500 + Math.random() * 300,
-      easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-      fill: 'forwards' as FillMode,
-    })
+        duration: 500 + Math.random() * 300,
+        easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+        fill: 'forwards' as FillMode,
+      }
+    )
 
     animation.onfinish = () => {
       particle.remove()
@@ -375,16 +397,19 @@ const startImpactSequence = () => {
 }
 
 // Watch for impact visibility to trigger the sequence
-watch(() => props.impactVisible, (visible) => {
-  if (visible && props.impactData) {
-    startImpactSequence()
-  } else if (!visible && impactPhase.value !== 'idle') {
-    clearAllImpactTimers()
-    impactPhase.value = 'idle'
-    crackActive.value = false
-    displayedResult.value = null
+watch(
+  () => props.impactVisible,
+  (visible) => {
+    if (visible && props.impactData) {
+      startImpactSequence()
+    } else if (!visible && impactPhase.value !== 'idle') {
+      clearAllImpactTimers()
+      impactPhase.value = 'idle'
+      crackActive.value = false
+      displayedResult.value = null
+    }
   }
-})
+)
 
 // =============================================
 // Existing Dice Roll Logic (unchanged)
@@ -689,7 +714,8 @@ onUnmounted(() => {
 
 /* Phase 2: HUD drops from above */
 .inversion-dropping {
-  animation: inversion-hud-drop var(--drop-duration, 150ms) cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards;
+  animation: inversion-hud-drop var(--drop-duration, 150ms) cubic-bezier(0.55, 0.055, 0.675, 0.19)
+    forwards;
 }
 
 @keyframes inversion-hud-drop {
@@ -827,16 +853,37 @@ onUnmounted(() => {
 }
 
 @keyframes hud-tremble {
-  0%, 100% { transform: translate(0, 0) rotate(0deg); }
-  10% { transform: translate(1px, -1px) rotate(0.3deg); }
-  20% { transform: translate(-1px, 1px) rotate(-0.3deg); }
-  30% { transform: translate(2px, 0px) rotate(0.2deg); }
-  40% { transform: translate(-1px, -1px) rotate(-0.2deg); }
-  50% { transform: translate(1px, 1px) rotate(0.4deg); }
-  60% { transform: translate(-2px, 0px) rotate(-0.3deg); }
-  70% { transform: translate(0px, 2px) rotate(0.2deg); }
-  80% { transform: translate(1px, -1px) rotate(-0.1deg); }
-  90% { transform: translate(-1px, 0px) rotate(0.1deg); }
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  10% {
+    transform: translate(1px, -1px) rotate(0.3deg);
+  }
+  20% {
+    transform: translate(-1px, 1px) rotate(-0.3deg);
+  }
+  30% {
+    transform: translate(2px, 0px) rotate(0.2deg);
+  }
+  40% {
+    transform: translate(-1px, -1px) rotate(-0.2deg);
+  }
+  50% {
+    transform: translate(1px, 1px) rotate(0.4deg);
+  }
+  60% {
+    transform: translate(-2px, 0px) rotate(-0.3deg);
+  }
+  70% {
+    transform: translate(0px, 2px) rotate(0.2deg);
+  }
+  80% {
+    transform: translate(1px, -1px) rotate(-0.1deg);
+  }
+  90% {
+    transform: translate(-1px, 0px) rotate(0.1deg);
+  }
 }
 
 /* Phase 3: Impact — elastic bounce with scale */
@@ -845,13 +892,27 @@ onUnmounted(() => {
 }
 
 @keyframes impact-shake {
-  0%   { transform: scale(1) translate(0, 0); }
-  15%  { transform: scale(1.03, 0.97) translate(0, 4px); }
-  30%  { transform: scale(0.97, 1.03) translate(-5px, -6px); }
-  45%  { transform: scale(1.02, 0.98) translate(4px, 3px); }
-  60%  { transform: scale(0.99, 1.01) translate(-3px, -2px); }
-  75%  { transform: scale(1.01, 0.99) translate(2px, 1px); }
-  100% { transform: scale(1) translate(0, 0); }
+  0% {
+    transform: scale(1) translate(0, 0);
+  }
+  15% {
+    transform: scale(1.03, 0.97) translate(0, 4px);
+  }
+  30% {
+    transform: scale(0.97, 1.03) translate(-5px, -6px);
+  }
+  45% {
+    transform: scale(1.02, 0.98) translate(4px, 3px);
+  }
+  60% {
+    transform: scale(0.99, 1.01) translate(-3px, -2px);
+  }
+  75% {
+    transform: scale(1.01, 0.99) translate(2px, 1px);
+  }
+  100% {
+    transform: scale(1) translate(0, 0);
+  }
 }
 
 /* Phase 5: Transformed — purple glow */
@@ -860,7 +921,9 @@ onUnmounted(() => {
   box-shadow:
     0 0 30px rgba(145, 70, 255, 0.5),
     0 20px 60px rgba(0, 0, 0, 0.5) !important;
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 /* Phase 5: Exit */
@@ -987,7 +1050,9 @@ onUnmounted(() => {
   color: rgb(226, 232, 240);
   text-shadow: 0 2px 12px rgba(0, 0, 0, 0.7);
   line-height: 1;
-  transition: color 0.3s ease, text-shadow 0.3s ease;
+  transition:
+    color 0.3s ease,
+    text-shadow 0.3s ease;
 }
 
 .critical-success .roll-result {

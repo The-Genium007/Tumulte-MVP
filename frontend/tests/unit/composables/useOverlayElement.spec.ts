@@ -8,6 +8,7 @@ import {
 import type { OverlayElement, DiceProperties } from '~/overlay-studio/types'
 
 function createMockDiceProperties(): DiceProperties {
+  // Simplified mock — only fields needed by the composable logic
   return {
     diceBox: {
       colors: {
@@ -25,37 +26,36 @@ function createMockDiceProperties(): DiceProperties {
         borderColor: '#333333',
         borderWidth: 1,
         borderRadius: 8,
-        opacity: 0.9,
         padding: { top: 8, right: 12, bottom: 8, left: 12 },
       },
       criticalBadge: {
-        successColor: '#22C55E',
-        failureColor: '#EF4444',
-        fontSize: 14,
-        fontWeight: 700,
+        successBackground: '#22C55E',
+        successTextColor: '#FFFFFF',
+        successBorderColor: '#16A34A',
+        failureBackground: '#EF4444',
+        failureTextColor: '#FFFFFF',
+        failureBorderColor: '#DC2626',
       },
       formula: {
-        fontSize: 12,
-        fontWeight: 400,
-        color: '#AAAAAA',
+        typography: { fontFamily: 'Inter', fontSize: 12, fontWeight: 400, color: '#AAAAAA' },
       },
       result: {
-        fontSize: 48,
-        fontWeight: 700,
-        color: '#FFFFFF',
+        typography: { fontFamily: 'Inter', fontSize: 48, fontWeight: 700, color: '#FFFFFF' },
+        criticalSuccessColor: '#22C55E',
+        criticalFailureColor: '#EF4444',
       },
       diceBreakdown: {
-        fontSize: 10,
-        fontWeight: 400,
-        color: '#888888',
-        showIndividualDice: true,
+        backgroundColor: 'transparent',
+        borderColor: 'transparent',
+        borderRadius: 4,
+        typography: { fontFamily: 'Inter', fontSize: 10, fontWeight: 400, color: '#888888' },
       },
       skillInfo: {
-        fontSize: 11,
-        fontWeight: 500,
-        color: '#CCCCCC',
-        showSkill: true,
-        showAbility: true,
+        backgroundColor: 'transparent',
+        borderColor: 'transparent',
+        borderRadius: 4,
+        skillTypography: { fontFamily: 'Inter', fontSize: 11, fontWeight: 500, color: '#CCCCCC' },
+        abilityTypography: { fontFamily: 'Inter', fontSize: 11, fontWeight: 500, color: '#CCCCCC' },
       },
       minWidth: 120,
       maxWidth: 300,
@@ -80,16 +80,13 @@ function createMockDiceProperties(): DiceProperties {
       exit: { type: 'fade', duration: 300, delay: 3000 },
     },
     mockData: {
-      formula: '1d20',
-      result: 17,
-      diceResults: [17],
+      rollFormula: '1d20',
+      diceTypes: ['d20'],
+      diceValues: [17],
       isCritical: false,
       criticalType: null,
-      rollType: 'attack',
-      skill: 'Attaque au corps à corps',
-      ability: 'Force',
     },
-  }
+  } as DiceProperties
 }
 
 function createMockDiceElement(overrides: Partial<OverlayElement> = {}): OverlayElement {
@@ -119,6 +116,7 @@ function createMockPollElement(): OverlayElement {
     visible: true,
     locked: false,
     zIndex: 1,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     properties: {} as any,
   }
 }
@@ -205,6 +203,7 @@ describe('useOverlayElement Composable', () => {
     const diceEl = createMockDiceElement()
     const props = diceEl.properties as DiceProperties
     // Remove hudTransform to test fallback
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ;(props as any).hudTransform = undefined
 
     const element = ref(diceEl)
@@ -365,6 +364,7 @@ describe('getDiceHudStyleFromElement', () => {
   test('should provide default transform when hudTransform is missing', () => {
     const element = createMockDiceElement()
     const props = element.properties as DiceProperties
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ;(props as any).hudTransform = undefined
 
     const style = getDiceHudStyleFromElement(element)

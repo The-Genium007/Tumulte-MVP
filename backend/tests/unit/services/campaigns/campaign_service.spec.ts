@@ -9,7 +9,7 @@ import type { campaign as Campaign } from '#models/campaign'
 // HELPERS
 // ========================================
 
-function createMockCampaign(overrides: Partial<Campaign> = {}): Campaign {
+function createMockCampaign(overrides: Record<string, unknown> = {}): Campaign {
   return {
     id: 'camp-1',
     ownerId: 'owner-1',

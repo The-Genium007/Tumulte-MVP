@@ -373,20 +373,11 @@
                 >
                   {{ campaign.vttInfo.gameSystemName }}
                 </UBadge>
-                <UBadge
-                  v-else-if="campaign.vttInfo?.gameSystemId"
-                  color="neutral"
-                  variant="soft"
-                >
+                <UBadge v-else-if="campaign.vttInfo?.gameSystemId" color="neutral" variant="soft">
                   {{ campaign.vttInfo.gameSystemId }}
                 </UBadge>
                 <span v-else class="text-muted text-sm italic">En attente de détection</span>
-                <UBadge
-                  v-if="campaign.vttInfo?.primaryDie"
-                  color="info"
-                  variant="subtle"
-                  size="xs"
-                >
+                <UBadge v-if="campaign.vttInfo?.primaryDie" color="info" variant="subtle" size="xs">
                   {{ campaign.vttInfo.primaryDie }}
                 </UBadge>
               </div>
@@ -504,7 +495,9 @@
               </p>
               <p class="text-xs text-muted">Personnages</p>
               <p
-                v-if="campaign.vttInfo?.characterCounts && campaign.vttInfo.characterCounts.total > 0"
+                v-if="
+                  campaign.vttInfo?.characterCounts && campaign.vttInfo.characterCounts.total > 0
+                "
                 class="text-xs text-muted mt-0.5"
               >
                 {{ campaign.vttInfo.characterCounts.pc }} PJ
@@ -662,90 +655,90 @@
         </template>
 
         <div class="space-y-6">
-            <!-- Loading State -->
-            <div v-if="gamificationLoading" class="flex items-center justify-center py-8">
-              <UIcon
-                name="i-game-icons-dice-twenty-faces-twenty"
-                class="size-10 text-primary animate-spin-slow"
+          <!-- Loading State -->
+          <div v-if="gamificationLoading" class="flex items-center justify-center py-8">
+            <UIcon
+              name="i-game-icons-dice-twenty-faces-twenty"
+              class="size-10 text-primary animate-spin-slow"
+            />
+          </div>
+
+          <!-- Error State -->
+          <UAlert
+            v-else-if="gamificationError"
+            color="error"
+            variant="soft"
+            icon="i-lucide-alert-circle"
+            :title="gamificationError"
+          />
+
+          <!-- Content -->
+          <template v-else>
+            <!-- Info Banner -->
+            <UAlert
+              color="info"
+              variant="soft"
+              icon="i-lucide-sparkles"
+              title="Points de chaîne Twitch"
+              description="Configurez les événements d'intégration pour permettre à vos viewers d'influencer le jeu. Chaque événement sera créé comme récompense sur les chaînes des streamers actifs."
+            />
+
+            <!-- Armed Instances (gauges filled, waiting to trigger) -->
+            <div v-if="armedGamificationInstances.length > 0" class="space-y-3">
+              <div class="flex items-center gap-2">
+                <UIcon name="i-lucide-zap" class="size-5 text-warning-500" />
+                <h3 class="text-lg font-semibold text-primary">Événements à venir</h3>
+              </div>
+              <MjGamificationInstanceRow
+                v-for="instance in armedGamificationInstances"
+                :key="instance.id"
+                :instance="instance"
+                :is-dev="isDev"
+                @cancel="handleCancelGamificationInstance"
+                @force-complete="handleForceCompleteInstance"
               />
             </div>
 
-            <!-- Error State -->
-            <UAlert
-              v-else-if="gamificationError"
-              color="error"
-              variant="soft"
-              icon="i-lucide-alert-circle"
-              :title="gamificationError"
-            />
+            <!-- Event Cards (grouped grid) -->
+            <div v-if="gamificationEvents.length > 0" class="space-y-6">
+              <h3 class="text-lg font-semibold text-primary">Configuration des événements</h3>
 
-            <!-- Content -->
-            <template v-else>
-              <!-- Info Banner -->
-              <UAlert
-                color="info"
-                variant="soft"
-                icon="i-lucide-sparkles"
-                title="Points de chaîne Twitch"
-                description="Configurez les événements d'intégration pour permettre à vos viewers d'influencer le jeu. Chaque événement sera créé comme récompense sur les chaînes des streamers actifs."
-              />
-
-              <!-- Armed Instances (gauges filled, waiting to trigger) -->
-              <div v-if="armedGamificationInstances.length > 0" class="space-y-3">
+              <div v-for="group in eventGroups" :key="group.label" class="space-y-3">
+                <!-- Group header -->
                 <div class="flex items-center gap-2">
-                  <UIcon name="i-lucide-zap" class="size-5 text-warning-500" />
-                  <h3 class="text-lg font-semibold text-primary">Événements à venir</h3>
+                  <UIcon :name="group.icon" class="size-4 text-muted" />
+                  <h4 class="text-sm font-medium text-muted uppercase tracking-wide">
+                    {{ group.label }}
+                  </h4>
                 </div>
-                <MjGamificationInstanceRow
-                  v-for="instance in armedGamificationInstances"
-                  :key="instance.id"
-                  :instance="instance"
-                  :is-dev="isDev"
-                  @cancel="handleCancelGamificationInstance"
-                  @force-complete="handleForceCompleteInstance"
-                />
-              </div>
 
-              <!-- Event Cards (grouped grid) -->
-              <div v-if="gamificationEvents.length > 0" class="space-y-6">
-                <h3 class="text-lg font-semibold text-primary">Configuration des événements</h3>
-
-                <div v-for="group in eventGroups" :key="group.label" class="space-y-3">
-                  <!-- Group header -->
-                  <div class="flex items-center gap-2">
-                    <UIcon :name="group.icon" class="size-4 text-muted" />
-                    <h4 class="text-sm font-medium text-muted uppercase tracking-wide">
-                      {{ group.label }}
-                    </h4>
-                  </div>
-
-                  <!-- Grid: 3 cols desktop, 2 tablet, 1 mobile -->
-                  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    <MjGamificationEventCard
-                      v-for="event in group.events"
-                      :key="event.id"
-                      :event="event"
-                      :config="getConfigForEvent(event.id)"
-                      :loading="savingGamificationEventId === event.id"
-                      :is-dev="isDev"
-                      :campaign-id="campaignId"
-                      @toggle="handleToggleGamificationEvent"
-                      @update="handleUpdateGamificationConfig"
-                      @simulate-redemption="handleSimulateRedemption"
-                    />
-                  </div>
+                <!-- Grid: 3 cols desktop, 2 tablet, 1 mobile -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <MjGamificationEventCard
+                    v-for="event in group.events"
+                    :key="event.id"
+                    :event="event"
+                    :config="getConfigForEvent(event.id)"
+                    :loading="savingGamificationEventId === event.id"
+                    :is-dev="isDev"
+                    :campaign-id="campaignId"
+                    @toggle="handleToggleGamificationEvent"
+                    @update="handleUpdateGamificationConfig"
+                    @simulate-redemption="handleSimulateRedemption"
+                  />
                 </div>
               </div>
+            </div>
 
-              <!-- No Events -->
-              <div v-else class="flex flex-col items-center justify-center text-center py-8">
-                <UIcon name="i-lucide-gamepad-2" class="size-10 text-muted mb-4" />
-                <p class="text-base font-normal text-muted">Aucun événement disponible</p>
-                <p class="text-sm text-muted mt-1">
-                  Les événements de gamification seront bientôt disponibles.
-                </p>
-              </div>
-            </template>
+            <!-- No Events -->
+            <div v-else class="flex flex-col items-center justify-center text-center py-8">
+              <UIcon name="i-lucide-gamepad-2" class="size-10 text-muted mb-4" />
+              <p class="text-base font-normal text-muted">Aucun événement disponible</p>
+              <p class="text-sm text-muted mt-1">
+                Les événements de gamification seront bientôt disponibles.
+              </p>
+            </div>
+          </template>
         </div>
       </UCard>
 
@@ -1824,6 +1817,7 @@ import {
   type CreateCriticalityRuleData,
   type UpdateCriticalityRuleData,
 } from '@/composables/useCriticalityRules'
+import { useItemCategoryRules } from '@/composables/useItemCategoryRules'
 import type { Campaign, CampaignMembership, StreamerSearchResult, LiveStatusMap } from '@/types'
 import type { GamificationInstance, UpdateGamificationConfigRequest } from '@/types/api'
 
@@ -1933,9 +1927,9 @@ const criticalityConditionOperators = [
   { label: 'différent de', value: '!=' },
 ]
 const criticalitySeverityOptions = [
-  { label: 'Mineure', value: 'minor' },
-  { label: 'Majeure', value: 'major' },
-  { label: 'Extrême', value: 'extreme' },
+  { label: 'Mineure', value: 'minor' as const },
+  { label: 'Majeure', value: 'major' as const },
+  { label: 'Extrême', value: 'extreme' as const },
 ]
 
 // Decomposed condition for natural language form
@@ -1952,7 +1946,7 @@ watch([critConditionOperator, critConditionValue], syncCritCondition)
 // Parse resultCondition string → decomposed (for edit mode)
 const parseCritCondition = (condition: string) => {
   const match = condition.trim().match(/^(==|!=|<=|>=|<|>)\s*(-?\d+(?:\.\d+)?)$/)
-  if (match) {
+  if (match?.[1] && match[2]) {
     critConditionOperator.value = match[1]
     critConditionValue.value = Number(match[2])
   }
@@ -2150,8 +2144,7 @@ const eventGroups = computed(() => {
   )
   const otherEvents = gamificationEvents.value.filter(
     (e) =>
-      !SPELL_ACTION_TYPES.includes(e.actionType) &&
-      !MONSTER_ACTION_TYPES.includes(e.actionType)
+      !SPELL_ACTION_TYPES.includes(e.actionType) && !MONSTER_ACTION_TYPES.includes(e.actionType)
   )
 
   const groups: { label: string; icon: string; events: typeof gamificationEvents.value }[] = []
@@ -2676,9 +2669,7 @@ const hasVttStats = computed(() => {
   if (!campaign.value?.vttInfo) return false
   const info = campaign.value.vttInfo
   return (
-    (info.characterCounts?.total ?? 0) > 0 ||
-    (info.diceRollCount ?? 0) > 0 ||
-    !!info.lastVttSyncAt
+    (info.characterCounts?.total ?? 0) > 0 || (info.diceRollCount ?? 0) > 0 || !!info.lastVttSyncAt
   )
 })
 

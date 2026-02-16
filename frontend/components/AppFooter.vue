@@ -9,7 +9,11 @@
             alt="Tumulte"
             class="size-8 sm:size-10 transition-transform group-hover:scale-105"
           />
-          <span class="text-base sm:text-lg font-bold text-primary uppercase" style="font-family: var(--font-heading)">TUMULTE</span>
+          <span
+            class="text-base sm:text-lg font-bold text-primary uppercase"
+            style="font-family: var(--font-heading)"
+            >TUMULTE</span
+          >
         </NuxtLink>
 
         <!-- Navigation centrale -->

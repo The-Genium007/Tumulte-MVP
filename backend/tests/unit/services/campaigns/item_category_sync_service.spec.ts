@@ -215,6 +215,7 @@ test.group('ItemCategorySyncService - syncCharacterCategories', () => {
     const result = await service.syncCharacterCategories(character as any, 'campaign-1')
 
     assert.isTrue(result.changed)
+    // eslint-disable-next-line camelcase
     assert.deepEqual(result.summary.feature, { class_feature: 1, racial_trait: 1 })
   })
 

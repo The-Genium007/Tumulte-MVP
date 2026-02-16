@@ -87,7 +87,9 @@
 
       <!-- Status breakdown -->
       <div v-if="stats" class="grid grid-cols-3 gap-2">
-        <div class="flex items-center gap-2 rounded-lg border border-success/20 bg-success/5 px-3 py-2">
+        <div
+          class="flex items-center gap-2 rounded-lg border border-success/20 bg-success/5 px-3 py-2"
+        >
           <UIcon name="i-lucide-check-circle" class="size-4 text-success" />
           <span class="text-sm font-medium">{{ stats.passed }} passés</span>
         </div>
@@ -197,9 +199,7 @@
 
               <UIcon
                 :name="
-                  expandedReports.has(report.id)
-                    ? 'i-lucide-chevron-up'
-                    : 'i-lucide-chevron-down'
+                  expandedReports.has(report.id) ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'
                 "
                 class="size-4 text-muted"
               />
@@ -236,8 +236,10 @@
         <template v-if="reportsMeta && reportsMeta.lastPage > 1" #footer>
           <div class="flex items-center justify-between">
             <p class="text-sm text-muted">
-              Page {{ reportsMeta.currentPage }} / {{ reportsMeta.lastPage }}
-              ({{ reportsMeta.total }} rapports)
+              Page {{ reportsMeta.currentPage }} / {{ reportsMeta.lastPage }} ({{
+                reportsMeta.total
+              }}
+              rapports)
             </p>
             <div class="flex gap-1">
               <UButton
@@ -335,7 +337,11 @@ const periods = [
   { value: '30d' as Period, label: '30 jours' },
 ]
 
-const reportFilters: { value: ReportFilter; label: string; color: 'neutral' | 'success' | 'error' }[] = [
+const reportFilters: {
+  value: ReportFilter
+  label: string
+  color: 'neutral' | 'success' | 'error'
+}[] = [
   { value: 'all', label: 'Tous', color: 'neutral' },
   { value: 'healthy', label: 'OK', color: 'success' },
   { value: 'failed', label: 'Échoués', color: 'error' },
@@ -404,7 +410,7 @@ async function fetchStats() {
   try {
     const response = await fetch(
       `${config.public.apiBase}/admin/preflight/stats?period=${period.value}`,
-      { credentials: 'include' },
+      { credentials: 'include' }
     )
     if (!response.ok) {
       if (response.status === 403) {
@@ -433,10 +439,9 @@ async function fetchReports(page = 1) {
     if (reportFilter.value === 'healthy') params.set('healthy', 'true')
     if (reportFilter.value === 'failed') params.set('healthy', 'false')
 
-    const response = await fetch(
-      `${config.public.apiBase}/admin/preflight/reports?${params}`,
-      { credentials: 'include' },
-    )
+    const response = await fetch(`${config.public.apiBase}/admin/preflight/reports?${params}`, {
+      credentials: 'include',
+    })
     if (!response.ok) return
     const json = await response.json()
     reports.value = json.data

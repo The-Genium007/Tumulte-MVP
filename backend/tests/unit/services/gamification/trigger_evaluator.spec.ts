@@ -8,10 +8,10 @@ import type GamificationEvent from '#models/gamification_event'
 // HELPERS
 // ========================================
 
-function createMockEvent(overrides: Partial<GamificationEvent> = {}): GamificationEvent {
+function createMockEvent(overrides: Record<string, unknown> = {}): GamificationEvent {
   return {
     id: 'event-1',
-    triggerType: 'critical_success',
+    triggerType: 'dice_critical',
     triggerConfig: null,
     actionType: 'dice_invert',
     actionConfig: null,
@@ -46,7 +46,7 @@ test.group('TriggerEvaluator — handler lookup', () => {
   test('should delegate evaluation to the correct handler', async ({ assert }) => {
     const registry = new TriggerHandlerRegistry()
     registry.register(
-      createTriggerHandler('critical_success', {
+      createTriggerHandler('dice_critical', {
         shouldTrigger: true,
         triggerData: {
           diceRoll: {
@@ -56,13 +56,14 @@ test.group('TriggerEvaluator — handler lookup', () => {
             diceResults: [20],
             characterId: null,
             characterName: null,
+            criticalType: 'success',
           },
         },
       })
     )
 
     const evaluator = new TriggerEvaluator(registry)
-    const event = createMockEvent({ triggerType: 'critical_success' })
+    const event = createMockEvent({ triggerType: 'dice_critical' })
 
     const result = evaluator.evaluate(event, { result: 20 })
 
@@ -78,7 +79,7 @@ test.group('TriggerEvaluator — handler lookup', () => {
     let receivedData: unknown = null
 
     const handler: TriggerHandler = {
-      type: 'critical_success',
+      type: 'dice_critical',
       evaluate: (config, data) => {
         receivedConfig = config
         receivedData = data
@@ -88,8 +89,10 @@ test.group('TriggerEvaluator — handler lookup', () => {
     registry.register(handler)
 
     const evaluator = new TriggerEvaluator(registry)
-    const triggerConfig = { threshold: 20 }
-    const event = createMockEvent({ triggerType: 'critical_success', triggerConfig })
+    const triggerConfig = {
+      criticalSuccess: { enabled: true, threshold: 20 },
+    }
+    const event = createMockEvent({ triggerType: 'dice_critical', triggerConfig })
     const inputData = { formula: '1d20', result: 15 }
 
     evaluator.evaluate(event, inputData)
@@ -103,7 +106,7 @@ test.group('TriggerEvaluator — trigger results', () => {
   test('should return shouldTrigger=false when handler says no', async ({ assert }) => {
     const registry = new TriggerHandlerRegistry()
     registry.register(
-      createTriggerHandler('critical_success', {
+      createTriggerHandler('dice_critical', {
         shouldTrigger: false,
         triggerData: null,
         reason: 'Roll was 15, not a critical',
@@ -111,7 +114,7 @@ test.group('TriggerEvaluator — trigger results', () => {
     )
 
     const evaluator = new TriggerEvaluator(registry)
-    const event = createMockEvent({ triggerType: 'critical_success' })
+    const event = createMockEvent({ triggerType: 'dice_critical' })
 
     const result = evaluator.evaluate(event, {})
 
@@ -135,14 +138,14 @@ test.group('TriggerEvaluator — trigger results', () => {
     }
 
     registry.register(
-      createTriggerHandler('critical_failure', {
+      createTriggerHandler('dice_critical', {
         shouldTrigger: true,
         triggerData,
       })
     )
 
     const evaluator = new TriggerEvaluator(registry)
-    const event = createMockEvent({ triggerType: 'critical_failure' })
+    const event = createMockEvent({ triggerType: 'dice_critical' })
 
     const result = evaluator.evaluate(event, {})
 
@@ -157,7 +160,7 @@ test.group('TriggerEvaluator — isSupportedTriggerType', () => {
   test('should return true for registered trigger type', async ({ assert }) => {
     const registry = new TriggerHandlerRegistry()
     registry.register(
-      createTriggerHandler('critical_success', {
+      createTriggerHandler('dice_critical', {
         shouldTrigger: false,
         triggerData: null,
       })
@@ -165,7 +168,7 @@ test.group('TriggerEvaluator — isSupportedTriggerType', () => {
 
     const evaluator = new TriggerEvaluator(registry)
 
-    assert.isTrue(evaluator.isSupportedTriggerType('critical_success'))
+    assert.isTrue(evaluator.isSupportedTriggerType('dice_critical'))
   })
 
   test('should return false for unregistered trigger type', async ({ assert }) => {
@@ -181,7 +184,7 @@ test.group('TriggerEvaluator — multiple handlers', () => {
     const registry = new TriggerHandlerRegistry()
 
     registry.register(
-      createTriggerHandler('critical_success', {
+      createTriggerHandler('dice_critical', {
         shouldTrigger: true,
         triggerData: {
           diceRoll: {
@@ -191,13 +194,14 @@ test.group('TriggerEvaluator — multiple handlers', () => {
             diceResults: [20],
             characterId: null,
             characterName: null,
+            criticalType: 'success',
           },
         },
       })
     )
 
     registry.register(
-      createTriggerHandler('critical_failure', {
+      createTriggerHandler('manual', {
         shouldTrigger: true,
         triggerData: {
           diceRoll: {
@@ -207,13 +211,14 @@ test.group('TriggerEvaluator — multiple handlers', () => {
             diceResults: [1],
             characterId: null,
             characterName: null,
+            criticalType: 'failure',
           },
         },
       })
     )
 
     registry.register(
-      createTriggerHandler('twitch_activation', {
+      createTriggerHandler('custom', {
         shouldTrigger: true,
         triggerData: {
           activation: { triggeredBy: 'viewer-1', twitchUserId: 'twitch-1', redemptionId: 'red-1' },
@@ -223,15 +228,15 @@ test.group('TriggerEvaluator — multiple handlers', () => {
 
     const evaluator = new TriggerEvaluator(registry)
 
-    // Test critical_failure handler
-    const event = createMockEvent({ triggerType: 'critical_failure' })
+    // Test manual handler
+    const event = createMockEvent({ triggerType: 'manual' })
     const result = evaluator.evaluate(event, {})
 
     assert.isTrue(result.shouldTrigger)
     assert.equal(result.triggerData!.diceRoll!.rollId, 'crit-failure')
 
-    // Test twitch_activation handler
-    const event2 = createMockEvent({ triggerType: 'twitch_activation' })
+    // Test custom handler
+    const event2 = createMockEvent({ triggerType: 'custom' })
     const result2 = evaluator.evaluate(event2, {})
 
     assert.isTrue(result2.shouldTrigger)

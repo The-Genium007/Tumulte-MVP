@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import type {
-  CriticalityRule,
-  CreateCriticalityRuleData,
-  UpdateCriticalityRuleData,
+import {
+  useCriticalityRules,
+  type CriticalityRule,
+  type CreateCriticalityRuleData,
+  type UpdateCriticalityRuleData,
 } from '~/composables/useCriticalityRules'
 
 definePageMeta({
@@ -57,9 +58,9 @@ const conditionOperators = [
 ]
 
 const severityOptions = [
-  { label: 'Mineure', value: 'minor' },
-  { label: 'Majeure', value: 'major' },
-  { label: 'Extrême', value: 'extreme' },
+  { label: 'Mineure', value: 'minor' as const },
+  { label: 'Majeure', value: 'major' as const },
+  { label: 'Extrême', value: 'extreme' as const },
 ]
 
 // Decomposed condition for natural language form
@@ -74,7 +75,7 @@ watch([condOperator, condValue], syncCondition)
 
 const parseCondition = (condition: string) => {
   const match = condition.trim().match(/^(==|!=|<=|>=|<|>)\s*(-?\d+(?:\.\d+)?)$/)
-  if (match) {
+  if (match?.[1] && match[2]) {
     condOperator.value = match[1]
     condValue.value = Number(match[2])
   }
@@ -167,11 +168,7 @@ const confirmDelete = (rule: CriticalityRule) => {
 
 // Form validation
 const isFormValid = computed(() => {
-  return (
-    form.value.label.trim().length > 0 &&
-    condValue.value !== null &&
-    !isNaN(condValue.value)
-  )
+  return form.value.label.trim().length > 0 && condValue.value !== null && !isNaN(condValue.value)
 })
 
 // CRUD handlers
@@ -183,7 +180,11 @@ const handleSubmit = async () => {
 
   try {
     if (editingRule.value) {
-      await updateRule(campaignId.value, editingRule.value.id, form.value as UpdateCriticalityRuleData)
+      await updateRule(
+        campaignId.value,
+        editingRule.value.id,
+        form.value as UpdateCriticalityRuleData
+      )
       toast.add({
         title: 'Règle mise à jour',
         description: `La règle "${form.value.label}" a été modifiée.`,
@@ -315,7 +316,10 @@ const goBack = () => {
 
         <!-- Loading -->
         <div v-if="loading" class="flex justify-center py-12">
-          <UIcon name="i-game-icons-dice-twenty-faces-twenty" class="size-8 text-primary animate-spin-slow" />
+          <UIcon
+            name="i-game-icons-dice-twenty-faces-twenty"
+            class="size-8 text-primary animate-spin-slow"
+          />
         </div>
 
         <!-- Empty State -->
@@ -627,9 +631,7 @@ const goBack = () => {
           <strong class="text-primary">"{{ deletingRule?.label }}"</strong> ?
         </p>
         <div class="bg-error-light border border-error-light rounded-lg p-4">
-          <p class="text-sm text-error-500">
-            Cette action est irréversible.
-          </p>
+          <p class="text-sm text-error-500">Cette action est irréversible.</p>
         </div>
       </div>
     </template>
@@ -639,7 +641,12 @@ const goBack = () => {
         <UButton color="neutral" variant="soft" @click="showDeleteConfirm = false">
           Annuler
         </UButton>
-        <UButton color="error" icon="i-lucide-trash-2" :loading="isSubmitting" @click="handleDelete">
+        <UButton
+          color="error"
+          icon="i-lucide-trash-2"
+          :loading="isSubmitting"
+          @click="handleDelete"
+        >
           Supprimer
         </UButton>
       </div>

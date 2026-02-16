@@ -427,8 +427,8 @@ test.group('ItemCategoryDetectionService - aliases', () => {
     await service2.detectAndSeedCategories('c2', 'wod5e')
 
     assert.equal(vtm5eData.length, wod5eData.length)
-    for (let i = 0; i < vtm5eData.length; i++) {
-      assert.equal(vtm5eData[i].subcategory, wod5eData[i].subcategory)
+    for (const [index, item] of vtm5eData.entries()) {
+      assert.equal(item.subcategory, wod5eData[index].subcategory)
     }
   })
 

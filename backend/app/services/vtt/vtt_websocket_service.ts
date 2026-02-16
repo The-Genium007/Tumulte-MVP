@@ -191,8 +191,8 @@ export default class VttWebSocketService {
       try {
         const campaigns = await connection.related('campaigns').query()
         if (campaigns.length > 0) {
-          const CampaignItemCategoryRule = (await import('#models/campaign_item_category_rule'))
-            .default
+          const CampaignItemCategoryRuleModel = await import('#models/campaign_item_category_rule')
+          const CampaignItemCategoryRule = CampaignItemCategoryRuleModel.default
           const rules = await CampaignItemCategoryRule.query()
             .where('campaignId', campaigns[0].id)
             .where('isEnabled', true)

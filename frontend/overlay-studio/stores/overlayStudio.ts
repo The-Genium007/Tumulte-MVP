@@ -814,6 +814,9 @@ export const useOverlayStudioStore = defineStore('overlayStudio', () => {
           width: 350,
           height: 120,
         } as MonsterImpactHudProperties
+
+      default:
+        return {} as ElementProperties
     }
   }
 

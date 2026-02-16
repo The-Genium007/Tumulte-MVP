@@ -199,7 +199,10 @@ onUnmounted(() => {
       }"
     >
       <!-- Glow effect -->
-      <div class="impact-glow" :style="{ background: `radial-gradient(circle, ${themeColor}, transparent)` }" />
+      <div
+        class="impact-glow"
+        :style="{ background: `radial-gradient(circle, ${themeColor}, transparent)` }"
+      />
 
       <!-- Main container -->
       <div
@@ -212,12 +215,7 @@ onUnmounted(() => {
         }"
       >
         <!-- Monster image (if available) -->
-        <img
-          v-if="data.monsterImg"
-          :src="data.monsterImg"
-          class="impact-monster-img"
-          alt=""
-        />
+        <img v-if="data.monsterImg" :src="data.monsterImg" class="impact-monster-img" alt="" />
 
         <!-- Title -->
         <div
