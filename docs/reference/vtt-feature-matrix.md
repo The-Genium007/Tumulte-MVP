@@ -26,6 +26,7 @@ Each feature maps to a Tumulte capability:
 ### TypeScript Interface
 
 ```typescript
+type SupportLevel = 'full' | 'beta' | 'partial' | 'manual' | 'na' | 'none'
 type FeatureKey = 'characters' | 'criticals' | 'inversion' | 'stats' | 'spells' | 'combat'
 
 interface TumulteFeatureMatrix {
@@ -45,16 +46,19 @@ interface TumulteFeatureMatrix {
 | Level | Icon | Color | Score | Description |
 |-------|------|-------|-------|-------------|
 | `full` | ✓ | Green | 100 | Automatic detection, no configuration needed |
+| `beta` | ✦ | Violet | 100 | Implemented but not yet validated in real game conditions |
 | `partial` | ~ | Yellow | 50 | Generic or limited detection, may miss edge cases |
 | `manual` | ⚙ | Blue | 25 | GM must configure manually, but the feature works once set up |
+| `na` | — | Light gray | Excluded | The system does not have this mechanic. Not counted in score. |
 | `none` | ✗ | Gray | 0 | Feature not available for this system |
 
 ### Score Calculation
 
-Per-system score = average of all 6 feature scores:
+Per-system score = average of applicable feature scores (excluding N/A):
 
 ```
-score = round(sum(SUPPORT_LEVEL_SCORE[feature]) / 6)
+applicableFeatures = features.filter(f => level !== 'na')
+score = round(sum(SUPPORT_LEVEL_SCORE[applicable]) / applicableFeatures.length)
 ```
 
 ### Score Color Thresholds

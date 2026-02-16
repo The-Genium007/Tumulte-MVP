@@ -126,7 +126,14 @@ register({
     hasNarrativeDice: false,
     primaryDie: 'd20',
   },
-  recommendedEvents: ['dice-invert', 'spell-disable', 'spell-buff', 'spell-debuff'],
+  recommendedEvents: [
+    'dice-invert',
+    'spell-disable',
+    'spell-buff',
+    'spell-debuff',
+    'monster-buff',
+    'monster-debuff',
+  ],
   availableWithWarning: [],
 })
 
@@ -167,7 +174,14 @@ register({
     hasNarrativeDice: false,
     primaryDie: 'd20',
   },
-  recommendedEvents: ['dice-invert', 'spell-disable', 'spell-buff', 'spell-debuff'],
+  recommendedEvents: [
+    'dice-invert',
+    'spell-disable',
+    'spell-buff',
+    'spell-debuff',
+    'monster-buff',
+    'monster-debuff',
+  ],
   availableWithWarning: [],
 })
 
@@ -208,8 +222,15 @@ register({
     hasNarrativeDice: false,
     primaryDie: 'd100',
   },
-  recommendedEvents: ['dice-invert', 'spell-disable'],
-  availableWithWarning: ['spell-buff', 'spell-debuff'],
+  recommendedEvents: [
+    'dice-invert',
+    'spell-disable',
+    'spell-buff',
+    'spell-debuff',
+    'monster-buff',
+    'monster-debuff',
+  ],
+  availableWithWarning: [],
 })
 
 // ── Warhammer Fantasy 4e ────────────────────────────────────────────────────
@@ -249,8 +270,15 @@ register({
     hasNarrativeDice: false,
     primaryDie: 'd100',
   },
-  recommendedEvents: ['dice-invert'],
-  availableWithWarning: ['spell-disable', 'spell-buff', 'spell-debuff'],
+  recommendedEvents: [
+    'dice-invert',
+    'spell-disable',
+    'spell-buff',
+    'spell-debuff',
+    'monster-buff',
+    'monster-debuff',
+  ],
+  availableWithWarning: [],
 })
 
 // ── Savage Worlds Adventure Edition ─────────────────────────────────────────
@@ -290,8 +318,15 @@ register({
     hasNarrativeDice: false,
     primaryDie: null,
   },
-  recommendedEvents: ['dice-invert', 'spell-disable', 'spell-buff'],
-  availableWithWarning: ['spell-debuff'],
+  recommendedEvents: [
+    'dice-invert',
+    'spell-disable',
+    'spell-buff',
+    'spell-debuff',
+    'monster-buff',
+    'monster-debuff',
+  ],
+  availableWithWarning: [],
 })
 
 // ── Cyberpunk RED ───────────────────────────────────────────────────────────
@@ -331,7 +366,7 @@ register({
     hasNarrativeDice: false,
     primaryDie: 'd10',
   },
-  recommendedEvents: ['dice-invert'],
+  recommendedEvents: ['dice-invert', 'monster-buff', 'monster-debuff'],
   availableWithWarning: ['spell-disable', 'spell-buff', 'spell-debuff'],
 })
 
@@ -372,7 +407,7 @@ register({
     hasNarrativeDice: false,
     primaryDie: 'd6',
   },
-  recommendedEvents: ['dice-invert'],
+  recommendedEvents: ['dice-invert', 'monster-buff', 'monster-debuff'],
   availableWithWarning: ['spell-disable', 'spell-buff', 'spell-debuff'],
 })
 
@@ -413,8 +448,15 @@ register({
     hasNarrativeDice: false,
     primaryDie: 'd6',
   },
-  recommendedEvents: ['dice-invert', 'spell-disable'],
-  availableWithWarning: ['spell-buff', 'spell-debuff'],
+  recommendedEvents: [
+    'dice-invert',
+    'spell-disable',
+    'spell-buff',
+    'spell-debuff',
+    'monster-buff',
+    'monster-debuff',
+  ],
+  availableWithWarning: [],
 })
 
 // ── Vaesen ──────────────────────────────────────────────────────────────────
@@ -454,7 +496,7 @@ register({
     hasNarrativeDice: false,
     primaryDie: 'd6',
   },
-  recommendedEvents: ['dice-invert'],
+  recommendedEvents: ['dice-invert', 'monster-buff', 'monster-debuff'],
   availableWithWarning: ['spell-disable', 'spell-buff', 'spell-debuff'],
 })
 
@@ -584,8 +626,15 @@ const shadowrunPreset: SystemPreset = {
     hasNarrativeDice: false,
     primaryDie: 'd6',
   },
-  recommendedEvents: ['dice-invert'],
-  availableWithWarning: ['spell-disable', 'spell-buff', 'spell-debuff'],
+  recommendedEvents: [
+    'dice-invert',
+    'spell-disable',
+    'spell-buff',
+    'spell-debuff',
+    'monster-buff',
+    'monster-debuff',
+  ],
+  availableWithWarning: [],
 }
 
 register(shadowrunPreset)
@@ -632,8 +681,15 @@ const swffgPreset: SystemPreset = {
     hasNarrativeDice: true,
     primaryDie: 'd12',
   },
-  recommendedEvents: ['dice-invert'],
-  availableWithWarning: ['spell-disable', 'spell-buff', 'spell-debuff'],
+  recommendedEvents: [
+    'dice-invert',
+    'spell-disable',
+    'spell-buff',
+    'spell-debuff',
+    'monster-buff',
+    'monster-debuff',
+  ],
+  availableWithWarning: [],
 }
 
 register(swffgPreset)

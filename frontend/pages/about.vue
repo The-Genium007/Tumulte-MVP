@@ -187,12 +187,20 @@
                   <span>Natif</span>
                 </div>
                 <div class="flex items-center gap-2 text-sm">
+                  <span class="status-badge status-beta">&#10022;</span>
+                  <span>Beta</span>
+                </div>
+                <div class="flex items-center gap-2 text-sm">
                   <span class="status-badge status-partial">~</span>
                   <span>Partiel</span>
                 </div>
                 <div class="flex items-center gap-2 text-sm">
                   <span class="status-badge status-manual">&#9881;</span>
                   <span>Manuel</span>
+                </div>
+                <div class="flex items-center gap-2 text-sm">
+                  <span class="status-badge status-na">&#8212;</span>
+                  <span>N/A</span>
                 </div>
                 <div class="flex items-center gap-2 text-sm">
                   <span class="status-badge status-none">&#10007;</span>
@@ -341,11 +349,13 @@
               <p class="text-sm text-muted mt-6">
                 <UIcon name="i-lucide-info" class="size-4 inline-block mr-1" />
                 Survolez la barre de compatibilite d'un systeme pour voir le detail des
-                fonctionnalites. Les 4 niveaux de support sont :
-                <strong>Natif</strong> (detection automatique), <strong>Partiel</strong> (generique
-                ou limits), <strong>Manuel</strong> (configuration par le MJ) et
-                <strong>Non supporte</strong>. Les systemes Tier 2 et 3 peuvent etre configures
-                manuellement via les regles de criticite dans les parametres de campagne.
+                fonctionnalites. Les niveaux de support sont :
+                <strong>Natif</strong> (detection automatique), <strong>Beta</strong> (implemente,
+                en attente de validation), <strong>Partiel</strong> (generique ou limite),
+                <strong>Manuel</strong> (configuration par le MJ), <strong>N/A</strong> (mecanique
+                absente du systeme) et <strong>Non supporte</strong>. Les systemes Tier 2 et 3
+                peuvent etre configures manuellement via les regles de criticite dans les parametres
+                de campagne.
               </p>
             </div>
           </article>
@@ -420,7 +430,7 @@ useSeoMeta({
 // TYPES
 // ========================================
 
-type SupportLevel = 'full' | 'partial' | 'manual' | 'none'
+type SupportLevel = 'full' | 'beta' | 'partial' | 'manual' | 'na' | 'none'
 
 type SystemTier = 1 | 2 | 3
 
@@ -493,8 +503,10 @@ const FEATURE_CATEGORIES: FeatureCategory[] = [
 
 const SUPPORT_LEVEL_SCORE: Record<SupportLevel, number> = {
   full: 100,
+  beta: 100,
   partial: 50,
   manual: 25,
+  na: -1,
   none: 0,
 }
 
@@ -520,18 +532,24 @@ function getStatusIcon(level: SupportLevel): string {
   switch (level) {
     case 'full':
       return '\u2713'
+    case 'beta':
+      return '\u2726'
     case 'partial':
       return '~'
     case 'manual':
       return '\u2699'
+    case 'na':
+      return '\u2014'
     case 'none':
       return '\u2717'
   }
 }
 
 function getSystemScore(system: TumulteFeatureMatrix): number {
-  const total = FEATURE_KEYS.reduce((sum, key) => sum + SUPPORT_LEVEL_SCORE[system[key]], 0)
-  return Math.round(total / FEATURE_KEYS.length)
+  const applicable = FEATURE_KEYS.filter((key) => system[key] !== 'na')
+  if (applicable.length === 0) return 100
+  const total = applicable.reduce((sum, key) => sum + SUPPORT_LEVEL_SCORE[system[key]], 0)
+  return Math.round(total / applicable.length)
 }
 
 function getScoreColorKey(score: number): string {
@@ -589,8 +607,8 @@ const tierGroups: TierGroup[] = [
         criticals: 'full',
         inversion: 'full',
         stats: 'full',
-        spells: 'partial',
-        combat: 'partial',
+        spells: 'beta',
+        combat: 'beta',
       },
       {
         id: 'wfrp4e',
@@ -602,8 +620,8 @@ const tierGroups: TierGroup[] = [
         criticals: 'full',
         inversion: 'full',
         stats: 'full',
-        spells: 'manual',
-        combat: 'partial',
+        spells: 'beta',
+        combat: 'beta',
       },
       {
         id: 'swade',
@@ -627,9 +645,9 @@ const tierGroups: TierGroup[] = [
         characters: 'full',
         criticals: 'full',
         inversion: 'full',
-        stats: 'partial',
-        spells: 'none',
-        combat: 'none',
+        stats: 'full',
+        spells: 'na',
+        combat: 'na',
       },
       {
         id: 'cyberpunk-red-core',
@@ -641,8 +659,8 @@ const tierGroups: TierGroup[] = [
         criticals: 'full',
         inversion: 'full',
         stats: 'full',
-        spells: 'none',
-        combat: 'partial',
+        spells: 'na',
+        combat: 'beta',
       },
       {
         id: 'starwarsffg',
@@ -652,10 +670,10 @@ const tierGroups: TierGroup[] = [
         primaryDie: 'd12',
         characters: 'full',
         criticals: 'full',
-        inversion: 'partial',
-        stats: 'partial',
-        spells: 'partial',
-        combat: 'partial',
+        inversion: 'full',
+        stats: 'full',
+        spells: 'beta',
+        combat: 'beta',
       },
       {
         id: 'alienrpg',
@@ -667,8 +685,8 @@ const tierGroups: TierGroup[] = [
         criticals: 'full',
         inversion: 'full',
         stats: 'full',
-        spells: 'none',
-        combat: 'partial',
+        spells: 'na',
+        combat: 'beta',
       },
       {
         id: 'shadowrun5e',
@@ -679,9 +697,9 @@ const tierGroups: TierGroup[] = [
         characters: 'full',
         criticals: 'full',
         inversion: 'full',
-        stats: 'partial',
-        spells: 'partial',
-        combat: 'partial',
+        stats: 'full',
+        spells: 'beta',
+        combat: 'beta',
       },
       {
         id: 'forbidden-lands',
@@ -694,7 +712,7 @@ const tierGroups: TierGroup[] = [
         inversion: 'full',
         stats: 'full',
         spells: 'full',
-        combat: 'partial',
+        combat: 'beta',
       },
       {
         id: 'blades-in-the-dark',
@@ -706,8 +724,8 @@ const tierGroups: TierGroup[] = [
         criticals: 'full',
         inversion: 'full',
         stats: 'full',
-        spells: 'none',
-        combat: 'none',
+        spells: 'na',
+        combat: 'na',
       },
       {
         id: 'vaesen',
@@ -719,8 +737,8 @@ const tierGroups: TierGroup[] = [
         criticals: 'full',
         inversion: 'full',
         stats: 'full',
-        spells: 'none',
-        combat: 'partial',
+        spells: 'na',
+        combat: 'beta',
       },
       {
         id: 'fate-core-official',
@@ -730,10 +748,10 @@ const tierGroups: TierGroup[] = [
         primaryDie: '4dF',
         characters: 'full',
         criticals: 'full',
-        inversion: 'partial',
-        stats: 'partial',
-        spells: 'none',
-        combat: 'none',
+        inversion: 'full',
+        stats: 'full',
+        spells: 'na',
+        combat: 'na',
       },
     ],
   },
@@ -1125,6 +1143,16 @@ const platformStats = computed(() => {
 .status-manual {
   background-color: rgba(59, 130, 246, 0.15);
   color: rgb(59, 130, 246);
+}
+
+.status-beta {
+  background-color: rgba(139, 92, 246, 0.15);
+  color: rgb(139, 92, 246);
+}
+
+.status-na {
+  background-color: rgba(156, 163, 175, 0.1);
+  color: rgb(156, 163, 175);
 }
 
 .status-none {
