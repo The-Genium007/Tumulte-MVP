@@ -47,6 +47,14 @@ class CampaignCriticalityRule extends BaseModel {
   @column()
   declare isEnabled: boolean
 
+  /** True for auto-generated rules from system presets */
+  @column()
+  declare isSystemPreset: boolean
+
+  /** Unique preset identifier for idempotent upsert, e.g. 'dnd5e:nat20' */
+  @column()
+  declare presetKey: string | null
+
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
 

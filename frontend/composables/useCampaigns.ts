@@ -168,6 +168,7 @@ export const useCampaigns = () => {
           activeMemberCount: data.data.activeMemberCount,
           createdAt: data.data.createdAt,
           vttConnection: data.data.vttConnection || null,
+          vttInfo: data.data.vttInfo ?? null,
         },
         members: data.data.members,
       }

@@ -39,17 +39,21 @@ const defaultForm: CreateCriticalityRuleData = {
 
 const form = ref<CreateCriticalityRuleData>({ ...defaultForm })
 
-// Options for selects
+// Options for selects (natural language)
 const resultFieldOptions = [
-  { label: 'Dé le plus haut', value: 'max_die' },
-  { label: 'Dé le plus bas', value: 'min_die' },
-  { label: 'Total', value: 'total' },
-  { label: "N'importe quel dé", value: 'any_die' },
+  { label: 'le dé le plus haut', value: 'max_die' },
+  { label: 'le dé le plus bas', value: 'min_die' },
+  { label: 'le total', value: 'total' },
+  { label: "n'importe quel dé", value: 'any_die' },
 ]
 
-const criticalTypeOptions = [
-  { label: 'Réussite critique', value: 'success' },
-  { label: 'Échec critique', value: 'failure' },
+const conditionOperators = [
+  { label: 'exactement', value: '==' },
+  { label: 'au moins', value: '>=' },
+  { label: 'au plus', value: '<=' },
+  { label: 'plus de', value: '>' },
+  { label: 'moins de', value: '<' },
+  { label: 'différent de', value: '!=' },
 ]
 
 const severityOptions = [
@@ -57,6 +61,24 @@ const severityOptions = [
   { label: 'Majeure', value: 'major' },
   { label: 'Extrême', value: 'extreme' },
 ]
+
+// Decomposed condition for natural language form
+const condOperator = ref('==')
+const condValue = ref(20)
+const showAdvanced = ref(false)
+
+const syncCondition = () => {
+  form.value.resultCondition = `${condOperator.value} ${condValue.value}`
+}
+watch([condOperator, condValue], syncCondition)
+
+const parseCondition = (condition: string) => {
+  const match = condition.trim().match(/^(==|!=|<=|>=|<|>)\s*(-?\d+(?:\.\d+)?)$/)
+  if (match) {
+    condOperator.value = match[1]
+    condValue.value = Number(match[2])
+  }
+}
 
 // Severity badge colors
 const severityColor = (severity: string) => {
@@ -114,6 +136,9 @@ onMounted(async () => {
 const openCreateModal = () => {
   editingRule.value = null
   form.value = { ...defaultForm }
+  condOperator.value = '=='
+  condValue.value = 20
+  showAdvanced.value = false
   showModal.value = true
 }
 
@@ -130,6 +155,8 @@ const openEditModal = (rule: CriticalityRule) => {
     priority: rule.priority,
     isEnabled: rule.isEnabled,
   }
+  parseCondition(rule.resultCondition)
+  showAdvanced.value = rule.severity !== 'major' || rule.priority !== 0 || !!rule.description
   showModal.value = true
 }
 
@@ -141,9 +168,9 @@ const confirmDelete = (rule: CriticalityRule) => {
 // Form validation
 const isFormValid = computed(() => {
   return (
-    form.value.resultCondition.trim().length > 0 &&
     form.value.label.trim().length > 0 &&
-    /^(==|!=|<=|>=|<|>)\s*-?\d+(\.\d+)?$/.test(form.value.resultCondition.trim())
+    condValue.value !== null &&
+    !isNaN(condValue.value)
   )
 })
 
@@ -385,144 +412,237 @@ const goBack = () => {
 
   <!-- Create/Edit Modal -->
   <UModal v-model:open="showModal">
-    <template #content>
-      <UCard>
-        <template #header>
-          <div class="flex items-center justify-between">
-            <h3 class="text-lg font-semibold text-primary">
-              {{ editingRule ? 'Modifier la règle' : 'Nouvelle règle de criticité' }}
-            </h3>
-            <UButton
-              icon="i-lucide-x"
-              color="neutral"
-              variant="ghost"
-              size="sm"
-              square
-              @click="showModal = false"
-            />
-          </div>
-        </template>
+    <template #header>
+      <h3 class="text-xl font-bold text-primary">
+        {{ editingRule ? 'Modifier la règle' : 'Nouvelle règle de criticité' }}
+      </h3>
+    </template>
 
-        <form class="space-y-5" @submit.prevent="handleSubmit">
-          <!-- Label -->
-          <div>
-            <label class="block text-sm font-medium text-primary mb-1">Label *</label>
-            <UInput
-              v-model="form.label"
-              placeholder="Ex: Natural 20, Fumble cosmique..."
-              maxlength="255"
-            />
-          </div>
+    <template #body>
+      <form id="critRuleForm" class="space-y-6" @submit.prevent="handleSubmit">
+        <!-- 1. Nom -->
+        <div>
+          <label class="block text-sm font-medium text-primary pl-2 mb-1">Nom de la règle</label>
+          <UInput
+            v-model="form.label"
+            placeholder="Ex: Natural 20, Fumble, Messy Critical..."
+            size="lg"
+            maxlength="255"
+            :ui="{
+              root: 'ring-0 border-0 rounded-lg overflow-hidden',
+              base: 'px-3.5 py-2.5 bg-(--theme-input-bg) text-(--theme-input-text) placeholder:text-(--theme-input-placeholder) rounded-lg',
+            }"
+          />
+        </div>
 
-          <!-- Critical Type -->
-          <div>
-            <label class="block text-sm font-medium text-primary mb-1">Type de critique *</label>
-            <USelect v-model="form.criticalType" :items="criticalTypeOptions" />
+        <!-- 2. Type : chips visuels -->
+        <div>
+          <label class="block text-sm font-medium text-primary pl-2 mb-2">C'est un...</label>
+          <div class="flex gap-3">
+            <button
+              type="button"
+              class="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium transition-all text-sm"
+              :class="
+                form.criticalType === 'success'
+                  ? 'bg-success-100 text-success-700 ring-2 ring-success-400 dark:bg-success-900/30 dark:text-success-400 dark:ring-success-600'
+                  : 'bg-elevated text-muted hover:bg-accented'
+              "
+              @click="form.criticalType = 'success'"
+            >
+              <UIcon name="i-lucide-trophy" class="size-5" />
+              Réussite critique
+            </button>
+            <button
+              type="button"
+              class="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium transition-all text-sm"
+              :class="
+                form.criticalType === 'failure'
+                  ? 'bg-error-100 text-error-700 ring-2 ring-error-400 dark:bg-error-900/30 dark:text-error-400 dark:ring-error-600'
+                  : 'bg-elevated text-muted hover:bg-accented'
+              "
+              @click="form.criticalType = 'failure'"
+            >
+              <UIcon name="i-lucide-skull" class="size-5" />
+              Échec critique
+            </button>
           </div>
+        </div>
 
-          <!-- Severity -->
-          <div>
-            <label class="block text-sm font-medium text-primary mb-1">Gravité</label>
-            <USelect v-model="form.severity" :items="severityOptions" />
-          </div>
-
-          <!-- Dice Formula -->
-          <div>
-            <label class="block text-sm font-medium text-primary mb-1">Formule de dé</label>
+        <!-- 3. Condition en phrase naturelle -->
+        <div>
+          <label class="block text-sm font-medium text-primary pl-2 mb-2">Déclenchement</label>
+          <div class="bg-elevated rounded-lg p-4 space-y-3">
+            <p class="text-sm text-muted pl-1">Quand un jet de</p>
             <UInput
               v-model="form.diceFormula"
-              placeholder="Ex: d20, d100, 2d6... (vide = tout dé)"
+              placeholder="n'importe quel dé (ex: d20, d100, 2d6)"
+              size="lg"
               maxlength="50"
+              :ui="{
+                root: 'ring-0 border-0 rounded-lg overflow-hidden',
+                base: 'px-3.5 py-2.5 bg-(--theme-input-bg) text-(--theme-input-text) placeholder:text-(--theme-input-placeholder) rounded-lg',
+              }"
             />
-            <p class="text-xs text-muted mt-1">Laissez vide pour appliquer à tous les dés</p>
-          </div>
-
-          <!-- Result Field -->
-          <div>
-            <label class="block text-sm font-medium text-primary mb-1">Valeur évaluée</label>
-            <USelect v-model="form.resultField" :items="resultFieldOptions" />
-          </div>
-
-          <!-- Result Condition -->
-          <div>
-            <label class="block text-sm font-medium text-primary mb-1">Condition *</label>
-            <UInput
-              v-model="form.resultCondition"
-              placeholder="Ex: == 20, <= 1, >= 96"
-              maxlength="100"
-            />
-            <p class="text-xs text-muted mt-1">
-              Opérateurs : == (égal), != (différent), &lt;= (inférieur ou égal), &gt;= (supérieur
-              ou égal), &lt; (inférieur), &gt; (supérieur)
-            </p>
-          </div>
-
-          <!-- Description -->
-          <div>
-            <label class="block text-sm font-medium text-primary mb-1">Description</label>
-            <UTextarea
-              v-model="form.description"
-              placeholder="Explication optionnelle de la règle..."
-              :rows="2"
-              maxlength="1000"
+            <p class="text-sm text-muted pl-1">fait</p>
+            <div class="grid grid-cols-2 gap-3">
+              <USelect
+                v-model="condOperator"
+                :items="conditionOperators"
+                size="lg"
+                :ui="{
+                  base: 'px-3.5 py-2.5 bg-(--theme-input-bg) text-(--theme-input-text) rounded-lg ring-0 border-0',
+                }"
+              />
+              <UInput
+                v-model.number="condValue"
+                type="number"
+                placeholder="20"
+                size="lg"
+                :ui="{
+                  root: 'ring-0 border-0 rounded-lg overflow-hidden',
+                  base: 'px-3.5 py-2.5 bg-(--theme-input-bg) text-(--theme-input-text) placeholder:text-(--theme-input-placeholder) rounded-lg',
+                }"
+              />
+            </div>
+            <p class="text-sm text-muted pl-1">sur</p>
+            <USelect
+              v-model="form.resultField"
+              :items="resultFieldOptions"
+              size="lg"
+              :ui="{
+                base: 'px-3.5 py-2.5 bg-(--theme-input-bg) text-(--theme-input-text) rounded-lg ring-0 border-0',
+              }"
             />
           </div>
+        </div>
 
-          <!-- Priority -->
-          <div>
-            <label class="block text-sm font-medium text-primary mb-1">Priorité</label>
-            <UInput v-model.number="form.priority" type="number" :min="0" :max="1000" />
-            <p class="text-xs text-muted mt-1">Plus la valeur est haute, plus la règle est prioritaire</p>
-          </div>
+        <!-- 4. Activé -->
+        <div class="flex items-center gap-3 pl-2">
+          <USwitch v-model="form.isEnabled" />
+          <span class="text-sm text-primary">Règle active</span>
+        </div>
 
-          <!-- Enabled -->
-          <div class="flex items-center gap-3">
-            <USwitch v-model="form.isEnabled" />
-            <span class="text-sm text-primary">Règle active</span>
+        <!-- 5. Options avancées -->
+        <div>
+          <button
+            type="button"
+            class="flex items-center gap-2 text-sm text-muted hover:text-primary transition-colors pl-2"
+            @click="showAdvanced = !showAdvanced"
+          >
+            <UIcon
+              name="i-lucide-chevron-right"
+              class="size-4 transition-transform duration-200"
+              :class="{ 'rotate-90': showAdvanced }"
+            />
+            Options avancées
+          </button>
+          <div v-if="showAdvanced" class="mt-3 space-y-4 pl-2">
+            <div>
+              <label class="block text-sm font-medium text-primary mb-2">Gravité</label>
+              <div class="flex gap-2">
+                <button
+                  v-for="opt in severityOptions"
+                  :key="opt.value"
+                  type="button"
+                  class="flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all"
+                  :class="
+                    form.severity === opt.value
+                      ? 'bg-primary text-white'
+                      : 'bg-elevated text-muted hover:bg-accented'
+                  "
+                  @click="form.severity = opt.value"
+                >
+                  {{ opt.label }}
+                </button>
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-primary mb-1">Priorité</label>
+              <p class="text-xs text-muted mb-2">
+                Si plusieurs règles correspondent, la plus prioritaire gagne
+              </p>
+              <UInput
+                v-model.number="form.priority"
+                type="number"
+                :min="0"
+                :max="1000"
+                placeholder="0"
+                size="lg"
+                :ui="{
+                  root: 'ring-0 border-0 rounded-lg overflow-hidden',
+                  base: 'px-3.5 py-2.5 bg-(--theme-input-bg) text-(--theme-input-text) placeholder:text-(--theme-input-placeholder) rounded-lg',
+                }"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-primary mb-1">Note</label>
+              <UTextarea
+                v-model="form.description"
+                placeholder="Note optionnelle pour vous rappeler à quoi sert cette règle..."
+                :rows="2"
+                maxlength="1000"
+                size="lg"
+                :ui="{
+                  root: 'ring-0 border-0 rounded-lg overflow-hidden',
+                  base: 'px-3.5 py-2.5 bg-(--theme-input-bg) text-(--theme-input-text) placeholder:text-(--theme-input-placeholder) rounded-lg',
+                }"
+              />
+            </div>
           </div>
+        </div>
+      </form>
+    </template>
 
-          <!-- Actions -->
-          <div class="flex justify-end gap-3 pt-4">
-            <UButton color="neutral" variant="soft" @click="showModal = false"> Annuler </UButton>
-            <UButton
-              type="submit"
-              color="primary"
-              :loading="isSubmitting"
-              :disabled="!isFormValid || isSubmitting"
-            >
-              {{ editingRule ? 'Enregistrer' : 'Créer' }}
-            </UButton>
-          </div>
-        </form>
-      </UCard>
+    <template #footer>
+      <div class="flex justify-end gap-3">
+        <UButton color="neutral" variant="soft" @click="showModal = false"> Annuler </UButton>
+        <UButton
+          type="submit"
+          form="critRuleForm"
+          color="primary"
+          :loading="isSubmitting"
+          :disabled="!isFormValid || isSubmitting"
+        >
+          {{ editingRule ? 'Enregistrer' : 'Créer' }}
+        </UButton>
+      </div>
     </template>
   </UModal>
 
   <!-- Delete Confirmation Modal -->
   <UModal v-model:open="showDeleteConfirm">
-    <template #content>
-      <UCard>
-        <template #header>
-          <h3 class="text-lg font-semibold text-error-500">Supprimer la règle</h3>
-        </template>
+    <template #header>
+      <div class="flex items-center gap-3">
+        <div class="bg-error-light p-2 rounded-lg">
+          <UIcon name="i-lucide-alert-triangle" class="size-6 text-error-500" />
+        </div>
+        <h3 class="text-xl font-bold text-primary">Supprimer la règle</h3>
+      </div>
+    </template>
 
+    <template #body>
+      <div class="space-y-4">
         <p class="text-primary">
           Voulez-vous vraiment supprimer la règle
-          <strong>"{{ deletingRule?.label }}"</strong> ?
+          <strong class="text-primary">"{{ deletingRule?.label }}"</strong> ?
         </p>
-        <p class="text-sm text-muted mt-2">Cette action est irréversible.</p>
+        <div class="bg-error-light border border-error-light rounded-lg p-4">
+          <p class="text-sm text-error-500">
+            Cette action est irréversible.
+          </p>
+        </div>
+      </div>
+    </template>
 
-        <template #footer>
-          <div class="flex justify-end gap-3">
-            <UButton color="neutral" variant="soft" @click="showDeleteConfirm = false">
-              Annuler
-            </UButton>
-            <UButton color="error" :loading="isSubmitting" @click="handleDelete">
-              Supprimer
-            </UButton>
-          </div>
-        </template>
-      </UCard>
+    <template #footer>
+      <div class="flex justify-end gap-3">
+        <UButton color="neutral" variant="soft" @click="showDeleteConfirm = false">
+          Annuler
+        </UButton>
+        <UButton color="error" icon="i-lucide-trash-2" :loading="isSubmitting" @click="handleDelete">
+          Supprimer
+        </UButton>
+      </div>
     </template>
   </UModal>
 </template>

@@ -18,6 +18,10 @@ export interface OverlayElement {
     | 'diceReverse'
     | 'diceReverseGoalBar'
     | 'diceReverseImpactHud'
+    | 'spellGoalBar'
+    | 'spellImpactHud'
+    | 'monsterGoalBar'
+    | 'monsterImpactHud'
   name: string
   position: { x: number; y: number; z: number }
   rotation: { x: number; y: number; z: number }
@@ -170,6 +174,184 @@ class OverlayConfig extends BaseModel {
         detail: {
           fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
           fontSize: 42,
+          fontWeight: 800,
+          color: '#ffffff',
+        },
+      },
+      width: 350,
+      height: 120,
+    }
+  }
+
+  /**
+   * Retourne les propriétés par défaut pour un élément Spell Goal Bar
+   */
+  static getDefaultSpellGoalBarProperties(): Record<string, unknown> {
+    return {
+      container: {
+        backgroundColor: 'rgba(26, 26, 46, 0.98)',
+        borderColor: '#8B5CF6',
+        borderWidth: 2,
+        borderRadius: 16,
+        opacity: 1,
+      },
+      progressBar: {
+        height: 28,
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        fillColor: '#8B5CF6',
+        fillGradientEnabled: true,
+        fillGradientStart: '#8B5CF6',
+        fillGradientEnd: '#ec4899',
+        glowColor: '#ffffff',
+      },
+      shake: {
+        startPercent: 70,
+        maxIntensity: 8,
+      },
+      animations: {
+        entry: { duration: 500, easing: 'ease-out' },
+        exit: { duration: 350, easing: 'ease-in' },
+        success: { displayDuration: 3000 },
+      },
+      audio: {
+        progressSound: { enabled: true, volume: 0.3 },
+        successSound: { enabled: true, volume: 0.5 },
+      },
+      typography: {
+        title: { fontFamily: 'Inter', fontSize: 20, fontWeight: 800, color: '#ffffff' },
+        progress: {
+          fontFamily: 'Inter',
+          fontSize: 16,
+          fontWeight: 600,
+          color: 'rgba(255, 255, 255, 0.85)',
+        },
+        timer: { fontFamily: 'Inter', fontSize: 18, fontWeight: 700, color: '#ffffff' },
+      },
+      width: 500,
+      height: 100,
+      mockData: {
+        eventName: '✨ Sort du chat!',
+        currentProgress: 45,
+        objectiveTarget: 100,
+        timeRemaining: 25,
+        isComplete: false,
+      },
+    }
+  }
+
+  /**
+   * Retourne les propriétés par défaut pour un élément Spell Impact HUD
+   */
+  static getDefaultSpellImpactHudProperties(): Record<string, unknown> {
+    return {
+      container: {
+        backgroundColor: 'rgba(26, 26, 46, 0.98)',
+        borderColor: '#8B5CF6',
+        borderWidth: 3,
+        borderRadius: 16,
+      },
+      animations: {
+        dropDistance: 200,
+        dropDuration: 150,
+        displayDuration: 3000,
+      },
+      audio: {
+        impactSound: { enabled: true, volume: 0.6 },
+      },
+      typography: {
+        title: { fontFamily: 'Inter', fontSize: 28, fontWeight: 900, color: '#8B5CF6' },
+        detail: {
+          fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+          fontSize: 32,
+          fontWeight: 800,
+          color: '#ffffff',
+        },
+      },
+      width: 350,
+      height: 120,
+    }
+  }
+
+  /**
+   * Retourne les propriétés par défaut pour un élément Monster Goal Bar
+   */
+  static getDefaultMonsterGoalBarProperties(): Record<string, unknown> {
+    return {
+      container: {
+        backgroundColor: 'rgba(26, 26, 46, 0.98)',
+        borderColor: '#10B981',
+        borderWidth: 2,
+        borderRadius: 16,
+        opacity: 1,
+      },
+      progressBar: {
+        height: 28,
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        fillColor: '#10B981',
+        fillGradientEnabled: true,
+        fillGradientStart: '#10B981',
+        fillGradientEnd: '#f59e0b',
+        glowColor: '#ffffff',
+      },
+      shake: {
+        startPercent: 70,
+        maxIntensity: 8,
+      },
+      animations: {
+        entry: { duration: 500, easing: 'ease-out' },
+        exit: { duration: 350, easing: 'ease-in' },
+        success: { displayDuration: 3000 },
+      },
+      audio: {
+        progressSound: { enabled: true, volume: 0.3 },
+        successSound: { enabled: true, volume: 0.5 },
+      },
+      typography: {
+        title: { fontFamily: 'Inter', fontSize: 20, fontWeight: 800, color: '#ffffff' },
+        progress: {
+          fontFamily: 'Inter',
+          fontSize: 16,
+          fontWeight: 600,
+          color: 'rgba(255, 255, 255, 0.85)',
+        },
+        timer: { fontFamily: 'Inter', fontSize: 18, fontWeight: 700, color: '#ffffff' },
+      },
+      width: 500,
+      height: 100,
+      mockData: {
+        eventName: '⚔️ Influence de Combat',
+        currentProgress: 35,
+        objectiveTarget: 100,
+        timeRemaining: 30,
+        isComplete: false,
+      },
+    }
+  }
+
+  /**
+   * Retourne les propriétés par défaut pour un élément Monster Impact HUD
+   */
+  static getDefaultMonsterImpactHudProperties(): Record<string, unknown> {
+    return {
+      container: {
+        backgroundColor: 'rgba(26, 26, 46, 0.98)',
+        borderColor: '#10B981',
+        borderWidth: 3,
+        borderRadius: 16,
+      },
+      animations: {
+        dropDistance: 200,
+        dropDuration: 150,
+        displayDuration: 3000,
+      },
+      audio: {
+        impactSound: { enabled: true, volume: 0.6 },
+      },
+      typography: {
+        title: { fontFamily: 'Inter', fontSize: 28, fontWeight: 900, color: '#10B981' },
+        detail: {
+          fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+          fontSize: 32,
           fontWeight: 800,
           color: '#ffffff',
         },
@@ -517,6 +699,54 @@ class OverlayConfig extends BaseModel {
           locked: false,
           zIndex: 3,
           properties: this.getDefaultImpactHudProperties(),
+        },
+        {
+          id: 'default_spell_goal_bar',
+          type: 'spellGoalBar',
+          name: 'Spell Goal Bar par défaut',
+          position: { x: 0, y: 400, z: 0 },
+          rotation: { x: 0, y: 0, z: 0 },
+          scale: { x: 1, y: 1, z: 1 },
+          visible: true,
+          locked: false,
+          zIndex: 4,
+          properties: this.getDefaultSpellGoalBarProperties(),
+        },
+        {
+          id: 'default_spell_impact_hud',
+          type: 'spellImpactHud',
+          name: 'Spell Impact HUD par défaut',
+          position: { x: 0, y: 0, z: 0 },
+          rotation: { x: 0, y: 0, z: 0 },
+          scale: { x: 1, y: 1, z: 1 },
+          visible: true,
+          locked: false,
+          zIndex: 5,
+          properties: this.getDefaultSpellImpactHudProperties(),
+        },
+        {
+          id: 'default_monster_goal_bar',
+          type: 'monsterGoalBar',
+          name: 'Monster Goal Bar par défaut',
+          position: { x: 0, y: 400, z: 0 },
+          rotation: { x: 0, y: 0, z: 0 },
+          scale: { x: 1, y: 1, z: 1 },
+          visible: true,
+          locked: false,
+          zIndex: 6,
+          properties: this.getDefaultMonsterGoalBarProperties(),
+        },
+        {
+          id: 'default_monster_impact_hud',
+          type: 'monsterImpactHud',
+          name: 'Monster Impact HUD par défaut',
+          position: { x: 0, y: 0, z: 0 },
+          rotation: { x: 0, y: 0, z: 0 },
+          scale: { x: 1, y: 1, z: 1 },
+          visible: true,
+          locked: false,
+          zIndex: 7,
+          properties: this.getDefaultMonsterImpactHudProperties(),
         },
       ],
     }

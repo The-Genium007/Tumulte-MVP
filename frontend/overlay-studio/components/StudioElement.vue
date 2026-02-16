@@ -58,6 +58,54 @@
     @move="handleMove"
     @move-end="handleMoveEnd"
   />
+
+  <!-- Spell Goal Bar -->
+  <StudioSpellGoalBarElement
+    v-else-if="element.type === 'spellGoalBar'"
+    :element="element"
+    :is-selected="isSelected"
+    :render-order="renderOrder"
+    @select="handleSelect"
+    @move-start="handleMoveStart"
+    @move="handleMove"
+    @move-end="handleMoveEnd"
+  />
+
+  <!-- Spell Impact HUD -->
+  <StudioSpellImpactHudElement
+    v-else-if="element.type === 'spellImpactHud'"
+    :element="element"
+    :is-selected="isSelected"
+    :render-order="renderOrder"
+    @select="handleSelect"
+    @move-start="handleMoveStart"
+    @move="handleMove"
+    @move-end="handleMoveEnd"
+  />
+
+  <!-- Monster Goal Bar -->
+  <StudioMonsterGoalBarElement
+    v-else-if="element.type === 'monsterGoalBar'"
+    :element="element"
+    :is-selected="isSelected"
+    :render-order="renderOrder"
+    @select="handleSelect"
+    @move-start="handleMoveStart"
+    @move="handleMove"
+    @move-end="handleMoveEnd"
+  />
+
+  <!-- Monster Impact HUD -->
+  <StudioMonsterImpactHudElement
+    v-else-if="element.type === 'monsterImpactHud'"
+    :element="element"
+    :is-selected="isSelected"
+    :render-order="renderOrder"
+    @select="handleSelect"
+    @move-start="handleMoveStart"
+    @move="handleMove"
+    @move-end="handleMoveEnd"
+  />
 </template>
 
 <script setup lang="ts">
@@ -67,6 +115,10 @@ import StudioPollElement from './StudioPollElement.vue'
 import StudioDiceReverseElement from './StudioDiceReverseElement.vue'
 import StudioDiceReverseGoalBarElement from './StudioDiceReverseGoalBarElement.vue'
 import StudioDiceReverseImpactHudElement from './StudioDiceReverseImpactHudElement.vue'
+import StudioSpellGoalBarElement from './StudioSpellGoalBarElement.vue'
+import StudioSpellImpactHudElement from './StudioSpellImpactHudElement.vue'
+import StudioMonsterGoalBarElement from './StudioMonsterGoalBarElement.vue'
+import StudioMonsterImpactHudElement from './StudioMonsterImpactHudElement.vue'
 import { StudioDiceElement } from '../dice/components'
 
 defineProps<{

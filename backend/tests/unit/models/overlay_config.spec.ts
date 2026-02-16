@@ -111,7 +111,7 @@ test.group('OverlayConfig Model - Static Methods', () => {
     const config = OverlayConfig.getDefaultConfigWithPoll()
 
     assert.equal(config.version, '1.0')
-    assert.lengthOf(config.elements, 4)
+    assert.lengthOf(config.elements, 8)
 
     // Check poll element
     const pollElement = config.elements.find((e) => e.type === 'poll')
@@ -146,6 +146,30 @@ test.group('OverlayConfig Model - Static Methods', () => {
     assert.equal(impactHudElement!.name, 'Impact HUD par défaut')
     assert.deepEqual(impactHudElement!.position, { x: 0, y: 0, z: 0 })
     assert.equal(impactHudElement!.zIndex, 3)
+
+    // Check spell goal bar element
+    const spellGoalBarElement = config.elements.find((e) => e.type === 'spellGoalBar')
+    assert.exists(spellGoalBarElement)
+    assert.equal(spellGoalBarElement!.id, 'default_spell_goal_bar')
+    assert.equal(spellGoalBarElement!.zIndex, 4)
+
+    // Check spell impact hud element
+    const spellImpactHudElement = config.elements.find((e) => e.type === 'spellImpactHud')
+    assert.exists(spellImpactHudElement)
+    assert.equal(spellImpactHudElement!.id, 'default_spell_impact_hud')
+    assert.equal(spellImpactHudElement!.zIndex, 5)
+
+    // Check monster goal bar element
+    const monsterGoalBarElement = config.elements.find((e) => e.type === 'monsterGoalBar')
+    assert.exists(monsterGoalBarElement)
+    assert.equal(monsterGoalBarElement!.id, 'default_monster_goal_bar')
+    assert.equal(monsterGoalBarElement!.zIndex, 6)
+
+    // Check monster impact hud element
+    const monsterImpactHudElement = config.elements.find((e) => e.type === 'monsterImpactHud')
+    assert.exists(monsterImpactHudElement)
+    assert.equal(monsterImpactHudElement!.id, 'default_monster_impact_hud')
+    assert.equal(monsterImpactHudElement!.zIndex, 7)
   })
 })
 
@@ -221,7 +245,7 @@ test.group('OverlayConfig Model - JSON Serialization', (group) => {
     assert.isObject(fetched.config)
     assert.equal(fetched.config.version, '1.0')
     assert.isArray(fetched.config.elements)
-    assert.lengthOf(fetched.config.elements, 4)
+    assert.lengthOf(fetched.config.elements, 8)
 
     // Verify element types
     const types = fetched.config.elements.map((e) => e.type)
@@ -229,6 +253,10 @@ test.group('OverlayConfig Model - JSON Serialization', (group) => {
     assert.include(types, 'dice')
     assert.include(types, 'diceReverseGoalBar')
     assert.include(types, 'diceReverseImpactHud')
+    assert.include(types, 'spellGoalBar')
+    assert.include(types, 'spellImpactHud')
+    assert.include(types, 'monsterGoalBar')
+    assert.include(types, 'monsterImpactHud')
   })
 
   test('should handle complex nested properties in config', async ({ assert }) => {
@@ -312,6 +340,12 @@ test.group('OverlayConfig Model - Element Types', () => {
       'diceReverse',
       'diceReverseGoalBar',
       'diceReverseImpactHud',
+      'spellEffect',
+      'spellGoalBar',
+      'spellImpactHud',
+      'monsterEffect',
+      'monsterGoalBar',
+      'monsterImpactHud',
     ]
     for (const element of configWithPoll.elements) {
       assert.include(validTypes, element.type)

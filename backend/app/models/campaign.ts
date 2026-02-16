@@ -33,11 +33,19 @@ class Campaign extends BaseModel {
   @column()
   declare vttCampaignName: string | null
 
-  @column()
+  @column({
+    prepare: (value: object | null) => (value ? JSON.stringify(value) : null),
+    consume: (value: string | object | null) =>
+      typeof value === 'string' ? JSON.parse(value) : value,
+  })
   declare vttData: object | null
 
   @column.dateTime()
   declare lastVttSyncAt: DateTime | null
+
+  // Detected game system from Foundry VTT (e.g. 'dnd5e', 'pf2e', 'CoC7')
+  @column()
+  declare gameSystemId: string | null
 
   // GM incarnation - currently active character for the GM
   @column()

@@ -12,8 +12,29 @@ export interface CriticalityRule {
   description: string | null
   priority: number
   isEnabled: boolean
+  isSystemPreset: boolean
+  presetKey: string | null
   createdAt: string
   updatedAt: string
+}
+
+export interface SystemInfo {
+  gameSystemId: string | null
+  systemName: string | null
+  isKnownSystem: boolean
+  capabilities: {
+    hasSpells: boolean
+    hasTraditionalCriticals: boolean
+    hasDicePool: boolean
+    hasPercentile: boolean
+    hasFudgeDice: boolean
+    hasNarrativeDice: boolean
+    primaryDie: string | null
+  } | null
+  recommendedEvents: string[]
+  availableWithWarning: string[]
+  presetRulesCount: number
+  presetRulesActive: number
 }
 
 export interface CreateCriticalityRuleData {
@@ -48,6 +69,7 @@ export const useCriticalityRules = () => {
   const API_URL = config.public.apiBase
 
   const rules = ref<CriticalityRule[]>([])
+  const systemInfo = ref<SystemInfo | null>(null)
   const loading = ref(false)
   const error = ref<string | null>(null)
 
@@ -180,11 +202,30 @@ export const useCriticalityRules = () => {
     await updateRule(campaignId, rule.id, { isEnabled: !rule.isEnabled })
   }
 
+  /**
+   * Récupère les infos système (presets, capabilities, recommandations)
+   */
+  const fetchSystemInfo = async (campaignId: string): Promise<SystemInfo | null> => {
+    try {
+      const response = await fetch(`${API_URL}/mj/campaigns/${campaignId}/system-info`, {
+        credentials: 'include',
+      })
+      if (!response.ok) return null
+      const data = await response.json()
+      systemInfo.value = data
+      return data
+    } catch {
+      return null
+    }
+  }
+
   return {
     rules: readonly(rules),
+    systemInfo: readonly(systemInfo),
     loading: readonly(loading),
     error: readonly(error),
     fetchRules,
+    fetchSystemInfo,
     createRule,
     updateRule,
     deleteRule,

@@ -1,11 +1,12 @@
 import { DateTime } from 'luxon'
 import VttConnection from '#models/vtt_connection'
 import { campaign as Campaign } from '#models/campaign'
-import Character from '#models/character'
+import Character, { type SpellInfo, type FeatureInfo } from '#models/character'
 import CharacterAssignment from '#models/character_assignment'
 import { streamer as Streamer } from '#models/streamer'
 import DiceRoll from '#models/dice_roll'
 import DiceRollService from '#services/vtt/dice_roll_service'
+import { SystemPresetService } from '#services/campaigns/system_preset_service'
 import type { GamificationService } from '#services/gamification/gamification_service'
 import type { DiceRollData } from '#services/gamification/trigger_evaluator'
 import logger from '@adonisjs/core/services/logger'
@@ -60,6 +61,12 @@ export default class VttWebhookService {
       .where('vtt_connection_id', vttConnection.id)
       .where('vtt_campaign_id', payload.campaignId)
       .firstOrFail()
+
+    // 1b. Detect game system from metadata (lazy detection on first dice roll)
+    const metadataSystem = payload.metadata?.system as string | undefined
+    if (metadataSystem && campaign.gameSystemId !== metadataSystem) {
+      await this.detectAndApplySystem(campaign, metadataSystem)
+    }
 
     // 2. Trouver ou créer le personnage from VTT
     const vttCharacter = await this.findOrCreateCharacter(campaign, payload)
@@ -290,6 +297,8 @@ export default class VttWebhookService {
       characterType?: 'pc' | 'npc' | 'monster'
       stats?: Record<string, unknown> | null
       inventory?: Record<string, unknown> | null
+      spells?: SpellInfo[] | null
+      features?: FeatureInfo[] | null
       vttData?: Record<string, unknown> | null
     }
   ): Promise<Character> {
@@ -381,6 +390,8 @@ export default class VttWebhookService {
         characterType: resolvedCharacterType,
         stats: characterData.stats || character.stats,
         inventory: characterData.inventory || character.inventory,
+        spells: characterData.spells || character.spells,
+        features: characterData.features || character.features,
         vttData: characterData.vttData || character.vttData,
         lastSyncAt: DateTime.now(),
       })
@@ -395,11 +406,87 @@ export default class VttWebhookService {
         characterType: resolvedCharacterType,
         stats: characterData.stats || null,
         inventory: characterData.inventory || null,
+        spells: characterData.spells || null,
+        features: characterData.features || null,
         vttData: characterData.vttData || null,
         lastSyncAt: DateTime.now(),
       })
     }
 
     return character
+  }
+
+  /**
+   * Detect game system from Foundry and apply preset criticality rules.
+   * Called lazily: on first dice roll, pairing, or campaign sync.
+   * Idempotent — safe to call multiple times for the same system.
+   */
+  private async detectAndApplySystem(
+    campaign: InstanceType<typeof Campaign>,
+    gameSystemId: string
+  ): Promise<void> {
+    const previous = campaign.gameSystemId
+
+    campaign.gameSystemId = gameSystemId
+    await campaign.save()
+
+    const presetService = new SystemPresetService()
+
+    try {
+      if (previous && previous !== gameSystemId) {
+        const result = await presetService.reapplyPresets(campaign.id, gameSystemId)
+        logger.info({
+          event: 'system_presets_reapplied',
+          campaignId: campaign.id,
+          previousSystem: previous,
+          newSystem: gameSystemId,
+          cleared: result.cleared,
+          rulesCreated: result.rulesCreated,
+        })
+      } else {
+        const result = await presetService.applyPresetsIfNeeded(campaign.id, gameSystemId)
+        if (result.applied) {
+          logger.info({
+            event: 'system_presets_applied',
+            campaignId: campaign.id,
+            gameSystemId,
+            systemName: result.systemName,
+            rulesCreated: result.rulesCreated,
+          })
+        }
+      }
+    } catch (error) {
+      logger.error(
+        {
+          event: 'system_preset_apply_error',
+          campaignId: campaign.id,
+          gameSystemId,
+          error: (error as Error).message,
+        },
+        'Failed to apply system presets (non-fatal)'
+      )
+    }
+
+    // Also auto-detect item categories (idempotent)
+    try {
+      const { ItemCategoryDetectionService } =
+        await import('#services/campaigns/item_category_detection_service')
+      const { CampaignItemCategoryRuleRepository } =
+        await import('#repositories/campaign_item_category_rule_repository')
+      const detectionService = new ItemCategoryDetectionService(
+        new CampaignItemCategoryRuleRepository()
+      )
+      await detectionService.detectAndSeedCategories(campaign.id, gameSystemId)
+    } catch (error) {
+      logger.error(
+        {
+          event: 'item_category_detect_error',
+          campaignId: campaign.id,
+          gameSystemId,
+          error: (error as Error).message,
+        },
+        'Failed to auto-detect item categories (non-fatal)'
+      )
+    }
   }
 }

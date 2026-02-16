@@ -44,7 +44,8 @@ export class CriticalityRuleService {
   }
 
   /**
-   * Met à jour une règle existante
+   * Met à jour une règle existante.
+   * System presets can only have isEnabled toggled.
    */
   async update(
     ruleId: string,
@@ -56,28 +57,41 @@ export class CriticalityRuleService {
       throw new Error('Rule not found')
     }
 
-    rule.merge({
-      ...(data.diceFormula !== undefined && { diceFormula: data.diceFormula ?? null }),
-      ...(data.resultCondition !== undefined && { resultCondition: data.resultCondition }),
-      ...(data.resultField !== undefined && { resultField: data.resultField }),
-      ...(data.criticalType !== undefined && { criticalType: data.criticalType }),
-      ...(data.severity !== undefined && { severity: data.severity }),
-      ...(data.label !== undefined && { label: data.label }),
-      ...(data.description !== undefined && { description: data.description ?? null }),
-      ...(data.priority !== undefined && { priority: data.priority }),
-      ...(data.isEnabled !== undefined && { isEnabled: data.isEnabled }),
-    })
+    if (rule.isSystemPreset) {
+      // System presets: only allow toggling isEnabled
+      if (data.isEnabled !== undefined) {
+        rule.merge({ isEnabled: data.isEnabled })
+      } else {
+        throw new Error('System preset rules can only be enabled or disabled')
+      }
+    } else {
+      rule.merge({
+        ...(data.diceFormula !== undefined && { diceFormula: data.diceFormula ?? null }),
+        ...(data.resultCondition !== undefined && { resultCondition: data.resultCondition }),
+        ...(data.resultField !== undefined && { resultField: data.resultField }),
+        ...(data.criticalType !== undefined && { criticalType: data.criticalType }),
+        ...(data.severity !== undefined && { severity: data.severity }),
+        ...(data.label !== undefined && { label: data.label }),
+        ...(data.description !== undefined && { description: data.description ?? null }),
+        ...(data.priority !== undefined && { priority: data.priority }),
+        ...(data.isEnabled !== undefined && { isEnabled: data.isEnabled }),
+      })
+    }
 
     return this.repository.update(rule)
   }
 
   /**
-   * Supprime une règle
+   * Supprime une règle. System presets cannot be deleted.
    */
   async delete(ruleId: string, campaignId: string): Promise<void> {
     const rule = await this.repository.findById(ruleId)
     if (!rule || rule.campaignId !== campaignId) {
       throw new Error('Rule not found')
+    }
+
+    if (rule.isSystemPreset) {
+      throw new Error('System preset rules cannot be deleted')
     }
 
     await this.repository.delete(rule)

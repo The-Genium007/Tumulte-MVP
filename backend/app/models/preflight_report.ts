@@ -26,7 +26,11 @@ export default class PreflightReport extends BaseModel {
   @column()
   declare hasWarnings: boolean
 
-  @column()
+  @column({
+    prepare: (value: CheckResult[]) => JSON.stringify(value),
+    consume: (value: string | CheckResult[]) =>
+      typeof value === 'string' ? JSON.parse(value) : value,
+  })
   declare checks: CheckResult[]
 
   @column()

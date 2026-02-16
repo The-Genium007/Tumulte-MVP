@@ -63,6 +63,25 @@ export interface FoundryCommandService {
     }
   ): Promise<{ success: boolean; error?: string }>
 
+  applyMonsterEffect(
+    connectionId: string,
+    data: {
+      actorId: string
+      monsterName: string
+      monsterImg?: string
+      effect: {
+        type: 'buff' | 'debuff'
+        acBonus?: number
+        acPenalty?: number
+        tempHp?: number
+        maxHpReduction?: number
+        highlightColor?: string
+        message?: string
+        triggeredBy?: string
+      }
+    }
+  ): Promise<{ success: boolean; error?: string }>
+
   cleanupAllEffects(
     connectionId: string,
     options?: { cleanChat?: boolean }

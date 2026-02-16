@@ -6,11 +6,14 @@
         v-if="campaignsLoaded && campaigns.length > 0"
         v-model="selectedCampaignId"
         :campaigns="campaigns"
+        @created="handleCampaignCreated"
       />
 
-      <!-- VTT Connection Alert Banner -->
+      <!-- VTT Connection Alert Banner (only for campaigns with VTT) -->
       <MjVttAlertBanner
-        v-if="selectedCampaignId && (vttHasIssue || isModuleOutdated)"
+        v-if="
+          selectedCampaignId && currentCampaign?.vttConnection && (vttHasIssue || isModuleOutdated)
+        "
         :status="vttHealthStatus"
         :campaign-id="selectedCampaignId"
         :campaign-name="currentCampaign?.name"
@@ -34,17 +37,30 @@
           <UIcon name="i-lucide-folder-x" class="size-12 text-muted mb-4" />
           <h2 class="heading-section text-muted mb-2">Aucune campagne disponible</h2>
           <p class="text-body-sm text-muted mb-6 max-w-md mx-auto">
-            Créez votre premiere campagne pour commencer à configurer vos sondages
+            Créez votre première campagne pour commencer à configurer vos sondages
           </p>
-          <UButton
-            color="primary"
-            size="lg"
-            icon="i-lucide-plus"
-            label="Connecter un VTT"
-            @click="router.push('/mj/vtt-connections/create')"
-          />
+          <div class="flex flex-col sm:flex-row gap-3 justify-center">
+            <UButton
+              color="primary"
+              size="lg"
+              icon="i-lucide-plus"
+              label="Créer une campagne"
+              @click="showCampaignCreateModal = true"
+            />
+            <UButton
+              color="neutral"
+              variant="soft"
+              size="lg"
+              icon="i-lucide-plug-zap"
+              label="Connecter un VTT"
+              @click="router.push('/mj/vtt-connections/create')"
+            />
+          </div>
         </div>
       </UCard>
+
+      <!-- Campaign Create Modal -->
+      <MjCampaignCreateModal v-model="showCampaignCreateModal" @created="handleCampaignCreated" />
 
       <!-- Active Poll Control Card -->
       <PollControlCard
@@ -219,6 +235,13 @@ interface StreamerDisplay {
 
 // Campaign management
 const campaignsLoaded = ref(false)
+const showCampaignCreateModal = ref(false)
+
+// Handler for campaign creation (from modal or CampaignSelectorCard)
+const handleCampaignCreated = async (campaign: { id: string }) => {
+  await fetchCampaigns()
+  selectedCampaignId.value = campaign.id
+}
 
 // Utiliser le composable pour la persistance localStorage
 const { selectedCampaignId, loadFromStorage } = useSelectedCampaign()
@@ -797,8 +820,8 @@ onMounted(async () => {
     selectedCampaignId.value = campaigns.value[0]?.id ?? null
   }
 
-  // Start VTT health polling if a campaign is selected
-  if (selectedCampaignId.value) {
+  // Start VTT health polling only for campaigns with a VTT connection
+  if (selectedCampaignId.value && currentCampaign.value?.vttConnection) {
     startVttPolling()
   }
 

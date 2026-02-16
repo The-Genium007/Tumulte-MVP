@@ -19,6 +19,7 @@ interface PendingPairing {
   worldName: string
   gmUserId: string
   moduleVersion: string
+  gameSystemId?: string | null
   createdAt: number
   expiresAt: number
 }
@@ -145,11 +146,12 @@ export default class FoundryWebhookController {
    */
   async requestPairing({ request, response }: HttpContext) {
     try {
-      const { worldId, worldName, gmUserId, moduleVersion } = request.only([
+      const { worldId, worldName, gmUserId, moduleVersion, gameSystemId } = request.only([
         'worldId',
         'worldName',
         'gmUserId',
         'moduleVersion',
+        'gameSystemId',
       ])
 
       if (!worldId || !worldName) {
@@ -169,6 +171,7 @@ export default class FoundryWebhookController {
         worldName,
         gmUserId: gmUserId || 'unknown',
         moduleVersion: moduleVersion || '2.0.0',
+        gameSystemId: gameSystemId || null,
         createdAt: now,
         expiresAt: now + PAIRING_CODE_EXPIRY * 1000,
       }

@@ -9,11 +9,14 @@ This folder contains CI/CD configurations and automation scripts for the Tumulte
 ├── workflows/
 │   ├── staging-ci.yml        # Progressive CI/CD for staging
 │   └── production-ci.yml     # Full CI/CD for production
-├── scripts/
-│   ├── deploy-staging.sh     # Helper for deploying to staging
-│   └── deploy-production.sh  # Helper for deploying to production
-├── BRANCH_PROTECTION.md      # GitHub configuration guide
-└── WORKFLOWS.md              # This file
+└── scripts/
+    ├── deploy-staging.sh     # Helper for deploying to staging
+    └── deploy-production.sh  # Helper for deploying to production
+
+docs/infrastructure/
+├── ci-cd.md                  # This file
+├── branch-protection.md      # GitHub configuration guide
+└── monitoring.md             # Monitoring stack documentation
 ```
 
 ## CI/CD Workflows
@@ -112,9 +115,9 @@ For automatic deployment to Dokploy (future), you'll need to add:
 
 ## Documentation
 
-- **Full configuration**: See [`BRANCH_PROTECTION.md`](./BRANCH_PROTECTION.md)
+- **Full configuration**: See [Branch Protection](./branch-protection.md)
 - **GitFlow workflow**: See the main README
-- **Backend tests**: See [`backend/tests/README.md`](../backend/tests/README.md)
+- **Backend tests**: See [Testing Guide](../guides/testing.md)
 
 ## Monitoring
 

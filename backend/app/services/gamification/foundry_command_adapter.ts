@@ -336,6 +336,67 @@ export class FoundryCommandAdapter implements FoundryCommandService {
     }
   }
   /**
+   * Applique un effet de monstre (buff/debuff) sur un acteur hostile dans Foundry
+   */
+  async applyMonsterEffect(
+    connectionId: string,
+    data: {
+      actorId: string
+      monsterName: string
+      monsterImg?: string
+      effect: {
+        type: 'buff' | 'debuff'
+        acBonus?: number
+        acPenalty?: number
+        tempHp?: number
+        maxHpReduction?: number
+        highlightColor?: string
+        message?: string
+        triggeredBy?: string
+      }
+    }
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      const connection = await VttConnection.find(connectionId)
+      if (!connection || connection.tunnelStatus !== 'connected') {
+        return {
+          success: false,
+          error: 'Connexion VTT non disponible ou déconnectée',
+        }
+      }
+
+      const result = await this.sendCommand(connectionId, 'apply_monster_effect', data)
+
+      if (result.success) {
+        logger.info(
+          {
+            event: 'foundry_monster_effect_applied',
+            connectionId,
+            actorId: data.actorId,
+            monsterName: data.monsterName,
+            effectType: data.effect.type,
+          },
+          'Effet de monstre appliqué dans Foundry'
+        )
+      }
+
+      return result
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      logger.error(
+        {
+          event: 'foundry_monster_effect_error',
+          connectionId,
+          actorId: data.actorId,
+          error: errorMessage,
+        },
+        "Erreur lors de l'application de l'effet de monstre"
+      )
+      return { success: false, error: errorMessage }
+    }
+  }
+
+  /**
    * Envoie une commande de nettoyage global à Foundry
    * Supprime tous les flags Tumulte, restaure les sorts, annule les timers
    */

@@ -14,6 +14,10 @@ import type {
   DiceReverseProperties,
   DiceReverseGoalBarProperties,
   DiceReverseImpactHudProperties,
+  SpellGoalBarProperties,
+  SpellImpactHudProperties,
+  MonsterGoalBarProperties,
+  MonsterImpactHudProperties,
   HudTransform,
 } from '../types'
 
@@ -57,7 +61,15 @@ const DEFAULT_POLL_GAMIFICATION: PollGamificationConfig = {
 /**
  * Types pour le cache des defaults
  */
-type DefaultsType = 'poll' | 'dice' | 'diceReverseGoalBar' | 'diceReverseImpactHud'
+type DefaultsType =
+  | 'poll'
+  | 'dice'
+  | 'diceReverseGoalBar'
+  | 'diceReverseImpactHud'
+  | 'spellGoalBar'
+  | 'spellImpactHud'
+  | 'monsterGoalBar'
+  | 'monsterImpactHud'
 
 /**
  * Store principal pour l'Overlay Studio
@@ -88,6 +100,10 @@ export const useOverlayStudioStore = defineStore('overlayStudio', () => {
     dice: null,
     diceReverseGoalBar: null,
     diceReverseImpactHud: null,
+    spellGoalBar: null,
+    spellImpactHud: null,
+    monsterGoalBar: null,
+    monsterImpactHud: null,
   })
   const defaultsLoaded = ref(false)
 
@@ -145,7 +161,16 @@ export const useOverlayStudioStore = defineStore('overlayStudio', () => {
 
     const config = useRuntimeConfig()
     const API_URL = config.public.apiBase
-    const types: DefaultsType[] = ['poll', 'dice', 'diceReverseGoalBar', 'diceReverseImpactHud']
+    const types: DefaultsType[] = [
+      'poll',
+      'dice',
+      'diceReverseGoalBar',
+      'diceReverseImpactHud',
+      'spellGoalBar',
+      'spellImpactHud',
+      'monsterGoalBar',
+      'monsterImpactHud',
+    ]
 
     try {
       const results = await Promise.allSettled(
@@ -627,6 +652,168 @@ export const useOverlayStudioStore = defineStore('overlayStudio', () => {
           width: 350,
           height: 120, // Approximate height for gizmo
         } as DiceReverseImpactHudProperties
+
+      case 'spellGoalBar':
+        return {
+          container: {
+            backgroundColor: 'rgba(26, 26, 46, 0.98)',
+            borderColor: '#3B82F6',
+            borderWidth: 2,
+            borderRadius: 16,
+            opacity: 1,
+          },
+          progressBar: {
+            height: 28,
+            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            fillColor: '#3B82F6',
+            fillGradientEnabled: true,
+            fillGradientStart: '#3B82F6',
+            fillGradientEnd: '#8B5CF6',
+            glowColor: '#ffffff',
+          },
+          shake: {
+            startPercent: 70,
+            maxIntensity: 8,
+          },
+          animations: {
+            entry: { duration: 500, easing: 'ease-out' },
+            exit: { duration: 350, easing: 'ease-in' },
+            success: { displayDuration: 3000 },
+          },
+          audio: {
+            progressSound: { enabled: true, volume: 0.3 },
+            successSound: { enabled: true, volume: 0.5 },
+          },
+          typography: {
+            title: { fontFamily: 'Inter', fontSize: 20, fontWeight: 800, color: '#ffffff' },
+            progress: {
+              fontFamily: 'Inter',
+              fontSize: 16,
+              fontWeight: 600,
+              color: 'rgba(255, 255, 255, 0.85)',
+            },
+            timer: { fontFamily: 'Inter', fontSize: 18, fontWeight: 700, color: '#ffffff' },
+          },
+          width: 500,
+          height: 100,
+          mockData: {
+            eventName: '✨ Sort du chat!',
+            currentProgress: 45,
+            objectiveTarget: 100,
+            timeRemaining: 25,
+            isComplete: false,
+          },
+        } as SpellGoalBarProperties
+
+      case 'spellImpactHud':
+        return {
+          container: {
+            backgroundColor: 'rgba(26, 26, 46, 0.98)',
+            borderColor: '#3B82F6',
+            borderWidth: 3,
+            borderRadius: 16,
+          },
+          animations: {
+            dropDistance: 200,
+            dropDuration: 150,
+            displayDuration: 3000,
+          },
+          audio: {
+            impactSound: { enabled: true, volume: 0.6 },
+          },
+          typography: {
+            title: { fontFamily: 'Inter', fontSize: 28, fontWeight: 900, color: '#3B82F6' },
+            detail: {
+              fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+              fontSize: 32,
+              fontWeight: 800,
+              color: '#ffffff',
+            },
+          },
+          width: 350,
+          height: 120,
+        } as SpellImpactHudProperties
+
+      case 'monsterGoalBar':
+        return {
+          container: {
+            backgroundColor: 'rgba(26, 26, 46, 0.98)',
+            borderColor: '#10B981',
+            borderWidth: 2,
+            borderRadius: 16,
+            opacity: 1,
+          },
+          progressBar: {
+            height: 28,
+            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            fillColor: '#10B981',
+            fillGradientEnabled: true,
+            fillGradientStart: '#10B981',
+            fillGradientEnd: '#f59e0b',
+            glowColor: '#ffffff',
+          },
+          shake: {
+            startPercent: 70,
+            maxIntensity: 8,
+          },
+          animations: {
+            entry: { duration: 500, easing: 'ease-out' },
+            exit: { duration: 350, easing: 'ease-in' },
+            success: { displayDuration: 3000 },
+          },
+          audio: {
+            progressSound: { enabled: true, volume: 0.3 },
+            successSound: { enabled: true, volume: 0.5 },
+          },
+          typography: {
+            title: { fontFamily: 'Inter', fontSize: 20, fontWeight: 800, color: '#ffffff' },
+            progress: {
+              fontFamily: 'Inter',
+              fontSize: 16,
+              fontWeight: 600,
+              color: 'rgba(255, 255, 255, 0.85)',
+            },
+            timer: { fontFamily: 'Inter', fontSize: 18, fontWeight: 700, color: '#ffffff' },
+          },
+          width: 500,
+          height: 100,
+          mockData: {
+            eventName: '⚔️ Influence de Combat',
+            currentProgress: 45,
+            objectiveTarget: 100,
+            timeRemaining: 25,
+            isComplete: false,
+          },
+        } as MonsterGoalBarProperties
+
+      case 'monsterImpactHud':
+        return {
+          container: {
+            backgroundColor: 'rgba(26, 26, 46, 0.98)',
+            borderColor: '#10B981',
+            borderWidth: 3,
+            borderRadius: 16,
+          },
+          animations: {
+            dropDistance: 200,
+            dropDuration: 150,
+            displayDuration: 3000,
+          },
+          audio: {
+            impactSound: { enabled: true, volume: 0.6 },
+          },
+          typography: {
+            title: { fontFamily: 'Inter', fontSize: 28, fontWeight: 900, color: '#10B981' },
+            detail: {
+              fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+              fontSize: 32,
+              fontWeight: 800,
+              color: '#ffffff',
+            },
+          },
+          width: 350,
+          height: 120,
+        } as MonsterImpactHudProperties
     }
   }
 
@@ -640,6 +827,12 @@ export const useOverlayStudioStore = defineStore('overlayStudio', () => {
       diceReverse: 'Inversion',
       diceReverseGoalBar: 'Goal Bar',
       diceReverseImpactHud: 'Impact HUD',
+      spellEffect: 'Sorts',
+      spellGoalBar: 'Spell Goal Bar',
+      spellImpactHud: 'Spell Impact HUD',
+      monsterEffect: 'Combat',
+      monsterGoalBar: 'Monster Goal Bar',
+      monsterImpactHud: 'Monster Impact HUD',
     }
     return names[type] || type
   }
@@ -710,6 +903,82 @@ export const useOverlayStudioStore = defineStore('overlayStudio', () => {
 
     elements.value.push(goalBar, impactHud)
     selectedElementId.value = goalBar.id // Sélectionner la Goal Bar par défaut
+    isDirty.value = true
+
+    return { goalBar, impactHud }
+  }
+
+  /**
+   * Ajoute les deux éléments Spell (Goal Bar + Impact HUD) en une seule action
+   * Appelé quand l'utilisateur clique sur "Sorts" dans le sidebar
+   */
+  function addSpellElements(): { goalBar: OverlayElement; impactHud: OverlayElement } {
+    const goalBar: OverlayElement = {
+      id: generateId(),
+      type: 'spellGoalBar',
+      name: `Spell Goal Bar ${elements.value.length + 1}`,
+      position: { x: 0, y: 400, z: 0 },
+      rotation: { x: 0, y: 0, z: 0 },
+      scale: { x: 1, y: 1, z: 1 },
+      visible: true,
+      locked: false,
+      zIndex: 0,
+      properties: getDefaultProperties('spellGoalBar'),
+    }
+
+    const impactHud: OverlayElement = {
+      id: generateId(),
+      type: 'spellImpactHud',
+      name: `Spell Impact HUD ${elements.value.length + 2}`,
+      position: { x: 0, y: 0, z: 0 },
+      rotation: { x: 0, y: 0, z: 0 },
+      scale: { x: 1, y: 1, z: 1 },
+      visible: true,
+      locked: false,
+      zIndex: 1,
+      properties: getDefaultProperties('spellImpactHud'),
+    }
+
+    elements.value.push(goalBar, impactHud)
+    selectedElementId.value = goalBar.id
+    isDirty.value = true
+
+    return { goalBar, impactHud }
+  }
+
+  /**
+   * Ajoute les deux éléments Monster (Goal Bar + Impact HUD) en une seule action
+   * Appelé quand l'utilisateur clique sur "Combat" dans le sidebar
+   */
+  function addMonsterElements(): { goalBar: OverlayElement; impactHud: OverlayElement } {
+    const goalBar: OverlayElement = {
+      id: generateId(),
+      type: 'monsterGoalBar',
+      name: `Monster Goal Bar ${elements.value.length + 1}`,
+      position: { x: 0, y: 400, z: 0 },
+      rotation: { x: 0, y: 0, z: 0 },
+      scale: { x: 1, y: 1, z: 1 },
+      visible: true,
+      locked: false,
+      zIndex: 0,
+      properties: getDefaultProperties('monsterGoalBar'),
+    }
+
+    const impactHud: OverlayElement = {
+      id: generateId(),
+      type: 'monsterImpactHud',
+      name: `Monster Impact HUD ${elements.value.length + 2}`,
+      position: { x: 0, y: 0, z: 0 },
+      rotation: { x: 0, y: 0, z: 0 },
+      scale: { x: 1, y: 1, z: 1 },
+      visible: true,
+      locked: false,
+      zIndex: 1,
+      properties: getDefaultProperties('monsterImpactHud'),
+    }
+
+    elements.value.push(goalBar, impactHud)
+    selectedElementId.value = goalBar.id
     isDirty.value = true
 
     return { goalBar, impactHud }
@@ -1025,6 +1294,8 @@ export const useOverlayStudioStore = defineStore('overlayStudio', () => {
     // Actions - Éléments
     addElement,
     addDiceReverseElements,
+    addSpellElements,
+    addMonsterElements,
     removeElement,
     updateElement,
     updateElementPosition,

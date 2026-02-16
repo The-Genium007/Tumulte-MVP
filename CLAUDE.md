@@ -56,7 +56,7 @@ Multi-channel Twitch poll management platform for Tabletop RPG Game Masters (GM)
 ├── frontend/             # Nuxt 3 (Vue 3 + Nuxt UI v3)
 ├── monitoring/           # Prometheus + Grafana + AlertManager
 ├── modules-vtt/          # Foundry VTT module (separate sub-project)
-├── docs/                 # Documentation (deployment, API, architecture)
+├── docs/                 # Documentation (see Documentation Map below)
 ├── scripts/              # Utility scripts (git hooks, lockfile sync)
 ├── .github/workflows/    # CI/CD GitHub Actions
 └── CLAUDE.md             # This file
@@ -199,167 +199,64 @@ import { createUserValidator } from '#validators/auth/create_user'
 
 ### PreFlight System
 
-Extensible, auto-discovering health check system that validates system health before launching polls, gamification events, or any future feature.
+Extensible, auto-discovering health check system that validates system health before launching polls, gamification events, or any feature. Uses priority-based execution (0=infrastructure → 20=business rules) with short-circuit on failure. Two modes: `full` (blocking) and `light` (observability-only).
 
-**File structure:**
-```
-app/services/preflight/
-├── types.ts                          # Core interfaces (PreFlightCheck, CheckContext, CheckResult, PreFlightReport)
-├── preflight_registry.ts             # Dynamic check registry (singleton)
-├── preflight_runner.ts               # Orchestrator: runs checks, short-circuits, tracks in Sentry/DB/Prometheus
-└── checks/
-    ├── redis_check.ts                # Priority 0 — Redis connectivity
-    ├── websocket_check.ts            # Priority 0 — WebSocket (Transmit) readiness
-    ├── twitch_api_check.ts           # Priority 5 — Twitch API availability
-    ├── token_check.ts                # Priority 10 — Streamer OAuth tokens
-    ├── vtt_connection_check.ts       # Priority 15 — VTT connection active
-    ├── cooldown_check.ts             # Priority 20 — Event not on cooldown
-    └── gamification_config_check.ts  # Priority 20 — Event enabled in config
-```
-
-**Priority system** (lower = runs first, short-circuits on failure):
-- `0`: Infrastructure (Redis, WebSocket) — if these fail, nothing works
-- `5`: External APIs (Twitch API availability)
-- `10`: Authentication (streamer tokens, OAuth)
-- `15`: Connections (VTT connection)
-- `20`: Business rules (cooldowns, config enabled)
-
-**Execution modes:**
-- `full`: Blocking, runs all checks. Used for MJ-initiated launches (polls, manual gamification triggers).
-- `light`: Non-blocking, runs only priority ≤ 10 checks. Used for automatic events (dice rolls, redemptions) — observability only.
-
-**To add a new pre-flight check:**
-1. Create a class implementing `PreFlightCheck` in `services/preflight/checks/`
-2. Register it in `start/container.ts` boot sequence via `preFlightRegistry.register()`
-3. Done — the runner auto-discovers and executes it
-
-**Observability:** Every run produces a `PreFlightReport` that is:
-- Tracked as a Sentry breadcrumb (failures also generate a Sentry event)
-- Persisted to `preflight_reports` table (JSONB checks column)
-- Recorded in Prometheus (`tumulte_preflight_runs_total`, `tumulte_preflight_check_duration_seconds`)
+> **Full documentation:** `docs/architecture/preflight.md`
 
 ### Gamification Handler Registries
 
-Registry-based handler system for gamification triggers and actions. Eliminates switch statements — adding a new handler type requires only one file.
+Registry-based handler system for gamification triggers and actions. Eliminates switch statements — adding a new handler type requires only one file + registration in `start/container.ts`.
 
-**File structure:**
-```
-app/services/gamification/handlers/
-├── types.ts                              # TriggerHandler, ActionHandler interfaces
-├── trigger_handler_registry.ts           # Registry for trigger handlers
-├── action_handler_registry.ts            # Registry for action handlers
-├── triggers/
-│   ├── dice_critical_trigger.ts          # dice_critical trigger type
-│   ├── manual_trigger.ts                 # manual trigger type
-│   └── custom_trigger.ts                # custom trigger type
-└── actions/
-    ├── dice_invert_action.ts             # dice_invert action type
-    ├── chat_message_action.ts            # chat_message action type
-    ├── stat_modify_action.ts             # stat_modify action type
-    └── custom_action.ts                  # custom action type
-```
-
-**To add a new gamification event type:**
-1. Create a trigger handler in `handlers/triggers/` implementing `TriggerHandler`
-2. Create an action handler in `handlers/actions/` implementing `ActionHandler`
-3. Register both in `start/container.ts` (`triggerHandlerRegistry.register()`, `actionHandlerRegistry.register()`)
-4. Add a `preFlightCheck?()` method on either handler to auto-register a health check (discovered automatically via `app.booted()`)
-5. Create the event seed data in a migration
-6. Done — `TriggerEvaluator` and `ActionExecutor` delegate to handlers via registry lookup
-
-**Admin monitoring:** `/admin/monitoring` page shows pre-flight stats, most-failed checks, and expandable recent reports with auto-refresh.
+> **Full documentation:** `docs/gamification/` (architecture + code patterns)
 
 ### System Presets Architecture
 
-When a campaign is connected to Foundry VTT, the game system is detected automatically via `game.system.id`. If the system is recognized, criticality rules and gamification recommendations are auto-configured.
+When a campaign is connected to Foundry VTT, the game system is detected automatically. If recognized, criticality rules and gamification recommendations are auto-configured via a 3-point detection chain (pairing → first dice roll → campaign sync). Three-tier support: 15 Tier 1 systems with full adapters (~85% of users), ~25 Tier 2 with degraded GenericAdapter support, and 320+ Tier 3 with basic dice extraction only.
 
-**Fallback chain for criticality detection:**
-1. **System Adapter** (module Foundry) — Enriches dice rolls with system-specific criticality
-2. **System Preset** (backend registry) — Auto-generates criticality rules in DB
-3. **Custom Rules** (MJ) — Override presets with higher priority
+> **Full documentation:** `docs/architecture/system-presets.md`
 
-**Key files:**
-- `backend/app/services/campaigns/system_preset_registry.ts` — TypeScript registry of all presets (code-defined, no DB table)
-- `backend/app/services/campaigns/system_preset_service.ts` — Applies/clears presets per campaign
-- `modules-vtt/foundry/scripts/utils/system-adapters.js` — 15 system adapters (client-side)
+---
 
-**Detection points** (3-point chain, by preference order):
-1. **Pairing** — `gameSystemId` sent from `pairing-manager.js` → stored on campaign creation
-2. **First dice roll** — `metadata.system` detected in `vtt_webhook_service.ts` → lazy application
-3. **Campaign sync** — `gameSystemId` sent in sync payload
+## Documentation Map
 
-**Adding a new system preset:**
-1. Add the adapter in `system-adapters.js` (Foundry module) if not already present
-2. Add the entry in `system_preset_registry.ts` (backend) with `CriticalityRulePreset[]` and `SystemCapabilities`
-3. No migration needed — presets are defined in code
-4. Presets are applied lazily at first system detection via `applyPresetsIfNeeded()`
+Quick lookup table — use this to find detailed documentation on any topic.
 
-**Supported systems (15):** dnd5e, pf2e, CoC7, wfrp4e, swade, cyberpunk-red-core, alienrpg, forbidden-lands, vaesen, blades-in-the-dark, vtm5e/wod5e, shadowrun5e/6e, starwarsffg/genesys, fate-core-official
+> **RULE: Documentation maintenance.** When creating, moving, or deleting a markdown file in `docs/`:
+> 1. **Update this table** — add/remove/edit the corresponding row
+> 2. **Update `docs/README.md`** — add/remove the link in the appropriate section
+> 3. **Update `.claude/agents/docs.md`** — keep the documentation structure tree in sync
+>
+> All documentation lives in `docs/`. Never create standalone `.md` files at the project root or in subdirectories like `.github/`, `backend/`, or `frontend/` — place them in the appropriate `docs/` subdirectory instead.
 
-**Idempotence:** Presets use a partial unique index `(campaign_id, preset_key) WHERE preset_key IS NOT NULL` to prevent duplicate rows. The `preset_key` format is `{systemId}:{ruleSlug}` (e.g. `dnd5e:nat20`).
-
-**Protection:** System preset rules (`is_system_preset = true`) cannot be deleted or fully edited. Only `isEnabled` can be toggled by the MJ. The frontend shows these with a lock icon and "Auto" badge.
-
-**SystemCapabilities:** Each preset declares its capabilities (`hasSpells`, `hasTraditionalCriticals`, `hasDicePool`, `hasPercentile`, etc.). The frontend uses these flags to display smart recommendations for gamification events.
+| Topic | File | Description |
+|-------|------|-------------|
+| **Gamification system** | `docs/gamification/` | Architecture, code patterns, handler registries |
+| **Database models** | `docs/reference/models.md` | All 28+ models with schema details |
+| **API routes** | `docs/api/reference.md` | Complete endpoint documentation |
+| **API authentication** | `docs/api/authentication.md` | OAuth flows, session management |
+| **Error handling** | `docs/architecture/backend.md` | Exception handler, resilience patterns |
+| **Security** | `docs/architecture/security.md` | Auth guards, token storage, HTTP security |
+| **PreFlight checks** | `docs/architecture/preflight.md` | Health check system, priorities, observability |
+| **System presets** | `docs/architecture/system-presets.md` | Foundry VTT system detection, preset registry |
+| **Backend architecture** | `docs/architecture/backend.md` | Layered pattern, DI, ORM conventions |
+| **Frontend architecture** | `docs/architecture/frontend.md` | Nuxt 3 patterns, composables, components |
+| **Testing** | `docs/guides/testing.md` | Japa + Vitest patterns, CI/CD, coverage |
+| **CI/CD & workflows** | `docs/infrastructure/ci-cd.md` | GitHub Actions, staging/production pipelines |
+| **Branch protection** | `docs/infrastructure/branch-protection.md` | GitHub rules, deployment workflow |
+| **Monitoring & Docker** | `docs/infrastructure/monitoring.md` | Prometheus, Grafana, Docker setup |
+| **Design system** | `docs/reference/design-system.md` | Spacing, typography, colors, components |
+| **VTT feature matrix** | `docs/reference/vtt-feature-matrix.md` | Feature support levels per VTT system, how to add features |
+| **Environment variables** | `docs/getting-started/configuration.md` | All .env options for backend & frontend |
+| **Installation** | `docs/getting-started/installation.md` | Self-hosting setup guide |
+| **VTT integration** | `docs/vtt-integration/` | Foundry VTT, pairing, webhooks, characters |
+| **Overlay Studio** | `docs/overlay-studio/` | Visual editor, customization, CSS |
+| **Contributing** | `docs/guides/contributing.md` | Code standards, PR process |
+| **Deployment** | `docs/guides/deployment.md` | Docker, Dokploy, production checklist |
+| **Services reference** | `docs/reference/services.md` | All backend services by domain |
 
 ---
 
 ## Database
-
-### Models (28 models)
-
-**Core Domain:**
-
-| Model | Description |
-|-------|-------------|
-| `User` | Users (email/password + OAuth providers) |
-| `AuthProvider` | OAuth providers linked to users (Twitch, Google) |
-| `Streamer` | Twitch channel info (encrypted tokens, scopes) |
-| `Campaign` | RPG campaigns created by GM |
-| `CampaignMembership` | Streamer invitations & authorization status |
-
-**Polls:**
-
-| Model | Description |
-|-------|-------------|
-| `Poll` | Poll definition (question, options, duration) |
-| `PollTemplate` | Reusable poll templates |
-| `PollSession` | Group of polls launched together |
-| `PollInstance` | Single launched poll (status: PENDING → STARTED → ENDED/CANCELLED) |
-| `PollResult` | Aggregated results per channel |
-| `PollChannelLink` | Links a poll instance to streamer channels |
-
-**VTT Integration:**
-
-| Model | Description |
-|-------|-------------|
-| `VttProvider` | VTT platform definitions (Foundry, Roll20, etc.) |
-| `VttConnection` | User's connection to a VTT instance |
-| `Character` | Imported characters from VTT |
-| `CharacterAssignment` | Streamer ↔ character assignments |
-| `DiceRoll` | Dice rolls received from VTT |
-| `TokenRevocationList` | Revoked VTT connection tokens |
-
-**Gamification:**
-
-| Model | Description |
-|-------|-------------|
-| `GamificationEvent` | Event definitions (dice roll, poll vote, etc.) |
-| `GamificationInstance` | Active gamification session |
-| `GamificationContribution` | Viewer contributions to gamification goals |
-| `StreamerGamificationConfig` | Per-streamer gamification settings |
-| `CampaignGamificationConfig` | Per-campaign gamification settings |
-
-**Other:**
-
-| Model | Description |
-|-------|-------------|
-| `OverlayConfig` | Overlay Studio visual configurations |
-| `PushSubscription` | Web push notification subscriptions |
-| `NotificationPreference` | Per-user notification settings |
-| `RetryEvent` | Failed operation retry tracking |
-| `Subscription` | User subscription (future monetization) |
-| `PreflightReport` | Pre-flight health check reports (JSONB checks) |
 
 ### Database Conventions
 
@@ -371,233 +268,9 @@ When a campaign is connected to Foundry VTT, the game system is detected automat
 
 ### Migration Count
 
-70 migrations as of v0.6.x. Migrations include both schema changes and data migrations (seeds, backfills). See the "Database Migration Safety" section above before creating new ones.
+70+ migrations as of v0.6.x. Migrations include both schema changes and data migrations (seeds, backfills). See the "Database Migration Safety" section above before creating new ones.
 
----
-
-## API Routes Overview
-
-### Public (no auth)
-
-| Group | Key Endpoints |
-|-------|---------------|
-| **Health** | `GET /health`, `GET /health/ready`, `GET /health/live` |
-| **Auth** | `POST /auth/register`, `POST /auth/login`, `GET /auth/twitch/redirect`, `GET /auth/twitch/callback`, `GET /auth/google/redirect`, `GET /auth/google/callback`, `POST /auth/forgot-password`, `POST /auth/reset-password` |
-| **Overlay** (OBS) | `GET /overlay/:streamerId`, `GET /overlay/:streamerId/active-poll`, `GET /overlay/:streamerId/config`, `GET /overlay/:streamerId/gamification/active` |
-| **Webhooks** | `POST /webhooks/twitch/eventsub`, `POST /webhooks/vtt/dice-roll`, `POST /webhooks/foundry/*` |
-
-### Authenticated
-
-| Group | Key Endpoints |
-|-------|---------------|
-| **Session** | `GET /auth/me`, `POST /auth/logout`, `POST /auth/change-password` |
-| **OAuth Linking** | `GET /auth/link/twitch`, `GET /auth/link/google`, `POST /auth/unlink` |
-| **GM - Campaigns** | `CRUD /mj/campaigns`, `POST /mj/campaigns/:id/invite`, `GET /mj/campaigns/:id/members`, `GET /mj/campaigns/:id/events` |
-| **GM - Polls** | `CRUD /mj/campaigns/:campaignId/polls`, `POST /mj/polls/:id/launch`, `POST /mj/polls/:id/cancel`, `GET /mj/polls/:id/results` |
-| **GM - Gamification** | `GET /mj/gamification/events`, `POST /mj/campaigns/:id/gamification/trigger`, gamification instance management |
-| **GM - VTT** | `CRUD /mj/vtt-connections`, `POST /mj/vtt-connections/pair-with-code`, sync operations |
-| **GM - Characters** | `GET /mj/campaigns/:id/characters`, `POST /mj/campaigns/:id/active-character`, dice roll attribution |
-| **Streamer** | `GET /streamer/campaigns/invitations`, accept/decline invitations, authorization grant/revoke, character assignment |
-| **Dashboard** | Mirrors `/streamer` routes + streamer gamification settings |
-| **Overlay Studio** | `CRUD /streamer/overlay-studio/configs`, activate, preview commands |
-| **Notifications** | VAPID key, subscribe/unsubscribe, preferences |
-| **Support** | `POST /support/report`, `POST /support/suggestion` |
-| **Admin** | `GET /admin/metrics/*`, `GET /admin/preflight/reports`, `GET /admin/preflight/reports/:id`, `GET /admin/preflight/stats` (admin middleware) |
-| **Account** | `DELETE /account/delete` |
-
-### Rate Limiting
-
-Rate limits are applied per-endpoint via Redis-based middleware:
-- Auth endpoints: 3-10 req/60s (strictest on registration, forgot-password)
-- Auth lockout: Exponential backoff (30s → 1h) after 5 failed logins
-- Poll operations: 20 req/60s
-- Overlay Studio: Per-action rate limiting
-- VTT webhooks: 100 req/60s
-
----
-
-## Error Handling
-
-### Backend
-
-**Exception Handler** (`app/exceptions/handler.ts`):
-- Logs all errors with request context (method, URL, IP, requestId)
-- Sends 5xx errors to Sentry (4xx filtered out)
-- Production: Masks sensitive error messages with generic responses
-
-**Custom Exceptions:**
-- `ValidationException`: Zod validation failures → HTTP 400 with field details
-- `CircuitOpenError`: Circuit breaker open → HTTP 503
-
-**Resilience Patterns** (`app/services/resilience/`):
-- **Circuit Breaker**: Redis-backed, distributed, Lua atomic scripts. States: CLOSED → OPEN → HALF_OPEN
-- **Retry Utility**: Exponential backoff + jitter, Retry-After header support, circuit breaker integration
-- **Health Check Service**: Pre-validates Twitch API, Redis, streamer tokens, WebSocket before poll operations
-
-**Error Response Format:**
-```json
-{
-  "error": "Human-readable message",
-  "details": [{ "field": "email", "message": "Invalid email", "code": "INVALID_EMAIL" }]
-}
-```
-
-### Frontend
-
-- **Global 401 handler** (`plugins/api-auth-handler.client.ts`): Clears auth state, redirects to login
-- **Sentry** with Session Replay: Captures errors, breadcrumbs, user context
-- **Toast notifications**: Debounced error toast when Sentry captures an error
-- **Support reporter** (`composables/useSupportReporter.ts`): Collects diagnostics (console, performance, store state) with automatic sensitive data sanitization
-- **Resilient WebSocket** (`composables/useResilientWebSocket.ts`): Auto-reconnect with exponential backoff, HTTP polling fallback when WebSocket is down
-- **Error message catalog** (`utils/supportErrorMessages.ts`): 60+ typed action categories with French user-facing messages
-
----
-
-## Security Architecture
-
-### Authentication
-- **Two guards**: `web` (session/cookie) and `api` (access token)
-- **OAuth**: Twitch + Google with PKCE-like state validation (`timingSafeEqual`)
-- **Password hashing**: Scrypt (cost: 16384, blockSize: 8)
-- **Sessions**: Redis-backed, `httpOnly`, `secure` (prod), 7-day expiry
-- **Brute force protection**: Exponential lockout (IP + IP+email tracking)
-
-### Token Storage
-- All OAuth tokens (Twitch, Google) encrypted at rest via AdonisJS Encryption (`APP_KEY`)
-- Token fields use `serializeAs: null` — never exposed in API responses
-- Automatic token refresh with failure tracking
-
-### HTTP Security
-- **CORS**: Whitelist-only (frontend URL). Exception: Foundry VTT endpoints (API key auth)
-- **Security Headers Middleware**: CSP, HSTS, X-Frame-Options (DENY except `/overlay`), X-Content-Type-Options, Permissions-Policy
-- **Rate Limiting**: Redis-based, per-IP, per-endpoint configurable
-- **Request IDs**: UUID per request for traceability
-- **Input validation**: Zod schemas on all endpoints
-
-### Sensitive Data
-- Passwords, tokens, API keys filtered from Sentry breadcrumbs
-- Support reporter sanitizes Bearer tokens, JWT, passwords before sending
-- Generic error messages in production (prevents email enumeration)
-
----
-
-## Testing Conventions
-
-### Backend (Japa)
-
-**Structure:**
-```
-backend/tests/
-├── unit/
-│   ├── services/        # Service tests (manual DI mocking)
-│   ├── repositories/    # Repository tests (real DB + transactions)
-│   ├── models/          # Model tests (computed properties, relations)
-│   └── validators/      # Validator tests
-├── functional/          # HTTP endpoint tests
-├── e2e/                 # End-to-end tests
-└── helpers/             # Test utilities (factories, database cleanup)
-```
-
-**Patterns:**
-- File naming: `snake_case.spec.ts`
-- Test groups: `test.group('ServiceName - methodName', () => { ... })`
-- Test names: Descriptive sentences — `'should launch a pending poll successfully'`
-- Assertions: `assert.equal()`, `assert.isTrue()`, `assert.rejects()`
-- **Service mocking**: Manual constructor injection (no DI container manipulation)
-  ```typescript
-  const service = new PollLifecycleService(
-    mockRepository as any,
-    mockChannelLinkRepo as any,
-    // ... other mocked dependencies
-  )
-  ```
-- **Repository tests**: Real database with `group.each.setup(() => testUtils.db().withGlobalTransaction())`
-- **Test helpers**: `createTestUser()`, `createTestStreamer()`, `createTestCampaign()`, etc. (faker-based)
-
-### Frontend (Vitest + Playwright)
-
-**Structure:**
-```
-frontend/tests/
-├── unit/
-│   ├── stores/          # Pinia store tests
-│   └── composables/     # Composable tests
-├── component/           # Vue component tests (Vue Test Utils)
-├── e2e/                 # Playwright browser tests
-└── setup.ts             # Global mocks (Nuxt auto-imports, localStorage)
-```
-
-**Patterns:**
-- File naming: `PascalCase.spec.ts` (components) or `camelCase.spec.ts` (stores/composables)
-- Describe/test: `describe('StoreName', () => { test('should ...', () => {}) })`
-- Assertions: `expect().toBe()`, `expect().toEqual()`, `expect().toContain()`
-- **Store tests**: Fresh Pinia per test via `setActivePinia(createPinia())`
-- **Component tests**: Mount with `@vue/test-utils`, mock Nuxt UI components as simple templates
-- **Composable tests**: `vi.resetModules()` in `afterEach` for clean imports
-- **Mocking**: `vi.mock()` for modules, `vi.stubGlobal()` for Nuxt composables, `vi.fn()` for functions
-- **Timers**: `vi.useFakeTimers()` / `vi.useRealTimers()` for interval-based logic
-
-### When Writing Tests
-
-- **Services**: Mock all dependencies via constructor injection. Test business logic, not DB queries.
-- **Repositories**: Use real DB with transaction rollback. Test actual queries.
-- **Components**: Test user interactions and rendered output. Mock API calls.
-- **Stores**: Test state mutations and actions. Mock axios calls.
-- Always follow the **Arrange-Act-Assert** (AAA) pattern.
-
----
-
-## Monitoring & Infrastructure
-
-### Docker Production Setup
-
-**Backend** (`backend/Dockerfile`):
-- 4-stage multi-stage build (deps → builder → prod-deps → production)
-- Non-root user (`nodejs:1001`)
-- `dumb-init` for proper signal handling
-- Health check: `GET /health/ready`
-- Resource limits: 2 CPU / 2GB RAM
-
-**Frontend** (`frontend/Dockerfile`):
-- 2-stage build (builder → production)
-- Nuxt SSR deployment
-- Health check: `GET /health`
-
-**Entrypoint** (`backend/docker-entrypoint.sh`):
-- Waits for PostgreSQL + Redis connectivity
-- Runs `migration:run --force` automatically
-- Exits with error if migrations fail
-
-### Monitoring Stack (`monitoring/`)
-
-```
-Prometheus (metrics collection, 30-day retention)
-  ├── Node Exporter (CPU, RAM, disk, network)
-  ├── cAdvisor (Docker container metrics)
-  ├── PostgreSQL Exporter (DB health)
-  └── Redis Exporter (cache metrics)
-
-Grafana (dashboards)
-AlertManager → Discord webhooks (normal + critical channels)
-```
-
-### CI/CD (`/.github/workflows/`)
-
-| Workflow | Branch | Behavior |
-|----------|--------|----------|
-| `staging-ci.yml` | staging | Functional tests non-blocking |
-| `production-ci.yml` | main | All tests blocking |
-| `sync-foundry-module.yml` | — | Syncs Foundry VTT module |
-
-**Pipeline:**
-```
-backend-quality ──► backend-unit-tests ──► backend-functional-tests
-frontend-quality ──► frontend-unit-tests
-                            ↓
-                         build
-                            ↓
-                   frontend-e2e-tests (prod only)
-```
+> **Full models reference (28+ models):** `docs/reference/models.md`
 
 ---
 
@@ -666,80 +339,6 @@ app/services/
 
 ---
 
-## Environment Variables
-
-### Backend (.env)
-
-```env
-# App
-PORT=3333
-HOST=localhost
-APP_KEY=<generated>             # CRITICAL: Used for encryption. Never change in prod.
-NODE_ENV=development
-LOG_LEVEL=info
-TZ=Europe/Paris
-
-# Database (PostgreSQL 16)
-DB_HOST=localhost
-DB_PORT=5432
-DB_USER=postgres
-DB_PASSWORD=postgres
-DB_DATABASE=twitch_polls
-DB_POOL_MIN=2
-DB_POOL_MAX=20
-
-# Cache (Redis 7)
-REDIS_HOST=localhost
-REDIS_PORT=6379
-
-# Twitch OAuth
-TWITCH_CLIENT_ID=
-TWITCH_CLIENT_SECRET=
-TWITCH_REDIRECT_URI=http://localhost:3333/auth/twitch/callback
-
-# Google OAuth
-GOOGLE_CLIENT_ID=
-GOOGLE_CLIENT_SECRET=
-GOOGLE_REDIRECT_URI=http://localhost:3333/auth/google/callback
-
-# Session
-SESSION_DRIVER=cookie            # Use 'redis' in production
-
-# CORS
-FRONTEND_URL=http://localhost:3000
-
-# Error Tracking
-SENTRY_DSN=
-
-# Email
-RESEND_API_KEY=
-
-# Web Push
-VAPID_PUBLIC_KEY=
-VAPID_PRIVATE_KEY=
-
-# Integrations
-DISCORD_WEBHOOK_SUPPORT=
-DISCORD_WEBHOOK_SUGGESTIONS=
-GITHUB_TOKEN=
-
-# Analytics
-POSTHOG_API_KEY=
-POSTHOG_HOST=
-
-# Admin
-ADMIN_EMAILS=admin@example.com
-```
-
-### Frontend (.env)
-
-```env
-NUXT_PUBLIC_API_BASE=http://localhost:3333
-NUXT_PUBLIC_SENTRY_DSN=
-```
-
----
-
 ## Important Notes
 
 1. **The `ace` file at backend root** is for production build only. In dev, always use `bin/console.ts` with ts-node.
@@ -757,27 +356,3 @@ NUXT_PUBLIC_SENTRY_DSN=
 7. **Rate limiting fails closed**: If Redis is down, requests are blocked (HTTP 503) rather than allowed through.
 
 8. **The monitoring stack** is optional for development but required in production. AlertManager sends to Discord.
-
----
-
-## Quick Start
-
-```bash
-# 1. Start services
-docker-compose up -d  # PostgreSQL + Redis
-
-# 2. Backend
-cd backend
-cp .env.example .env  # Configure variables
-npm install
-node --loader ts-node-maintained/esm bin/console.ts migration:run
-npm run dev
-
-# 3. Frontend
-cd frontend
-cp .env.example .env
-npm install
-npm run dev
-
-# 4. Open http://localhost:3000
-```

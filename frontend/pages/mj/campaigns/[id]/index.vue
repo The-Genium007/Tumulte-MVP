@@ -358,8 +358,41 @@
         </template>
 
         <div class="space-y-4">
-          <!-- World Information -->
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <!-- Info Grid: unified 3-column layout -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
+            <!-- Système de jeu -->
+            <div>
+              <label class="block text-sm font-bold text-primary ml-4 uppercase mb-2">
+                Système de jeu
+              </label>
+              <div class="flex items-center gap-2 ml-4">
+                <UBadge
+                  v-if="campaign.vttInfo?.gameSystemName"
+                  :color="campaign.vttInfo.isKnownSystem ? 'success' : 'neutral'"
+                  variant="soft"
+                >
+                  {{ campaign.vttInfo.gameSystemName }}
+                </UBadge>
+                <UBadge
+                  v-else-if="campaign.vttInfo?.gameSystemId"
+                  color="neutral"
+                  variant="soft"
+                >
+                  {{ campaign.vttInfo.gameSystemId }}
+                </UBadge>
+                <span v-else class="text-muted text-sm italic">En attente de détection</span>
+                <UBadge
+                  v-if="campaign.vttInfo?.primaryDie"
+                  color="info"
+                  variant="subtle"
+                  size="xs"
+                >
+                  {{ campaign.vttInfo.primaryDie }}
+                </UBadge>
+              </div>
+            </div>
+
+            <!-- Monde VTT -->
             <div>
               <label class="block text-sm font-bold text-primary ml-4 uppercase mb-2">
                 Monde VTT
@@ -368,12 +401,26 @@
                 {{ campaign.vttConnection.worldName || 'Non configuré' }}
               </p>
             </div>
+
+            <!-- Connecté depuis -->
+            <div v-if="campaign.vttInfo?.connectedSince">
+              <label class="block text-sm font-bold text-primary ml-4 uppercase mb-2">
+                Connecté depuis
+              </label>
+              <p class="text-muted ml-4">
+                {{ formatDate(campaign.vttInfo.connectedSince) }}
+              </p>
+            </div>
+
+            <!-- Version du Module -->
             <div v-if="campaign.vttConnection.moduleVersion">
               <label class="block text-sm font-bold text-primary ml-4 uppercase mb-2">
                 Version du Module
               </label>
               <p class="text-muted ml-4">v{{ campaign.vttConnection.moduleVersion }}</p>
             </div>
+
+            <!-- Dernière activité -->
             <div v-if="campaign.vttConnection.lastHeartbeatAt">
               <label class="block text-sm font-bold text-primary ml-4 uppercase mb-2">
                 Dernière activité
@@ -381,6 +428,111 @@
               <p class="text-muted ml-4">
                 {{ formatRelativeTime(campaign.vttConnection.lastHeartbeatAt) }}
               </p>
+            </div>
+          </div>
+
+          <!-- System Capability Badges -->
+          <div
+            v-if="campaign.vttInfo?.isKnownSystem && campaign.vttInfo.systemCapabilities"
+            class="flex flex-wrap gap-2 ml-4"
+          >
+            <UBadge
+              v-if="campaign.vttInfo.systemCapabilities.hasSpells"
+              color="primary"
+              variant="subtle"
+              size="xs"
+            >
+              <UIcon name="i-lucide-wand-sparkles" class="size-3 mr-1" />
+              Sorts
+            </UBadge>
+            <UBadge
+              v-if="campaign.vttInfo.systemCapabilities.hasTraditionalCriticals"
+              color="primary"
+              variant="subtle"
+              size="xs"
+            >
+              <UIcon name="i-lucide-target" class="size-3 mr-1" />
+              Critiques d20
+            </UBadge>
+            <UBadge
+              v-if="campaign.vttInfo.systemCapabilities.hasDicePool"
+              color="primary"
+              variant="subtle"
+              size="xs"
+            >
+              <UIcon name="i-lucide-dice-5" class="size-3 mr-1" />
+              Pool de dés
+            </UBadge>
+            <UBadge
+              v-if="campaign.vttInfo.systemCapabilities.hasPercentile"
+              color="primary"
+              variant="subtle"
+              size="xs"
+            >
+              <UIcon name="i-lucide-percent" class="size-3 mr-1" />
+              Percentile
+            </UBadge>
+            <UBadge
+              v-if="campaign.vttInfo.systemCapabilities.hasFudgeDice"
+              color="primary"
+              variant="subtle"
+              size="xs"
+            >
+              <UIcon name="i-lucide-plus-minus" class="size-3 mr-1" />
+              Dés FATE
+            </UBadge>
+            <UBadge
+              v-if="campaign.vttInfo.systemCapabilities.hasNarrativeDice"
+              color="primary"
+              variant="subtle"
+              size="xs"
+            >
+              <UIcon name="i-lucide-book-open" class="size-3 mr-1" />
+              Dés narratifs
+            </UBadge>
+          </div>
+
+          <!-- Campaign Stats (visual counters) -->
+          <div
+            v-if="hasVttStats"
+            class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4 border-t border-neutral-200 dark:border-neutral-700"
+          >
+            <div class="text-center p-3 rounded-lg bg-elevated">
+              <UIcon name="i-lucide-users" class="size-5 text-primary mx-auto mb-1" />
+              <p class="text-lg font-bold text-primary">
+                {{ campaign.vttInfo?.characterCounts?.total ?? 0 }}
+              </p>
+              <p class="text-xs text-muted">Personnages</p>
+              <p
+                v-if="campaign.vttInfo?.characterCounts && campaign.vttInfo.characterCounts.total > 0"
+                class="text-xs text-muted mt-0.5"
+              >
+                {{ campaign.vttInfo.characterCounts.pc }} PJ
+                <template v-if="campaign.vttInfo.characterCounts.npc > 0">
+                  &middot; {{ campaign.vttInfo.characterCounts.npc }} PNJ
+                </template>
+                <template v-if="campaign.vttInfo.characterCounts.monster > 0">
+                  &middot; {{ campaign.vttInfo.characterCounts.monster }} Monstres
+                </template>
+              </p>
+            </div>
+            <div class="text-center p-3 rounded-lg bg-elevated">
+              <UIcon name="i-lucide-dice-5" class="size-5 text-primary mx-auto mb-1" />
+              <p class="text-lg font-bold text-primary">
+                {{ campaign.vttInfo?.diceRollCount ?? 0 }}
+              </p>
+              <p class="text-xs text-muted">Jets de dés</p>
+            </div>
+            <div class="text-center p-3 rounded-lg bg-elevated">
+              <UIcon name="i-lucide-refresh-cw" class="size-5 text-primary mx-auto mb-1" />
+              <p class="text-lg font-bold text-primary">
+                {{
+                  campaign.vttInfo?.lastVttSyncAt
+                    ? formatRelativeTime(campaign.vttInfo.lastVttSyncAt)
+                    : '—'
+                }}
+              </p>
+              <p class="text-xs text-muted">Dernière synchro</p>
             </div>
           </div>
 
@@ -503,39 +655,13 @@
       <!-- Intégration Twitch Section (VTT only — gamification events depend on VTT) -->
       <UCard v-if="campaign?.vttConnection" class="mt-8">
         <template #header>
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-3">
-              <UIcon name="i-lucide-twitch" class="size-6 text-[#9146FF]" />
-              <h2 class="text-xl font-bold text-primary">Intégration Twitch</h2>
-            </div>
-            <div class="flex items-center gap-2">
-              <!-- Reset Cooldowns Button (ouvre la modale de sélection) -->
-              <UButton
-                v-if="hasEnabledEvents"
-                icon="i-lucide-timer-reset"
-                label="Reset Cooldowns"
-                color="warning"
-                variant="soft"
-                size="sm"
-                @click="showResetCooldownsModal = true"
-              />
-              <!-- Collapse toggle -->
-              <UButton
-                :icon="
-                  gamificationSectionExpanded ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'
-                "
-                color="neutral"
-                variant="ghost"
-                size="sm"
-                square
-                @click="gamificationSectionExpanded = !gamificationSectionExpanded"
-              />
-            </div>
+          <div class="flex items-center gap-3">
+            <UIcon name="i-lucide-twitch" class="size-6 text-[#9146FF]" />
+            <h2 class="text-xl font-bold text-primary">Intégration Twitch</h2>
           </div>
         </template>
 
-        <Transition name="collapse">
-          <div v-if="gamificationSectionExpanded" class="space-y-6">
+        <div class="space-y-6">
             <!-- Loading State -->
             <div v-if="gamificationLoading" class="flex items-center justify-center py-8">
               <UIcon
@@ -564,14 +690,14 @@
                 description="Configurez les événements d'intégration pour permettre à vos viewers d'influencer le jeu. Chaque événement sera créé comme récompense sur les chaînes des streamers actifs."
               />
 
-              <!-- Active Instances (if any) -->
-              <div v-if="activeGamificationInstances.length > 0" class="space-y-3">
+              <!-- Armed Instances (gauges filled, waiting to trigger) -->
+              <div v-if="armedGamificationInstances.length > 0" class="space-y-3">
                 <div class="flex items-center gap-2">
-                  <UIcon name="i-lucide-activity" class="size-5 text-success-500" />
-                  <h3 class="text-lg font-semibold text-primary">Événements en cours</h3>
+                  <UIcon name="i-lucide-zap" class="size-5 text-warning-500" />
+                  <h3 class="text-lg font-semibold text-primary">Événements à venir</h3>
                 </div>
                 <MjGamificationInstanceRow
-                  v-for="instance in activeGamificationInstances"
+                  v-for="instance in armedGamificationInstances"
                   :key="instance.id"
                   :instance="instance"
                   :is-dev="isDev"
@@ -620,8 +746,7 @@
                 </p>
               </div>
             </template>
-          </div>
-        </Transition>
+        </div>
       </UCard>
 
       <!-- Criticality Rules Section (VTT only — rules are for VTT dice rolls) -->
@@ -1559,15 +1684,6 @@
           <li>Timers de réactivation : annulés</li>
         </ul>
 
-        <div class="pt-2">
-          <label class="flex items-center gap-3 cursor-pointer">
-            <input v-model="cleanupFoundryChat" type="checkbox" class="accent-info-500" />
-            <span class="text-sm text-primary">
-              Supprimer aussi les messages Tumulte du chat Foundry
-            </span>
-          </label>
-        </div>
-
         <UAlert
           color="info"
           variant="soft"
@@ -1579,20 +1695,28 @@
     </template>
 
     <template #footer>
-      <div class="flex gap-3 justify-end">
-        <UButton
-          color="neutral"
-          variant="soft"
-          label="Annuler"
-          @click="showCleanupFoundryModal = false"
-        />
-        <UButton
+      <div class="space-y-3">
+        <UCheckbox
+          v-model="cleanupFoundryChat"
           color="info"
-          icon="i-lucide-eraser"
-          label="Nettoyer"
-          :loading="cleaningFoundry"
-          @click="handleCleanupFoundryConfirm"
+          label="Supprimer aussi les messages Tumulte du chat Foundry"
         />
+        <div class="flex gap-3">
+          <UButton
+            color="neutral"
+            variant="soft"
+            label="Annuler"
+            @click="showCleanupFoundryModal = false"
+          />
+          <UButton
+            color="info"
+            variant="soft"
+            icon="i-lucide-eraser"
+            label="Nettoyer"
+            :loading="cleaningFoundry"
+            @click="handleCleanupFoundryConfirm"
+          />
+        </div>
       </div>
     </template>
   </UModal>
@@ -1994,8 +2118,10 @@ const searching = ref(false)
 
 // Gamification state
 const activeGamificationInstances = ref<GamificationInstance[]>([])
+const armedGamificationInstances = computed(() =>
+  activeGamificationInstances.value.filter((i) => i.status === 'armed')
+)
 const savingGamificationEventId = ref<string | null>(null)
-const gamificationSectionExpanded = ref(true)
 
 // Outils de maintenance MJ
 const showMaintenanceInfoModal = ref(false)
@@ -2011,15 +2137,21 @@ const cleaningFoundry = ref(false)
 
 const activeMembers = computed(() => members.value.filter((m) => m.status === 'ACTIVE'))
 
-// Group gamification events by family (spells together, others together)
+// Group gamification events by family (dice, spells, monsters)
 const SPELL_ACTION_TYPES = ['spell_disable', 'spell_buff', 'spell_debuff']
+const MONSTER_ACTION_TYPES = ['monster_buff', 'monster_debuff']
 
 const eventGroups = computed(() => {
   const spellEvents = gamificationEvents.value.filter((e) =>
     SPELL_ACTION_TYPES.includes(e.actionType)
   )
+  const monsterEvents = gamificationEvents.value.filter((e) =>
+    MONSTER_ACTION_TYPES.includes(e.actionType)
+  )
   const otherEvents = gamificationEvents.value.filter(
-    (e) => !SPELL_ACTION_TYPES.includes(e.actionType)
+    (e) =>
+      !SPELL_ACTION_TYPES.includes(e.actionType) &&
+      !MONSTER_ACTION_TYPES.includes(e.actionType)
   )
 
   const groups: { label: string; icon: string; events: typeof gamificationEvents.value }[] = []
@@ -2031,6 +2163,13 @@ const eventGroups = computed(() => {
       label: 'Sorts & Capacités',
       icon: 'i-lucide-wand-sparkles',
       events: spellEvents,
+    })
+  }
+  if (monsterEvents.length > 0) {
+    groups.push({
+      label: 'Mode Monstre',
+      icon: 'i-lucide-swords',
+      events: monsterEvents,
     })
   }
   return groups
@@ -2533,6 +2672,16 @@ const confirmDeleteCampaign = async () => {
 }
 
 // VTT Connection helpers
+const hasVttStats = computed(() => {
+  if (!campaign.value?.vttInfo) return false
+  const info = campaign.value.vttInfo
+  return (
+    (info.characterCounts?.total ?? 0) > 0 ||
+    (info.diceRollCount ?? 0) > 0 ||
+    !!info.lastVttSyncAt
+  )
+})
+
 const getTunnelStatusColor = (status?: string): 'success' | 'warning' | 'error' | 'neutral' => {
   switch (status) {
     case 'connected':

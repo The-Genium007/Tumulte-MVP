@@ -2,6 +2,7 @@ import type { HttpContext } from '@adonisjs/core/http'
 import { inject } from '@adonisjs/core'
 import { campaign as Campaign } from '#models/campaign'
 import { CriticalityRuleService } from '#services/campaigns/criticality_rule_service'
+import { SystemPresetService } from '#services/campaigns/system_preset_service'
 import { CampaignCriticalityRuleRepository } from '#repositories/campaign_criticality_rule_repository'
 import {
   createCriticalityRuleSchema,
@@ -11,9 +12,11 @@ import {
 @inject()
 export default class CriticalityRulesController {
   private service: CriticalityRuleService
+  private presetService: SystemPresetService
 
   constructor() {
     this.service = new CriticalityRuleService(new CampaignCriticalityRuleRepository())
+    this.presetService = new SystemPresetService()
   }
 
   /**
@@ -84,5 +87,27 @@ export default class CriticalityRulesController {
     await this.service.delete(params.ruleId, campaign.id)
 
     return response.noContent()
+  }
+
+  /**
+   * Retourne les infos système et recommandations pour une campagne
+   * GET /mj/campaigns/:campaignId/system-info
+   */
+  async systemInfo({ auth, params, response }: HttpContext) {
+    const user = auth.user!
+
+    const campaign = await Campaign.query()
+      .where('id', params.campaignId)
+      .where('owner_id', user.id)
+      .firstOrFail()
+
+    const info = this.presetService.getCompatibilityInfo(campaign.gameSystemId)
+    const activePresets = await this.presetService.countActivePresets(campaign.id)
+
+    return response.ok({
+      gameSystemId: campaign.gameSystemId,
+      ...info,
+      presetRulesActive: activePresets,
+    })
   }
 }

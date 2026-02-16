@@ -510,7 +510,7 @@ describe('useGamification', () => {
     it('should call backend reset-cooldowns endpoint', async () => {
       global.fetch = vi.fn().mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({ data: { message: 'Cooldowns réinitialisés' } }),
+        json: () => Promise.resolve({ data: { count: 2, message: 'Cooldowns réinitialisés' } }),
       })
 
       const { resetCooldowns } = useGamification()
@@ -521,7 +521,7 @@ describe('useGamification', () => {
         expect.stringContaining('/mj/campaigns/campaign-123/gamification/reset-cooldowns'),
         expect.objectContaining({ method: 'POST', credentials: 'include' })
       )
-      expect(result).toEqual({ count: 1 })
+      expect(result).toEqual({ count: 2, message: 'Cooldowns réinitialisés' })
     })
 
     it('should throw on backend error', async () => {
@@ -578,6 +578,7 @@ describe('useGamification', () => {
     it('should simulate a redemption successfully', async () => {
       global.fetch = vi.fn().mockResolvedValueOnce({
         ok: true,
+        json: () => Promise.resolve({ success: true }),
       })
 
       const { simulateRedemption } = useGamification()

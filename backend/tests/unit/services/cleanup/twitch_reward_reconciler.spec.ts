@@ -45,7 +45,22 @@ test.group('TwitchRewardReconciler', () => {
       logFullReconciliationCompleted: () => {},
     }
 
-    return { mockTwitchRewardService, mockConfigRepo, mockAuditService }
+    const mockTokenRefreshService = {
+      refreshStreamerToken: async () => true,
+    }
+
+    return { mockTwitchRewardService, mockConfigRepo, mockAuditService, mockTokenRefreshService }
+  }
+
+  function createReconciler(mocks: ReturnType<typeof createMocks>): TwitchRewardReconciler {
+    const reconciler = new TwitchRewardReconciler(
+      mocks.mockTwitchRewardService as any,
+      mocks.mockConfigRepo as any,
+      mocks.mockAuditService as any
+    )
+    // Inject mock token refresh service to avoid real HTTP calls
+    ;(reconciler as any).tokenRefreshService = mocks.mockTokenRefreshService
+    return reconciler
   }
 
   // ========================================
@@ -127,13 +142,13 @@ test.group('TwitchRewardReconciler', () => {
   test('cleanupOrphans should successfully clean orphan with valid streamer', async ({
     assert,
   }) => {
-    const { mockTwitchRewardService, mockConfigRepo, mockAuditService } = createMocks({
+    const mocks = createMocks({
       deleteSuccess: true,
       isAlreadyDeleted: false,
     })
 
     let markedAsDeleted = false
-    mockConfigRepo.markAsDeleted = async () => {
+    mocks.mockConfigRepo.markAsDeleted = async () => {
       markedAsDeleted = true
     }
 
@@ -151,11 +166,7 @@ test.group('TwitchRewardReconciler', () => {
       load: async () => {},
     } as unknown as StreamerGamificationConfig
 
-    const reconciler = new TwitchRewardReconciler(
-      mockTwitchRewardService as any,
-      mockConfigRepo as any,
-      mockAuditService as any
-    )
+    const reconciler = createReconciler(mocks)
 
     const result = await reconciler.cleanupOrphans([orphanConfig])
 
@@ -166,7 +177,7 @@ test.group('TwitchRewardReconciler', () => {
   })
 
   test('cleanupOrphans should handle already deleted on Twitch (404)', async ({ assert }) => {
-    const { mockTwitchRewardService, mockConfigRepo, mockAuditService } = createMocks({
+    const mocks = createMocks({
       deleteSuccess: true,
       isAlreadyDeleted: true,
     })
@@ -185,11 +196,7 @@ test.group('TwitchRewardReconciler', () => {
       load: async () => {},
     } as unknown as StreamerGamificationConfig
 
-    const reconciler = new TwitchRewardReconciler(
-      mockTwitchRewardService as any,
-      mockConfigRepo as any,
-      mockAuditService as any
-    )
+    const reconciler = createReconciler(mocks)
 
     const result = await reconciler.cleanupOrphans([orphanConfig])
 
@@ -201,12 +208,12 @@ test.group('TwitchRewardReconciler', () => {
   test('cleanupOrphans should handle deletion failure with retry scheduling', async ({
     assert,
   }) => {
-    const { mockTwitchRewardService, mockConfigRepo, mockAuditService } = createMocks({
+    const mocks = createMocks({
       deleteSuccess: false,
     })
 
     let retryScheduled = false
-    mockConfigRepo.updateOrphanRetry = async () => {
+    mocks.mockConfigRepo.updateOrphanRetry = async () => {
       retryScheduled = true
     }
 
@@ -224,11 +231,7 @@ test.group('TwitchRewardReconciler', () => {
       load: async () => {},
     } as unknown as StreamerGamificationConfig
 
-    const reconciler = new TwitchRewardReconciler(
-      mockTwitchRewardService as any,
-      mockConfigRepo as any,
-      mockAuditService as any
-    )
+    const reconciler = createReconciler(mocks)
 
     const result = await reconciler.cleanupOrphans([orphanConfig])
 
@@ -239,13 +242,11 @@ test.group('TwitchRewardReconciler', () => {
   })
 
   test('cleanupOrphans should handle exception during cleanup', async ({ assert }) => {
-    const { mockConfigRepo, mockAuditService } = createMocks()
+    const mocks = createMocks()
 
-    const mockTwitchRewardService = {
-      deleteRewardWithRetry: async () => {
-        throw new Error('API error')
-      },
-      listRewards: async () => [],
+    // Override deleteRewardWithRetry to throw
+    mocks.mockTwitchRewardService.deleteRewardWithRetry = async () => {
+      throw new Error('API error')
     }
 
     const mockStreamer = {
@@ -258,14 +259,11 @@ test.group('TwitchRewardReconciler', () => {
       twitchRewardId: 'reward-1',
       streamerId: 'streamer-1',
       streamer: mockStreamer,
+      deletionRetryCount: 0,
       load: async () => {},
     } as unknown as StreamerGamificationConfig
 
-    const reconciler = new TwitchRewardReconciler(
-      mockTwitchRewardService as any,
-      mockConfigRepo as any,
-      mockAuditService as any
-    )
+    const reconciler = createReconciler(mocks)
 
     const result = await reconciler.cleanupOrphans([orphanConfig])
 

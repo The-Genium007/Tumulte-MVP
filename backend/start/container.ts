@@ -152,6 +152,10 @@ app.container.singleton('actionHandlerRegistry', async () => {
     await import('#services/gamification/handlers/actions/spell_buff_action')
   const { SpellDebuffAction } =
     await import('#services/gamification/handlers/actions/spell_debuff_action')
+  const { MonsterBuffAction } =
+    await import('#services/gamification/handlers/actions/monster_buff_action')
+  const { MonsterDebuffAction } =
+    await import('#services/gamification/handlers/actions/monster_debuff_action')
 
   registry.register(new DiceInvertAction())
   registry.register(new ChatMessageAction())
@@ -160,6 +164,8 @@ app.container.singleton('actionHandlerRegistry', async () => {
   registry.register(new SpellDisableAction())
   registry.register(new SpellBuffAction())
   registry.register(new SpellDebuffAction())
+  registry.register(new MonsterBuffAction())
+  registry.register(new MonsterDebuffAction())
 
   return registry
 })

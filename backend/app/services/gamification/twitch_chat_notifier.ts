@@ -40,6 +40,20 @@ const NOTIFICATION_TEMPLATES = new Map<string, TemplateBuilder>([
       return `🔒 Le chat a scellé ${spellName} ! Sort indisponible pendant ${mins} min.`
     },
   ],
+  [
+    'monster_buff',
+    (ctx) => {
+      const name = ctx.resultData?.actionResult?.monsterName ?? 'un monstre'
+      return `⚔️ Le chat renforce ${name} ! CA augmentée et PV temporaires.`
+    },
+  ],
+  [
+    'monster_debuff',
+    (ctx) => {
+      const name = ctx.resultData?.actionResult?.monsterName ?? 'un monstre'
+      return `💥 Le chat affaiblit ${name} ! CA réduite et PV diminués.`
+    },
+  ],
 ])
 
 /**

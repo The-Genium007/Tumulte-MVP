@@ -1,10 +1,11 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import { inject } from '@adonisjs/core'
+import app from '@adonisjs/core/services/app'
 import crypto from 'node:crypto'
 import * as Sentry from '@sentry/node'
 import env from '#start/env'
 import logger from '@adonisjs/core/services/logger'
-import { GamificationService } from '#services/gamification/gamification_service'
+import type { GamificationService } from '#services/gamification/gamification_service'
 import { GamificationConfigRepository } from '#repositories/gamification_config_repository'
 import { StreamerGamificationConfigRepository } from '#repositories/streamer_gamification_config_repository'
 import { StreamerRepository } from '#repositories/streamer_repository'
@@ -60,14 +61,26 @@ interface RedemptionEvent {
 @inject()
 export default class TwitchEventSubController {
   private webhookSecret: string
+  private _gamificationService: GamificationService | null = null
 
   constructor(
-    private gamificationService: GamificationService,
     private configRepository: GamificationConfigRepository,
     private streamerConfigRepository: StreamerGamificationConfigRepository,
     private streamerRepository: StreamerRepository
   ) {
     this.webhookSecret = env.get('TWITCH_EVENTSUB_SECRET') || ''
+  }
+
+  /**
+   * Résout le GamificationService depuis le container IoC (singleton avec FoundryCommandAdapter).
+   * On ne peut PAS l'injecter via @inject() car cela créerait une instance fresh
+   * sans les registries et sans FoundryCommandAdapter.
+   */
+  private async getGamificationService(): Promise<GamificationService> {
+    if (!this._gamificationService) {
+      this._gamificationService = await app.container.make('gamificationService')
+    }
+    return this._gamificationService
   }
 
   /**
@@ -118,7 +131,22 @@ export default class TwitchEventSubController {
 
     // Gestion des notifications
     if (messageType === 'notification') {
-      await this.handleNotification(body)
+      try {
+        await this.handleNotification(body)
+      } catch (error) {
+        logger.error(
+          {
+            event: 'eventsub_notification_error',
+            subscriptionType: body.subscription?.type,
+            error: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined,
+          },
+          'Erreur non gérée lors du traitement de la notification EventSub'
+        )
+        Sentry.captureException(error, {
+          tags: { service: 'twitch_eventsub', operation: 'handleNotification' },
+        })
+      }
       return response.ok({ received: true })
     }
 
@@ -249,7 +277,8 @@ export default class TwitchEventSubController {
 
     // Traiter la redemption via le service de gamification (ancien flux)
     try {
-      const result = await this.gamificationService.onRedemption({
+      const gamificationService = await this.getGamificationService()
+      const result = await gamificationService.onRedemption({
         redemptionId: event.id,
         rewardId: event.reward.id,
         streamerId: streamer.id,
@@ -330,7 +359,8 @@ export default class TwitchEventSubController {
     )
 
     try {
-      const result = await this.gamificationService.onStreamerRedemption({
+      const gamificationService = await this.getGamificationService()
+      const result = await gamificationService.onStreamerRedemption({
         redemptionId: event.id,
         rewardId: event.reward.id,
         streamerId,

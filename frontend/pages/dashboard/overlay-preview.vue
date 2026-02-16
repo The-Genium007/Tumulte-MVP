@@ -135,12 +135,56 @@
             />
           </div>
 
-          <!-- Impact HUD Preview -->
+          <!-- Impact HUD Preview (Dice Reverse) -->
           <div class="impact-hud-preview-container">
             <DiceReverseImpactHUD
               :data="previewImpactData"
               :visible="isPreviewImpactVisible"
               @hidden="isPreviewImpactVisible = false"
+            />
+          </div>
+
+          <!-- Spell Goal Bar Preview -->
+          <div class="goal-bar-preview-container">
+            <SpellGoalBar
+              :instance="previewSpellInstance"
+              :visible="isPreviewSpellGoalBarVisible"
+              :custom-styles="spellGoalBarCustomStyles"
+              @complete="handlePreviewSpellGoalBarComplete"
+              @expired="handlePreviewSpellGoalBarExpired"
+              @hidden="isPreviewSpellGoalBarVisible = false"
+            />
+          </div>
+
+          <!-- Spell Impact HUD Preview -->
+          <div class="impact-hud-preview-container">
+            <SpellImpactHUD
+              :data="previewSpellImpactData"
+              :visible="isPreviewSpellImpactVisible"
+              :custom-styles="spellImpactHudCustomStyles"
+              @hidden="isPreviewSpellImpactVisible = false"
+            />
+          </div>
+
+          <!-- Monster Goal Bar Preview -->
+          <div class="goal-bar-preview-container">
+            <MonsterGoalBar
+              :instance="previewMonsterInstance"
+              :visible="isPreviewMonsterGoalBarVisible"
+              :custom-styles="monsterGoalBarCustomStyles"
+              @complete="handlePreviewMonsterGoalBarComplete"
+              @expired="handlePreviewMonsterGoalBarExpired"
+              @hidden="isPreviewMonsterGoalBarVisible = false"
+            />
+          </div>
+
+          <!-- Monster Impact HUD Preview -->
+          <div class="impact-hud-preview-container">
+            <MonsterImpactHUD
+              :data="previewMonsterImpactData"
+              :visible="isPreviewMonsterImpactVisible"
+              :custom-styles="monsterImpactHudCustomStyles"
+              @hidden="isPreviewMonsterImpactVisible = false"
             />
           </div>
 
@@ -172,6 +216,12 @@
           @show-goal-bar="handleShowGoalBar"
           @hide-goal-bar="handleHideGoalBar"
           @show-impact-hud="handleShowImpactHud"
+          @show-spell-goal-bar="handleShowSpellGoalBar"
+          @hide-spell-goal-bar="handleHideSpellGoalBar"
+          @show-spell-impact-hud="handleShowSpellImpactHud"
+          @show-monster-goal-bar="handleShowMonsterGoalBar"
+          @hide-monster-goal-bar="handleHideMonsterGoalBar"
+          @show-monster-impact-hud="handleShowMonsterImpactHud"
         />
       </div>
     </div>
@@ -187,13 +237,25 @@ import DiceReverseGoalBar from '@/components/overlay/DiceReverseGoalBar.vue'
 import DiceReverseImpactHUD, {
   type ImpactData,
 } from '@/components/overlay/DiceReverseImpactHUD.vue'
+import SpellGoalBar from '@/components/overlay/SpellGoalBar.vue'
+import SpellImpactHUD, { type SpellImpactData } from '@/components/overlay/SpellImpactHUD.vue'
+import MonsterGoalBar from '@/components/overlay/MonsterGoalBar.vue'
+import MonsterImpactHUD, { type MonsterImpactData } from '@/components/overlay/MonsterImpactHUD.vue'
 import { useOverlayStudioStore } from '@/overlay-studio/stores/overlayStudio'
 import { useOverlayStudioApi } from '@/overlay-studio/composables/useOverlayStudioApi'
 import {
   getDiceConfigFromElement,
   getDiceHudStyleFromElement,
 } from '@/composables/useOverlayElement'
-import type { PollProperties, DiceRollEvent, OverlayElement } from '@/overlay-studio/types'
+import type {
+  PollProperties,
+  DiceRollEvent,
+  OverlayElement,
+  SpellGoalBarProperties,
+  SpellImpactHudProperties,
+  MonsterGoalBarProperties,
+  MonsterImpactHudProperties,
+} from '@/overlay-studio/types'
 import type { GamificationInstanceEvent } from '@/types'
 import type { AnimationState } from '@/overlay-studio/composables/useAnimationController'
 
@@ -275,16 +337,82 @@ const currentPreviewDiceRoll = ref<DiceRollEvent | null>(null)
 const previewGoalBarInstance = ref<GamificationInstanceEvent | null>(null)
 const isPreviewGoalBarVisible = ref(false)
 
-// État pour Impact HUD preview
+// État pour Impact HUD preview (Dice Reverse)
 const previewImpactData = ref<ImpactData | null>(null)
 const isPreviewImpactVisible = ref(false)
 const isPreviewDiceHudVisible = ref(false)
 let diceHudTimeout: ReturnType<typeof setTimeout> | null = null
 
+// État pour Spell Goal Bar preview
+const previewSpellInstance = ref<GamificationInstanceEvent | null>(null)
+const isPreviewSpellGoalBarVisible = ref(false)
+
+// État pour Spell Impact HUD preview
+const previewSpellImpactData = ref<SpellImpactData | null>(null)
+const isPreviewSpellImpactVisible = ref(false)
+
+// État pour Monster Goal Bar preview
+const previewMonsterInstance = ref<GamificationInstanceEvent | null>(null)
+const isPreviewMonsterGoalBarVisible = ref(false)
+
+// État pour Monster Impact HUD preview
+const previewMonsterImpactData = ref<MonsterImpactData | null>(null)
+const isPreviewMonsterImpactVisible = ref(false)
+
 // Éléments de la configuration
 const elements = computed(() => store.elements)
 const visibleElements = computed(() => elements.value.filter((el) => el.visible))
 const hasConfig = computed(() => elements.value.length > 0)
+
+// =============================================
+// Custom styles extraits du store pour les composants overlay
+// Mapping: Store Properties → Component customStyles prop
+// =============================================
+const spellGoalBarCustomStyles = computed(() => {
+  const el = elements.value.find((e) => e.type === 'spellGoalBar')
+  if (!el) return undefined
+  const props = el.properties as SpellGoalBarProperties
+  return {
+    container: props.container,
+    progressBar: props.progressBar,
+    shakeStartPercent: props.shake.startPercent,
+    shakeMaxIntensity: props.shake.maxIntensity,
+  }
+})
+
+const spellImpactHudCustomStyles = computed(() => {
+  const el = elements.value.find((e) => e.type === 'spellImpactHud')
+  if (!el) return undefined
+  const props = el.properties as SpellImpactHudProperties
+  return {
+    container: props.container,
+    animation: props.animations,
+    typography: props.typography,
+  }
+})
+
+const monsterGoalBarCustomStyles = computed(() => {
+  const el = elements.value.find((e) => e.type === 'monsterGoalBar')
+  if (!el) return undefined
+  const props = el.properties as MonsterGoalBarProperties
+  return {
+    container: props.container,
+    progressBar: props.progressBar,
+    shakeStartPercent: props.shake.startPercent,
+    shakeMaxIntensity: props.shake.maxIntensity,
+  }
+})
+
+const monsterImpactHudCustomStyles = computed(() => {
+  const el = elements.value.find((e) => e.type === 'monsterImpactHud')
+  if (!el) return undefined
+  const props = el.properties as MonsterImpactHudProperties
+  return {
+    container: props.container,
+    animation: props.animations,
+    typography: props.typography,
+  }
+})
 
 // État actuel de l'élément sélectionné
 const currentState = computed<AnimationState>(() => {
@@ -681,12 +809,88 @@ const handlePreviewGoalBarExpired = () => {
 }
 
 // =============================================
-// Impact HUD Preview Handlers
+// Impact HUD Preview Handlers (Dice Reverse)
 // =============================================
 const handleShowImpactHud = (data: ImpactData) => {
   console.log('[Preview] Showing Impact HUD:', data)
   previewImpactData.value = data
   isPreviewImpactVisible.value = true
+}
+
+// =============================================
+// Spell Goal Bar Preview Handlers
+// =============================================
+const handleShowSpellGoalBar = (instance: GamificationInstanceEvent) => {
+  console.log('[Preview] Showing Spell Goal Bar:', instance)
+  previewSpellInstance.value = instance
+  isPreviewSpellGoalBarVisible.value = true
+}
+
+const handleHideSpellGoalBar = () => {
+  console.log('[Preview] Hiding Spell Goal Bar')
+  isPreviewSpellGoalBarVisible.value = false
+  setTimeout(() => {
+    previewSpellInstance.value = null
+  }, 500)
+}
+
+const handlePreviewSpellGoalBarComplete = () => {
+  console.log('[Preview] Spell Goal Bar complete')
+}
+
+const handlePreviewSpellGoalBarExpired = () => {
+  console.log('[Preview] Spell Goal Bar expired')
+  setTimeout(() => {
+    isPreviewSpellGoalBarVisible.value = false
+    previewSpellInstance.value = null
+  }, 2000)
+}
+
+// =============================================
+// Spell Impact HUD Preview Handlers
+// =============================================
+const handleShowSpellImpactHud = (data: SpellImpactData) => {
+  console.log('[Preview] Showing Spell Impact HUD:', data)
+  previewSpellImpactData.value = data
+  isPreviewSpellImpactVisible.value = true
+}
+
+// =============================================
+// Monster Goal Bar Preview Handlers
+// =============================================
+const handleShowMonsterGoalBar = (instance: GamificationInstanceEvent) => {
+  console.log('[Preview] Showing Monster Goal Bar:', instance)
+  previewMonsterInstance.value = instance
+  isPreviewMonsterGoalBarVisible.value = true
+}
+
+const handleHideMonsterGoalBar = () => {
+  console.log('[Preview] Hiding Monster Goal Bar')
+  isPreviewMonsterGoalBarVisible.value = false
+  setTimeout(() => {
+    previewMonsterInstance.value = null
+  }, 500)
+}
+
+const handlePreviewMonsterGoalBarComplete = () => {
+  console.log('[Preview] Monster Goal Bar complete')
+}
+
+const handlePreviewMonsterGoalBarExpired = () => {
+  console.log('[Preview] Monster Goal Bar expired')
+  setTimeout(() => {
+    isPreviewMonsterGoalBarVisible.value = false
+    previewMonsterInstance.value = null
+  }, 2000)
+}
+
+// =============================================
+// Monster Impact HUD Preview Handlers
+// =============================================
+const handleShowMonsterImpactHud = (data: MonsterImpactData) => {
+  console.log('[Preview] Showing Monster Impact HUD:', data)
+  previewMonsterImpactData.value = data
+  isPreviewMonsterImpactVisible.value = true
 }
 </script>
 

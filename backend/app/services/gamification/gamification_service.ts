@@ -765,8 +765,14 @@ export class GamificationService {
 
     // Si l'objectif est atteint
     if (objectiveReached && updatedInstance.status === 'active') {
-      // Spell actions execute immediately (no ARMED phase)
-      const immediateActionTypes = ['spell_disable', 'spell_buff', 'spell_debuff']
+      // Spell & monster actions execute immediately (no ARMED phase)
+      const immediateActionTypes = [
+        'spell_disable',
+        'spell_buff',
+        'spell_debuff',
+        'monster_buff',
+        'monster_debuff',
+      ]
 
       if (immediateActionTypes.includes(gamificationEvent.actionType)) {
         const connectionId = await this.getVttConnectionId(redemption.campaignId)
@@ -779,7 +785,7 @@ export class GamificationService {
             true
           )
 
-          // Broadcast spell action result to overlay
+          // Broadcast action result to overlay
           const actionResult = updatedInstance.resultData?.actionResult as
             | Record<string, unknown>
             | undefined
@@ -792,6 +798,7 @@ export class GamificationService {
                 actionType: gamificationEvent.actionType,
                 success: updatedInstance.resultData?.success ?? false,
                 message: updatedInstance.resultData?.message,
+                // Spell fields
                 spellName: actionResult?.spellName as string | undefined,
                 spellImg: actionResult?.spellImg as string | undefined,
                 effectDuration: actionResult?.effectDuration as number | undefined,
@@ -799,10 +806,19 @@ export class GamificationService {
                 debuffType: actionResult?.debuffType as string | undefined,
                 bonusValue: actionResult?.bonusValue as number | undefined,
                 penaltyValue: actionResult?.penaltyValue as number | undefined,
+                // Monster fields
+                monsterName: actionResult?.monsterName as string | undefined,
+                monsterImg: actionResult?.monsterImg as string | undefined,
+                effectType: actionResult?.effectType as string | undefined,
+                acBonus: actionResult?.acBonus as number | undefined,
+                acPenalty: actionResult?.acPenalty as number | undefined,
+                tempHp: actionResult?.tempHp as number | undefined,
+                maxHpReduction: actionResult?.maxHpReduction as number | undefined,
+                highlightColor: actionResult?.highlightColor as string | undefined,
               })
             )
             .catch((err) => {
-              logger.error({ err }, 'Failed to emit gamification:action_executed for spell action')
+              logger.error({ err }, 'Failed to emit gamification:action_executed')
             })
 
           logger.info(
@@ -812,7 +828,7 @@ export class GamificationService {
               campaignId: redemption.campaignId,
               actionType: gamificationEvent.actionType,
             },
-            'Action spell exécutée immédiatement (pas de phase armed)'
+            'Action exécutée immédiatement (pas de phase armed)'
           )
         } else {
           logger.warn(
@@ -821,7 +837,7 @@ export class GamificationService {
               instanceId: updatedInstance.id,
               campaignId: redemption.campaignId,
             },
-            "Pas de connexion VTT pour exécuter l'action spell"
+            "Pas de connexion VTT pour exécuter l'action"
           )
         }
 

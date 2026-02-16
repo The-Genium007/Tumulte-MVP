@@ -277,6 +277,18 @@ export class StreamerGamificationConfigRepository {
     config.nextDeletionRetryAt = nextRetryAt
     await config.save()
   }
+
+  /**
+   * Find orphaned configs that have been stuck for longer than the given threshold
+   */
+  async findStaleOrphans(olderThan: DateTime): Promise<StreamerGamificationConfig[]> {
+    return StreamerGamificationConfig.query()
+      .where('twitchRewardStatus', 'orphaned')
+      .whereNotNull('twitchRewardId')
+      .whereNotNull('deletionFailedAt')
+      .where('deletionFailedAt', '<', olderThan.toSQL()!)
+      .preload('streamer')
+  }
 }
 
 export default StreamerGamificationConfigRepository

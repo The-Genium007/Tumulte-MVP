@@ -42,13 +42,18 @@
 
     <!-- Dice Roll Overlay (VTT Integration) - Visibilité contrôlée par la queue -->
     <!-- Position et scale basés sur hudTransform de l'élément dice -->
+    <!-- Also handles dice inversion impact (HUD slam animation) -->
     <DiceRollOverlay
       :dice-roll="currentDiceRoll"
       :visible="isPopup2DVisible"
       :hud-config="diceHudConfig"
       :critical-colors="diceCriticalColors"
+      :impact-data="gamificationImpactData"
+      :impact-visible="isGamificationImpactVisible"
+      :impact-config="diceReverseImpactHudConfig"
       :style="diceHudTransformStyle"
       @hidden="handleDiceRollHidden"
+      @impact-hidden="handleGamificationImpactHidden"
     />
 
     <!-- Dice Reverse Goal Bar - Positioned at top center (Twitch Goal style) -->
@@ -62,12 +67,47 @@
       />
     </div>
 
-    <!-- Dice Reverse Impact HUD - Appears when action executes (e.g., dice inversion) -->
-    <div class="dice-reverse-impact-container">
-      <DiceReverseImpactHUD
-        :data="gamificationImpactData"
-        :visible="isGamificationImpactVisible"
-        @hidden="handleGamificationImpactHidden"
+    <!-- Spell Goal Bar - Positioned at top center (same position as dice reverse, mutually exclusive) -->
+    <div class="spell-goal-bar-container">
+      <SpellGoalBar
+        :instance="activeSpellInstance"
+        :visible="isSpellVisible"
+        :custom-styles="spellGoalBarCustomStyles"
+        @complete="handleSpellComplete"
+        @expired="handleSpellExpired"
+        @hidden="handleSpellHidden"
+      />
+    </div>
+
+    <!-- Spell Impact HUD - Appears when spell action executes -->
+    <div class="spell-impact-container">
+      <SpellImpactHUD
+        :data="spellImpactData"
+        :visible="isSpellImpactVisible"
+        :custom-styles="spellImpactHudCustomStyles"
+        @hidden="handleSpellImpactHidden"
+      />
+    </div>
+
+    <!-- Monster Goal Bar - Positioned at top center (combat influence) -->
+    <div class="monster-goal-bar-container">
+      <MonsterGoalBar
+        :instance="activeMonsterInstance"
+        :visible="isMonsterVisible"
+        :custom-styles="monsterGoalBarCustomStyles"
+        @complete="handleMonsterComplete"
+        @expired="handleMonsterExpired"
+        @hidden="handleMonsterHidden"
+      />
+    </div>
+
+    <!-- Monster Impact HUD - Appears when monster action executes -->
+    <div class="monster-impact-container">
+      <MonsterImpactHUD
+        :data="monsterImpactData"
+        :visible="isMonsterImpactVisible"
+        :custom-styles="monsterImpactHudCustomStyles"
+        @hidden="handleMonsterImpactHidden"
       />
     </div>
   </div>
@@ -78,9 +118,10 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import LivePollElement from '@/overlay-studio/components/LivePollElement.vue'
 import DiceRollOverlay from '@/components/overlay/DiceRollOverlay.vue'
 import DiceReverseGoalBar from '@/components/overlay/DiceReverseGoalBar.vue'
-import DiceReverseImpactHUD, {
-  type ImpactData,
-} from '@/components/overlay/DiceReverseImpactHUD.vue'
+import SpellGoalBar from '@/components/overlay/SpellGoalBar.vue'
+import SpellImpactHUD, { type SpellImpactData } from '@/components/overlay/SpellImpactHUD.vue'
+import MonsterGoalBar from '@/components/overlay/MonsterGoalBar.vue'
+import MonsterImpactHUD, { type MonsterImpactData } from '@/components/overlay/MonsterImpactHUD.vue'
 // Note: LiveDiceElement a été remplacé par DiceBox - voir DiceBox.client.vue
 import { useWebSocket } from '@/composables/useWebSocket'
 import { useOverlayConfig } from '@/composables/useOverlayConfig'
@@ -91,8 +132,16 @@ import type {
   DiceRollEvent,
   GamificationInstanceEvent,
   GamificationActionExecutedEvent,
+  ImpactData,
 } from '@/types'
-import type { DiceProperties } from '@/overlay-studio/types'
+import type {
+  DiceProperties,
+  DiceReverseImpactHudProperties,
+  SpellGoalBarProperties,
+  SpellImpactHudProperties,
+  MonsterGoalBarProperties,
+  MonsterImpactHudProperties,
+} from '@/overlay-studio/types'
 
 // State pour l'indicateur de connexion
 const isWsConnected = ref(true)
@@ -155,6 +204,61 @@ const diceBoxConfig = computed(() => {
 const diceAudioConfig = computed(() => {
   if (!diceElement.value) return undefined
   return (diceElement.value.properties as DiceProperties).audio
+})
+
+// Config du HUD d'impact dice reverse depuis l'élément diceReverseImpactHud
+const diceReverseImpactHudConfig = computed(() => {
+  const impactElement = visibleElements.value.find((el) => el.type === 'diceReverseImpactHud')
+  if (!impactElement) return undefined
+  return impactElement.properties as DiceReverseImpactHudProperties
+})
+
+// Custom styles pour les composants Spell/Monster
+// Mapping: Store Properties → Component customStyles prop
+const spellGoalBarCustomStyles = computed(() => {
+  const el = visibleElements.value.find((e) => e.type === 'spellGoalBar')
+  if (!el) return undefined
+  const props = el.properties as SpellGoalBarProperties
+  return {
+    container: props.container,
+    progressBar: props.progressBar,
+    shakeStartPercent: props.shake.startPercent,
+    shakeMaxIntensity: props.shake.maxIntensity,
+  }
+})
+
+const spellImpactHudCustomStyles = computed(() => {
+  const el = visibleElements.value.find((e) => e.type === 'spellImpactHud')
+  if (!el) return undefined
+  const props = el.properties as SpellImpactHudProperties
+  return {
+    container: props.container,
+    animation: props.animations,
+    typography: props.typography,
+  }
+})
+
+const monsterGoalBarCustomStyles = computed(() => {
+  const el = visibleElements.value.find((e) => e.type === 'monsterGoalBar')
+  if (!el) return undefined
+  const props = el.properties as MonsterGoalBarProperties
+  return {
+    container: props.container,
+    progressBar: props.progressBar,
+    shakeStartPercent: props.shake.startPercent,
+    shakeMaxIntensity: props.shake.maxIntensity,
+  }
+})
+
+const monsterImpactHudCustomStyles = computed(() => {
+  const el = visibleElements.value.find((e) => e.type === 'monsterImpactHud')
+  if (!el) return undefined
+  const props = el.properties as MonsterImpactHudProperties
+  return {
+    container: props.container,
+    animation: props.animations,
+    typography: props.typography,
+  }
 })
 
 // Style de positionnement du HUD basé sur hudTransform
@@ -248,9 +352,30 @@ const ROLL_DELAY_BETWEEN = 500 // 0.5s entre deux rolls
 const activeGamificationInstance = ref<GamificationInstanceEvent | null>(null)
 const isGamificationVisible = ref(false)
 
-// Impact HUD state (appears when action executes, e.g., dice inversion)
+// Impact HUD state (rendered inside DiceRollOverlay as slam animation)
 const gamificationImpactData = ref<ImpactData | null>(null)
 const isGamificationImpactVisible = ref(false)
+
+// Keep last dice roll for re-show when impact arrives after HUD has faded
+const lastDiceRoll = ref<DiceRollEvent | null>(null)
+
+// Spell Gamification State (separate from dice reverse — can coexist conceptually but use same goal bar slot)
+const activeSpellInstance = ref<GamificationInstanceEvent | null>(null)
+const isSpellVisible = ref(false)
+const spellImpactData = ref<SpellImpactData | null>(null)
+const isSpellImpactVisible = ref(false)
+
+// Monster Gamification State (combat influence - separate from spells and dice reverse)
+const activeMonsterInstance = ref<GamificationInstanceEvent | null>(null)
+const isMonsterVisible = ref(false)
+const monsterImpactData = ref<MonsterImpactData | null>(null)
+const isMonsterImpactVisible = ref(false)
+
+// Spell action types that use SpellGoalBar instead of DiceReverseGoalBar
+const SPELL_ACTION_TYPES = ['spell_disable', 'spell_buff', 'spell_debuff']
+
+// Monster action types that use MonsterGoalBar
+const MONSTER_ACTION_TYPES = ['monster_buff', 'monster_debuff']
 
 const { subscribeToStreamerPolls } = useWebSocket()
 
@@ -345,6 +470,7 @@ const processNextRoll = () => {
 
   // 1. Définir le roll actuel (utilisé par la pop-up 2D)
   currentDiceRoll.value = roll
+  lastDiceRoll.value = roll // Keep for potential re-show during impact
 
   // 2. Construire la notation DiceBox avec résultats forcés
   let notation = roll.rollFormula
@@ -413,11 +539,78 @@ const handleGamificationHidden = () => {
   activeGamificationInstance.value = null
 }
 
-// Impact HUD handler
+// Impact HUD handler — also dismisses the dice roll HUD and resumes the queue
 const handleGamificationImpactHidden = () => {
   console.log('[Overlay] Gamification impact HUD hidden')
   isGamificationImpactVisible.value = false
   gamificationImpactData.value = null
+
+  // Dismiss the dice roll HUD (the impact exit animation handles the visual)
+  isPopup2DVisible.value = false
+  isDice3DVisible.value = false
+
+  // Clean up and resume dice roll queue after a brief delay
+  setTimeout(() => {
+    currentDiceRoll.value = null
+    currentDiceNotation.value = ''
+    processNextRoll()
+  }, 300)
+}
+
+// =============================================
+// Spell Gamification Handlers
+// =============================================
+
+const handleSpellComplete = () => {
+  console.log('[Overlay] Spell gauge reported complete')
+}
+
+const handleSpellExpired = () => {
+  console.log('[Overlay] Spell gauge reported expired')
+  setTimeout(() => {
+    isSpellVisible.value = false
+    activeSpellInstance.value = null
+  }, 2000)
+}
+
+const handleSpellHidden = () => {
+  console.log('[Overlay] Spell goal bar hidden')
+  isSpellVisible.value = false
+  activeSpellInstance.value = null
+}
+
+const handleSpellImpactHidden = () => {
+  console.log('[Overlay] Spell impact HUD hidden')
+  isSpellImpactVisible.value = false
+  spellImpactData.value = null
+}
+
+// =============================================
+// Monster Gamification Handlers
+// =============================================
+
+const handleMonsterComplete = () => {
+  console.log('[Overlay] Monster gauge reported complete')
+}
+
+const handleMonsterExpired = () => {
+  console.log('[Overlay] Monster gauge reported expired')
+  setTimeout(() => {
+    isMonsterVisible.value = false
+    activeMonsterInstance.value = null
+  }, 2000)
+}
+
+const handleMonsterHidden = () => {
+  console.log('[Overlay] Monster goal bar hidden')
+  isMonsterVisible.value = false
+  activeMonsterInstance.value = null
+}
+
+const handleMonsterImpactHidden = () => {
+  console.log('[Overlay] Monster impact HUD hidden')
+  isMonsterImpactVisible.value = false
+  monsterImpactData.value = null
 }
 
 // Variable pour stocker la fonction de désabonnement
@@ -622,16 +815,39 @@ const setupWebSocketSubscription = () => {
       }
     },
 
-    // Gamification events
+    // Gamification events — route to spell or dice reverse based on action type
     onGamificationStart: (data) => {
       console.log('[Overlay] Gamification started:', data)
-      activeGamificationInstance.value = data
-      isGamificationVisible.value = true
+      if (SPELL_ACTION_TYPES.includes(data.event?.actionType)) {
+        activeSpellInstance.value = data
+        isSpellVisible.value = true
+      } else if (MONSTER_ACTION_TYPES.includes(data.event?.actionType)) {
+        activeMonsterInstance.value = data
+        isMonsterVisible.value = true
+      } else {
+        activeGamificationInstance.value = data
+        isGamificationVisible.value = true
+      }
     },
 
     onGamificationProgress: (data) => {
       console.log('[Overlay] Gamification progress:', data)
-      if (activeGamificationInstance.value?.id === data.instanceId) {
+      // Update whichever instance matches (spell, monster, or dice reverse)
+      if (activeSpellInstance.value?.id === data.instanceId) {
+        activeSpellInstance.value = {
+          ...activeSpellInstance.value,
+          currentProgress: data.currentProgress,
+          progressPercentage: data.progressPercentage,
+          isObjectiveReached: data.isObjectiveReached,
+        }
+      } else if (activeMonsterInstance.value?.id === data.instanceId) {
+        activeMonsterInstance.value = {
+          ...activeMonsterInstance.value,
+          currentProgress: data.currentProgress,
+          progressPercentage: data.progressPercentage,
+          isObjectiveReached: data.isObjectiveReached,
+        }
+      } else if (activeGamificationInstance.value?.id === data.instanceId) {
         activeGamificationInstance.value = {
           ...activeGamificationInstance.value,
           currentProgress: data.currentProgress,
@@ -654,7 +870,19 @@ const setupWebSocketSubscription = () => {
 
     onGamificationComplete: (data) => {
       console.log('[Overlay] Gamification complete:', data)
-      if (activeGamificationInstance.value?.id === data.instanceId) {
+      if (activeSpellInstance.value?.id === data.instanceId) {
+        activeSpellInstance.value = {
+          ...activeSpellInstance.value,
+          status: 'completed',
+          isObjectiveReached: true,
+        }
+      } else if (activeMonsterInstance.value?.id === data.instanceId) {
+        activeMonsterInstance.value = {
+          ...activeMonsterInstance.value,
+          status: 'completed',
+          isObjectiveReached: true,
+        }
+      } else if (activeGamificationInstance.value?.id === data.instanceId) {
         activeGamificationInstance.value = {
           ...activeGamificationInstance.value,
           status: 'completed',
@@ -665,12 +893,29 @@ const setupWebSocketSubscription = () => {
 
     onGamificationExpired: (data) => {
       console.log('[Overlay] Gamification expired:', data)
-      if (activeGamificationInstance.value?.id === data.instanceId) {
+      if (activeSpellInstance.value?.id === data.instanceId) {
+        activeSpellInstance.value = {
+          ...activeSpellInstance.value,
+          status: 'expired',
+        }
+        setTimeout(() => {
+          isSpellVisible.value = false
+          activeSpellInstance.value = null
+        }, 2000)
+      } else if (activeMonsterInstance.value?.id === data.instanceId) {
+        activeMonsterInstance.value = {
+          ...activeMonsterInstance.value,
+          status: 'expired',
+        }
+        setTimeout(() => {
+          isMonsterVisible.value = false
+          activeMonsterInstance.value = null
+        }, 2000)
+      } else if (activeGamificationInstance.value?.id === data.instanceId) {
         activeGamificationInstance.value = {
           ...activeGamificationInstance.value,
           status: 'expired',
         }
-        // Hide after a short delay
         setTimeout(() => {
           isGamificationVisible.value = false
           activeGamificationInstance.value = null
@@ -678,21 +923,77 @@ const setupWebSocketSubscription = () => {
       }
     },
 
-    // Gamification Action Executed - Shows Impact HUD when action executes (e.g., dice inversion)
+    // Gamification Action Executed - Shows Impact HUD when action executes
     onGamificationActionExecuted: (data: GamificationActionExecutedEvent) => {
       console.log('[Overlay] Gamification action executed:', data)
 
-      // Transform to ImpactData format
-      gamificationImpactData.value = {
-        instanceId: data.instanceId,
-        eventName: data.eventName,
-        actionType: data.actionType,
-        success: data.success,
-        message: data.message,
-        originalValue: data.originalValue,
-        invertedValue: data.invertedValue,
+      if (SPELL_ACTION_TYPES.includes(data.actionType)) {
+        // Route to SpellImpactHUD
+        spellImpactData.value = {
+          instanceId: data.instanceId,
+          eventName: data.eventName,
+          actionType: data.actionType as 'spell_disable' | 'spell_buff' | 'spell_debuff',
+          success: data.success,
+          message: data.message,
+          spellName: data.spellName,
+          spellImg: data.spellImg,
+          effectDuration: data.effectDuration,
+          buffType: data.buffType,
+          debuffType: data.debuffType,
+          bonusValue: data.bonusValue,
+          penaltyValue: data.penaltyValue,
+        }
+        isSpellImpactVisible.value = true
+      } else if (MONSTER_ACTION_TYPES.includes(data.actionType)) {
+        // Route to MonsterImpactHUD
+        monsterImpactData.value = {
+          instanceId: data.instanceId,
+          eventName: data.eventName,
+          actionType: data.actionType as 'monster_buff' | 'monster_debuff',
+          success: data.success,
+          message: data.message,
+          monsterName: data.monsterName,
+          monsterImg: data.monsterImg,
+          acBonus: data.acBonus,
+          acPenalty: data.acPenalty,
+          tempHp: data.tempHp,
+          maxHpReduction: data.maxHpReduction,
+        }
+        isMonsterImpactVisible.value = true
+      } else {
+        // Route to DiceRollOverlay's integrated impact mode (slam animation)
+        gamificationImpactData.value = {
+          instanceId: data.instanceId,
+          eventName: data.eventName,
+          actionType: data.actionType as ImpactData['actionType'],
+          success: data.success,
+          message: data.message,
+          originalValue: data.originalValue,
+          invertedValue: data.invertedValue,
+        }
+
+        // Cancel the normal dice roll display timeout — impact takes over the HUD lifecycle
+        if (rollDisplayTimeout.value) {
+          clearTimeout(rollDisplayTimeout.value)
+          rollDisplayTimeout.value = null
+        }
+
+        if (isPopup2DVisible.value && currentDiceRoll.value) {
+          // HUD is already visible — slam immediately
+          isGamificationImpactVisible.value = true
+        } else if (lastDiceRoll.value) {
+          // HUD has faded — re-show with last roll, then slam after entry transition
+          currentDiceRoll.value = lastDiceRoll.value
+          isPopup2DVisible.value = true
+          isDice3DVisible.value = false // Don't re-show 3D dice
+          setTimeout(() => {
+            isGamificationImpactVisible.value = true
+          }, 600) // Wait for dice-roll-in transition (500ms) + buffer
+        } else {
+          // No dice roll to slam into — show impact standalone
+          isGamificationImpactVisible.value = true
+        }
       }
-      isGamificationImpactVisible.value = true
     },
   })
 
@@ -862,8 +1163,35 @@ body,
   z-index: 100;
 }
 
-/* Container pour le HUD d'impact dice reverse (slam animation) */
-.dice-reverse-impact-container {
+/* Container pour la jauge spell (Goal Bar) - même position que dice reverse */
+.spell-goal-bar-container {
+  position: fixed;
+  top: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+}
+
+/* Container pour le HUD d'impact spell (slam animation) */
+.spell-impact-container {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 200;
+}
+
+/* Container pour la jauge monster (Goal Bar) - même position que spell */
+.monster-goal-bar-container {
+  position: fixed;
+  top: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+}
+
+/* Container pour le HUD d'impact monster (slam animation) */
+.monster-impact-container {
   position: fixed;
   top: 50%;
   left: 50%;

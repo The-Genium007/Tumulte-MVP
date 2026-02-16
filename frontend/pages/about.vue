@@ -7,11 +7,6 @@
       />
       <div class="container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl relative">
         <div class="text-center space-y-6">
-          <div
-            class="inline-flex items-center justify-center size-20 rounded-2xl bg-secondary-500/10 dark:bg-secondary-500/20"
-          >
-            <UIcon name="i-lucide-sparkles" class="size-10 text-secondary-500" />
-          </div>
           <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight leading-tight">
             A propos de
             <span
@@ -123,147 +118,221 @@
                 jeu supportes :
               </p>
 
-              <!-- Barre de compatibilité d'inversion de dés -->
-              <div class="inversion-ratio-card mt-6">
+              <!-- Barre de compatibilité globale -->
+              <div class="platform-score-card mt-6">
                 <div class="flex items-center justify-between mb-2">
                   <div class="flex items-center gap-2">
-                    <UIcon name="i-lucide-refresh-cw" class="size-4 text-secondary-500" />
+                    <UIcon name="i-lucide-gauge" class="size-4 text-secondary-500" />
                     <span class="text-sm font-semibold text-primary"
-                      >Compatibilite de l'inversion de des</span
+                      >Compatibilite globale Foundry VTT</span
                     >
                   </div>
                   <span class="text-sm font-bold text-secondary-500">
-                    {{ inversionStats.ratioSupported }}%
+                    {{ platformStats.avgScore }}%
                   </span>
                 </div>
-                <div class="inversion-bar">
+                <div class="platform-bar">
                   <div
-                    class="inversion-bar-full"
-                    :style="{ width: inversionStats.ratioFull + '%' }"
+                    class="platform-bar-segment platform-bar-excellent"
+                    :style="{ width: platformStats.excellentRatio + '%' }"
                   />
                   <div
-                    class="inversion-bar-partial"
-                    :style="{ width: inversionStats.ratioSupported - inversionStats.ratioFull + '%' }"
+                    class="platform-bar-segment platform-bar-good"
+                    :style="{ width: platformStats.goodRatio + '%' }"
+                  />
+                  <div
+                    class="platform-bar-segment platform-bar-limited"
+                    :style="{ width: platformStats.limitedRatio + '%' }"
                   />
                 </div>
                 <div class="flex items-center justify-between mt-2 text-xs text-muted">
                   <div class="flex items-center gap-3">
                     <span class="flex items-center gap-1">
                       <span class="inline-block size-2.5 rounded-full bg-green-500" />
-                      Complet ({{ inversionStats.full }})
+                      Excellent ({{ platformStats.excellent }})
                     </span>
                     <span class="flex items-center gap-1">
                       <span class="inline-block size-2.5 rounded-full bg-yellow-500" />
-                      Partiel ({{ inversionStats.partial }})
+                      Bon ({{ platformStats.good }})
                     </span>
                     <span class="flex items-center gap-1">
                       <span class="inline-block size-2.5 rounded-full bg-gray-400" />
-                      Non supporte ({{ inversionStats.none }})
+                      Limite ({{ platformStats.limited }})
                     </span>
                   </div>
-                  <span>{{ inversionStats.total }} systemes</span>
+                  <span>{{ platformStats.total }} systemes</span>
+                </div>
+
+                <!-- Tier summary badges -->
+                <div class="flex flex-wrap gap-2 mt-3">
+                  <span class="tier-summary-badge tier-badge-1">
+                    <UIcon name="i-lucide-shield-check" class="size-3.5" />
+                    Tier 1 : 15 systemes (~85% des utilisateurs)
+                  </span>
+                  <span class="tier-summary-badge tier-badge-2">
+                    <UIcon name="i-lucide-shield" class="size-3.5" />
+                    Tier 2 : {{ tierGroups[1]?.systems.length ?? 0 }} systemes (~10%)
+                  </span>
+                  <span class="tier-summary-badge tier-badge-3">
+                    <UIcon name="i-lucide-shield-off" class="size-3.5" />
+                    Tier 3 : 320+ systemes (~5%)
+                  </span>
                 </div>
               </div>
 
               <!-- Légende -->
               <div class="flex flex-wrap gap-4 mt-6 mb-4">
                 <div class="flex items-center gap-2 text-sm">
-                  <span class="status-supported">✓</span>
-                  <span>Supporte</span>
+                  <span class="status-badge status-full">&#10003;</span>
+                  <span>Natif</span>
                 </div>
                 <div class="flex items-center gap-2 text-sm">
-                  <span class="status-partial">~</span>
-                  <span>Partiel / Generique</span>
+                  <span class="status-badge status-partial">~</span>
+                  <span>Partiel</span>
                 </div>
                 <div class="flex items-center gap-2 text-sm">
-                  <span class="status-unsupported">✗</span>
+                  <span class="status-badge status-manual">&#9881;</span>
+                  <span>Manuel</span>
+                </div>
+                <div class="flex items-center gap-2 text-sm">
+                  <span class="status-badge status-none">&#10007;</span>
                   <span>Non supporte</span>
                 </div>
               </div>
 
-              <!-- Tableau des systèmes -->
+              <!-- Tier groups -->
               <div class="mt-6 space-y-4">
-                <div v-for="(group, groupKey) in systemGroups" :key="groupKey" class="system-group">
+                <div v-for="tierGroup in tierGroups" :key="tierGroup.tier" class="tier-group">
                   <button
-                    class="system-group-header"
-                    @click="toggleGroup(groupKey)"
-                    :aria-expanded="expandedGroups[groupKey]"
+                    class="tier-group-header"
+                    @click="toggleTier(tierGroup.tier)"
+                    :aria-expanded="expandedTiers[tierGroup.tier]"
                   >
-                    <div class="flex items-center gap-3">
-                      <UIcon :name="group.icon" class="size-5 text-secondary-500" />
-                      <span class="font-semibold">{{ group.name }}</span>
-                      <span class="text-xs text-muted">({{ group.systems.length }})</span>
+                    <div class="flex items-center gap-3 min-w-0">
+                      <UIcon
+                        :name="tierGroup.icon"
+                        class="size-5 shrink-0"
+                        :class="'tier-icon-' + tierGroup.tier"
+                      />
+                      <div class="min-w-0">
+                        <div class="flex items-center gap-2 flex-wrap">
+                          <span class="font-semibold">{{ tierGroup.name }}</span>
+                          <span class="text-xs text-muted"
+                            >({{
+                              tierGroup.tier === 3 ? '320+' : tierGroup.systems.length
+                            }}
+                            systemes)</span
+                          >
+                        </div>
+                        <p class="text-xs text-muted mt-0.5 hidden sm:block">
+                          {{ tierGroup.description }}
+                        </p>
+                      </div>
                     </div>
                     <UIcon
                       name="i-lucide-chevron-down"
-                      class="size-5 text-muted transition-transform duration-200"
-                      :class="{ 'rotate-180': expandedGroups[groupKey] }"
+                      class="size-5 text-muted transition-transform duration-200 shrink-0"
+                      :class="{ 'rotate-180': expandedTiers[tierGroup.tier] }"
                     />
                   </button>
 
                   <Transition name="collapse">
-                    <div v-if="expandedGroups[groupKey]" class="system-table-wrapper">
-                      <table class="system-table">
-                        <thead>
-                          <tr>
-                            <th class="th-system">Systeme</th>
-                            <th class="th-feature" title="Synchronisation des personnages">
-                              <span class="hidden sm:inline">Personnages</span>
-                              <UIcon name="i-lucide-users" class="sm:hidden size-4" />
-                            </th>
-                            <th class="th-feature" title="Detection des critiques">
-                              <span class="hidden sm:inline">Critiques</span>
-                              <UIcon name="i-lucide-zap" class="sm:hidden size-4" />
-                            </th>
-                            <th class="th-feature" title="Inversion de des">
-                              <span class="hidden sm:inline">Inversion</span>
-                              <UIcon name="i-lucide-refresh-cw" class="sm:hidden size-4" />
-                            </th>
-                            <th class="th-feature" title="Extraction des stats avancees">
-                              <span class="hidden sm:inline">Stats</span>
-                              <UIcon name="i-lucide-bar-chart" class="sm:hidden size-4" />
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr v-for="system in group.systems" :key="system.id">
-                            <td class="td-system">
-                              <span class="system-name">
-                                <UIcon
-                                  v-if="system.id === 'custom'"
-                                  name="i-lucide-settings"
-                                  class="size-4 text-secondary-500 inline-block mr-1 align-text-bottom"
-                                />
-                                {{ system.name }}
-                              </span>
-                              <span v-if="system.id !== 'custom'" class="system-id">{{
-                                system.id
-                              }}</span>
-                              <span v-else class="system-id">Configurable par le MJ</span>
-                            </td>
-                            <td class="td-feature">
-                              <span :class="getStatusClass(system.characters)">
-                                {{ getStatusIcon(system.characters) }}
-                              </span>
-                            </td>
-                            <td class="td-feature">
-                              <span :class="getStatusClass(system.criticals)">
-                                {{ getStatusIcon(system.criticals) }}
-                              </span>
-                            </td>
-                            <td class="td-feature">
-                              <span :class="getStatusClass(system.inversion)">
-                                {{ getStatusIcon(system.inversion) }}
-                              </span>
-                            </td>
-                            <td class="td-feature">
-                              <span :class="getStatusClass(system.stats)">
-                                {{ getStatusIcon(system.stats) }}
-                              </span>
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
+                    <div v-if="expandedTiers[tierGroup.tier]" class="tier-group-content">
+                      <!-- Tier 3 special message -->
+                      <div v-if="tierGroup.tier === 3" class="tier-3-message">
+                        <UIcon name="i-lucide-info" class="size-4 shrink-0 text-muted" />
+                        <p class="text-sm text-muted">
+                          Plus de 320 systemes Foundry VTT fonctionnent en mode basique avec
+                          Tumulte. Le MJ peut configurer manuellement les regles de criticite et
+                          utiliser les fonctionnalites de gamification universelles (inversion de
+                          des, messages chat).
+                        </p>
+                      </div>
+
+                      <!-- System list -->
+                      <div v-for="system in tierGroup.systems" :key="system.id" class="system-row">
+                        <div class="system-row-info">
+                          <div class="flex items-center gap-2 min-w-0">
+                            <UIcon
+                              v-if="system.id === 'custom'"
+                              name="i-lucide-settings"
+                              class="size-4 text-secondary-500 shrink-0"
+                            />
+                            <span class="system-name truncate">{{ system.name }}</span>
+                          </div>
+                          <div class="flex items-center gap-2 text-xs text-muted">
+                            <span v-if="system.id !== 'custom'" class="system-id">{{
+                              system.id
+                            }}</span>
+                            <span v-else class="system-id">Configurable par le MJ</span>
+                            <span v-if="system.installPercent" class="install-percent">{{
+                              system.installPercent
+                            }}</span>
+                          </div>
+                        </div>
+
+                        <!-- Score bar with popover -->
+                        <UPopover mode="hover" :open-delay="200" :close-delay="150">
+                          <div class="score-bar-wrapper">
+                            <div class="score-bar">
+                              <div
+                                class="score-bar-fill"
+                                :class="'score-color-' + getScoreColorKey(getSystemScore(system))"
+                                :style="{ width: getSystemScore(system) + '%' }"
+                              />
+                            </div>
+                            <span
+                              class="score-label"
+                              :class="'text-score-' + getScoreColorKey(getSystemScore(system))"
+                            >
+                              {{ getSystemScore(system) }}%
+                            </span>
+                          </div>
+
+                          <template #content>
+                            <div class="popover-content">
+                              <div class="popover-header">
+                                <span class="font-semibold text-sm">{{ system.name }}</span>
+                                <div class="flex items-center gap-2 text-xs text-muted">
+                                  <span v-if="system.primaryDie">{{ system.primaryDie }}</span>
+                                  <span
+                                    class="font-semibold"
+                                    :class="
+                                      'text-score-' + getScoreColorKey(getSystemScore(system))
+                                    "
+                                  >
+                                    {{ getSystemScore(system) }}%
+                                  </span>
+                                </div>
+                              </div>
+                              <div
+                                v-for="category in FEATURE_CATEGORIES"
+                                :key="category.key"
+                                class="popover-category"
+                              >
+                                <div class="popover-category-header">
+                                  <span>{{ category.label }}</span>
+                                </div>
+                                <div
+                                  v-for="featureKey in category.features"
+                                  :key="featureKey"
+                                  class="popover-feature-row"
+                                >
+                                  <span class="text-xs">{{
+                                    FEATURE_DEFINITIONS[featureKey].label
+                                  }}</span>
+                                  <span
+                                    class="status-badge status-badge-sm"
+                                    :class="'status-' + system[featureKey]"
+                                  >
+                                    {{ getStatusIcon(system[featureKey]) }}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </template>
+                        </UPopover>
+                      </div>
                     </div>
                   </Transition>
                 </div>
@@ -271,10 +340,12 @@
 
               <p class="text-sm text-muted mt-6">
                 <UIcon name="i-lucide-info" class="size-4 inline-block mr-1" />
-                Les systemes avec support "partiel" utilisent une detection generique ou les
-                <strong>regles de criticite personnalisees du MJ</strong>. L'inversion de des
-                necessite une detection de critique fonctionnelle. Les systemes homebrew sont
-                configurables via les regles custom dans les parametres de campagne.
+                Survolez la barre de compatibilite d'un systeme pour voir le detail des
+                fonctionnalites. Les 4 niveaux de support sont :
+                <strong>Natif</strong> (detection automatique), <strong>Partiel</strong> (generique
+                ou limits), <strong>Manuel</strong> (configuration par le MJ) et
+                <strong>Non supporte</strong>. Les systemes Tier 2 et 3 peuvent etre configures
+                manuellement via les regles de criticite dans les parametres de campagne.
               </p>
             </div>
           </article>
@@ -345,649 +416,637 @@ useSeoMeta({
     'Decouvrez Tumulte, la plateforme de sondages Twitch multi-streams pour les jeux de role. Notre mission, notre equipe et la compatibilite avec les systemes de JDR.',
 })
 
-// Types
-type SupportLevel = 'full' | 'partial' | 'none'
+// ========================================
+// TYPES
+// ========================================
 
-interface SystemInfo {
-  id: string
-  name: string
+type SupportLevel = 'full' | 'partial' | 'manual' | 'none'
+
+type SystemTier = 1 | 2 | 3
+
+type FeatureKey = 'characters' | 'criticals' | 'inversion' | 'stats' | 'spells' | 'combat'
+
+interface TumulteFeatureMatrix {
   characters: SupportLevel
   criticals: SupportLevel
   inversion: SupportLevel
   stats: SupportLevel
+  spells: SupportLevel
+  combat: SupportLevel
 }
 
-interface SystemGroup {
+interface SystemInfo extends TumulteFeatureMatrix {
+  id: string
   name: string
+  tier: SystemTier
+  installPercent?: string
+  primaryDie?: string
+}
+
+interface TierGroup {
+  tier: SystemTier
+  name: string
+  description: string
   icon: string
   systems: SystemInfo[]
 }
 
-// État des groupes (collapsibles)
-const expandedGroups = ref<Record<string, boolean>>({
-  dnd: true, // Ouvrir D&D par défaut
-  horror: false,
-  scifi: false,
-  fantasy: false,
-  narrative: false,
-  yearzero: false,
-  savage: false,
-  warhammer: false,
-  other: false,
-})
-
-function toggleGroup(groupKey: string) {
-  expandedGroups.value[groupKey] = !expandedGroups.value[groupKey]
+interface FeatureDefinition {
+  label: string
+  icon: string
 }
 
-// Helpers pour les icônes de statut
+interface FeatureCategory {
+  key: string
+  label: string
+  features: FeatureKey[]
+}
+
+// ========================================
+// FEATURE DEFINITIONS
+// ========================================
+
+const FEATURE_DEFINITIONS: Record<FeatureKey, FeatureDefinition> = {
+  characters: { label: 'Personnages', icon: 'i-lucide-users' },
+  criticals: { label: 'Critiques', icon: 'i-lucide-zap' },
+  stats: { label: 'Stats', icon: 'i-lucide-bar-chart' },
+  inversion: { label: 'Inversion', icon: 'i-lucide-refresh-cw' },
+  spells: { label: 'Sorts', icon: 'i-lucide-sparkles' },
+  combat: { label: 'Combat', icon: 'i-lucide-swords' },
+}
+
+const FEATURE_KEYS: FeatureKey[] = [
+  'characters',
+  'criticals',
+  'inversion',
+  'stats',
+  'spells',
+  'combat',
+]
+
+const FEATURE_CATEGORIES: FeatureCategory[] = [
+  { key: 'base', label: 'Base', features: ['characters', 'criticals', 'stats'] },
+  { key: 'dice', label: 'Des', features: ['inversion'] },
+  { key: 'magic', label: 'Magie', features: ['spells'] },
+  { key: 'combat', label: 'Combat', features: ['combat'] },
+]
+
+const SUPPORT_LEVEL_SCORE: Record<SupportLevel, number> = {
+  full: 100,
+  partial: 50,
+  manual: 25,
+  none: 0,
+}
+
+// ========================================
+// STATE
+// ========================================
+
+const expandedTiers = ref<Record<number, boolean>>({
+  1: true,
+  2: false,
+  3: false,
+})
+
+function toggleTier(tier: number) {
+  expandedTiers.value[tier] = !expandedTiers.value[tier]
+}
+
+// ========================================
+// HELPERS
+// ========================================
+
 function getStatusIcon(level: SupportLevel): string {
   switch (level) {
     case 'full':
-      return '✓'
+      return '\u2713'
     case 'partial':
       return '~'
+    case 'manual':
+      return '\u2699'
     case 'none':
-      return '✗'
+      return '\u2717'
   }
 }
 
-function getStatusClass(level: SupportLevel): string {
-  switch (level) {
-    case 'full':
-      return 'status-supported'
-    case 'partial':
-      return 'status-partial'
-    case 'none':
-      return 'status-unsupported'
-  }
+function getSystemScore(system: TumulteFeatureMatrix): number {
+  const total = FEATURE_KEYS.reduce((sum, key) => sum + SUPPORT_LEVEL_SCORE[system[key]], 0)
+  return Math.round(total / FEATURE_KEYS.length)
 }
 
-// Données des systèmes groupées
-const systemGroups: Record<string, SystemGroup> = {
-  dnd: {
-    name: 'D&D et derives',
-    icon: 'i-lucide-sword',
+function getScoreColorKey(score: number): string {
+  if (score >= 90) return 'excellent'
+  if (score >= 60) return 'good'
+  if (score >= 30) return 'moderate'
+  return 'limited'
+}
+
+// ========================================
+// TIER DATA
+// ========================================
+
+const tierGroups: TierGroup[] = [
+  // ── Tier 1 — Support complet ──────────────────────────────────────────────
+  {
+    tier: 1,
+    name: 'Support complet',
+    description: 'Adaptateur dedie + presets automatiques + detection enrichie',
+    icon: 'i-lucide-shield-check',
     systems: [
       {
         id: 'dnd5e',
         name: 'D&D 5th Edition',
+        tier: 1,
+        installPercent: '64.28%',
+        primaryDie: 'd20',
         characters: 'full',
         criticals: 'full',
         inversion: 'full',
         stats: 'full',
+        spells: 'full',
+        combat: 'full',
       },
       {
         id: 'pf2e',
         name: 'Pathfinder 2e',
+        tier: 1,
+        installPercent: '30.52%',
+        primaryDie: 'd20',
         characters: 'full',
         criticals: 'full',
         inversion: 'full',
         stats: 'full',
+        spells: 'full',
+        combat: 'full',
       },
-      {
-        id: 'a5e',
-        name: 'Level Up: A5E',
-        characters: 'full',
-        criticals: 'partial',
-        inversion: 'partial',
-        stats: 'partial',
-      },
-      {
-        id: 'sfrpg',
-        name: 'Starfinder',
-        characters: 'full',
-        criticals: 'partial',
-        inversion: 'partial',
-        stats: 'partial',
-      },
-      {
-        id: 'ose',
-        name: 'Old-School Essentials',
-        characters: 'full',
-        criticals: 'partial',
-        inversion: 'partial',
-        stats: 'partial',
-      },
-      {
-        id: 'dcc',
-        name: 'Dungeon Crawl Classics',
-        characters: 'full',
-        criticals: 'partial',
-        inversion: 'partial',
-        stats: 'partial',
-      },
-      {
-        id: 'castles-and-crusades',
-        name: 'Castles & Crusades',
-        characters: 'full',
-        criticals: 'partial',
-        inversion: 'partial',
-        stats: 'partial',
-      },
-      {
-        id: 'archmage',
-        name: '13th Age',
-        characters: 'full',
-        criticals: 'partial',
-        inversion: 'partial',
-        stats: 'partial',
-      },
-    ],
-  },
-  horror: {
-    name: 'Horreur et enquete',
-    icon: 'i-lucide-skull',
-    systems: [
       {
         id: 'CoC7',
-        name: 'Call of Cthulhu 7e',
+        name: "L'Appel de Cthulhu 7e",
+        tier: 1,
+        installPercent: '6.71%',
+        primaryDie: 'd100',
         characters: 'full',
         criticals: 'full',
         inversion: 'full',
         stats: 'full',
+        spells: 'partial',
+        combat: 'partial',
       },
       {
-        id: 'deltagreen',
-        name: 'Delta Green',
+        id: 'wfrp4e',
+        name: 'Warhammer Fantasy 4e',
+        tier: 1,
+        installPercent: '4.16%',
+        primaryDie: 'd100',
         characters: 'full',
-        criticals: 'partial',
-        inversion: 'partial',
-        stats: 'partial',
+        criticals: 'full',
+        inversion: 'full',
+        stats: 'full',
+        spells: 'manual',
+        combat: 'partial',
       },
       {
-        id: 'wod5e',
-        name: 'World of Darkness 5e',
+        id: 'swade',
+        name: 'Savage Worlds (SWADE)',
+        tier: 1,
+        installPercent: '3.94%',
+        primaryDie: 'Variable',
+        characters: 'full',
+        criticals: 'full',
+        inversion: 'full',
+        stats: 'full',
+        spells: 'full',
+        combat: 'full',
+      },
+      {
+        id: 'vtm5e',
+        name: 'Vampire: La Mascarade V5',
+        tier: 1,
+        installPercent: '3.61%',
+        primaryDie: 'd10',
         characters: 'full',
         criticals: 'full',
         inversion: 'full',
         stats: 'partial',
+        spells: 'none',
+        combat: 'none',
       },
-      {
-        id: 'mta',
-        name: 'Chronicles of Darkness',
-        characters: 'full',
-        criticals: 'partial',
-        inversion: 'partial',
-        stats: 'partial',
-      },
-      {
-        id: 'motw',
-        name: 'Monster of the Week',
-        characters: 'full',
-        criticals: 'partial',
-        inversion: 'partial',
-        stats: 'partial',
-      },
-    ],
-  },
-  scifi: {
-    name: 'Science-Fiction',
-    icon: 'i-lucide-rocket',
-    systems: [
       {
         id: 'cyberpunk-red-core',
         name: 'Cyberpunk RED',
+        tier: 1,
+        installPercent: '3.50%',
+        primaryDie: 'd10',
         characters: 'full',
         criticals: 'full',
         inversion: 'full',
         stats: 'full',
+        spells: 'none',
+        combat: 'partial',
+      },
+      {
+        id: 'starwarsffg',
+        name: 'Star Wars FFG / Genesys',
+        tier: 1,
+        installPercent: '3.28%',
+        primaryDie: 'd12',
+        characters: 'full',
+        criticals: 'full',
+        inversion: 'partial',
+        stats: 'partial',
+        spells: 'partial',
+        combat: 'partial',
       },
       {
         id: 'alienrpg',
         name: 'Alien RPG',
+        tier: 1,
+        installPercent: '3.02%',
+        primaryDie: 'd6',
         characters: 'full',
         criticals: 'full',
         inversion: 'full',
         stats: 'full',
-      },
-      {
-        id: 'shadowrun6-eden',
-        name: 'Shadowrun 6e',
-        characters: 'full',
-        criticals: 'full',
-        inversion: 'full',
-        stats: 'partial',
+        spells: 'none',
+        combat: 'partial',
       },
       {
         id: 'shadowrun5e',
-        name: 'Shadowrun 5e',
+        name: 'Shadowrun 5e / 6e',
+        tier: 1,
+        installPercent: '~2.0%',
+        primaryDie: 'd6',
         characters: 'full',
         criticals: 'full',
         inversion: 'full',
         stats: 'partial',
+        spells: 'partial',
+        combat: 'partial',
       },
-      {
-        id: 'lancer',
-        name: 'Lancer',
-        characters: 'full',
-        criticals: 'partial',
-        inversion: 'partial',
-        stats: 'partial',
-      },
-      {
-        id: 'traveller',
-        name: 'Traveller',
-        characters: 'full',
-        criticals: 'partial',
-        inversion: 'partial',
-        stats: 'partial',
-      },
-      {
-        id: 'starwarsffg',
-        name: 'Star Wars FFG',
-        characters: 'full',
-        criticals: 'full',
-        inversion: 'partial',
-        stats: 'partial',
-      },
-      {
-        id: 'genesys',
-        name: 'Genesys',
-        characters: 'full',
-        criticals: 'full',
-        inversion: 'partial',
-        stats: 'partial',
-      },
-      {
-        id: 'mothership',
-        name: 'Mothership',
-        characters: 'full',
-        criticals: 'partial',
-        inversion: 'partial',
-        stats: 'partial',
-      },
-      {
-        id: 't2k4e',
-        name: 'Twilight 2000 4e',
-        characters: 'full',
-        criticals: 'partial',
-        inversion: 'partial',
-        stats: 'partial',
-      },
-      {
-        id: 'cyphersystem',
-        name: 'Cypher System',
-        characters: 'full',
-        criticals: 'partial',
-        inversion: 'partial',
-        stats: 'partial',
-      },
-    ],
-  },
-  fantasy: {
-    name: 'Fantaisie medievale',
-    icon: 'i-lucide-castle',
-    systems: [
       {
         id: 'forbidden-lands',
         name: 'Forbidden Lands',
+        tier: 1,
+        installPercent: '1.87%',
+        primaryDie: 'd6',
         characters: 'full',
         criticals: 'full',
         inversion: 'full',
         stats: 'full',
+        spells: 'full',
+        combat: 'partial',
       },
-      {
-        id: 'dragonbane',
-        name: 'Dragonbane',
-        characters: 'full',
-        criticals: 'partial',
-        inversion: 'partial',
-        stats: 'partial',
-      },
-      {
-        id: 'tor2e',
-        name: 'The One Ring 2e',
-        characters: 'full',
-        criticals: 'partial',
-        inversion: 'partial',
-        stats: 'partial',
-      },
-      {
-        id: 'dungeonworld',
-        name: 'Dungeon World',
-        characters: 'full',
-        criticals: 'partial',
-        inversion: 'partial',
-        stats: 'partial',
-      },
-      {
-        id: 'mausritter',
-        name: 'Mausritter',
-        characters: 'full',
-        criticals: 'partial',
-        inversion: 'partial',
-        stats: 'partial',
-      },
-      {
-        id: 'demonlord',
-        name: 'Shadow of the Demon Lord',
-        characters: 'full',
-        criticals: 'partial',
-        inversion: 'partial',
-        stats: 'partial',
-      },
-      {
-        id: 'weirdwizard',
-        name: 'Shadow of the Weird Wizard',
-        characters: 'full',
-        criticals: 'partial',
-        inversion: 'partial',
-        stats: 'partial',
-      },
-      {
-        id: 'symbaroum',
-        name: 'Symbaroum',
-        characters: 'full',
-        criticals: 'partial',
-        inversion: 'partial',
-        stats: 'partial',
-      },
-      {
-        id: 'rqg',
-        name: 'RuneQuest Glorantha',
-        characters: 'full',
-        criticals: 'partial',
-        inversion: 'partial',
-        stats: 'partial',
-      },
-      {
-        id: 'mythras',
-        name: 'Mythras',
-        characters: 'full',
-        criticals: 'partial',
-        inversion: 'partial',
-        stats: 'partial',
-      },
-      {
-        id: 'arm5e',
-        name: 'Ars Magica 5e',
-        characters: 'full',
-        criticals: 'partial',
-        inversion: 'partial',
-        stats: 'partial',
-      },
-      {
-        id: 'pendragon',
-        name: 'Pendragon 6e',
-        characters: 'full',
-        criticals: 'partial',
-        inversion: 'partial',
-        stats: 'partial',
-      },
-      {
-        id: 'l5r5e',
-        name: 'Legend of the Five Rings',
-        characters: 'full',
-        criticals: 'partial',
-        inversion: 'partial',
-        stats: 'partial',
-      },
-      {
-        id: 'morkborg',
-        name: 'Mork Borg / Pirate Borg',
-        characters: 'full',
-        criticals: 'partial',
-        inversion: 'partial',
-        stats: 'partial',
-      },
-    ],
-  },
-  narrative: {
-    name: 'Narratif et PbtA',
-    icon: 'i-lucide-book-open',
-    systems: [
       {
         id: 'blades-in-the-dark',
         name: 'Blades in the Dark',
+        tier: 1,
+        installPercent: '~1.5%',
+        primaryDie: 'd6',
         characters: 'full',
         criticals: 'full',
         inversion: 'full',
         stats: 'full',
+        spells: 'none',
+        combat: 'none',
       },
       {
-        id: 'pbta',
-        name: 'Powered by the Apocalypse',
+        id: 'vaesen',
+        name: 'Vaesen',
+        tier: 1,
+        installPercent: '~1.0%',
+        primaryDie: 'd6',
         characters: 'full',
-        criticals: 'partial',
-        inversion: 'partial',
-        stats: 'partial',
+        criticals: 'full',
+        inversion: 'full',
+        stats: 'full',
+        spells: 'none',
+        combat: 'partial',
       },
       {
         id: 'fate-core-official',
         name: 'FATE Core',
+        tier: 1,
+        installPercent: '~0.8%',
+        primaryDie: '4dF',
         characters: 'full',
         criticals: 'full',
         inversion: 'partial',
         stats: 'partial',
+        spells: 'none',
+        combat: 'none',
+      },
+    ],
+  },
+
+  // ── Tier 2 — Support partiel ──────────────────────────────────────────────
+  {
+    tier: 2,
+    name: 'Support partiel',
+    description:
+      'Adaptateur generique — detection d20 automatique, autres mecaniques en configuration manuelle',
+    icon: 'i-lucide-shield',
+    systems: [
+      // Tier 2a — d20-based
+      {
+        id: 'pf1',
+        name: 'Pathfinder 1e',
+        tier: 2,
+        installPercent: '4.32%',
+        primaryDie: 'd20',
+        characters: 'partial',
+        criticals: 'partial',
+        inversion: 'partial',
+        stats: 'none',
+        spells: 'manual',
+        combat: 'none',
+      },
+      {
+        id: 'sfrpg',
+        name: 'Starfinder',
+        tier: 2,
+        installPercent: '4.06%',
+        primaryDie: 'd20',
+        characters: 'partial',
+        criticals: 'partial',
+        inversion: 'partial',
+        stats: 'none',
+        spells: 'manual',
+        combat: 'none',
+      },
+      {
+        id: 'lancer',
+        name: 'LANCER',
+        tier: 2,
+        installPercent: '3.87%',
+        primaryDie: 'd20',
+        characters: 'partial',
+        criticals: 'partial',
+        inversion: 'partial',
+        stats: 'none',
+        spells: 'none',
+        combat: 'none',
+      },
+      {
+        id: 'a5e',
+        name: 'Level Up: Advanced 5e',
+        tier: 2,
+        installPercent: '2.34%',
+        primaryDie: 'd20',
+        characters: 'partial',
+        criticals: 'partial',
+        inversion: 'partial',
+        stats: 'none',
+        spells: 'manual',
+        combat: 'none',
+      },
+      {
+        id: 'shadowdark',
+        name: 'Shadowdark RPG',
+        tier: 2,
+        installPercent: '1.85%',
+        primaryDie: 'd20',
+        characters: 'partial',
+        criticals: 'partial',
+        inversion: 'partial',
+        stats: 'none',
+        spells: 'none',
+        combat: 'none',
+      },
+      {
+        id: 'd35e',
+        name: 'D&D 3.5e',
+        tier: 2,
+        installPercent: '1.51%',
+        primaryDie: 'd20',
+        characters: 'partial',
+        criticals: 'partial',
+        inversion: 'partial',
+        stats: 'none',
+        spells: 'manual',
+        combat: 'none',
+      },
+      {
+        id: 'tormenta20',
+        name: 'Tormenta20',
+        tier: 2,
+        installPercent: '0.90%',
+        primaryDie: 'd20',
+        characters: 'partial',
+        criticals: 'partial',
+        inversion: 'partial',
+        stats: 'none',
+        spells: 'manual',
+        combat: 'none',
+      },
+      {
+        id: 'dcc',
+        name: 'Dungeon Crawl Classics',
+        tier: 2,
+        installPercent: '~0.7%',
+        primaryDie: 'd20',
+        characters: 'partial',
+        criticals: 'partial',
+        inversion: 'partial',
+        stats: 'none',
+        spells: 'manual',
+        combat: 'none',
+      },
+      // Tier 2b — d100/percentile
+      {
+        id: 'deltagreen',
+        name: 'Delta Green',
+        tier: 2,
+        installPercent: '2.26%',
+        primaryDie: 'd100',
+        characters: 'partial',
+        criticals: 'manual',
+        inversion: 'manual',
+        stats: 'none',
+        spells: 'none',
+        combat: 'none',
+      },
+      {
+        id: 'dsa5',
+        name: 'Das Schwarze Auge 5e',
+        tier: 2,
+        installPercent: '1.01%',
+        primaryDie: '3d20',
+        characters: 'partial',
+        criticals: 'manual',
+        inversion: 'manual',
+        stats: 'none',
+        spells: 'none',
+        combat: 'none',
+      },
+      // Tier 2c — d6/d10 dice pool
+      {
+        id: 'wrath-and-glory',
+        name: 'Wrath & Glory',
+        tier: 2,
+        installPercent: '2.37%',
+        primaryDie: 'd6',
+        characters: 'partial',
+        criticals: 'manual',
+        inversion: 'manual',
+        stats: 'none',
+        spells: 'none',
+        combat: 'none',
+      },
+      {
+        id: 'worldofdarkness',
+        name: 'World of Darkness 20th',
+        tier: 2,
+        installPercent: '2.10%',
+        primaryDie: 'd10',
+        characters: 'partial',
+        criticals: 'manual',
+        inversion: 'manual',
+        stats: 'none',
+        spells: 'none',
+        combat: 'none',
+      },
+      {
+        id: 'dragonbane',
+        name: 'Dragonbane',
+        tier: 2,
+        installPercent: '1.43%',
+        primaryDie: 'd20',
+        characters: 'partial',
+        criticals: 'manual',
+        inversion: 'manual',
+        stats: 'none',
+        spells: 'none',
+        combat: 'none',
+      },
+      {
+        id: 'blade-runner',
+        name: 'Blade Runner RPG',
+        tier: 2,
+        installPercent: '~0.5%',
+        primaryDie: 'd6-d12',
+        characters: 'partial',
+        criticals: 'manual',
+        inversion: 'manual',
+        stats: 'none',
+        spells: 'none',
+        combat: 'none',
+      },
+      // Tier 2d — Other mechanics
+      {
+        id: 'gurps',
+        name: 'GURPS 4th Edition',
+        tier: 2,
+        installPercent: '1.85%',
+        primaryDie: '3d6',
+        characters: 'partial',
+        criticals: 'manual',
+        inversion: 'manual',
+        stats: 'none',
+        spells: 'none',
+        combat: 'none',
       },
       {
         id: 'foundry-ironsworn',
         name: 'Ironsworn / Starforged',
-        characters: 'full',
-        criticals: 'partial',
-        inversion: 'partial',
-        stats: 'partial',
+        tier: 2,
+        installPercent: '~0.7%',
+        primaryDie: 'd6+2d10',
+        characters: 'partial',
+        criticals: 'manual',
+        inversion: 'manual',
+        stats: 'none',
+        spells: 'none',
+        combat: 'none',
+      },
+      {
+        id: 'demonlord',
+        name: 'Shadow of the Demon Lord',
+        tier: 2,
+        installPercent: '~0.5%',
+        primaryDie: 'd20',
+        characters: 'partial',
+        criticals: 'manual',
+        inversion: 'manual',
+        stats: 'none',
+        spells: 'none',
+        combat: 'none',
       },
       {
         id: 'city-of-mist',
         name: 'City of Mist',
-        characters: 'full',
-        criticals: 'partial',
-        inversion: 'partial',
-        stats: 'partial',
-      },
-      {
-        id: 'masks',
-        name: 'Masks: A New Generation',
-        characters: 'full',
-        criticals: 'partial',
-        inversion: 'partial',
-        stats: 'partial',
-      },
-      {
-        id: 'avatarlegends',
-        name: 'Avatar Legends',
-        characters: 'full',
-        criticals: 'partial',
-        inversion: 'partial',
-        stats: 'partial',
-      },
-      {
-        id: 'root',
-        name: 'Root RPG',
-        characters: 'full',
-        criticals: 'partial',
-        inversion: 'partial',
-        stats: 'partial',
-      },
-      {
-        id: 'kids-on-bikes',
-        name: 'Kids on Bikes',
-        characters: 'full',
-        criticals: 'partial',
-        inversion: 'partial',
-        stats: 'partial',
-      },
-      {
-        id: 'daggerheart',
-        name: 'Daggerheart',
-        characters: 'full',
-        criticals: 'partial',
-        inversion: 'partial',
-        stats: 'partial',
-      },
-      {
-        id: 'quest',
-        name: 'Quest RPG',
-        characters: 'full',
-        criticals: 'partial',
-        inversion: 'partial',
-        stats: 'partial',
-      },
-      {
-        id: 'draw-steel',
-        name: 'Draw Steel (MCDM)',
-        characters: 'full',
-        criticals: 'partial',
-        inversion: 'partial',
-        stats: 'partial',
-      },
-    ],
-  },
-  yearzero: {
-    name: 'Year Zero Engine',
-    icon: 'i-lucide-dices',
-    systems: [
-      {
-        id: 'vaesen',
-        name: 'Vaesen',
-        characters: 'full',
-        criticals: 'full',
-        inversion: 'full',
-        stats: 'full',
-      },
-      {
-        id: 'yzecoriolis',
-        name: 'Coriolis',
-        characters: 'full',
-        criticals: 'partial',
-        inversion: 'partial',
-        stats: 'partial',
-      },
-      {
-        id: 'mutant-year-zero',
-        name: 'Mutant Year Zero',
-        characters: 'full',
-        criticals: 'partial',
-        inversion: 'partial',
-        stats: 'partial',
-      },
-      {
-        id: 'tftloop',
-        name: 'Tales from the Loop',
-        characters: 'full',
-        criticals: 'partial',
-        inversion: 'partial',
-        stats: 'partial',
-      },
-    ],
-  },
-  savage: {
-    name: 'Savage Worlds',
-    icon: 'i-lucide-flame',
-    systems: [
-      {
-        id: 'swade',
-        name: 'Savage Worlds (SWADE)',
-        characters: 'full',
-        criticals: 'full',
-        inversion: 'full',
-        stats: 'full',
-      },
-      {
-        id: 'swpf',
-        name: 'Savage Pathfinder',
-        characters: 'full',
-        criticals: 'full',
-        inversion: 'full',
-        stats: 'partial',
-      },
-    ],
-  },
-  warhammer: {
-    name: 'Warhammer',
-    icon: 'i-lucide-shield',
-    systems: [
-      {
-        id: 'wfrp4e',
-        name: 'WFRP 4e',
-        characters: 'full',
-        criticals: 'full',
-        inversion: 'full',
-        stats: 'full',
-      },
-      {
-        id: 'dark-heresy',
-        name: 'Dark Heresy 2e',
-        characters: 'full',
-        criticals: 'partial',
-        inversion: 'partial',
-        stats: 'partial',
-      },
-      {
-        id: 'wrath-and-glory',
-        name: 'Wrath & Glory',
-        characters: 'full',
-        criticals: 'partial',
-        inversion: 'partial',
-        stats: 'partial',
-      },
-    ],
-  },
-  other: {
-    name: 'Autres systemes',
-    icon: 'i-lucide-layers',
-    systems: [
-      {
-        id: 'worldbuilding',
-        name: 'Simple Worldbuilding',
-        characters: 'full',
-        criticals: 'partial',
-        inversion: 'partial',
+        tier: 2,
+        installPercent: '~0.4%',
+        primaryDie: '2d6',
+        characters: 'partial',
+        criticals: 'manual',
+        inversion: 'manual',
         stats: 'none',
+        spells: 'none',
+        combat: 'none',
       },
       {
-        id: 'gurps',
-        name: 'GURPS',
-        characters: 'full',
-        criticals: 'partial',
-        inversion: 'partial',
-        stats: 'partial',
+        id: 'torgeternity',
+        name: 'Torg Eternity',
+        tier: 2,
+        installPercent: '~0.3%',
+        primaryDie: 'd20',
+        characters: 'partial',
+        criticals: 'manual',
+        inversion: 'manual',
+        stats: 'none',
+        spells: 'none',
+        combat: 'none',
       },
-      {
-        id: 'rolemaster',
-        name: 'Rolemaster',
-        characters: 'full',
-        criticals: 'partial',
-        inversion: 'partial',
-        stats: 'partial',
-      },
-      {
-        id: 'paranoia',
-        name: 'Paranoia',
-        characters: 'full',
-        criticals: 'partial',
-        inversion: 'partial',
-        stats: 'partial',
-      },
+    ],
+  },
+
+  // ── Tier 3 — Support basique ──────────────────────────────────────────────
+  {
+    tier: 3,
+    name: 'Support basique',
+    description:
+      'Extraction de des basique — configuration manuelle requise pour toutes les fonctionnalites',
+    icon: 'i-lucide-shield-off',
+    systems: [
       {
         id: 'custom',
         name: 'Custom / Homebrew',
-        characters: 'full',
-        criticals: 'partial',
-        inversion: 'partial',
+        tier: 3,
+        primaryDie: 'Variable',
+        characters: 'manual',
+        criticals: 'manual',
+        inversion: 'manual',
         stats: 'none',
+        spells: 'none',
+        combat: 'none',
       },
     ],
   },
-}
+]
 
-// Statistiques de compatibilité d'inversion de dés
-const inversionStats = computed(() => {
-  const allSystems = Object.values(systemGroups).flatMap((g) => g.systems)
-  // Exclure l'entrée "custom" du calcul de ratio (ce n'est pas un vrai système)
-  const countable = allSystems.filter((s) => s.id !== 'custom')
-  const full = countable.filter((s) => s.inversion === 'full').length
-  const partial = countable.filter((s) => s.inversion === 'partial').length
-  const total = countable.length
+// ========================================
+// COMPUTED
+// ========================================
+
+const platformStats = computed(() => {
+  const allSystems = tierGroups.flatMap((g) => g.systems).filter((s) => s.id !== 'custom')
+  const scores = allSystems.map((s) => getSystemScore(s))
+
+  const excellent = scores.filter((s) => s >= 90).length
+  const good = scores.filter((s) => s >= 60 && s < 90).length
+  const limited = scores.filter((s) => s < 60).length
+  const total = allSystems.length
+  const avgScore = total > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / total) : 0
+
   return {
-    full,
-    partial,
-    none: total - full - partial,
+    excellent,
+    good,
+    limited,
     total,
-    ratioFull: Math.round((full / total) * 100),
-    ratioSupported: Math.round(((full + partial) / total) * 100),
+    avgScore,
+    excellentRatio: Math.round((excellent / total) * 100),
+    goodRatio: Math.round((good / total) * 100),
+    limitedRatio: Math.round((limited / total) * 100),
   }
 })
 </script>
@@ -1035,55 +1094,53 @@ const inversionStats = computed(() => {
   border-color: var(--theme-border);
 }
 
-/* Statuts de compatibilité */
-.status-supported {
+/* Status badges */
+.status-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 1.5rem;
   height: 1.5rem;
   border-radius: 9999px;
-  background-color: rgba(34, 197, 94, 0.15);
-  color: rgb(34, 197, 94);
   font-size: 0.75rem;
   font-weight: 600;
+}
+
+.status-badge-sm {
+  width: 1.25rem;
+  height: 1.25rem;
+  font-size: 0.625rem;
+}
+
+.status-full {
+  background-color: rgba(34, 197, 94, 0.15);
+  color: rgb(34, 197, 94);
 }
 
 .status-partial {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.5rem;
-  height: 1.5rem;
-  border-radius: 9999px;
   background-color: rgba(234, 179, 8, 0.15);
   color: rgb(234, 179, 8);
-  font-size: 0.75rem;
-  font-weight: 600;
 }
 
-.status-unsupported {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.5rem;
-  height: 1.5rem;
-  border-radius: 9999px;
+.status-manual {
+  background-color: rgba(59, 130, 246, 0.15);
+  color: rgb(59, 130, 246);
+}
+
+.status-none {
   background-color: rgba(107, 114, 128, 0.15);
   color: rgb(107, 114, 128);
-  font-size: 0.75rem;
-  font-weight: 600;
 }
 
-/* Barre de compatibilité d'inversion */
-.inversion-ratio-card {
+/* Platform score card */
+.platform-score-card {
   padding: 1rem 1.25rem;
   border-radius: 0.75rem;
   background-color: var(--theme-bg-elevated);
   border: 1px solid var(--theme-border-muted);
 }
 
-.inversion-bar {
+.platform-bar {
   display: flex;
   height: 0.5rem;
   border-radius: 9999px;
@@ -1091,25 +1148,57 @@ const inversionStats = computed(() => {
   background-color: rgba(107, 114, 128, 0.2);
 }
 
-.inversion-bar-full {
+.platform-bar-segment {
+  transition: width 0.5s ease;
+}
+
+.platform-bar-excellent {
   background-color: rgb(34, 197, 94);
-  transition: width 0.5s ease;
 }
 
-.inversion-bar-partial {
+.platform-bar-good {
   background-color: rgb(234, 179, 8);
-  transition: width 0.5s ease;
 }
 
-/* Groupes de systèmes */
-.system-group {
+.platform-bar-limited {
+  background-color: rgb(156, 163, 175);
+}
+
+/* Tier summary badges */
+.tier-summary-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 500;
+}
+
+.tier-badge-1 {
+  background-color: rgba(34, 197, 94, 0.1);
+  color: rgb(34, 197, 94);
+}
+
+.tier-badge-2 {
+  background-color: rgba(234, 179, 8, 0.1);
+  color: rgb(202, 155, 7);
+}
+
+.tier-badge-3 {
+  background-color: rgba(107, 114, 128, 0.1);
+  color: rgb(107, 114, 128);
+}
+
+/* Tier groups */
+.tier-group {
   border: 1px solid var(--theme-border-muted);
   border-radius: 0.75rem;
   overflow: hidden;
   background-color: var(--theme-bg-elevated);
 }
 
-.system-group-header {
+.tier-group-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1119,69 +1208,181 @@ const inversionStats = computed(() => {
   border: none;
   cursor: pointer;
   transition: background-color 0.15s ease;
-}
-
-.system-group-header:hover {
-  background-color: var(--theme-bg-muted);
-}
-
-/* Tableau des systèmes */
-.system-table-wrapper {
-  overflow-x: auto;
-  border-top: 1px solid var(--theme-border-muted);
-}
-
-.system-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.875rem;
-}
-
-.system-table thead {
-  background-color: var(--theme-bg-muted);
-}
-
-.system-table th {
-  padding: 0.625rem 0.75rem;
   text-align: left;
-  font-weight: 500;
-  color: var(--color-text-secondary);
-  white-space: nowrap;
 }
 
-.th-system {
-  min-width: 180px;
+.tier-group-header:hover {
+  background-color: var(--theme-bg-muted);
 }
 
-.th-feature {
-  text-align: center !important;
-  min-width: 70px;
+.tier-icon-1 {
+  color: rgb(34, 197, 94);
 }
 
-.system-table td {
-  padding: 0.5rem 0.75rem;
+.tier-icon-2 {
+  color: rgb(202, 155, 7);
+}
+
+.tier-icon-3 {
+  color: rgb(107, 114, 128);
+}
+
+.tier-group-content {
   border-top: 1px solid var(--theme-border-muted);
 }
 
-.td-system {
+.tier-3-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background-color: var(--theme-bg-muted);
+  border-bottom: 1px solid var(--theme-border-muted);
+}
+
+/* System rows */
+.system-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.625rem 1rem;
+  border-bottom: 1px solid var(--theme-border-muted);
+  transition: background-color 0.1s ease;
+}
+
+.system-row:last-child {
+  border-bottom: none;
+}
+
+.system-row:hover {
+  background-color: var(--theme-bg-muted);
+}
+
+.system-row-info {
   display: flex;
   flex-direction: column;
   gap: 0.125rem;
+  min-width: 0;
+  flex: 1;
 }
 
 .system-name {
   font-weight: 500;
+  font-size: 0.875rem;
   color: var(--color-text-primary);
 }
 
 .system-id {
-  font-size: 0.75rem;
-  color: var(--color-text-muted);
   font-family: ui-monospace, monospace;
 }
 
-.td-feature {
-  text-align: center;
+.install-percent {
+  padding: 0.0625rem 0.375rem;
+  border-radius: 9999px;
+  background-color: var(--theme-bg-muted);
+  font-size: 0.6875rem;
+}
+
+/* Score bar */
+.score-bar-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: default;
+  flex-shrink: 0;
+}
+
+.score-bar {
+  width: 5rem;
+  height: 0.375rem;
+  border-radius: 9999px;
+  overflow: hidden;
+  background-color: rgba(107, 114, 128, 0.15);
+}
+
+.score-bar-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.4s ease;
+}
+
+.score-color-excellent {
+  background-color: rgb(34, 197, 94);
+}
+
+.score-color-good {
+  background-color: rgb(234, 179, 8);
+}
+
+.score-color-moderate {
+  background-color: rgb(249, 115, 22);
+}
+
+.score-color-limited {
+  background-color: rgb(156, 163, 175);
+}
+
+.score-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  min-width: 2.5rem;
+  text-align: right;
+}
+
+.text-score-excellent {
+  color: rgb(34, 197, 94);
+}
+
+.text-score-good {
+  color: rgb(202, 155, 7);
+}
+
+.text-score-moderate {
+  color: rgb(249, 115, 22);
+}
+
+.text-score-limited {
+  color: rgb(107, 114, 128);
+}
+
+/* Popover */
+.popover-content {
+  width: 15rem;
+  padding: 0.75rem;
+}
+
+.popover-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--theme-border-muted);
+  margin-bottom: 0.5rem;
+}
+
+.popover-category {
+  margin-bottom: 0.375rem;
+}
+
+.popover-category:last-child {
+  margin-bottom: 0;
+}
+
+.popover-category-header {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  padding: 0.25rem 0;
+}
+
+.popover-feature-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.125rem 0;
 }
 
 /* Animation collapse */
@@ -1200,26 +1401,26 @@ const inversionStats = computed(() => {
 .collapse-enter-to,
 .collapse-leave-from {
   opacity: 1;
-  max-height: 1000px;
+  max-height: 2000px;
 }
 
 /* Responsive */
 @media (max-width: 640px) {
-  .th-feature {
-    min-width: 50px;
-    padding: 0.5rem 0.25rem;
+  .score-bar {
+    width: 3rem;
   }
 
-  .td-feature {
-    padding: 0.5rem 0.25rem;
+  .score-label {
+    min-width: 2rem;
+    font-size: 0.6875rem;
   }
 
-  .system-table {
-    font-size: 0.8125rem;
+  .system-row {
+    padding: 0.5rem 0.75rem;
   }
 
-  .th-system {
-    min-width: 140px;
+  .tier-summary-badge {
+    font-size: 0.625rem;
   }
 }
 </style>

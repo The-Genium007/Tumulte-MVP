@@ -110,6 +110,16 @@ export class AuthorizationService {
     const streamer = await Streamer.find(streamerId)
     try {
       if (streamer) {
+        // Refresh token before attempting Twitch API cleanup
+        const tokenRefreshService = new TokenRefreshService()
+        const refreshSuccess = await tokenRefreshService.refreshStreamerToken(streamer)
+        if (!refreshSuccess) {
+          logger.warn(
+            { streamerId, campaignId },
+            '[Authorization] Token refresh failed before revoke cleanup, attempting anyway'
+          )
+        }
+
         const gamificationResult = await this.gamificationBridge.onAuthorizationRevoked(
           campaignId,
           streamer

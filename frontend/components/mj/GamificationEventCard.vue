@@ -20,7 +20,6 @@ const props = defineProps<{
 const emit = defineEmits<{
   toggle: [eventId: string, enabled: boolean]
   update: [eventId: string, updates: UpdateGamificationConfigRequest]
-  triggerTest: [eventId: string, diceValue: number]
   simulateRedemption: [eventId: string]
 }>()
 
@@ -188,6 +187,30 @@ const eventTypeBadge = computed(() => {
     : { label: 'Groupe', color: 'warning' as const, icon: 'i-lucide-users' }
 })
 
+// Action type icon mapping
+const eventIcon = computed(() => {
+  switch (props.event.actionType) {
+    case 'dice_invert':
+      return { name: 'i-lucide-dice-6', color: props.event.rewardColor }
+    case 'spell_disable':
+      return { name: 'i-lucide-shield-ban', color: '#8B5CF6' }
+    case 'spell_buff':
+      return { name: 'i-lucide-sparkles', color: '#10B981' }
+    case 'spell_debuff':
+      return { name: 'i-lucide-skull', color: '#EF4444' }
+    case 'monster_buff':
+      return { name: 'i-lucide-swords', color: '#10B981' }
+    case 'monster_debuff':
+      return { name: 'i-lucide-shield-off', color: '#EF4444' }
+    case 'chat_message':
+      return { name: 'i-lucide-message-circle', color: props.event.rewardColor }
+    case 'stat_modify':
+      return { name: 'i-lucide-trending-up', color: props.event.rewardColor }
+    default:
+      return { name: 'i-lucide-wand-2', color: props.event.rewardColor }
+  }
+})
+
 // Action type description
 const actionDescription = computed(() => {
   switch (props.event.actionType) {
@@ -197,6 +220,16 @@ const actionDescription = computed(() => {
       return 'Envoie un message dans le chat Foundry'
     case 'stat_modify':
       return 'Modifie les statistiques du personnage'
+    case 'spell_disable':
+      return 'Bloque un sort aléatoire'
+    case 'spell_buff':
+      return 'Amplifie un sort aléatoire'
+    case 'spell_debuff':
+      return 'Maudit un sort aléatoire'
+    case 'monster_buff':
+      return 'Renforce un monstre hostile aléatoire'
+    case 'monster_debuff':
+      return 'Affaiblit un monstre hostile aléatoire'
     default:
       return 'Action personnalisée'
   }
@@ -263,179 +296,125 @@ const handleResetToDefaults = () => {
 <template>
   <div
     :class="[
-      'rounded-xl p-4 sm:p-5 transition-all duration-200',
+      'rounded-xl p-4 transition-all duration-200 flex flex-col',
       isEnabled
         ? 'bg-primary-50 dark:bg-primary-950/30 ring-2 ring-primary shadow-md'
         : 'bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800/80',
     ]"
   >
-    <!-- Header -->
-    <div class="flex items-start justify-between gap-4">
-      <div class="flex items-start gap-3 min-w-0">
-        <!-- Icon -->
-        <div class="size-10 sm:size-12 flex items-center justify-center shrink-0">
-          <UIcon
-            :name="event.actionType === 'dice_invert' ? 'i-lucide-dice-6' : 'i-lucide-sparkles'"
-            class="size-7 sm:size-8"
-            :style="{ color: event.rewardColor }"
-          />
-        </div>
-
-        <!-- Info -->
-        <div class="min-w-0 flex-1">
-          <div class="flex items-center gap-2 flex-wrap">
-            <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 truncate">
-              {{ event.name }}
-            </h3>
-            <UBadge :color="eventTypeBadge.color" variant="soft" size="xs">
-              <UIcon :name="eventTypeBadge.icon" class="size-3 mr-1" />
-              {{ eventTypeBadge.label }}
-            </UBadge>
-          </div>
-          <p
-            v-if="event.description"
-            class="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mt-1"
-          >
-            {{ event.description }}
-          </p>
-          <p class="text-xs text-gray-500 dark:text-gray-500 mt-1">
-            {{ actionDescription }}
-          </p>
-        </div>
-      </div>
-
-      <!-- Toggle Switch -->
-      <div class="flex items-center gap-2 shrink-0">
-        <button
-          type="button"
-          role="switch"
-          :aria-checked="isEnabled"
-          :disabled="loading"
-          :class="[
-            'relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed',
-            isEnabled ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600',
-          ]"
-          @click="handleToggle"
+    <!-- Header: Icon + Name + Toggle -->
+    <div class="flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2.5 min-w-0">
+        <div
+          class="size-9 flex items-center justify-center rounded-lg shrink-0"
+          :style="{ backgroundColor: eventIcon.color + '18' }"
         >
-          <span
-            :class="[
-              'pointer-events-none inline-flex h-6 w-6 transform items-center justify-center rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
-              isEnabled ? 'translate-x-5' : 'translate-x-0',
-            ]"
-          >
-            <UIcon
-              v-if="loading"
-              name="i-game-icons-dice-twenty-faces-twenty"
-              class="size-3.5 animate-spin text-gray-400"
-            />
-          </span>
-        </button>
+          <UIcon :name="eventIcon.name" class="size-5" :style="{ color: eventIcon.color }" />
+        </div>
+        <div class="min-w-0">
+          <h3 class="text-sm font-bold text-gray-900 dark:text-gray-100 truncate">
+            {{ event.name }}
+          </h3>
+          <p class="text-xs text-gray-500 dark:text-gray-400">{{ actionDescription }}</p>
+        </div>
       </div>
+
+      <!-- Toggle Switch (compact) -->
+      <button
+        type="button"
+        role="switch"
+        :aria-checked="isEnabled"
+        :disabled="loading"
+        :class="[
+          'relative inline-flex h-6 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed',
+          isEnabled ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600',
+        ]"
+        @click="handleToggle"
+      >
+        <span
+          :class="[
+            'pointer-events-none inline-flex h-5 w-5 transform items-center justify-center rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+            isEnabled ? 'translate-x-4' : 'translate-x-0',
+          ]"
+        >
+          <UIcon
+            v-if="loading"
+            name="i-game-icons-dice-twenty-faces-twenty"
+            class="size-3 animate-spin text-gray-400"
+          />
+        </span>
+      </button>
     </div>
 
-    <!-- Quick Stats (when enabled) -->
-    <div v-if="isEnabled" class="mt-4 pt-4 border-t border-primary/20 dark:border-primary/30">
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <!-- Cost -->
-        <div
-          class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-3 flex flex-col"
-        >
-          <div class="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 mb-1">
-            <UIcon name="i-lucide-coins" class="size-3 shrink-0" />
-            <span>Coût Twitch</span>
-          </div>
-          <p class="text-sm font-semibold text-gray-900 dark:text-gray-100 mt-auto">
-            {{ effectiveCost }} pts
-          </p>
-        </div>
+    <!-- Description (when disabled) -->
+    <p
+      v-if="!isEnabled && event.description"
+      class="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mt-2"
+    >
+      {{ event.description }}
+    </p>
 
-        <!-- Duration -->
-        <div
-          class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-3 flex flex-col"
-        >
-          <div class="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 mb-1">
-            <UIcon name="i-lucide-timer" class="size-3 shrink-0" />
-            <span>Durée</span>
-          </div>
-          <p class="text-sm font-semibold text-gray-900 dark:text-gray-100 mt-auto">
-            {{ formatDuration(effectiveDuration) }}
-          </p>
-        </div>
+    <!-- Badge type (when disabled) -->
+    <div v-if="!isEnabled" class="mt-2">
+      <UBadge :color="eventTypeBadge.color" variant="soft" size="xs">
+        <UIcon :name="eventTypeBadge.icon" class="size-3 mr-1" />
+        {{ eventTypeBadge.label }}
+      </UBadge>
+    </div>
 
-        <!-- Difficulty -->
-        <div
-          class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-3 flex flex-col"
+    <!-- Quick Stats Inline (when enabled) -->
+    <div v-if="isEnabled" class="mt-3 pt-3 border-t border-primary/20 dark:border-primary/30">
+      <!-- Compact inline stats -->
+      <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+        <span class="flex items-center gap-1 text-gray-600 dark:text-gray-300">
+          <UIcon name="i-lucide-coins" class="size-3 text-gray-400 dark:text-gray-500" />
+          <span class="font-semibold">{{ effectiveCost }}</span> pts
+        </span>
+        <span class="text-gray-300 dark:text-gray-600">·</span>
+        <span class="flex items-center gap-1 text-gray-600 dark:text-gray-300">
+          <UIcon name="i-lucide-timer" class="size-3 text-gray-400 dark:text-gray-500" />
+          <span class="font-semibold">{{ formatDuration(effectiveDuration) }}</span>
+        </span>
+        <span class="text-gray-300 dark:text-gray-600">·</span>
+        <span
+          class="font-semibold"
+          :class="[
+            difficultyBadge.color === 'success' ? 'text-success-600 dark:text-success-400' : '',
+            difficultyBadge.color === 'warning' ? 'text-warning-600 dark:text-warning-400' : '',
+            difficultyBadge.color === 'error' ? 'text-error-600 dark:text-error-400' : '',
+          ]"
         >
-          <div class="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 mb-1">
-            <UIcon name="i-lucide-gauge" class="size-3 shrink-0" />
-            <span>Difficulté</span>
-          </div>
-          <p
-            class="text-sm font-semibold mt-auto"
-            :class="[
-              difficultyBadge.color === 'success' ? 'text-success-600 dark:text-success-400' : '',
-              difficultyBadge.color === 'warning' ? 'text-warning-600 dark:text-warning-400' : '',
-              difficultyBadge.color === 'error' ? 'text-error-600 dark:text-error-400' : '',
-            ]"
-          >
-            {{ difficultyBadge.label }}
-          </p>
-        </div>
-
-        <!-- Minimum -->
-        <div
-          class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-3 flex flex-col"
-        >
-          <div class="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 mb-1">
-            <UIcon name="i-lucide-shield" class="size-3 shrink-0" />
-            <span>Minimum</span>
-          </div>
-          <p class="text-sm font-semibold text-gray-900 dark:text-gray-100 mt-auto">
-            {{ effectiveMinimum }} clics
-          </p>
-        </div>
+          {{ difficultyBadge.label }}
+        </span>
+        <span class="text-gray-300 dark:text-gray-600">·</span>
+        <span class="text-gray-600 dark:text-gray-300">
+          Min <span class="font-semibold">{{ effectiveMinimum }}</span>
+        </span>
       </div>
 
-      <!-- Settings & Test Buttons -->
-      <div class="mt-4 flex flex-wrap justify-end gap-2">
-        <!-- Test Buttons (DEV/STAGING only) -->
-        <template v-if="isDev && event.triggerType === 'dice_critical'">
-          <UButton
-            icon="i-lucide-flask-conical"
-            label="Simuler 20"
-            color="warning"
-            variant="soft"
-            size="sm"
-            :loading="loading"
-            @click="emit('triggerTest', event.id, 20)"
-          />
-          <UButton
-            icon="i-lucide-flask-conical"
-            label="Simuler 1"
-            color="warning"
-            variant="soft"
-            size="sm"
-            :loading="loading"
-            @click="emit('triggerTest', event.id, 1)"
-          />
-        </template>
-        <!-- Simulate Channel Points Redemption (DEV/STAGING only, any event type) -->
+      <!-- Compact action buttons -->
+      <div class="mt-2.5 flex items-center justify-end gap-1.5">
+        <!-- Simulate Channel Points Redemption (DEV/STAGING only) -->
         <UButton
           v-if="isDev && config"
           icon="i-lucide-zap"
-          label="Simuler redemption"
           color="info"
-          variant="soft"
-          size="sm"
+          variant="ghost"
+          size="xs"
+          square
           :loading="loading"
+          :ui="{ base: 'cursor-pointer' }"
+          title="Simuler redemption"
           @click="emit('simulateRedemption', event.id)"
         />
         <UButton
           icon="i-lucide-settings"
-          label="Paramètres"
           color="primary"
-          variant="soft"
-          size="sm"
+          variant="ghost"
+          size="xs"
+          square
+          :ui="{ base: 'cursor-pointer' }"
+          title="Paramètres"
           @click="showSettings = true"
         />
       </div>
@@ -475,7 +454,7 @@ const handleResetToDefaults = () => {
                 placeholder="100"
                 min="1"
                 max="1000000"
-                class="flex-1 h-full px-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm text-center border-y border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-primary focus:border-primary focus:z-10 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                class="flex-1 h-full px-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm text-center border-y border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-primary focus:border-primary focus:z-10"
               />
               <span
                 class="flex items-center px-2 bg-gray-50 dark:bg-gray-800 text-sm text-gray-500 dark:text-gray-400 border-y border-gray-300 dark:border-gray-600"
@@ -512,7 +491,7 @@ const handleResetToDefaults = () => {
                 placeholder="60"
                 min="10"
                 max="600"
-                class="flex-1 h-full px-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm text-center border-y border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-primary focus:border-primary focus:z-10 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                class="flex-1 h-full px-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm text-center border-y border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-primary focus:border-primary focus:z-10"
               />
               <span
                 class="flex items-center px-2 bg-gray-50 dark:bg-gray-800 text-sm text-gray-500 dark:text-gray-400 border-y border-gray-300 dark:border-gray-600"
@@ -575,7 +554,7 @@ const handleResetToDefaults = () => {
                 :placeholder="`${event.defaultObjectiveCoefficient}`"
                 min="0.01"
                 max="1"
-                class="w-full h-9 px-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                class="w-full h-9 px-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
               />
               <p class="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
                 Objectif = viewers × coefficient
@@ -628,7 +607,7 @@ const handleResetToDefaults = () => {
                 placeholder="3"
                 min="1"
                 max="1000"
-                class="flex-1 h-full px-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm text-center border-y border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-primary focus:border-primary focus:z-10 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                class="flex-1 h-full px-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm text-center border-y border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-primary focus:border-primary focus:z-10"
               />
               <span
                 class="flex items-center px-2 bg-gray-50 dark:bg-gray-800 text-sm text-gray-500 dark:text-gray-400 border-y border-gray-300 dark:border-gray-600"
@@ -669,7 +648,7 @@ const handleResetToDefaults = () => {
                   placeholder="0"
                   min="0"
                   max="23"
-                  class="flex-1 min-w-0 h-full px-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm text-center border-y border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-primary focus:border-primary focus:z-10 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  class="flex-1 min-w-0 h-full px-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm text-center border-y border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-primary focus:border-primary focus:z-10"
                 />
                 <span
                   class="flex items-center px-1.5 bg-gray-50 dark:bg-gray-800 text-xs text-gray-500 dark:text-gray-400 border-y border-gray-300 dark:border-gray-600"
@@ -699,7 +678,7 @@ const handleResetToDefaults = () => {
                   placeholder="30"
                   min="0"
                   max="59"
-                  class="flex-1 min-w-0 h-full px-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm text-center border-y border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-primary focus:border-primary focus:z-10 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  class="flex-1 min-w-0 h-full px-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm text-center border-y border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-primary focus:border-primary focus:z-10"
                 />
                 <span
                   class="flex items-center px-1 bg-gray-50 dark:bg-gray-800 text-xs text-gray-500 dark:text-gray-400 border-y border-gray-300 dark:border-gray-600"
@@ -729,7 +708,7 @@ const handleResetToDefaults = () => {
                   placeholder="0"
                   min="0"
                   max="59"
-                  class="flex-1 min-w-0 h-full px-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm text-center border-y border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-primary focus:border-primary focus:z-10 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  class="flex-1 min-w-0 h-full px-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm text-center border-y border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-primary focus:border-primary focus:z-10"
                 />
                 <span
                   class="flex items-center px-1 bg-gray-50 dark:bg-gray-800 text-xs text-gray-500 dark:text-gray-400 border-y border-gray-300 dark:border-gray-600"

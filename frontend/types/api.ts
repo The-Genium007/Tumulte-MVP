@@ -234,7 +234,16 @@ export interface LaunchPollRequest {
 
 export type GamificationEventType = 'individual' | 'group'
 export type GamificationTriggerType = 'dice_critical' | 'manual' | 'custom'
-export type GamificationActionType = 'dice_invert' | 'chat_message' | 'stat_modify' | 'custom'
+export type GamificationActionType =
+  | 'dice_invert'
+  | 'chat_message'
+  | 'stat_modify'
+  | 'custom'
+  | 'spell_disable'
+  | 'spell_buff'
+  | 'spell_debuff'
+  | 'monster_buff'
+  | 'monster_debuff'
 export type GamificationCooldownType = 'time' | 'gm_validation' | 'event_complete'
 export type GamificationInstanceStatus = 'active' | 'armed' | 'completed' | 'expired' | 'cancelled'
 
