@@ -1073,12 +1073,38 @@ export default class VttWebSocketService {
   /**
    * Broadcast event to specific VTT connection
    */
-  async broadcast(connectionId: string, event: string, data: any): Promise<void> {
+  async broadcast(connectionId: string, event: string, data: any): Promise<boolean> {
     if (!this.io) {
       throw new Error('WebSocket service not initialized')
     }
 
     const vttNamespace = this.io.of('/vtt')
-    vttNamespace.to(`vtt:${connectionId}`).emit(event, data)
+    const roomName = `vtt:${connectionId}`
+
+    // Check if there are actual sockets in the room before emitting
+    const sockets = await vttNamespace.in(roomName).fetchSockets()
+    if (sockets.length === 0) {
+      logger.warn(
+        {
+          event: 'vtt_broadcast_no_sockets',
+          connectionId,
+          socketEvent: event,
+        },
+        `No VTT sockets in room ${roomName} — command will not be received by Foundry`
+      )
+      return false
+    }
+
+    logger.debug(
+      {
+        connectionId,
+        socketEvent: event,
+        socketCount: sockets.length,
+      },
+      `Broadcasting to ${sockets.length} socket(s) in room ${roomName}`
+    )
+
+    vttNamespace.to(roomName).emit(event, data)
+    return true
   }
 }

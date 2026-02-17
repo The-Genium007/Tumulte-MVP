@@ -40,7 +40,7 @@ export default class GamificationEventsSeeder extends BaseSeeder {
             deleteOriginal: true,
           },
         },
-        defaultCost: 100, // 100 points de chaîne par clic
+        defaultCost: 1000, // 1000 points de chaîne par clic
         defaultObjectiveCoefficient: 0.3, // 30% des viewers
         defaultMinimumObjective: 3, // Minimum 3 clics
         defaultDuration: 60, // 60 secondes pour remplir la jauge

@@ -40,11 +40,31 @@ export class FoundryCommandAdapter implements FoundryCommandService {
     )
 
     try {
-      await this.vttWebSocketService.broadcast(connectionId, `command:${action}`, {
-        ...data,
-        requestId,
-        timestamp: new Date().toISOString(),
-      })
+      const delivered = await this.vttWebSocketService.broadcast(
+        connectionId,
+        `command:${action}`,
+        {
+          ...data,
+          requestId,
+          timestamp: new Date().toISOString(),
+        }
+      )
+
+      if (!delivered) {
+        logger.error(
+          {
+            event: 'foundry_command_no_receiver',
+            connectionId,
+            action,
+            requestId,
+          },
+          'Aucun socket Foundry connecté — la commande ne sera pas reçue'
+        )
+        return {
+          success: false,
+          error: 'Module Foundry non connecté (aucun socket actif dans la room)',
+        }
+      }
 
       logger.info(
         {

@@ -238,7 +238,7 @@ onUnmounted(() => {
             fontFamily:
               customStyles?.typography?.detail?.fontFamily ??
               `'JetBrains Mono', 'Fira Code', monospace`,
-            fontSize: `${customStyles?.typography?.detail?.fontSize ?? 32}px`,
+            fontSize: `${customStyles?.typography?.detail?.fontSize ?? 24}px`,
             fontWeight: customStyles?.typography?.detail?.fontWeight ?? 800,
             color: customStyles?.typography?.detail?.color ?? '#ffffff',
           }"
@@ -256,7 +256,8 @@ onUnmounted(() => {
 <style scoped>
 .monster-impact-hud {
   position: relative;
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family:
+    'Inter', system-ui, 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
 }
 
 .impact-glow {
@@ -293,6 +294,7 @@ onUnmounted(() => {
   border-style: solid;
   padding: 20px 32px;
   text-align: center;
+  max-width: 500px;
   background: linear-gradient(135deg, rgba(26, 26, 46, 0.98), rgba(35, 35, 55, 0.98));
   box-shadow:
     0 15px 50px rgba(0, 0, 0, 0.6),
@@ -317,15 +319,21 @@ onUnmounted(() => {
     0 0 20px color-mix(in srgb, var(--theme-color, #10b981) 40%, transparent);
   letter-spacing: 1px;
   margin-bottom: 8px;
+  white-space: nowrap;
 }
 
 .impact-detail {
-  font-size: 32px;
+  font-size: 24px;
   font-weight: 800;
   color: #fff;
-  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-family:
+    'JetBrains Mono', 'Fira Code', monospace, 'Apple Color Emoji', 'Segoe UI Emoji',
+    'Noto Color Emoji';
   text-shadow: 0 3px 15px rgba(0, 0, 0, 0.5);
-  letter-spacing: 2px;
+  letter-spacing: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Animation phases */

@@ -412,6 +412,7 @@ export class GamificationService {
         {
           rollId: diceRollData.rollId,
           characterId: diceRollData.characterId,
+          vttCharacterId: diceRollData.vttCharacterId ?? null,
           characterName: diceRollData.characterName,
           formula: diceRollData.formula,
           result: diceRollData.result,
@@ -421,8 +422,9 @@ export class GamificationService {
         }
       )
 
-      // Broadcast la consommation (action exécutée)
+      // Broadcast la consommation (action exécutée) + complétion (pour que la GoalBar disparaisse)
       this.broadcastInstanceConsumed(consumedInstance, diceRollData)
+      this.broadcastInstanceCompleted(consumedInstance)
 
       return consumedInstance
     }

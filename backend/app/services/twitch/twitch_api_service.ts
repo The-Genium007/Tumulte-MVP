@@ -45,8 +45,8 @@ interface TwitchStream {
 }
 
 class TwitchApiService {
-  private appAccessToken: string | null = null
-  private tokenExpiry: number = 0
+  private static appAccessToken: string | null = null
+  private static tokenExpiry: number = 0
   private readonly retryUtility: RetryUtility
 
   constructor() {
@@ -59,8 +59,8 @@ class TwitchApiService {
    */
   async getAppAccessToken(): Promise<string> {
     // Si on a déjà un token valide, le retourner (sans log pour éviter le spam)
-    if (this.appAccessToken && Date.now() < this.tokenExpiry) {
-      return this.appAccessToken
+    if (TwitchApiService.appAccessToken && Date.now() < TwitchApiService.tokenExpiry) {
+      return TwitchApiService.appAccessToken
     }
 
     try {
@@ -96,18 +96,18 @@ class TwitchApiService {
         expires_in: number
       }
 
-      this.appAccessToken = data.access_token
+      TwitchApiService.appAccessToken = data.access_token
       // Expire 5 minutes avant la vraie expiration pour être sûr
-      this.tokenExpiry = Date.now() + (data.expires_in - 300) * 1000
+      TwitchApiService.tokenExpiry = Date.now() + (data.expires_in - 300) * 1000
 
       // Log uniquement lors d'un VRAI renouvellement de token
       logger.info({
         event: 'twitch_app_token_renewed',
         expiresIn: data.expires_in,
-        expiresAt: new Date(this.tokenExpiry).toISOString(),
+        expiresAt: new Date(TwitchApiService.tokenExpiry).toISOString(),
       })
 
-      return this.appAccessToken
+      return TwitchApiService.appAccessToken
     } catch (error) {
       Sentry.captureException(error, {
         tags: {
@@ -484,10 +484,10 @@ class TwitchApiService {
    */
   async getAppAccessTokenWithRetry(context?: Partial<RetryContext>): Promise<RetryResult<string>> {
     // Return cached token if still valid
-    if (this.appAccessToken && Date.now() < this.tokenExpiry) {
+    if (TwitchApiService.appAccessToken && Date.now() < TwitchApiService.tokenExpiry) {
       return {
         success: true,
-        data: this.appAccessToken,
+        data: TwitchApiService.appAccessToken,
         attempts: 0,
         totalDurationMs: 0,
         circuitBreakerOpen: false,
@@ -544,8 +544,8 @@ class TwitchApiService {
       }
 
       // Cache the token
-      this.appAccessToken = data.access_token
-      this.tokenExpiry = Date.now() + (data.expires_in - 300) * 1000
+      TwitchApiService.appAccessToken = data.access_token
+      TwitchApiService.tokenExpiry = Date.now() + (data.expires_in - 300) * 1000
 
       return {
         success: true,

@@ -227,7 +227,8 @@ onUnmounted(() => {
 <style scoped>
 .dice-reverse-impact-hud {
   position: relative;
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family:
+    'Inter', system-ui, 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
 }
 
 /* Glow effect - Purple gradient matching Goal Bar */

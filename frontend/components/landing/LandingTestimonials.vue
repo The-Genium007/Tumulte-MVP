@@ -23,17 +23,7 @@
         >
           <div class="space-y-4">
             <!-- Quote icon -->
-            <div class="flex justify-between items-start">
-              <UIcon name="i-lucide-quote" class="size-6 text-secondary-300" />
-              <div class="flex gap-0.5">
-                <UIcon
-                  v-for="n in 5"
-                  :key="n"
-                  name="i-lucide-star"
-                  class="size-4 text-warning-400 fill-warning-400"
-                />
-              </div>
-            </div>
+            <UIcon name="i-lucide-quote" class="size-6 text-secondary-300" />
 
             <!-- Quote text -->
             <p class="text-muted leading-relaxed">{{ testimonial.quote }}</p>

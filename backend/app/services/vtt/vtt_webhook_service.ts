@@ -85,8 +85,14 @@ export default class VttWebhookService {
     }
 
     // 4. Determine which character to attribute this roll to
-    const { characterId, pendingAttribution, streamerId, streamerName, resolvedCharacterName } =
-      await this.resolveCharacterForRoll(campaign, vttCharacter)
+    const {
+      characterId,
+      vttCharacterId: resolvedVttCharacterId,
+      pendingAttribution,
+      streamerId,
+      streamerName,
+      resolvedCharacterName,
+    } = await this.resolveCharacterForRoll(campaign, vttCharacter)
 
     // 5. Créer le dice roll via le service
     const diceRollService = new DiceRollService()
@@ -132,6 +138,7 @@ export default class VttWebhookService {
       const diceRollData: DiceRollData = {
         rollId: diceRoll.id,
         characterId,
+        vttCharacterId: resolvedVttCharacterId,
         characterName: resolvedCharacterName ?? vttCharacter.name,
         formula: payload.rollFormula,
         result: payload.result,
@@ -178,6 +185,7 @@ export default class VttWebhookService {
     vttCharacter: Character
   ): Promise<{
     characterId: string | null
+    vttCharacterId: string | null
     pendingAttribution: boolean
     streamerId: string | null
     streamerName: string | null
@@ -194,10 +202,12 @@ export default class VttWebhookService {
       // This is a player's character - attribute to them
       logger.debug('Roll attributed to player character', {
         characterId: vttCharacter.id,
+        vttCharacterId: vttCharacter.vttCharacterId,
         characterName: vttCharacter.name,
       })
       return {
         characterId: vttCharacter.id,
+        vttCharacterId: vttCharacter.vttCharacterId,
         pendingAttribution: false,
         streamerId: playerAssignment.streamerId,
         streamerName:
@@ -214,16 +224,18 @@ export default class VttWebhookService {
 
     // Check if GM has an active character set
     if (campaign.gmActiveCharacterId) {
-      // Load the GM's active character name
+      // Load the GM's active character
       const gmActiveCharacter = await Character.find(campaign.gmActiveCharacterId)
 
       logger.debug('Roll attributed to GM active character', {
         gmActiveCharacterId: campaign.gmActiveCharacterId,
+        gmActiveVttCharacterId: gmActiveCharacter?.vttCharacterId,
         gmActiveCharacterName: gmActiveCharacter?.name,
         originalCharacterId: vttCharacter.id,
       })
       return {
         characterId: campaign.gmActiveCharacterId,
+        vttCharacterId: gmActiveCharacter?.vttCharacterId ?? null,
         pendingAttribution: false,
         streamerId: gmStreamer?.id ?? null,
         streamerName: gmStreamer?.twitchDisplayName || gmStreamer?.twitchLogin || null,
@@ -234,10 +246,11 @@ export default class VttWebhookService {
     // No active character - roll needs manual attribution
     logger.info('Roll pending attribution (no GM active character)', {
       campaignId: campaign.id,
-      vttCharacterId: vttCharacter.id,
+      vttCharacterId: vttCharacter.vttCharacterId,
     })
     return {
       characterId: null,
+      vttCharacterId: null,
       pendingAttribution: true,
       streamerId: null,
       streamerName: null,
@@ -383,8 +396,8 @@ export default class VttWebhookService {
       .first()
 
     if (character) {
-      // Mettre à jour les données existantes
-      character.merge({
+      // Check if anything actually changed before writing to DB
+      const newData = {
         name: characterData.name,
         avatarUrl: characterData.avatarUrl,
         characterType: resolvedCharacterType,
@@ -393,9 +406,27 @@ export default class VttWebhookService {
         spells: characterData.spells || character.spells,
         features: characterData.features || character.features,
         vttData: characterData.vttData || character.vttData,
-        lastSyncAt: DateTime.now(),
-      })
-      await character.save()
+      }
+
+      const hasChanges =
+        character.name !== newData.name ||
+        character.avatarUrl !== newData.avatarUrl ||
+        character.characterType !== newData.characterType ||
+        JSON.stringify(character.stats) !== JSON.stringify(newData.stats) ||
+        JSON.stringify(character.inventory) !== JSON.stringify(newData.inventory) ||
+        JSON.stringify(character.spells) !== JSON.stringify(newData.spells) ||
+        JSON.stringify(character.features) !== JSON.stringify(newData.features) ||
+        JSON.stringify(character.vttData) !== JSON.stringify(newData.vttData)
+
+      if (hasChanges) {
+        character.merge({ ...newData, lastSyncAt: DateTime.now() })
+        await character.save()
+      } else {
+        logger.debug('Character sync skipped (no changes)', {
+          characterId: character.id,
+          characterName: character.name,
+        })
+      }
     } else {
       // Créer un nouveau personnage
       character = await Character.create({

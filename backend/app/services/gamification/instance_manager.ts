@@ -554,6 +554,7 @@ export class InstanceManager {
     diceRollData?: {
       rollId: string
       characterId: string | null
+      vttCharacterId?: string | null
       characterName: string | null
       formula: string
       result: number

@@ -2,6 +2,7 @@ import Character from '#models/character'
 import type { SpellInfo } from '#models/character'
 import CharacterAssignment from '#models/character_assignment'
 import { campaign as Campaign } from '#models/campaign'
+import { streamer as Streamer } from '#models/streamer'
 import { CampaignItemCategoryRuleRepository } from '#repositories/campaign_item_category_rule_repository'
 import type CampaignItemCategoryRule from '#models/campaign_item_category_rule'
 import logger from '@adonisjs/core/services/logger'
@@ -10,8 +11,8 @@ import logger from '@adonisjs/core/services/logger'
  * Resolve the Foundry VTT actor ID and Character model for a given streamer in a campaign.
  *
  * Resolution order:
- * 1. CharacterAssignment (streamer → character)
- * 2. Campaign.gmActiveCharacterId (fallback when the streamer is also the GM)
+ * 1. CharacterAssignment (streamer → character) — standard player path
+ * 2. Campaign.gmActiveCharacterId — only if the streamer IS the campaign owner (GM)
  */
 export async function resolveActorForStreamer(
   campaignId: string,
@@ -25,29 +26,80 @@ export async function resolveActorForStreamer(
     .first()
 
   if (assignment?.character && assignment.character.vttCharacterId) {
+    logger.debug(
+      {
+        campaignId,
+        streamerId,
+        characterId: assignment.character.id,
+        vttCharacterId: assignment.character.vttCharacterId,
+        characterName: assignment.character.name,
+      },
+      '[spell_utils] Resolved via CharacterAssignment'
+    )
     return { actorId: assignment.character.vttCharacterId, character: assignment.character }
   }
 
-  // 2. Fallback: GM active character (when streamer is also the GM)
+  // 2. Fallback: GM active character — only if this streamer is the campaign owner
   const campaign = await Campaign.query()
     .where('id', campaignId)
     .preload('gmActiveCharacter')
     .first()
 
-  if (campaign?.gmActiveCharacterId && campaign.gmActiveCharacter) {
+  if (!campaign) {
+    logger.warn({ campaignId, streamerId }, '[spell_utils] Campaign not found')
+    return null
+  }
+
+  // Verify this streamer is the GM (campaign owner)
+  const streamer = await Streamer.find(streamerId)
+  if (!streamer?.userId || streamer.userId !== campaign.ownerId) {
+    logger.warn(
+      {
+        campaignId,
+        streamerId,
+        streamerUserId: streamer?.userId ?? null,
+        campaignOwnerId: campaign.ownerId,
+      },
+      '[spell_utils] Streamer is not the GM — cannot use gmActiveCharacter fallback'
+    )
+    return null
+  }
+
+  // 2a. GM has explicitly selected an active character
+  if (campaign.gmActiveCharacterId && campaign.gmActiveCharacter) {
     const gmChar = campaign.gmActiveCharacter
     if (gmChar.vttCharacterId) {
       logger.info(
-        { campaignId, streamerId, characterId: gmChar.id, characterName: gmChar.name },
-        '[spell_utils] Using GM active character as fallback'
+        {
+          campaignId,
+          streamerId,
+          characterId: gmChar.id,
+          vttCharacterId: gmChar.vttCharacterId,
+          characterName: gmChar.name,
+        },
+        '[spell_utils] Using GM active character (streamer is campaign owner)'
       )
       return { actorId: gmChar.vttCharacterId, character: gmChar }
     }
+    logger.warn(
+      {
+        campaignId,
+        streamerId,
+        characterId: gmChar.id,
+        characterName: gmChar.name,
+      },
+      '[spell_utils] GM active character has no vttCharacterId — character not synced from Foundry?'
+    )
+    return null
   }
 
   logger.warn(
-    { campaignId, streamerId },
-    '[spell_utils] No character found (no assignment, no GM active character)'
+    {
+      campaignId,
+      streamerId,
+      gmActiveCharacterId: campaign.gmActiveCharacterId,
+    },
+    '[spell_utils] GM has no active character set — please select a character via incarnation UI'
   )
   return null
 }
@@ -56,7 +108,8 @@ export async function resolveActorForStreamer(
  * Pick a random spell from the character's spell list.
  * Supports optional weighted selection when weights are provided.
  * Optionally excludes cantrips (level 0).
- * Excludes spells with active Tumulte effects by default (anti-duplicate).
+ * Excludes spells with active Tumulte effects by default (anti-duplicate),
+ * but falls back to all spells if every spell is already affected.
  */
 export function pickRandomSpell(
   spells: SpellInfo[],
@@ -70,15 +123,24 @@ export function pickRandomSpell(
     eligible = spells.filter((s) => s.level !== 0)
   }
 
-  // Exclude spells that already have an active Tumulte effect
-  if (excludeAffected) {
-    eligible = eligible.filter((s) => !s.activeEffect)
-  }
-
   // Filter only spells that have a name (safety)
   eligible = eligible.filter((s) => s.name)
 
   if (eligible.length === 0) return null
+
+  // Exclude spells that already have an active Tumulte effect
+  if (excludeAffected) {
+    const unaffected = eligible.filter((s) => !s.activeEffect)
+    if (unaffected.length > 0) {
+      eligible = unaffected
+    } else {
+      // Fallback: all spells are affected — allow re-targeting rather than blocking
+      logger.warn(
+        { totalSpells: eligible.length },
+        '[pickRandomSpell] All spells have active effects — bypassing activeEffect filter to avoid blocking action'
+      )
+    }
+  }
 
   // Weighted random selection if weights are provided
   if (weights && weights.size > 0) {

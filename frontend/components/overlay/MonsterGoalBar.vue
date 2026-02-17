@@ -356,7 +356,8 @@ onUnmounted(() => {
 .monster-goal-bar {
   position: relative;
   width: 500px;
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family:
+    'Inter', system-ui, 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
   transition: transform 0.05s linear;
 }
 
@@ -540,12 +541,15 @@ onUnmounted(() => {
 .success-content {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
+  padding: 0 16px;
 }
 
 .success-icon {
-  font-size: 40px;
+  font-size: 32px;
+  line-height: 1;
   animation: bounce 0.6s ease-out infinite;
+  flex-shrink: 0;
 }
 
 .success-icon:last-child {
@@ -553,12 +557,13 @@ onUnmounted(() => {
 }
 
 .success-text {
-  font-size: 32px;
+  font-size: 24px;
   font-weight: 900;
   color: #fff;
   text-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
-  letter-spacing: 2px;
+  letter-spacing: 1px;
   animation: scale-in 0.4s ease-out;
+  white-space: nowrap;
 }
 
 @keyframes bounce {

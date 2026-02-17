@@ -408,13 +408,13 @@ const handleResetToDefaults = () => {
           @click="emit('simulateRedemption', event.id)"
         />
         <UButton
-          icon="i-lucide-settings"
-          color="primary"
-          variant="ghost"
+          icon="i-lucide-pencil-line"
+          label="Modifier la récompense"
           size="xs"
-          square
-          :ui="{ base: 'cursor-pointer' }"
-          title="Paramètres"
+          variant="soft"
+          :ui="{
+            base: 'cursor-pointer bg-[#9146FF]/10 text-[#9146FF] hover:bg-[#9146FF]/20 dark:bg-[#9146FF]/15 dark:hover:bg-[#9146FF]/25',
+          }"
           @click="showSettings = true"
         />
       </div>

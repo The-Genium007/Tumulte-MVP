@@ -356,6 +356,10 @@ const isGamificationVisible = ref(false)
 const gamificationImpactData = ref<ImpactData | null>(null)
 const isGamificationImpactVisible = ref(false)
 
+// Pending impact: set when action_executed arrives before the dice HUD is visible.
+// The watcher on isPopup2DVisible will fire the impact once the HUD appears.
+const pendingImpact = ref(false)
+
 // Keep last dice roll for re-show when impact arrives after HUD has faded
 const lastDiceRoll = ref<DiceRollEvent | null>(null)
 
@@ -425,9 +429,11 @@ const handlePollStateChange = (newState: string) => {
 /**
  * Ajoute un dice roll à la queue unifiée
  * Si aucun roll n'est en cours, lance immédiatement le traitement
+ *
+ * @param priority - Si true, ajoute en tête de queue (pour les critiques)
  */
-const handleDiceRoll = (data: DiceRollEvent) => {
-  console.log('[Overlay] Dice roll received:', data)
+const handleDiceRoll = (data: DiceRollEvent, priority: boolean = false) => {
+  console.log('[Overlay] Dice roll received:', data, priority ? '(PRIORITY)' : '')
 
   // SECURITY: Never display hidden rolls on overlay (GM secret rolls)
   if (data.isHidden) {
@@ -435,8 +441,12 @@ const handleDiceRoll = (data: DiceRollEvent) => {
     return
   }
 
-  // Ajouter à la queue
-  diceRollQueue.value.push(data)
+  // Ajouter à la queue (priorité = en tête, normal = en fin)
+  if (priority) {
+    diceRollQueue.value.unshift(data)
+  } else {
+    diceRollQueue.value.push(data)
+  }
   console.log('[Overlay] Dice roll added to queue, queue size:', diceRollQueue.value.length)
 
   // Si aucun roll n'est en cours, lancer le traitement
@@ -544,6 +554,7 @@ const handleGamificationImpactHidden = () => {
   console.log('[Overlay] Gamification impact HUD hidden')
   isGamificationImpactVisible.value = false
   gamificationImpactData.value = null
+  pendingImpact.value = false
 
   // Dismiss the dice roll HUD (the impact exit animation handles the visual)
   isPopup2DVisible.value = false
@@ -556,6 +567,29 @@ const handleGamificationImpactHidden = () => {
     processNextRoll()
   }, 300)
 }
+
+// Watcher: when the dice HUD becomes visible while a pending impact is waiting,
+// wait for the entry animation (500ms) + settle buffer, then fire the slam.
+watch(
+  () => isPopup2DVisible.value,
+  (visible) => {
+    if (visible && pendingImpact.value && gamificationImpactData.value) {
+      pendingImpact.value = false
+
+      // Cancel the normal dice roll display timeout — impact takes over the HUD lifecycle
+      if (rollDisplayTimeout.value) {
+        clearTimeout(rollDisplayTimeout.value)
+        rollDisplayTimeout.value = null
+      }
+
+      // Wait for dice-roll-in entry animation (500ms) + settle buffer
+      setTimeout(() => {
+        console.log('[Overlay] Pending impact fired after dice HUD became visible')
+        isGamificationImpactVisible.value = true
+      }, 600)
+    }
+  }
+)
 
 // =============================================
 // Spell Gamification Handlers
@@ -807,12 +841,8 @@ const setupWebSocketSubscription = () => {
         await setActiveCampaign(data.campaignId)
       }
 
-      // Les rolls critiques passent devant la queue
-      if (currentDiceRoll.value) {
-        diceRollQueue.value.unshift(data) // Ajouter au début de la queue
-      } else {
-        currentDiceRoll.value = data
-      }
+      // Les rolls critiques passent par le pipeline unifié avec priorité
+      handleDiceRoll(data, true)
     },
 
     // Gamification events — route to spell or dice reverse based on action type
@@ -981,18 +1011,14 @@ const setupWebSocketSubscription = () => {
 
         if (isPopup2DVisible.value && currentDiceRoll.value) {
           // HUD is already visible — slam immediately
+          console.log('[Overlay] Dice HUD visible, slamming impact immediately')
           isGamificationImpactVisible.value = true
-        } else if (lastDiceRoll.value) {
-          // HUD has faded — re-show with last roll, then slam after entry transition
-          currentDiceRoll.value = lastDiceRoll.value
-          isPopup2DVisible.value = true
-          isDice3DVisible.value = false // Don't re-show 3D dice
-          setTimeout(() => {
-            isGamificationImpactVisible.value = true
-          }, 600) // Wait for dice-roll-in transition (500ms) + buffer
         } else {
-          // No dice roll to slam into — show impact standalone
-          isGamificationImpactVisible.value = true
+          // HUD is NOT yet visible (critical roll still in queue / being processed).
+          // Mark as pending — the watcher on isPopup2DVisible will fire the impact
+          // once the dice HUD entry animation completes.
+          console.log('[Overlay] Dice HUD not visible yet, deferring impact to pending')
+          pendingImpact.value = true
         }
       }
     },

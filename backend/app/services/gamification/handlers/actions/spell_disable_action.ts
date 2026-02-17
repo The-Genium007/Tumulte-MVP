@@ -53,9 +53,17 @@ export class SpellDisableAction implements ActionHandler {
 
     const affectedCount = eligible.filter((s) => s.activeEffect).length
     if (affectedCount > 0) {
+      const allAffected = affectedCount >= eligible.length
       logger.info(
-        { event: 'spell_selection_filtered', affectedCount, totalEligible: eligible.length },
-        `Excluding ${affectedCount} spell(s) with active effects from disable selection`
+        {
+          event: 'spell_selection_filtered',
+          affectedCount,
+          totalEligible: eligible.length,
+          allAffected,
+        },
+        allAffected
+          ? `All ${eligible.length} spell(s) have active effects — will bypass filter for disable selection`
+          : `Excluding ${affectedCount} spell(s) with active effects from disable selection`
       )
     }
 

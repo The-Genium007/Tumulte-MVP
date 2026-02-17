@@ -1,4 +1,5 @@
 import logger from '@adonisjs/core/services/logger'
+import Character from '#models/character'
 import type { ActionConfig } from '#models/gamification_event'
 import type GamificationInstance from '#models/gamification_instance'
 import type { ResultData } from '#models/gamification_instance'
@@ -64,6 +65,15 @@ export class DiceInvertAction implements ActionHandler {
       return { success: false, error: 'Service Foundry non disponible' }
     }
 
+    // Resolve vttCharacterId from Tumulte characterId if available.
+    // triggerData.diceRoll.characterId is a Tumulte UUID (PK of characters table),
+    // but Foundry expects vttCharacterId (Foundry actor ID). We prefer the
+    // enriched vttCharacterId if already present in triggerData (set by vtt_webhook_service).
+    const vttCharacterId = await this.resolveVttCharacterId(
+      diceData.characterId ?? null,
+      instance.triggerData?.diceRoll?.vttCharacterId ?? undefined
+    )
+
     const diceConfig = config?.diceInvert
     const trollMessage =
       diceConfig?.trollMessage || "🎭 Le chat a inversé le destin ! C'est leur faute..."
@@ -85,7 +95,8 @@ export class DiceInvertAction implements ActionHandler {
         invertedResult,
         trollMessage,
         actionResult,
-        instance.id
+        instance.id,
+        vttCharacterId
       )
     }
 
@@ -97,7 +108,8 @@ export class DiceInvertAction implements ActionHandler {
       trollMessage,
       actionResult,
       diceConfig?.deleteOriginal !== false,
-      instance.id
+      instance.id,
+      vttCharacterId
     )
   }
 
@@ -107,7 +119,8 @@ export class DiceInvertAction implements ActionHandler {
     invertedResult: number,
     trollMessage: string,
     actionResult: Record<string, unknown>,
-    instanceId: string
+    instanceId: string,
+    vttCharacterId: string | null
   ): Promise<ResultData> {
     logger.info(
       { event: 'dice_invert_test_step1', instanceId, diceValue: diceData.result },
@@ -119,7 +132,7 @@ export class DiceInvertAction implements ActionHandler {
       diceData.formula,
       diceData.result,
       `🎲 Test de dé critique: ${diceData.result}`,
-      { characterId: diceData.characterId ?? undefined }
+      { characterId: vttCharacterId ?? undefined }
     )
 
     if (!originalRollResult.success) {
@@ -142,7 +155,7 @@ export class DiceInvertAction implements ActionHandler {
       diceData.formula,
       invertedResult,
       `${trollMessage}\n\n(Résultat original: ${diceData.result} → Inversé: ${invertedResult})`,
-      { characterId: diceData.characterId ?? undefined }
+      { characterId: vttCharacterId ?? undefined }
     )
 
     if (!invertedRollResult.success) {
@@ -167,7 +180,8 @@ export class DiceInvertAction implements ActionHandler {
     trollMessage: string,
     actionResult: Record<string, unknown>,
     shouldDeleteOriginal: boolean,
-    instanceId: string
+    instanceId: string,
+    vttCharacterId: string | null
   ): Promise<ResultData> {
     if (shouldDeleteOriginal && diceData.messageId) {
       const deleteResult = await this.foundryCommandService!.deleteChatMessage(
@@ -193,7 +207,7 @@ export class DiceInvertAction implements ActionHandler {
       diceData.formula,
       invertedResult,
       `${trollMessage}\n\n(Résultat original: ${diceData.result} → Inversé: ${invertedResult})`,
-      { characterId: diceData.characterId ?? undefined }
+      { characterId: vttCharacterId ?? undefined }
     )
 
     if (!rollResult.success) {
@@ -208,6 +222,53 @@ export class DiceInvertAction implements ActionHandler {
       success: true,
       message: `Dé inversé: ${diceData.result} → ${invertedResult}`,
       actionResult,
+    }
+  }
+
+  /**
+   * Resolve the Foundry VTT actor ID from a Tumulte character UUID.
+   *
+   * triggerData.diceRoll.characterId is a Tumulte PK (characters table),
+   * but Foundry expects the vttCharacterId (Foundry actor ID like "Actor.xxxx").
+   * If a pre-resolved vttCharacterId is provided (enriched trigger data), use it directly.
+   */
+  private async resolveVttCharacterId(
+    tumulteCharacterId: string | null,
+    preResolved?: string
+  ): Promise<string | null> {
+    if (preResolved) {
+      return preResolved
+    }
+
+    if (!tumulteCharacterId) {
+      return null
+    }
+
+    try {
+      const character = await Character.find(tumulteCharacterId)
+      if (character?.vttCharacterId) {
+        logger.debug(
+          {
+            tumulteCharacterId,
+            vttCharacterId: character.vttCharacterId,
+            characterName: character.name,
+          },
+          '[DiceInvertAction] Resolved vttCharacterId from Tumulte UUID'
+        )
+        return character.vttCharacterId
+      }
+
+      logger.warn(
+        { tumulteCharacterId },
+        '[DiceInvertAction] Character found but has no vttCharacterId'
+      )
+      return null
+    } catch (error) {
+      logger.warn(
+        { tumulteCharacterId, error: (error as Error).message },
+        '[DiceInvertAction] Failed to resolve vttCharacterId'
+      )
+      return null
     }
   }
 

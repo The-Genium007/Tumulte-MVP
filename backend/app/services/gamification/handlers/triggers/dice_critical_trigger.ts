@@ -4,7 +4,10 @@ import type { TriggerHandler, TriggerEvaluationResult } from '../types.js'
 
 export interface DiceRollData {
   rollId: string
+  /** Tumulte character UUID (PK of characters table) */
   characterId: string | null
+  /** Foundry VTT actor ID — resolved at source to avoid UUID confusion */
+  vttCharacterId?: string | null
   characterName: string | null
   formula: string
   result: number
@@ -134,6 +137,7 @@ export class DiceCriticalTrigger implements TriggerHandler {
       diceRoll: {
         rollId: diceRoll.rollId,
         characterId: diceRoll.characterId,
+        vttCharacterId: diceRoll.vttCharacterId ?? null,
         characterName: diceRoll.characterName,
         formula: diceRoll.formula,
         result: diceRoll.result,

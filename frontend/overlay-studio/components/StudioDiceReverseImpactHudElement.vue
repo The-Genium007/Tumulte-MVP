@@ -147,7 +147,8 @@ const handlePointerUp = () => {
 
 <style scoped>
 .impact-hud-element {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family:
+    'Inter', system-ui, 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
   cursor: move;
   user-select: none;
 }

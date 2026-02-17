@@ -72,20 +72,8 @@ const isAssignedToStreamer = (character: GmCharacter) => character.assignedToStr
           <p class="text-xs text-muted">Sélectionnez le personnage que vous incarnez</p>
         </div>
 
-        <!-- Actions en haut à droite -->
-        <div class="flex items-center gap-2">
-          <!-- Bouton voir tous si beaucoup de personnages -->
-          <UButton
-            v-if="hasMoreCharacters && !loading"
-            color="primary"
-            variant="soft"
-            size="xs"
-            @click="showAllCharactersModal = true"
-          >
-            Voir tout ({{ characters.length }})
-          </UButton>
-
-          <!-- Bouton d'information -->
+        <!-- Bouton d'information -->
+        <div class="flex items-center">
           <UPopover>
             <UButton color="info" variant="soft" icon="i-lucide-help-circle" size="sm" />
             <template #content>
