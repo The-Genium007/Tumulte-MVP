@@ -10,8 +10,8 @@ services:
     container_name: tumulte-backend-${ENV_SUFFIX:-prod}
     hostname: tumulte-backend-${ENV_SUFFIX:-prod}
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: backend/Dockerfile
       target: production
     image: ${IMAGE_NAME:-tumulte-backend}:${IMAGE_TAG:-latest}
     environment:

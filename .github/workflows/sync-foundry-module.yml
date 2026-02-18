@@ -192,6 +192,26 @@ jobs:
           echo "tag=${TAG}" >> $GITHUB_OUTPUT
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
 
+      - name: Sync FOUNDRY_MODULE_LATEST_VERSION in .env.example
+        if: steps.check_sync.outputs.needed == 'true'
+        id: version_sync
+        run: |
+          MODULE_VERSION=$(jq -r '.version' modules-vtt/foundry/module.json)
+          ENV_VERSION=$(grep 'FOUNDRY_MODULE_LATEST_VERSION=' backend/.env.example | tail -1 | cut -d= -f2)
+
+          echo "module_version=${MODULE_VERSION}" >> $GITHUB_OUTPUT
+
+          if [ "${MODULE_VERSION}" != "${ENV_VERSION}" ]; then
+            echo "⚠️  Version mismatch: module.json=${MODULE_VERSION}, .env.example=${ENV_VERSION}"
+            sed -i "s/FOUNDRY_MODULE_LATEST_VERSION=.*/FOUNDRY_MODULE_LATEST_VERSION=${MODULE_VERSION}/" backend/.env.example
+            git add backend/.env.example
+            echo "✅ Updated .env.example to ${MODULE_VERSION}"
+            echo "updated=true" >> $GITHUB_OUTPUT
+          else
+            echo "✅ Versions in sync: ${MODULE_VERSION}"
+            echo "updated=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Commit injected URLs
         if: steps.check_sync.outputs.needed == 'true'
         run: |
@@ -267,7 +287,13 @@ jobs:
             echo "- **Source**: \`modules-vtt/foundry\` in Tumulte" >> $GITHUB_STEP_SUMMARY
             echo "- **Target**: \`${BRANCH_NAME}\` branch in [Tumulte-Foundry-module](https://github.com/The-Genium007/Tumulte-Foundry-module)" >> $GITHUB_STEP_SUMMARY
             echo "- **Release**: \`${{ steps.urls.outputs.tag }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "- **Module version**: \`${{ steps.urls.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
+            if [ "${{ steps.version_sync.outputs.updated }}" = "true" ]; then
+              echo "### 🔄 Version Auto-sync" >> $GITHUB_STEP_SUMMARY
+              echo "\`backend/.env.example\` updated to \`${{ steps.version_sync.outputs.module_version }}\`" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+            fi
             if [ "${BRANCH_NAME}" = "main" ]; then
               echo "🏷️ **Production release** - Ready for Foundry VTT users!" >> $GITHUB_STEP_SUMMARY
             else
