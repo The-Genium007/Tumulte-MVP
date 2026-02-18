@@ -11,7 +11,7 @@ WORKDIR /app
 RUN apk add --no-cache python3 make g++
 
 # Copy package files for dependency installation
-COPY package*.json ./
+COPY backend/package*.json ./
 
 # Install all dependencies (production + dev for build)
 RUN npm ci && npm cache clean --force
@@ -26,8 +26,11 @@ WORKDIR /app
 # Copy dependencies from deps stage
 COPY --from=deps /app/node_modules ./node_modules
 
-# Copy source code
-COPY . .
+# Copy backend source code
+COPY backend/ .
+
+# Copy module.json for auto-detection of Foundry module version
+COPY modules-vtt/foundry/module.json ./modules-vtt/foundry/module.json
 
 # Build TypeScript to JavaScript
 # This compiles all TS files to JS in the /build directory
@@ -41,7 +44,7 @@ FROM node:22-alpine AS prod-deps
 WORKDIR /app
 
 # Copy package files
-COPY package*.json ./
+COPY backend/package*.json ./
 
 # Install production dependencies only (no devDependencies)
 RUN npm ci --omit=dev && npm cache clean --force
@@ -70,8 +73,11 @@ COPY --from=prod-deps --chown=nodejs:nodejs /app/node_modules ./node_modules
 # Copy built JavaScript from builder stage
 COPY --from=builder --chown=nodejs:nodejs /app/build ./
 
+# Copy Foundry module.json for version auto-detection at runtime
+COPY --from=builder --chown=nodejs:nodejs /app/modules-vtt/foundry/module.json ./modules-vtt/foundry/module.json
+
 # Copy entrypoint script
-COPY --chown=nodejs:nodejs docker-entrypoint.sh /usr/local/bin/
+COPY backend/docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # Set environment variables

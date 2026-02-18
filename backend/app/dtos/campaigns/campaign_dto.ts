@@ -1,7 +1,7 @@
 import type { campaign as Campaign } from '#models/campaign'
 import type { SystemCapabilities } from '#services/campaigns/system_preset_registry'
 import { StreamerDto } from '#dtos/auth/streamer_dto'
-import env from '#start/env'
+import { getFoundryModuleLatestVersion } from '#utils/foundry_module_version'
 
 /**
  * VTT enrichment data gathered from multiple sources (preset registry, character/dice counts).
@@ -42,7 +42,7 @@ export class VttConnectionStatusDto {
       lastHeartbeatAt: connection.lastHeartbeatAt?.toISO() || null,
       worldName: connection.worldName || null,
       moduleVersion: connection.moduleVersion || null,
-      latestModuleVersion: env.get('FOUNDRY_MODULE_LATEST_VERSION') || null,
+      latestModuleVersion: getFoundryModuleLatestVersion(),
     }
   }
 }

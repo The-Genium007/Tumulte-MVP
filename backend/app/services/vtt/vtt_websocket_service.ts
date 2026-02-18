@@ -594,6 +594,21 @@ export default class VttWebSocketService {
               timestamp: data.timestamp,
             })
           )
+
+          // Réactiver les rewards monster (combat-linked toggle)
+          try {
+            const combatRewardToggle = await app.container.make('combatRewardToggleService')
+            await combatRewardToggle.onCombatStart(campaign.id)
+          } catch (toggleError) {
+            logger.error(
+              {
+                event: 'combat_reward_toggle_start_error',
+                campaignId: campaign.id,
+                error: toggleError instanceof Error ? toggleError.message : String(toggleError),
+              },
+              'Failed to toggle combat rewards on combat start'
+            )
+          }
         }
       }
 
@@ -641,6 +656,21 @@ export default class VttWebSocketService {
               timestamp: data.timestamp,
             })
           )
+
+          // Réactiver les rewards monster (combat-linked toggle, idempotent)
+          try {
+            const combatRewardToggle = await app.container.make('combatRewardToggleService')
+            await combatRewardToggle.onCombatStart(campaign.id)
+          } catch (toggleError) {
+            logger.error(
+              {
+                event: 'combat_reward_toggle_sync_error',
+                campaignId: campaign.id,
+                error: toggleError instanceof Error ? toggleError.message : String(toggleError),
+              },
+              'Failed to toggle combat rewards on combat sync'
+            )
+          }
         }
       }
 
@@ -756,6 +786,21 @@ export default class VttWebSocketService {
 
           // Clear cached combat state
           await redis.del(`campaign:${campaign.id}:combat:active`)
+
+          // Mettre en pause les rewards monster (combat-linked toggle)
+          try {
+            const combatRewardToggle = await app.container.make('combatRewardToggleService')
+            await combatRewardToggle.onCombatEnd(campaign.id)
+          } catch (toggleError) {
+            logger.error(
+              {
+                event: 'combat_reward_toggle_end_error',
+                campaignId: campaign.id,
+                error: toggleError instanceof Error ? toggleError.message : String(toggleError),
+              },
+              'Failed to toggle combat rewards on combat end'
+            )
+          }
         }
       }
 

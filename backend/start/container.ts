@@ -182,6 +182,12 @@ app.container.bind('rewardManagerService', async () => {
   return rewardManager
 })
 
+// CombatRewardToggleService — toggle des rewards Twitch selon l'état du combat
+app.container.bind('combatRewardToggleService', async () => {
+  const mod = await import('#services/gamification/combat_reward_toggle_service')
+  return app.container.make(mod.CombatRewardToggleService)
+})
+
 // GamificationAuthBridge avec injection du TwitchEventSubService
 app.container.bind('gamificationAuthBridge', async () => {
   const mod = await import('#services/gamification/gamification_auth_bridge')
@@ -515,6 +521,9 @@ declare module '@adonisjs/core/types' {
     >
     rewardManagerService: InstanceType<
       typeof import('#services/gamification/reward_manager_service').RewardManagerService
+    >
+    combatRewardToggleService: InstanceType<
+      typeof import('#services/gamification/combat_reward_toggle_service').CombatRewardToggleService
     >
     gamificationService: InstanceType<
       typeof import('#services/gamification/gamification_service').GamificationService
