@@ -30,7 +30,7 @@ function createSubscription(overrides: Record<string, any> = {}): EventSubSubscr
     type: 'channel.channel_points_custom_reward_redemption.add',
     version: '1',
     transport: { method: 'webhook' },
-    created_at: new Date().toISOString(), // eslint-disable-line camelcase
+    created_at: new Date().toISOString(),
     cost: 0,
     condition: {
       broadcaster_user_id: 'broadcaster-1',

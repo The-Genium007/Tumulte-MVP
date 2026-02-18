@@ -52,13 +52,13 @@ async function spyOnLogger() {
   const originalInfo = logger.info.bind(logger)
   const originalWarn = logger.warn.bind(logger)
 
-  logger.info = (data: Record<string, unknown>, message: string) => {
+  logger.info = ((data: Record<string, unknown>, message: string) => {
     infoLogs.push({ data, message })
-  }
+  }) as any
 
-  logger.warn = (data: Record<string, unknown>, message: string) => {
+  logger.warn = ((data: Record<string, unknown>, message: string) => {
     warnLogs.push({ data, message })
-  }
+  }) as any
 
   const restore = () => {
     logger.info = originalInfo
