@@ -29,7 +29,7 @@
 <script setup lang="ts">
 definePageMeta({
   layout: 'authenticated' as const,
-  middleware: 'auth',
+  middleware: ['auth', 'admin'],
 })
 
 useHead({

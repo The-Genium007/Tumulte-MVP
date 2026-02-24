@@ -165,7 +165,12 @@ export default class CampaignsController {
    * Invite un streamer à rejoindre la campagne
    * POST /api/v2/mj/campaigns/:id/invite
    */
-  async invite({ params, request, response }: HttpContext) {
+  async invite({ auth, params, request, response }: HttpContext) {
+    const userId = auth.user!.id
+
+    // Verify the user owns this campaign before inviting
+    await this.campaignService.getCampaignWithMembers(params.id, userId)
+
     const data = inviteStreamerSchema.parse(request.all())
 
     // Trouver ou créer le streamer
@@ -208,7 +213,12 @@ export default class CampaignsController {
    * Liste les membres actifs d'une campagne
    * GET /api/v2/mj/campaigns/:id/members
    */
-  async listMembers({ params, response }: HttpContext) {
+  async listMembers({ auth, params, response }: HttpContext) {
+    const userId = auth.user!.id
+
+    // Verify the user owns or is a member of this campaign
+    await this.campaignService.getCampaignWithMembers(params.id, userId)
+
     const members = await this.membershipService.getActiveMembers(params.id)
 
     return response.ok({

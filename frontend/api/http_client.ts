@@ -63,9 +63,9 @@ class HttpClient {
 
           switch (status) {
             case 401:
-              // Redirection vers la page de connexion
+              // Redirect to login page (not directly to OAuth provider)
               if (import.meta.client) {
-                window.location.href = '/auth/twitch/redirect'
+                window.location.href = '/login'
               }
               break
             case 403:

@@ -5,7 +5,7 @@ echo "🚀 Starting Tumulte Backend..."
 
 # Wait for PostgreSQL to be ready
 echo "⏳ Waiting for PostgreSQL..."
-until curl -f http://${DB_HOST}:${DB_PORT} 2>&1 | grep -q "52"; do
+until pg_isready -h "${DB_HOST}" -p "${DB_PORT}" -q 2>/dev/null; do
   echo "PostgreSQL is unavailable - sleeping"
   sleep 2
 done
@@ -30,13 +30,8 @@ else
   node --loader ts-node-maintained/esm bin/console.ts migration:run --force
 fi
 
-# Check if migrations succeeded
-if [ $? -eq 0 ]; then
-  echo "✅ Migrations completed successfully"
-else
-  echo "❌ Migrations failed"
-  exit 1
-fi
+# set -e already handles failure — the script exits on migration error
+echo "✅ Migrations completed successfully"
 
 # Start the application
 echo "🎯 Starting application..."

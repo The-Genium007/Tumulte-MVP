@@ -385,8 +385,8 @@ export default class GamificationController {
    * POST /mj/campaigns/:id/gamification/instances/:instanceId/force-complete
    */
   async forceComplete({ auth, params, response }: HttpContext) {
-    // Bloquer en production (ENV_SUFFIX distingue prod/staging, contrairement à NODE_ENV)
-    const envSuffix = process.env.ENV_SUFFIX || 'dev'
+    // Blocked in production — fail-closed: if ENV_SUFFIX is not explicitly set to a non-prod value, deny
+    const envSuffix = env.get('ENV_SUFFIX', 'prod')
     if (envSuffix === 'prod') {
       return response.forbidden({ error: 'Cette route est désactivée en production' })
     }
@@ -571,7 +571,8 @@ export default class GamificationController {
    * /webhooks/twitch/eventsub pour tester le pipeline complet.
    */
   async simulateRedemption({ auth, params, response }: HttpContext) {
-    const envSuffix = process.env.ENV_SUFFIX || 'dev'
+    // Blocked in production — fail-closed: if ENV_SUFFIX is not explicitly set to a non-prod value, deny
+    const envSuffix = env.get('ENV_SUFFIX', 'prod')
     if (envSuffix === 'prod') {
       return response.forbidden({ error: 'Cette route est désactivée en production' })
     }

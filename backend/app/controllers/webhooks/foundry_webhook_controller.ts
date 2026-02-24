@@ -323,29 +323,16 @@ export default class FoundryWebhookController {
       const authHeader = request.header('Authorization')
       const apiKey = authHeader?.replace('Bearer ', '')
 
-      // Or from query params (for simple health checks)
-      const worldId = request.input('worldId')
-
-      if (!apiKey && !worldId) {
-        return response.badRequest({
-          error: 'Missing authentication: provide Authorization header or worldId query param',
+      if (!apiKey) {
+        return response.unauthorized({
+          error: 'Missing Authorization header with Bearer token',
         })
       }
 
-      // Find connection by API key or worldId
+      // Find connection by API key only (worldId lookup removed for security)
       let connection: VttConnection | null = null
 
-      if (apiKey) {
-        connection = await VttConnection.query()
-          .where('api_key', apiKey)
-          .preload('campaigns')
-          .first()
-      } else if (worldId) {
-        connection = await VttConnection.query()
-          .where('world_id', worldId)
-          .preload('campaigns')
-          .first()
-      }
+      connection = await VttConnection.query().where('api_key', apiKey).preload('campaigns').first()
 
       if (!connection) {
         return response.notFound({

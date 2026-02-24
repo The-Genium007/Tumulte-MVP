@@ -21,12 +21,10 @@
     "coverage:check": "./scripts/check-coverage.sh",
     "coverage:check:prod": "./scripts/check-coverage.sh 85",
     "test:sentry": "node --loader ts-node-maintained/esm scripts/test-sentry.ts",
-
     "--- GAMIFICATION SIMULATION ---": "echo 'Simuler des redemptions Channel Points Twitch en dev/staging'",
     "gamification:simulate": "node --loader ts-node-maintained/esm bin/console.ts gamification:simulate",
     "gamification:simulate:fast": "node --loader ts-node-maintained/esm bin/console.ts gamification:simulate --fast --fill --reset-cooldown",
     "gamification:simulate:eventsub": "../scripts/simulate-twitch-eventsub.sh",
-
     "lint": "eslint .",
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit",
@@ -94,7 +92,6 @@
     "@types/socket.io": "^3.0.1",
     "@types/tmi.js": "^1.8.6",
     "@vinejs/vine": "^4.2.0",
-    "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
     "luxon": "^3.7.2",
     "node-cron": "^4.2.1",

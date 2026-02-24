@@ -181,7 +181,8 @@ const testUncaughtError = () => {
 
 // Définir les métadonnées de la page
 definePageMeta({
-  layout: false, // Pas de layout pour cette page de test
+  layout: false,
+  middleware: ['auth', 'admin'],
 })
 
 useHead({

@@ -11,32 +11,6 @@
 import { clearUserData } from '@/utils/offline-storage'
 
 export default defineNuxtPlugin(() => {
-  const config = useRuntimeConfig()
-  const API_URL = config.public.apiBase
-
-  /**
-   * Create an authenticated fetch wrapper that handles 401 responses globally
-   */
-  function createAuthenticatedFetch() {
-    return async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-      const response = await fetch(input, {
-        ...init,
-        credentials: 'include',
-      })
-
-      // Handle 401 Unauthorized globally
-      if (response.status === 401) {
-        // Check if this is an API request (not a third-party request)
-        const url = typeof input === 'string' ? input : input.toString()
-        if (url.startsWith(API_URL)) {
-          await handleUnauthorized()
-        }
-      }
-
-      return response
-    }
-  }
-
   /**
    * Handle unauthorized response by clearing state and redirecting
    */
@@ -75,7 +49,6 @@ export default defineNuxtPlugin(() => {
 
   return {
     provide: {
-      authFetch: createAuthenticatedFetch(),
       handleUnauthorized,
     },
   }

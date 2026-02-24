@@ -34,9 +34,8 @@ services:
       - '--storage.tsdb.retention.time=${PROMETHEUS_RETENTION_TIME:-30d}'
       - '--storage.tsdb.retention.size=${PROMETHEUS_RETENTION_SIZE:-10GB}'
       - '--web.enable-lifecycle'
-      - '--web.enable-admin-api'
     ports:
-      - '9090:9090'
+      - '127.0.0.1:9090:9090'
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
@@ -66,7 +65,7 @@ services:
       - GF_SECURITY_COOKIE_SECURE=${GF_SECURITY_COOKIE_SECURE:-false}
       - GF_SECURITY_STRICT_TRANSPORT_SECURITY=${GF_SECURITY_STRICT_TRANSPORT_SECURITY:-false}
     ports:
-      - '3001:3000'
+      - '127.0.0.1:3001:3000'
     volumes:
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
       - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
@@ -94,7 +93,7 @@ services:
       - '--config.file=/etc/alertmanager/alertmanager.yml'
       - '--storage.path=/alertmanager'
     ports:
-      - '9093:9093'
+      - '127.0.0.1:9093:9093'
     volumes:
       - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
       - ./alertmanager/templates:/etc/alertmanager/templates:ro
@@ -119,7 +118,7 @@ services:
       - '--path.rootfs=/rootfs'
       - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
     ports:
-      - '9100:9100'
+      - '127.0.0.1:9100:9100'
     volumes:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
@@ -137,7 +136,7 @@ services:
     restart: unless-stopped
     privileged: true
     ports:
-      - '8080:8080'
+      - '127.0.0.1:8080:8080'
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run:ro
@@ -158,7 +157,7 @@ services:
     environment:
       - DATA_SOURCE_NAME=${DATA_SOURCE_NAME}
     ports:
-      - '9187:9187'
+      - '127.0.0.1:9187:9187'
     networks:
       - dokploy-network
     extra_hosts:
@@ -176,7 +175,7 @@ services:
       - REDIS_ADDR=${REDIS_ADDR:-redis:6379}
       - REDIS_PASSWORD=${REDIS_PASSWORD:-}
     ports:
-      - '9121:9121'
+      - '127.0.0.1:9121:9121'
     networks:
       - dokploy-network
     extra_hosts:

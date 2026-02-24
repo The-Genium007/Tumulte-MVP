@@ -261,6 +261,7 @@ import type { AnimationState } from '@/overlay-studio/composables/useAnimationCo
 
 definePageMeta({
   layout: 'authenticated',
+  middleware: ['auth'],
 })
 
 const store = useOverlayStudioStore()

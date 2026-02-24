@@ -49,6 +49,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
+    "@iconify-json/game-icons": "^1.2.3",
     "@iconify-json/lucide": "^1.2.81",
     "@iconify-json/simple-icons": "^1.2.63",
     "@nuxt/test-utils": "^3.15.0",

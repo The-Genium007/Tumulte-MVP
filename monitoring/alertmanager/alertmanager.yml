@@ -58,24 +58,24 @@ receivers:
   # IMPORTANT: Configurer DISCORD_MONITORING_WEBHOOK_URL dans .env
   # ---------------------------------------------------------------------------
   - name: 'discord-notifications'
-    # Webhook désactivé par défaut - décommenter et configurer pour activer
-    # webhook_configs:
-    #   - url: '${DISCORD_MONITORING_WEBHOOK_URL}'
-    #     send_resolved: true
-    #     http_config:
-    #       follow_redirects: true
+    # Placeholder is replaced by deploy.sh with the actual Discord webhook URL
+    webhook_configs:
+      - url: 'DISCORD_MONITORING_WEBHOOK_PLACEHOLDER'
+        send_resolved: true
+        http_config:
+          follow_redirects: true
 
   # ---------------------------------------------------------------------------
   # Discord - Alertes critiques (channel séparé recommandé)
   # IMPORTANT: Configurer DISCORD_CRITICAL_WEBHOOK_URL dans .env
   # ---------------------------------------------------------------------------
   - name: 'discord-critical'
-    # Webhook désactivé par défaut - décommenter et configurer pour activer
-    # webhook_configs:
-    #   - url: '${DISCORD_CRITICAL_WEBHOOK_URL}'
-    #     send_resolved: true
-    #     http_config:
-    #       follow_redirects: true
+    # Placeholder is replaced by deploy.sh with the actual Discord webhook URL
+    webhook_configs:
+      - url: 'DISCORD_CRITICAL_WEBHOOK_PLACEHOLDER'
+        send_resolved: true
+        http_config:
+          follow_redirects: true
 
   # ---------------------------------------------------------------------------
   # Fallback - Aucune notification (utilisé si les webhooks ne sont pas configurés)
