@@ -7,18 +7,12 @@ import { useAnalytics } from '@/composables/useAnalytics'
  * de l'autocomplétion et du typage.
  */
 export type FeatureFlagKey =
-  // UI/UX experiments
-  | 'dashboard_v2' // Nouveau dashboard MJ
-  | 'new_onboarding' // Nouveau flow d'onboarding
-
   // Feature rollouts
   | 'vtt_integration' // Intégration VTT (Foundry, etc.)
-  | 'premium_trial' // Essai premium gratuit
   | 'gamification' // Système de gamification
 
   // A/B tests
   | 'cta_variant' // Variante du CTA sur la landing
-  | 'pricing_layout' // Layout de la page pricing
 
 /**
  * Composable typé pour les feature flags PostHog.
@@ -28,17 +22,17 @@ export type FeatureFlagKey =
  *
  * @example
  * ```ts
- * const { isNewDashboardEnabled, getOnboardingVariant } = useFeatureFlags()
+ * const { isVttIntegrationEnabled, getCtaVariant } = useFeatureFlags()
  *
  * // Vérifier un flag booléen
- * if (isNewDashboardEnabled()) {
- *   // Afficher le nouveau dashboard
+ * if (isVttIntegrationEnabled()) {
+ *   // Afficher les fonctionnalités VTT
  * }
  *
  * // Récupérer une variante A/B
- * const variant = getOnboardingVariant()
+ * const variant = getCtaVariant()
  * if (variant === 'variant_a') {
- *   // Flow d'onboarding A
+ *   // CTA alternatif
  * }
  * ```
  */
@@ -48,24 +42,10 @@ export const useFeatureFlags = () => {
   // ========== Feature Flags Booléens ==========
 
   /**
-   * Vérifie si le nouveau dashboard V2 est activé pour cet utilisateur
-   */
-  const isNewDashboardEnabled = (): boolean => {
-    return isFeatureEnabled('dashboard_v2')
-  }
-
-  /**
    * Vérifie si l'intégration VTT est activée
    */
   const isVttIntegrationEnabled = (): boolean => {
     return isFeatureEnabled('vtt_integration')
-  }
-
-  /**
-   * Vérifie si l'essai premium est activé
-   */
-  const isPremiumTrialEnabled = (): boolean => {
-    return isFeatureEnabled('premium_trial')
   }
 
   /**
@@ -76,17 +56,6 @@ export const useFeatureFlags = () => {
   }
 
   // ========== Feature Flags Multivariés (A/B Tests) ==========
-
-  /**
-   * Récupère la variante du flow d'onboarding
-   */
-  const getOnboardingVariant = (): 'control' | 'variant_a' | 'variant_b' | undefined => {
-    const variant = getFeatureFlag('new_onboarding')
-    if (typeof variant === 'string') {
-      return variant as 'control' | 'variant_a' | 'variant_b'
-    }
-    return undefined
-  }
 
   /**
    * Récupère la variante du CTA sur la landing
@@ -117,13 +86,10 @@ export const useFeatureFlags = () => {
 
   return {
     // Feature flags booléens
-    isNewDashboardEnabled,
     isVttIntegrationEnabled,
-    isPremiumTrialEnabled,
     isGamificationEnabled,
 
     // A/B tests (variantes)
-    getOnboardingVariant,
     getCtaVariant,
 
     // Helpers génériques

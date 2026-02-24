@@ -302,6 +302,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useAuth } from '@/composables/useAuth'
+import { useAnalytics } from '@/composables/useAnalytics'
 import { useCampaigns } from '@/composables/useCampaigns'
 import { useSupportWidget } from '@/composables/useSupportWidget'
 import type { AuthorizationStatus } from '@/types/index'
@@ -321,6 +322,7 @@ const { user: _user } = useAuth()
 const { fetchInvitations, getAuthorizationStatus, grantAuthorization, revokeAuthorization } =
   useCampaigns()
 const { openSupport } = useSupportWidget()
+const { track } = useAnalytics()
 
 const overlayUrl = ref<string | null>(null)
 const loadingOverlay = ref(false)
@@ -470,6 +472,7 @@ const formatTime = (seconds: number): string => {
 
 // Charger automatiquement l'URL de l'overlay, les invitations et les autorisations au montage
 onMounted(async () => {
+  track('dashboard_viewed')
   fetchOverlayUrl()
   await loadInvitationCount()
   await loadAuthorizationStatus()

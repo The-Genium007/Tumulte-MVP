@@ -65,6 +65,14 @@ class HttpClient {
             case 401:
               // Redirect to login page (not directly to OAuth provider)
               if (import.meta.client) {
+                try {
+                  const { $posthog } = useNuxtApp()
+                  ;($posthog as any)?.capture('twitch_auth_expired', {
+                    url: error.config?.url,
+                  })
+                } catch {
+                  // PostHog may not be available outside setup context
+                }
                 window.location.href = '/login'
               }
               break

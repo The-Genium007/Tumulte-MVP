@@ -67,6 +67,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { useAnalytics } from '@/composables/useAnalytics'
 
 definePageMeta({
   layout: 'auth' as const,
@@ -74,6 +75,7 @@ definePageMeta({
 
 const route = useRoute()
 const config = useRuntimeConfig()
+const { track } = useAnalytics()
 
 const verificationStatus = ref<'loading' | 'success' | 'error'>('loading')
 const errorMessage = ref<string | null>(null)
@@ -101,6 +103,7 @@ onMounted(async () => {
 
     if (response.ok) {
       verificationStatus.value = 'success'
+      track('email_verified')
     } else {
       verificationStatus.value = 'error'
       errorMessage.value = result.error || 'Une erreur est survenue.'

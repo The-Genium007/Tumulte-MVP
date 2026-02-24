@@ -346,7 +346,8 @@
         </div>
       </UCard>
 
-      <!-- VTT Connection Section -->
+      <!-- VTT Connection Section (gated by feature flag) -->
+      <template v-if="isVttIntegrationEnabled()">
       <UCard v-if="campaign?.vttConnection" class="mt-8">
         <template #header>
           <div class="flex items-center justify-between">
@@ -644,9 +645,10 @@
           />
         </div>
       </UCard>
+      </template>
 
       <!-- Intégration Twitch Section (VTT only — gamification events depend on VTT) -->
-      <UCard v-if="campaign?.vttConnection" class="mt-8">
+      <UCard v-if="campaign?.vttConnection && isGamificationEnabled()" class="mt-8">
         <template #header>
           <div class="flex items-center gap-3">
             <UIcon name="i-lucide-twitch" class="size-6 text-[#9146FF]" />
@@ -1818,12 +1820,14 @@ import {
   type UpdateCriticalityRuleData,
 } from '@/composables/useCriticalityRules'
 import { useItemCategoryRules } from '@/composables/useItemCategoryRules'
+import { useFeatureFlags } from '@/composables/useFeatureFlags'
 import type { Campaign, CampaignMembership, StreamerSearchResult, LiveStatusMap } from '@/types'
 import type { GamificationInstance, UpdateGamificationConfigRequest } from '@/types/api'
 
 const _router = useRouter()
 const route = useRoute()
 const campaignId = route.params.id as string
+const { isVttIntegrationEnabled, isGamificationEnabled } = useFeatureFlags()
 
 const {
   getCampaignDetails,

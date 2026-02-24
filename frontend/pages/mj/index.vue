@@ -12,7 +12,10 @@
       <!-- VTT Connection Alert Banner (only for campaigns with VTT) -->
       <MjVttAlertBanner
         v-if="
-          selectedCampaignId && currentCampaign?.vttConnection && (vttHasIssue || isModuleOutdated)
+          isVttIntegrationEnabled() &&
+          selectedCampaignId &&
+          currentCampaign?.vttConnection &&
+          (vttHasIssue || isModuleOutdated)
         "
         :status="vttHealthStatus"
         :campaign-id="selectedCampaignId"
@@ -48,6 +51,7 @@
               @click="showCampaignCreateModal = true"
             />
             <UButton
+              v-if="isVttIntegrationEnabled()"
               color="neutral"
               variant="soft"
               size="lg"
@@ -179,6 +183,7 @@ import { usePollControlStore } from '@/stores/pollControl'
 import { useWebSocket } from '@/composables/useWebSocket'
 import { useActionButton } from '@/composables/useActionButton'
 import { useVttHealth } from '@/composables/useVttHealth'
+import { useFeatureFlags } from '@/composables/useFeatureFlags'
 import { loggers } from '@/utils/logger'
 
 definePageMeta({
@@ -196,6 +201,7 @@ const route = useRoute()
 const router = useRouter()
 const { createTemplate, deleteTemplate, launchPoll } = usePollTemplates()
 const { campaigns, fetchCampaigns, getCampaignMembers, getLiveStatus } = useCampaigns()
+const { isVttIntegrationEnabled } = useFeatureFlags()
 
 // WebSocket setup
 const { subscribeToPoll } = useWebSocket()

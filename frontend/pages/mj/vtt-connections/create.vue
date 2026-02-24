@@ -297,6 +297,8 @@
 import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useToast } from '#ui/composables/useToast'
+import { useAnalytics } from '@/composables/useAnalytics'
+import { useFeatureFlags } from '@/composables/useFeatureFlags'
 
 definePageMeta({
   layout: 'authenticated' as const,
@@ -307,6 +309,13 @@ const _router = useRouter()
 const route = useRoute()
 const toast = useToast()
 const config = useRuntimeConfig()
+const { track, setUserPropertiesOnce } = useAnalytics()
+const { isVttIntegrationEnabled } = useFeatureFlags()
+
+// Redirect if VTT integration is disabled
+if (!isVttIntegrationEnabled()) {
+  navigateTo('/mj')
+}
 
 // Foundry module URL for installation
 const foundryModuleUrl =
@@ -450,6 +459,12 @@ const handlePairing = async () => {
     }
 
     pairingSuccess.value = data
+
+    track('vtt_connected', {
+      campaign_id: data.campaign.id, // eslint-disable-line camelcase
+      campaign_name: data.campaign.name, // eslint-disable-line camelcase
+    })
+    setUserPropertiesOnce({ first_vtt_connected_at: new Date().toISOString() })
 
     toast.add({
       title: 'Connexion établie',

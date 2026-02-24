@@ -104,8 +104,6 @@ export default defineNuxtConfig({
       // PostHog Analytics (EU)
       posthogKey: process.env.NUXT_PUBLIC_POSTHOG_KEY || '',
       posthogHost: process.env.NUXT_PUBLIC_POSTHOG_HOST || 'https://eu.i.posthog.com',
-      // Google Tag Manager (marketing pixels)
-      gtmId: process.env.NUXT_PUBLIC_GTM_ID || '',
     },
   },
 
