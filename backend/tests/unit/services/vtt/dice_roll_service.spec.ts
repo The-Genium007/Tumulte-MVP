@@ -41,6 +41,9 @@ test.group('DiceRollService - recordDiceRoll', (group) => {
       ability: 'strength',
       abilityRaw: 'str',
       modifiers: ['+5'],
+      severity: null,
+      criticalLabel: null,
+      criticalCategory: null,
     }
 
     const diceRoll = await service.recordDiceRoll(rollData)
@@ -85,6 +88,9 @@ test.group('DiceRollService - recordDiceRoll', (group) => {
       ability: null,
       abilityRaw: null,
       modifiers: null,
+      severity: 'extreme' as const,
+      criticalLabel: 'Natural 20',
+      criticalCategory: 'nat20',
     }
 
     const diceRoll = await service.recordDiceRoll(rollData)
@@ -125,6 +131,9 @@ test.group('DiceRollService - recordDiceRoll', (group) => {
       ability: null,
       abilityRaw: null,
       modifiers: null,
+      severity: 'extreme' as const,
+      criticalLabel: 'Natural 1',
+      criticalCategory: 'fumble',
     }
 
     const diceRoll = await service.recordDiceRoll(rollData)
@@ -165,6 +174,9 @@ test.group('DiceRollService - recordDiceRoll', (group) => {
       ability: 'dexterity',
       abilityRaw: 'dex',
       modifiers: ['+10'],
+      severity: null,
+      criticalLabel: null,
+      criticalCategory: null,
     }
 
     const diceRoll = await service.recordDiceRoll(rollData)
@@ -204,6 +216,9 @@ test.group('DiceRollService - recordDiceRoll', (group) => {
       ability: null,
       abilityRaw: null,
       modifiers: null,
+      severity: null,
+      criticalLabel: null,
+      criticalCategory: null,
     }
 
     const diceRoll = await service.recordDiceRoll(rollData)

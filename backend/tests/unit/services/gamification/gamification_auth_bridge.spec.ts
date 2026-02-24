@@ -30,6 +30,7 @@ test.group('GamificationAuthBridge', () => {
     const mockStreamerConfigRepo = {
       findByStreamerCampaignAndEvent: async () => overrides.existingConfig ?? null,
       findActiveByStreamerAndCampaign: async () => overrides.activeConfigs ?? [],
+      findWithRewardIdByStreamerAndCampaign: async () => overrides.activeConfigs ?? [],
     }
 
     const mockCampaignConfigRepo = {
@@ -38,6 +39,10 @@ test.group('GamificationAuthBridge', () => {
 
     const mockTwitchRewardService = {
       deleteReward: async () => overrides.deleteRewardSuccess ?? true,
+      deleteRewardWithRetry: async () => ({
+        success: overrides.deleteRewardSuccess ?? true,
+        isAlreadyDeleted: false,
+      }),
     }
 
     return {
@@ -72,6 +77,7 @@ test.group('GamificationAuthBridge', () => {
     const mockStreamer = {
       id: 'streamer-1',
       twitchDisplayName: 'TestStreamer',
+      twitchUserId: 'twitch-123',
     } as unknown as Streamer
 
     const result = await bridge.onAuthorizationGranted('campaign-1', mockStreamer)
@@ -103,6 +109,7 @@ test.group('GamificationAuthBridge', () => {
     const mockStreamer = {
       id: 'streamer-1',
       twitchDisplayName: 'TestStreamer',
+      twitchUserId: 'twitch-123',
     } as unknown as Streamer
 
     const result = await bridge.onAuthorizationGranted('campaign-1', mockStreamer)
@@ -132,6 +139,7 @@ test.group('GamificationAuthBridge', () => {
     const mockStreamer = {
       id: 'streamer-1',
       twitchDisplayName: 'TestStreamer',
+      twitchUserId: 'twitch-123',
     } as unknown as Streamer
 
     const result = await bridge.onAuthorizationGranted('campaign-1', mockStreamer)
@@ -163,6 +171,7 @@ test.group('GamificationAuthBridge', () => {
     const mockStreamer = {
       id: 'streamer-1',
       twitchDisplayName: 'TestStreamer',
+      twitchUserId: 'twitch-123',
     } as unknown as Streamer
 
     const result = await bridge.onAuthorizationGranted('campaign-1', mockStreamer)
@@ -194,6 +203,7 @@ test.group('GamificationAuthBridge', () => {
     const mockStreamer = {
       id: 'streamer-1',
       twitchDisplayName: 'TestStreamer',
+      twitchUserId: 'twitch-123',
     } as unknown as Streamer
 
     const result = await bridge.onAuthorizationGranted('campaign-1', mockStreamer)
@@ -227,6 +237,7 @@ test.group('GamificationAuthBridge', () => {
     const mockStreamer = {
       id: 'streamer-1',
       twitchDisplayName: 'TestStreamer',
+      twitchUserId: 'twitch-123',
     } as unknown as Streamer
 
     const result = await bridge.onAuthorizationRevoked('campaign-1', mockStreamer)
@@ -237,20 +248,19 @@ test.group('GamificationAuthBridge', () => {
   })
 
   test('onAuthorizationRevoked should skip configs without rewardId', async ({ assert }) => {
-    const {
-      mockRewardManager,
-      mockStreamerConfigRepo,
-      mockCampaignConfigRepo,
-      mockTwitchRewardService,
-    } = createMocks({
-      activeConfigs: [
+    const { mockRewardManager, mockCampaignConfigRepo, mockTwitchRewardService } = createMocks({})
+
+    const mockStreamerConfigRepo = {
+      findByStreamerCampaignAndEvent: async () => null,
+      findActiveByStreamerAndCampaign: async () => [],
+      findWithRewardIdByStreamerAndCampaign: async () => [
         {
           eventId: 'event-1',
           twitchRewardId: null,
           save: async () => {},
         },
       ],
-    })
+    }
 
     const bridge = new GamificationAuthBridge(
       mockRewardManager as any,
@@ -262,6 +272,7 @@ test.group('GamificationAuthBridge', () => {
     const mockStreamer = {
       id: 'streamer-1',
       twitchDisplayName: 'TestStreamer',
+      twitchUserId: 'twitch-123',
     } as unknown as Streamer
 
     const result = await bridge.onAuthorizationRevoked('campaign-1', mockStreamer)
@@ -270,7 +281,7 @@ test.group('GamificationAuthBridge', () => {
   })
 
   test('onAuthorizationRevoked should delete active rewards', async ({ assert }) => {
-    const { mockRewardManager, mockCampaignConfigRepo, mockTwitchRewardService } = createMocks({
+    const { mockRewardManager, mockCampaignConfigRepo } = createMocks({
       deleteRewardSuccess: true,
     })
 
@@ -279,12 +290,21 @@ test.group('GamificationAuthBridge', () => {
       twitchRewardId: 'reward-123',
       twitchRewardStatus: 'active',
       isEnabled: true,
+      deletionFailedAt: null as any,
+      deletionRetryCount: 0,
+      nextDeletionRetryAt: null as any,
       save: async () => {},
     }
 
     const mockStreamerConfigRepo = {
       findByStreamerCampaignAndEvent: async () => null,
-      findActiveByStreamerAndCampaign: async () => [mockConfig],
+      findActiveByStreamerAndCampaign: async () => [],
+      findWithRewardIdByStreamerAndCampaign: async () => [mockConfig],
+    }
+
+    const mockTwitchRewardService = {
+      deleteReward: async () => true,
+      deleteRewardWithRetry: async () => ({ success: true, isAlreadyDeleted: false }),
     }
 
     const bridge = new GamificationAuthBridge(
@@ -297,6 +317,7 @@ test.group('GamificationAuthBridge', () => {
     const mockStreamer = {
       id: 'streamer-1',
       twitchDisplayName: 'TestStreamer',
+      twitchUserId: 'twitch-123',
     } as unknown as Streamer
 
     const result = await bridge.onAuthorizationRevoked('campaign-1', mockStreamer)
@@ -312,6 +333,7 @@ test.group('GamificationAuthBridge', () => {
 
     const mockTwitchRewardService = {
       deleteReward: async () => false,
+      deleteRewardWithRetry: async () => ({ success: false, isAlreadyDeleted: false }),
     }
 
     const mockConfig = {
@@ -327,7 +349,8 @@ test.group('GamificationAuthBridge', () => {
 
     const mockStreamerConfigRepo = {
       findByStreamerCampaignAndEvent: async () => null,
-      findActiveByStreamerAndCampaign: async () => [mockConfig],
+      findActiveByStreamerAndCampaign: async () => [],
+      findWithRewardIdByStreamerAndCampaign: async () => [mockConfig],
     }
 
     const bridge = new GamificationAuthBridge(
@@ -340,6 +363,7 @@ test.group('GamificationAuthBridge', () => {
     const mockStreamer = {
       id: 'streamer-1',
       twitchDisplayName: 'TestStreamer',
+      twitchUserId: 'twitch-123',
     } as unknown as Streamer
 
     const result = await bridge.onAuthorizationRevoked('campaign-1', mockStreamer)
@@ -360,6 +384,9 @@ test.group('GamificationAuthBridge', () => {
       deleteReward: async () => {
         throw new Error('Network error')
       },
+      deleteRewardWithRetry: async () => {
+        throw new Error('Network error')
+      },
     }
 
     const mockConfig = {
@@ -370,7 +397,8 @@ test.group('GamificationAuthBridge', () => {
 
     const mockStreamerConfigRepo = {
       findByStreamerCampaignAndEvent: async () => null,
-      findActiveByStreamerAndCampaign: async () => [mockConfig],
+      findActiveByStreamerAndCampaign: async () => [],
+      findWithRewardIdByStreamerAndCampaign: async () => [mockConfig],
     }
 
     const bridge = new GamificationAuthBridge(
@@ -383,6 +411,7 @@ test.group('GamificationAuthBridge', () => {
     const mockStreamer = {
       id: 'streamer-1',
       twitchDisplayName: 'TestStreamer',
+      twitchUserId: 'twitch-123',
     } as unknown as Streamer
 
     const result = await bridge.onAuthorizationRevoked('campaign-1', mockStreamer)

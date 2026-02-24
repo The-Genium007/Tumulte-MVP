@@ -12,6 +12,7 @@ describe('useGmCharacters Composable', () => {
       name: 'Hero',
       avatarUrl: 'https://example.com/hero.png',
       characterType: 'pc',
+      characterTypeOverride: false,
       vttCharacterId: 'vtt-1',
       stats: { hp: 100 },
       lastSyncAt: '2024-01-01T00:00:00Z',
@@ -22,6 +23,7 @@ describe('useGmCharacters Composable', () => {
       name: 'Villain',
       avatarUrl: null,
       characterType: 'npc',
+      characterTypeOverride: false,
       vttCharacterId: 'vtt-2',
       stats: null,
       lastSyncAt: null,
@@ -32,6 +34,7 @@ describe('useGmCharacters Composable', () => {
       name: 'Dragon',
       avatarUrl: 'https://example.com/dragon.png',
       characterType: 'monster',
+      characterTypeOverride: false,
       vttCharacterId: 'vtt-3',
       stats: { hp: 500 },
       lastSyncAt: '2024-01-02T00:00:00Z',
@@ -337,6 +340,7 @@ describe('useGmCharacters Composable', () => {
       expect(gmCharacters.fetchActiveCharacter).toBeDefined()
       expect(gmCharacters.setActiveCharacter).toBeDefined()
       expect(gmCharacters.clearActiveCharacter).toBeDefined()
+      expect(gmCharacters.toggleCharacterType).toBeDefined()
       expect(gmCharacters.initialize).toBeDefined()
     })
   })

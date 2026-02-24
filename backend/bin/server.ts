@@ -145,6 +145,16 @@ new Ignitor(APP_ROOT, { importer: IMPORTER })
             auditService
           )
 
+          // Inject EventSub reconciler if available
+          try {
+            const { EventSubReconciler } = await import('#services/cleanup/eventsub_reconciler')
+            const twitchEventSubService = await app.container.make('twitchEventSubService')
+            const eventSubReconciler = new EventSubReconciler(configRepo, twitchEventSubService)
+            reconciliationService.setEventSubReconciler(eventSubReconciler)
+          } catch (error) {
+            console.warn('[Startup] EventSub reconciler not available, skipping:', error)
+          }
+
           return reconciliationService.reconcile()
         })
         .then((reconciliationResult) => {
@@ -153,6 +163,13 @@ new Ignitor(APP_ROOT, { importer: IMPORTER })
               orphansFound: reconciliationResult.orphanedRewardsFound,
               orphansCleaned: reconciliationResult.orphanedRewardsCleaned,
               phantomsFixed: reconciliationResult.phantomsFixed,
+              eventSub: reconciliationResult.eventSubReconciliation
+                ? {
+                    checked: reconciliationResult.eventSubReconciliation.subscriptionsChecked,
+                    recreated: reconciliationResult.eventSubReconciliation.missingRecreated,
+                    orphansDeleted: reconciliationResult.eventSubReconciliation.orphanedDeleted,
+                  }
+                : 'skipped',
               durationMs: reconciliationResult.durationMs,
               errors: reconciliationResult.errors.length,
             })

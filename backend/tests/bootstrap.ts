@@ -4,6 +4,7 @@ import { pluginAdonisJS } from '@japa/plugin-adonisjs'
 import testUtils from '@adonisjs/core/services/test_utils'
 import app from '@adonisjs/core/services/app'
 import db from '@adonisjs/lucid/services/db'
+import redis from '@adonisjs/redis/services/main'
 import type { Config } from '@japa/runner/types'
 
 /**
@@ -23,7 +24,14 @@ export const plugins = [
  */
 export const configureSuite: Config['configureSuite'] = (suite) => {
   if (['functional', 'e2e'].includes(suite.name)) {
-    return suite.setup(() => testUtils.httpServer().start())
+    return suite.setup(async () => {
+      // Flush rate limit keys to prevent 429 errors across test groups
+      const keys = await redis.keys('rate_limit:*')
+      if (keys.length > 0) {
+        await redis.del(keys)
+      }
+      return testUtils.httpServer().start()
+    })
   }
 }
 
@@ -81,6 +89,13 @@ export const runnerHooks = {
             // Table might not exist, skip silently
           }
         }
+
+        // Clean up Redis rate limit keys
+        const keys = await redis.keys('rate_limit:*')
+        if (keys.length > 0) {
+          await redis.del(keys)
+        }
+
         console.log('✅ Test database cleaned up')
       } catch (error) {
         console.error('⚠️ Failed to clean up test database:', error)

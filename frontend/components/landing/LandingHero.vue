@@ -50,9 +50,9 @@
               size="xl"
               class="cta-glow shimmer w-full sm:w-auto justify-center"
               trailing-icon="i-lucide-wand-sparkles"
-              @click="trackCtaClick('Rejoindre l\'Aventure', 'hero_primary')"
+              @click="trackCtaClick(ctaText, 'hero_primary')"
             >
-              Rejoindre l'Aventure
+              {{ ctaText }}
             </UButton>
             <UButton
               to="#features"
@@ -78,8 +78,11 @@
 
 <script setup lang="ts">
 import { useAnalytics } from '~/composables/useAnalytics'
+import { useFeatureFlags } from '~/composables/useFeatureFlags'
 
 const { track } = useAnalytics()
+const { getCtaVariant } = useFeatureFlags()
+const ctaText = getCtaVariant() === 'variant_a' ? "Commencer l'Aventure" : "Rejoindre l'Aventure"
 
 /**
  * Track CTA clicks for funnel analysis.

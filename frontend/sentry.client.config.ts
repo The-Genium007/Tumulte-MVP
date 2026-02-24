@@ -26,6 +26,10 @@ export const setSentrySessionId = (sessionId: string) => {
   }
 }
 
+export const setSentryUser = (user: { id: string; email?: string; username?: string } | null) => {
+  Sentry.setUser(user)
+}
+
 // Récupérer le DSN depuis les variables d'environnement injectées au build
 // Note: En mode SPA, les variables sont disponibles via import.meta.env
 const dsn = import.meta.env.VITE_SENTRY_DSN || import.meta.env.NUXT_PUBLIC_SENTRY_DSN || ''

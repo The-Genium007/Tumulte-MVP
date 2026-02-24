@@ -63,10 +63,10 @@ export default class GmCharactersController {
           name: char.name,
           avatarUrl: char.avatarUrl,
           characterType: char.characterType,
+          characterTypeOverride: char.characterTypeOverride,
           vttCharacterId: char.vttCharacterId,
           stats: char.stats,
           lastSyncAt: char.lastSyncAt?.toISO(),
-          // New fields for assignment info
           assignedToStreamer: assignment
             ? {
                 streamerId: assignment.streamerId,
@@ -108,6 +108,7 @@ export default class GmCharactersController {
         name: campaign.gmActiveCharacter.name,
         avatarUrl: campaign.gmActiveCharacter.avatarUrl,
         characterType: campaign.gmActiveCharacter.characterType,
+        characterTypeOverride: campaign.gmActiveCharacter.characterTypeOverride,
       },
     })
   }
@@ -160,6 +161,7 @@ export default class GmCharactersController {
             name: campaign.gmActiveCharacter.name,
             avatarUrl: campaign.gmActiveCharacter.avatarUrl,
             characterType: campaign.gmActiveCharacter.characterType,
+            characterTypeOverride: campaign.gmActiveCharacter.characterTypeOverride,
           }
         : null,
     })
@@ -183,6 +185,60 @@ export default class GmCharactersController {
     await campaign.save()
 
     return response.noContent()
+  }
+
+  /**
+   * Toggle a character's type between NPC and Monster
+   * PUT /mj/campaigns/:id/characters/:characterId/type
+   *
+   * Body: { characterType: 'npc' | 'monster' }
+   * Only works for non-PC characters. PCs cannot be re-typed.
+   */
+  async toggleType({ auth, params, request, response }: HttpContext) {
+    const userId = auth.user!.id
+
+    const campaign = await Campaign.query().where('id', params.id).where('owner_id', userId).first()
+
+    if (!campaign) {
+      return response.notFound({ error: 'Campaign not found or not owned by user' })
+    }
+
+    const character = await Character.query()
+      .where('id', params.characterId)
+      .where('campaign_id', params.id)
+      .first()
+
+    if (!character) {
+      return response.notFound({ error: 'Character not found in this campaign' })
+    }
+
+    if (character.characterType === 'pc') {
+      return response.forbidden({ error: 'Cannot change the type of a player character' })
+    }
+
+    const { toggleCharacterTypeSchema } = await import('#validators/mj/character_type_validator')
+    const body = request.only(['characterType'])
+    const parsed = toggleCharacterTypeSchema.safeParse(body)
+
+    if (!parsed.success) {
+      return response.badRequest({
+        error: 'Invalid character type',
+        details: parsed.error.flatten(),
+      })
+    }
+
+    character.characterType = parsed.data.characterType
+    character.characterTypeOverride = true
+    await character.save()
+
+    return response.ok({
+      data: {
+        id: character.id,
+        name: character.name,
+        characterType: character.characterType,
+        characterTypeOverride: character.characterTypeOverride,
+      },
+    })
   }
 
   /**

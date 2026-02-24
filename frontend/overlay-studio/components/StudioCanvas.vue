@@ -164,11 +164,19 @@ import type {
   DiceProperties,
   DiceReverseGoalBarProperties,
   DiceReverseImpactHudProperties,
+  SpellGoalBarProperties,
+  SpellImpactHudProperties,
+  MonsterGoalBarProperties,
+  MonsterImpactHudProperties,
 } from '../types'
 import {
   calculatePollGizmoSize,
   calculateGoalBarGizmoSize,
   calculateImpactHudGizmoSize,
+  calculateSpellGoalBarGizmoSize,
+  calculateSpellImpactHudGizmoSize,
+  calculateMonsterGoalBarGizmoSize,
+  calculateMonsterImpactHudGizmoSize,
   HUD_BASE_SIZE,
 } from '../utils/gizmo-size'
 import StudioElement from './StudioElement.vue'
@@ -475,6 +483,26 @@ const getElementHalfSize = (element: typeof gizmoTargetElement.value) => {
     const gizmoSize = calculateImpactHudGizmoSize(impactHudProps)
     baseWidth = gizmoSize.width
     baseHeight = gizmoSize.height
+  } else if (element.type === 'spellGoalBar') {
+    const spellGoalBarProps = element.properties as SpellGoalBarProperties
+    const gizmoSize = calculateSpellGoalBarGizmoSize(spellGoalBarProps)
+    baseWidth = gizmoSize.width
+    baseHeight = gizmoSize.height
+  } else if (element.type === 'spellImpactHud') {
+    const spellImpactHudProps = element.properties as SpellImpactHudProperties
+    const gizmoSize = calculateSpellImpactHudGizmoSize(spellImpactHudProps)
+    baseWidth = gizmoSize.width
+    baseHeight = gizmoSize.height
+  } else if (element.type === 'monsterGoalBar') {
+    const monsterGoalBarProps = element.properties as MonsterGoalBarProperties
+    const gizmoSize = calculateMonsterGoalBarGizmoSize(monsterGoalBarProps)
+    baseWidth = gizmoSize.width
+    baseHeight = gizmoSize.height
+  } else if (element.type === 'monsterImpactHud') {
+    const monsterImpactHudProps = element.properties as MonsterImpactHudProperties
+    const gizmoSize = calculateMonsterImpactHudGizmoSize(monsterImpactHudProps)
+    baseWidth = gizmoSize.width
+    baseHeight = gizmoSize.height
   }
 
   return {
@@ -650,6 +678,26 @@ const handleResize = (
   } else if (el.type === 'diceReverseImpactHud') {
     const impactHudProps = el.properties as DiceReverseImpactHudProperties
     const gizmoSize = calculateImpactHudGizmoSize(impactHudProps)
+    baseWidth = gizmoSize.width
+    baseHeight = gizmoSize.height
+  } else if (el.type === 'spellGoalBar') {
+    const spellGoalBarProps = el.properties as SpellGoalBarProperties
+    const gizmoSize = calculateSpellGoalBarGizmoSize(spellGoalBarProps)
+    baseWidth = gizmoSize.width
+    baseHeight = gizmoSize.height
+  } else if (el.type === 'spellImpactHud') {
+    const spellImpactHudProps = el.properties as SpellImpactHudProperties
+    const gizmoSize = calculateSpellImpactHudGizmoSize(spellImpactHudProps)
+    baseWidth = gizmoSize.width
+    baseHeight = gizmoSize.height
+  } else if (el.type === 'monsterGoalBar') {
+    const monsterGoalBarProps = el.properties as MonsterGoalBarProperties
+    const gizmoSize = calculateMonsterGoalBarGizmoSize(monsterGoalBarProps)
+    baseWidth = gizmoSize.width
+    baseHeight = gizmoSize.height
+  } else if (el.type === 'monsterImpactHud') {
+    const monsterImpactHudProps = el.properties as MonsterImpactHudProperties
+    const gizmoSize = calculateMonsterImpactHudGizmoSize(monsterImpactHudProps)
     baseWidth = gizmoSize.width
     baseHeight = gizmoSize.height
   }

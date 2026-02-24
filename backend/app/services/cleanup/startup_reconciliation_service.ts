@@ -3,6 +3,7 @@ import logger from '@adonisjs/core/services/logger'
 import { OrphanDetector } from './orphan_detector.js'
 import { TwitchRewardReconciler } from './twitch_reward_reconciler.js'
 import { CleanupAuditService } from './cleanup_audit_service.js'
+import type { EventSubReconciler, EventSubReconciliationResult } from './eventsub_reconciler.js'
 
 /**
  * Résultat de la réconciliation au démarrage
@@ -14,6 +15,7 @@ export interface ReconciliationResult {
   orphanedRewardsCleaned: number
   orphanedRewardsAlreadyDeleted: number
   phantomsFixed: number
+  eventSubReconciliation: EventSubReconciliationResult | null
   durationMs: number
   errors: Array<{ task: string; error: string }>
 }
@@ -32,11 +34,20 @@ export interface ReconciliationResult {
  */
 @inject()
 export class StartupReconciliationService {
+  private eventSubReconciler: EventSubReconciler | null = null
+
   constructor(
     private orphanDetector: OrphanDetector,
     private reconciler: TwitchRewardReconciler,
     private auditService: CleanupAuditService
   ) {}
+
+  /**
+   * Injecte l'EventSubReconciler (optionnel, setter injection)
+   */
+  setEventSubReconciler(reconciler: EventSubReconciler): void {
+    this.eventSubReconciler = reconciler
+  }
 
   /**
    * Point d'entrée principal - exécute la réconciliation complète
@@ -57,6 +68,7 @@ export class StartupReconciliationService {
       orphanedRewardsCleaned: 0,
       orphanedRewardsAlreadyDeleted: 0,
       phantomsFixed: 0,
+      eventSubReconciliation: null,
       durationMs: 0,
       errors: [],
     }
@@ -119,6 +131,26 @@ export class StartupReconciliationService {
       const errorMsg = error instanceof Error ? error.message : String(error)
       result.errors.push({ task: 'fullReconciliation', error: errorMsg })
       logger.error({ error }, '[StartupReconciliation] Failed full reconciliation')
+    }
+
+    // Étape 5: Réconciliation EventSub (subscriptions manquantes ou orphelines)
+    if (this.eventSubReconciler) {
+      try {
+        result.eventSubReconciliation = await this.eventSubReconciler.reconcile()
+
+        for (const err of result.eventSubReconciliation.errors) {
+          result.errors.push({
+            task: `eventSubReconciliation:${err.streamerId}`,
+            error: err.error,
+          })
+        }
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error)
+        result.errors.push({ task: 'eventSubReconciliation', error: errorMsg })
+        logger.error({ error }, '[StartupReconciliation] Failed EventSub reconciliation')
+      }
+    } else {
+      logger.debug('[StartupReconciliation] EventSub reconciler not available, skipping step 5')
     }
 
     result.durationMs = Date.now() - startTime

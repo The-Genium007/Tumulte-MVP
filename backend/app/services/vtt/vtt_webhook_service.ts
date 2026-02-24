@@ -1,11 +1,12 @@
 import { DateTime } from 'luxon'
 import VttConnection from '#models/vtt_connection'
 import { campaign as Campaign } from '#models/campaign'
-import Character from '#models/character'
+import Character, { type SpellInfo, type FeatureInfo } from '#models/character'
 import CharacterAssignment from '#models/character_assignment'
 import { streamer as Streamer } from '#models/streamer'
 import DiceRoll from '#models/dice_roll'
 import DiceRollService from '#services/vtt/dice_roll_service'
+import { SystemPresetService } from '#services/campaigns/system_preset_service'
 import type { GamificationService } from '#services/gamification/gamification_service'
 import type { DiceRollData } from '#services/gamification/trigger_evaluator'
 import logger from '@adonisjs/core/services/logger'
@@ -29,6 +30,10 @@ interface DiceRollPayload {
   ability?: string | null
   abilityRaw?: string | null
   modifiers?: string[] | null
+  // Criticality enrichment V2
+  severity?: 'minor' | 'major' | 'extreme' | null
+  criticalLabel?: string | null
+  criticalCategory?: string | null
 }
 
 export default class VttWebhookService {
@@ -57,6 +62,12 @@ export default class VttWebhookService {
       .where('vtt_campaign_id', payload.campaignId)
       .firstOrFail()
 
+    // 1b. Detect game system from metadata (lazy detection on first dice roll)
+    const metadataSystem = payload.metadata?.system as string | undefined
+    if (metadataSystem && campaign.gameSystemId !== metadataSystem) {
+      await this.detectAndApplySystem(campaign, metadataSystem)
+    }
+
     // 2. Trouver ou créer le personnage from VTT
     const vttCharacter = await this.findOrCreateCharacter(campaign, payload)
 
@@ -74,8 +85,14 @@ export default class VttWebhookService {
     }
 
     // 4. Determine which character to attribute this roll to
-    const { characterId, pendingAttribution, streamerId, streamerName, resolvedCharacterName } =
-      await this.resolveCharacterForRoll(campaign, vttCharacter)
+    const {
+      characterId,
+      vttCharacterId: resolvedVttCharacterId,
+      pendingAttribution,
+      streamerId,
+      streamerName,
+      resolvedCharacterName,
+    } = await this.resolveCharacterForRoll(campaign, vttCharacter)
 
     // 5. Créer le dice roll via le service
     const diceRollService = new DiceRollService()
@@ -97,6 +114,22 @@ export default class VttWebhookService {
       ability: payload.ability || null,
       abilityRaw: payload.abilityRaw || null,
       modifiers: payload.modifiers || null,
+      // Criticality enrichment V2 (fallback for older Foundry modules)
+      severity: payload.severity || (payload.isCritical ? 'major' : null),
+      criticalLabel:
+        payload.criticalLabel ||
+        (payload.isCritical && payload.criticalType === 'success'
+          ? 'Critical Success'
+          : payload.isCritical && payload.criticalType === 'failure'
+            ? 'Critical Failure'
+            : null),
+      criticalCategory:
+        payload.criticalCategory ||
+        (payload.isCritical && payload.criticalType === 'success'
+          ? 'generic_success'
+          : payload.isCritical && payload.criticalType === 'failure'
+            ? 'generic_failure'
+            : null),
       pendingAttribution,
     })
 
@@ -105,12 +138,17 @@ export default class VttWebhookService {
       const diceRollData: DiceRollData = {
         rollId: diceRoll.id,
         characterId,
+        vttCharacterId: resolvedVttCharacterId,
         characterName: resolvedCharacterName ?? vttCharacter.name,
         formula: payload.rollFormula,
         result: payload.result,
         diceResults: payload.diceResults,
         isCritical: payload.isCritical,
         criticalType: payload.criticalType ?? null,
+        // Criticality enrichment V2
+        severity: diceRoll.severity ?? null,
+        criticalLabel: diceRoll.criticalLabel ?? null,
+        criticalCategory: diceRoll.criticalCategory ?? null,
       }
 
       try {
@@ -147,6 +185,7 @@ export default class VttWebhookService {
     vttCharacter: Character
   ): Promise<{
     characterId: string | null
+    vttCharacterId: string | null
     pendingAttribution: boolean
     streamerId: string | null
     streamerName: string | null
@@ -163,10 +202,12 @@ export default class VttWebhookService {
       // This is a player's character - attribute to them
       logger.debug('Roll attributed to player character', {
         characterId: vttCharacter.id,
+        vttCharacterId: vttCharacter.vttCharacterId,
         characterName: vttCharacter.name,
       })
       return {
         characterId: vttCharacter.id,
+        vttCharacterId: vttCharacter.vttCharacterId,
         pendingAttribution: false,
         streamerId: playerAssignment.streamerId,
         streamerName:
@@ -183,16 +224,18 @@ export default class VttWebhookService {
 
     // Check if GM has an active character set
     if (campaign.gmActiveCharacterId) {
-      // Load the GM's active character name
+      // Load the GM's active character
       const gmActiveCharacter = await Character.find(campaign.gmActiveCharacterId)
 
       logger.debug('Roll attributed to GM active character', {
         gmActiveCharacterId: campaign.gmActiveCharacterId,
+        gmActiveVttCharacterId: gmActiveCharacter?.vttCharacterId,
         gmActiveCharacterName: gmActiveCharacter?.name,
         originalCharacterId: vttCharacter.id,
       })
       return {
         characterId: campaign.gmActiveCharacterId,
+        vttCharacterId: gmActiveCharacter?.vttCharacterId ?? null,
         pendingAttribution: false,
         streamerId: gmStreamer?.id ?? null,
         streamerName: gmStreamer?.twitchDisplayName || gmStreamer?.twitchLogin || null,
@@ -203,10 +246,11 @@ export default class VttWebhookService {
     // No active character - roll needs manual attribution
     logger.info('Roll pending attribution (no GM active character)', {
       campaignId: campaign.id,
-      vttCharacterId: vttCharacter.id,
+      vttCharacterId: vttCharacter.vttCharacterId,
     })
     return {
       characterId: null,
+      vttCharacterId: null,
       pendingAttribution: true,
       streamerId: null,
       streamerName: null,
@@ -266,6 +310,8 @@ export default class VttWebhookService {
       characterType?: 'pc' | 'npc' | 'monster'
       stats?: Record<string, unknown> | null
       inventory?: Record<string, unknown> | null
+      spells?: SpellInfo[] | null
+      features?: FeatureInfo[] | null
       vttData?: Record<string, unknown> | null
     }
   ): Promise<Character> {
@@ -350,17 +396,42 @@ export default class VttWebhookService {
       .first()
 
     if (character) {
-      // Mettre à jour les données existantes
-      character.merge({
+      // Check if anything actually changed before writing to DB
+      // If the GM manually overrode the character type, preserve it during sync
+      const effectiveCharacterType = character.characterTypeOverride
+        ? character.characterType
+        : resolvedCharacterType
+
+      const newData = {
         name: characterData.name,
         avatarUrl: characterData.avatarUrl,
-        characterType: resolvedCharacterType,
+        characterType: effectiveCharacterType,
         stats: characterData.stats || character.stats,
         inventory: characterData.inventory || character.inventory,
+        spells: characterData.spells || character.spells,
+        features: characterData.features || character.features,
         vttData: characterData.vttData || character.vttData,
-        lastSyncAt: DateTime.now(),
-      })
-      await character.save()
+      }
+
+      const hasChanges =
+        character.name !== newData.name ||
+        character.avatarUrl !== newData.avatarUrl ||
+        character.characterType !== newData.characterType ||
+        JSON.stringify(character.stats) !== JSON.stringify(newData.stats) ||
+        JSON.stringify(character.inventory) !== JSON.stringify(newData.inventory) ||
+        JSON.stringify(character.spells) !== JSON.stringify(newData.spells) ||
+        JSON.stringify(character.features) !== JSON.stringify(newData.features) ||
+        JSON.stringify(character.vttData) !== JSON.stringify(newData.vttData)
+
+      if (hasChanges) {
+        character.merge({ ...newData, lastSyncAt: DateTime.now() })
+        await character.save()
+      } else {
+        logger.debug('Character sync skipped (no changes)', {
+          characterId: character.id,
+          characterName: character.name,
+        })
+      }
     } else {
       // Créer un nouveau personnage
       character = await Character.create({
@@ -371,11 +442,87 @@ export default class VttWebhookService {
         characterType: resolvedCharacterType,
         stats: characterData.stats || null,
         inventory: characterData.inventory || null,
+        spells: characterData.spells || null,
+        features: characterData.features || null,
         vttData: characterData.vttData || null,
         lastSyncAt: DateTime.now(),
       })
     }
 
     return character
+  }
+
+  /**
+   * Detect game system from Foundry and apply preset criticality rules.
+   * Called lazily: on first dice roll, pairing, or campaign sync.
+   * Idempotent — safe to call multiple times for the same system.
+   */
+  private async detectAndApplySystem(
+    campaign: InstanceType<typeof Campaign>,
+    gameSystemId: string
+  ): Promise<void> {
+    const previous = campaign.gameSystemId
+
+    campaign.gameSystemId = gameSystemId
+    await campaign.save()
+
+    const presetService = new SystemPresetService()
+
+    try {
+      if (previous && previous !== gameSystemId) {
+        const result = await presetService.reapplyPresets(campaign.id, gameSystemId)
+        logger.info({
+          event: 'system_presets_reapplied',
+          campaignId: campaign.id,
+          previousSystem: previous,
+          newSystem: gameSystemId,
+          cleared: result.cleared,
+          rulesCreated: result.rulesCreated,
+        })
+      } else {
+        const result = await presetService.applyPresetsIfNeeded(campaign.id, gameSystemId)
+        if (result.applied) {
+          logger.info({
+            event: 'system_presets_applied',
+            campaignId: campaign.id,
+            gameSystemId,
+            systemName: result.systemName,
+            rulesCreated: result.rulesCreated,
+          })
+        }
+      }
+    } catch (error) {
+      logger.error(
+        {
+          event: 'system_preset_apply_error',
+          campaignId: campaign.id,
+          gameSystemId,
+          error: (error as Error).message,
+        },
+        'Failed to apply system presets (non-fatal)'
+      )
+    }
+
+    // Also auto-detect item categories (idempotent)
+    try {
+      const { ItemCategoryDetectionService } =
+        await import('#services/campaigns/item_category_detection_service')
+      const { CampaignItemCategoryRuleRepository } =
+        await import('#repositories/campaign_item_category_rule_repository')
+      const detectionService = new ItemCategoryDetectionService(
+        new CampaignItemCategoryRuleRepository()
+      )
+      await detectionService.detectAndSeedCategories(campaign.id, gameSystemId)
+    } catch (error) {
+      logger.error(
+        {
+          event: 'item_category_detect_error',
+          campaignId: campaign.id,
+          gameSystemId,
+          error: (error as Error).message,
+        },
+        'Failed to auto-detect item categories (non-fatal)'
+      )
+    }
   }
 }

@@ -10,6 +10,9 @@ export default defineEventHandler((event) => {
   setHeader(event, 'X-XSS-Protection', '1; mode=block')
   setHeader(event, 'Referrer-Policy', 'strict-origin-when-cross-origin')
 
+  // HSTS: enforce HTTPS (1 year, include subdomains)
+  setHeader(event, 'Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
+
   // X-Frame-Options: exclude /overlay routes for OBS Browser Source
   const isOverlayRoute = url.pathname.startsWith('/overlay')
   if (!isOverlayRoute) {

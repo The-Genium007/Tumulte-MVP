@@ -1,5 +1,6 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import { inject } from '@adonisjs/core'
+import app from '@adonisjs/core/services/app'
 import { z } from 'zod'
 import { streamer as Streamer } from '#models/streamer'
 import { campaign as Campaign } from '#models/campaign'
@@ -7,7 +8,7 @@ import { StreamerGamificationConfigRepository } from '#repositories/streamer_gam
 import { GamificationConfigRepository } from '#repositories/gamification_config_repository'
 // GamificationEventRepository non utilisé directement - les events sont chargés via les configs
 import { CampaignMembershipRepository } from '#repositories/campaign_membership_repository'
-import { RewardManagerService } from '#services/gamification/reward_manager_service'
+import type { RewardManagerService } from '#services/gamification/reward_manager_service'
 
 // Schéma de validation pour activer un événement
 const enableEventSchema = z.object({
@@ -29,12 +30,24 @@ const updateCostSchema = z.object({
  */
 @inject()
 export default class StreamerGamificationController {
+  private _rewardManagerService!: RewardManagerService
+
   constructor(
     private streamerConfigRepo: StreamerGamificationConfigRepository,
     private campaignConfigRepo: GamificationConfigRepository,
-    private membershipRepo: CampaignMembershipRepository,
-    private rewardManagerService: RewardManagerService
+    private membershipRepo: CampaignMembershipRepository
   ) {}
+
+  /**
+   * Lazy getter pour RewardManagerService — résout via le binding nommé du container
+   * afin que setEventSubService() ait été appelé (contrairement à @inject() auto-résolution)
+   */
+  private async getRewardManagerService(): Promise<RewardManagerService> {
+    if (!this._rewardManagerService) {
+      this._rewardManagerService = await app.container.make('rewardManagerService')
+    }
+    return this._rewardManagerService
+  }
 
   /**
    * Vérifie que l'utilisateur a accès à la campagne en tant que streamer
@@ -104,11 +117,9 @@ export default class StreamerGamificationController {
 
         const streamerConfig = streamerConfigs.find((sc) => sc.eventId === event.id)
 
-        const recommendedCost = this.rewardManagerService.getRecommendedCost(campaignConfig, event)
-        const difficultyExplanation = this.rewardManagerService.getDifficultyExplanation(
-          campaignConfig,
-          event
-        )
+        const rewardManager = await this.getRewardManagerService()
+        const recommendedCost = rewardManager.getRecommendedCost(campaignConfig, event)
+        const difficultyExplanation = rewardManager.getDifficultyExplanation(campaignConfig, event)
 
         return {
           eventId: event.id,
@@ -172,7 +183,8 @@ export default class StreamerGamificationController {
     const costOverride = validationResult.success ? validationResult.data.costOverride : undefined
 
     try {
-      const config = await this.rewardManagerService.enableForStreamer(
+      const rewardManager = await this.getRewardManagerService()
+      const config = await rewardManager.enableForStreamer(
         streamer,
         campaignId,
         eventId,
@@ -220,7 +232,8 @@ export default class StreamerGamificationController {
       return response.forbidden({ error })
     }
 
-    await this.rewardManagerService.disableForStreamer(streamer, campaignId, eventId)
+    const rewardManager = await this.getRewardManagerService()
+    await rewardManager.disableForStreamer(streamer, campaignId, eventId)
 
     return response.ok({
       message: 'Événement désactivé sur votre chaîne',
@@ -253,7 +266,8 @@ export default class StreamerGamificationController {
 
     const { cost } = validationResult.data
 
-    const config = await this.rewardManagerService.updateCost(streamer, campaignId, eventId, cost)
+    const rewardManager = await this.getRewardManagerService()
+    const config = await rewardManager.updateCost(streamer, campaignId, eventId, cost)
 
     if (!config) {
       return response.notFound({

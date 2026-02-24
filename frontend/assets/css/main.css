@@ -1149,11 +1149,27 @@ h6 {
   --tw-ring-color: var(--color-dark-border) !important;
 }
 
+/* Boutons soft en dark mode — augmenter l'opacité du fond (10% trop subtil sur cuir sombre) */
+.dark .bg-primary\/10 { background-color: color-mix(in srgb, var(--color-brand-500) 20%, transparent) !important; }
+.dark .bg-secondary\/10 { background-color: color-mix(in srgb, var(--color-secondary-500) 20%, transparent) !important; }
+.dark .bg-success\/10 { background-color: color-mix(in srgb, var(--color-success-500) 20%, transparent) !important; }
+.dark .bg-info\/10 { background-color: color-mix(in srgb, var(--color-info-500) 20%, transparent) !important; }
+.dark .bg-warning\/10 { background-color: color-mix(in srgb, var(--color-warning-500) 20%, transparent) !important; }
+.dark .bg-error\/10 { background-color: color-mix(in srgb, var(--color-error-500) 20%, transparent) !important; }
+
+.dark .hover\:bg-primary\/15:hover { background-color: color-mix(in srgb, var(--color-brand-500) 30%, transparent) !important; }
+.dark .hover\:bg-secondary\/15:hover { background-color: color-mix(in srgb, var(--color-secondary-500) 30%, transparent) !important; }
+.dark .hover\:bg-success\/15:hover { background-color: color-mix(in srgb, var(--color-success-500) 30%, transparent) !important; }
+.dark .hover\:bg-info\/15:hover { background-color: color-mix(in srgb, var(--color-info-500) 30%, transparent) !important; }
+.dark .hover\:bg-warning\/15:hover { background-color: color-mix(in srgb, var(--color-warning-500) 30%, transparent) !important; }
+.dark .hover\:bg-error\/15:hover { background-color: color-mix(in srgb, var(--color-error-500) 30%, transparent) !important; }
+
 /* ============================================================================
    SUPPRESSION GLOBALE DES BORDURES NUXT UI
+   Exception : les éléments avec ring-inset (variant outline) conservent leur ring
    ============================================================================ */
 
-[class*='ring-'] {
+[class*='ring-']:not(.ring-inset) {
   --tw-ring-offset-width: 0px !important;
   --tw-ring-width: 0px !important;
   --tw-ring-color: transparent !important;
@@ -1378,21 +1394,13 @@ input[type='number'] {
   appearance: textfield;
 }
 
-/* Webkit - Always show spin buttons */
+/* Webkit - Hide native spin buttons (custom +/- controls are used instead) */
 input[type='number']::-webkit-inner-spin-button,
 input[type='number']::-webkit-outer-spin-button {
   -webkit-appearance: none;
   appearance: none;
-  opacity: 1;
-  position: absolute;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  width: 20px;
-  background: var(--color-neutral-200);
-  border-left: 1px solid var(--color-neutral-300);
-  border-radius: 0 6px 6px 0;
-  cursor: pointer;
+  margin: 0;
+  display: none;
 }
 
 /* Custom spin buttons using pseudo-elements on wrapper */

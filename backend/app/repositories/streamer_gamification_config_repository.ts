@@ -194,6 +194,50 @@ export class StreamerGamificationConfigRepository {
   }
 
   // ========================================
+  // COMBAT-LINKED REWARD TOGGLE
+  // ========================================
+
+  /**
+   * Trouve les configs avec un reward Twitch pausé pour des événements combat
+   * Utilisé quand un combat COMMENCE pour réactiver les rewards
+   */
+  async findPausedCombatRewardsByCampaign(
+    campaignId: string,
+    actionTypes: string[]
+  ): Promise<StreamerGamificationConfig[]> {
+    return StreamerGamificationConfig.query()
+      .where('campaignId', campaignId)
+      .where('isEnabled', true)
+      .where('twitchRewardStatus', 'paused')
+      .whereNotNull('twitchRewardId')
+      .whereHas('event', (eventQuery) => {
+        eventQuery.whereIn('actionType', actionTypes)
+      })
+      .preload('streamer')
+      .preload('event')
+  }
+
+  /**
+   * Trouve les configs avec un reward Twitch actif pour des événements combat
+   * Utilisé quand un combat SE TERMINE pour mettre en pause les rewards
+   */
+  async findActiveCombatRewardsByCampaign(
+    campaignId: string,
+    actionTypes: string[]
+  ): Promise<StreamerGamificationConfig[]> {
+    return StreamerGamificationConfig.query()
+      .where('campaignId', campaignId)
+      .where('isEnabled', true)
+      .where('twitchRewardStatus', 'active')
+      .whereNotNull('twitchRewardId')
+      .whereHas('event', (eventQuery) => {
+        eventQuery.whereIn('actionType', actionTypes)
+      })
+      .preload('streamer')
+      .preload('event')
+  }
+
+  // ========================================
   // CLEANUP & ORPHAN DETECTION
   // ========================================
 
@@ -276,6 +320,18 @@ export class StreamerGamificationConfigRepository {
     config.deletionRetryCount = (config.deletionRetryCount || 0) + 1
     config.nextDeletionRetryAt = nextRetryAt
     await config.save()
+  }
+
+  /**
+   * Find orphaned configs that have been stuck for longer than the given threshold
+   */
+  async findStaleOrphans(olderThan: DateTime): Promise<StreamerGamificationConfig[]> {
+    return StreamerGamificationConfig.query()
+      .where('twitchRewardStatus', 'orphaned')
+      .whereNotNull('twitchRewardId')
+      .whereNotNull('deletionFailedAt')
+      .where('deletionFailedAt', '<', olderThan.toSQL()!)
+      .preload('streamer')
   }
 }
 

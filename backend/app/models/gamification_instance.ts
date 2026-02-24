@@ -19,6 +19,8 @@ export interface TriggerData {
   diceRoll?: {
     rollId: string
     characterId: string | null
+    /** Foundry VTT actor ID — resolved at trigger time to avoid UUID confusion */
+    vttCharacterId?: string | null
     characterName: string | null
     formula: string
     result: number

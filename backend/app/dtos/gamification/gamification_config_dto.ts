@@ -60,7 +60,7 @@ export class GamificationConfigEffectiveDto extends GamificationConfigDto {
     const event = config.event
     return {
       ...base,
-      effectiveCost: config.cost ?? event?.defaultCost ?? 100,
+      effectiveCost: config.cost ?? event?.defaultCost ?? 1000,
       effectiveObjectiveCoefficient:
         config.objectiveCoefficient ?? event?.defaultObjectiveCoefficient ?? 0.3,
       effectiveMinimumObjective: config.minimumObjective ?? event?.defaultMinimumObjective ?? 3,

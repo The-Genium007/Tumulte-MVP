@@ -5,8 +5,17 @@ const props = defineProps<{
   campaignId: string
 }>()
 
-const { characters, activeCharacter, loading, updating, initialize, setActiveCharacter } =
-  useGmCharacters()
+const {
+  characters,
+  activeCharacter,
+  loading,
+  updating,
+  initialize,
+  setActiveCharacter,
+  toggleCharacterType,
+} = useGmCharacters()
+
+const toast = useToast()
 
 // État pour le modal "voir plus"
 const showAllCharactersModal = ref(false)
@@ -61,6 +70,40 @@ const isActive = (character: GmCharacter) => activeCharacter.value?.id === chara
 
 // Check if a character is assigned to a streamer (not selectable by GM)
 const isAssignedToStreamer = (character: GmCharacter) => character.assignedToStreamer !== null
+
+// Context menu items for NPC/Monster type toggle
+const getContextMenuItems = (character: GmCharacter) => {
+  if (character.characterType === 'pc') return []
+
+  const targetType = character.characterType === 'npc' ? 'monster' : 'npc'
+  const label = character.characterType === 'npc' ? 'Basculer en Monstre' : 'Basculer en PNJ'
+  const icon = character.characterType === 'npc' ? 'i-lucide-skull' : 'i-lucide-user-round'
+
+  return [
+    [
+      {
+        label,
+        icon,
+        onSelect: async () => {
+          try {
+            await toggleCharacterType(props.campaignId, character.id, targetType)
+            toast.add({
+              title: 'Type modifié',
+              description: `${character.name} est maintenant ${targetType === 'monster' ? 'un Monstre' : 'un PNJ'}`,
+              color: 'success' as const,
+            })
+          } catch (error) {
+            toast.add({
+              title: 'Erreur',
+              description: error instanceof Error ? error.message : 'Impossible de changer le type',
+              color: 'error' as const,
+            })
+          }
+        },
+      },
+    ],
+  ]
+}
 </script>
 
 <template>
@@ -72,20 +115,8 @@ const isAssignedToStreamer = (character: GmCharacter) => character.assignedToStr
           <p class="text-xs text-muted">Sélectionnez le personnage que vous incarnez</p>
         </div>
 
-        <!-- Actions en haut à droite -->
-        <div class="flex items-center gap-2">
-          <!-- Bouton voir tous si beaucoup de personnages -->
-          <UButton
-            v-if="hasMoreCharacters && !loading"
-            color="primary"
-            variant="soft"
-            size="xs"
-            @click="showAllCharactersModal = true"
-          >
-            Voir tout ({{ characters.length }})
-          </UButton>
-
-          <!-- Bouton d'information -->
+        <!-- Bouton d'information -->
+        <div class="flex items-center">
           <UPopover>
             <UButton color="info" variant="soft" icon="i-lucide-help-circle" size="sm" />
             <template #content>
@@ -279,76 +310,81 @@ const isAssignedToStreamer = (character: GmCharacter) => character.assignedToStr
             <UIcon v-if="!activeCharacter" name="i-lucide-check" class="size-4 text-primary-500" />
           </button>
 
-          <!-- Personnages visibles -->
-          <button
+          <!-- Personnages visibles (clic droit = menu contextuel pour NPC/Monster) -->
+          <UContextMenu
             v-for="character in visibleCharacters"
             :key="character.id"
-            class="flex items-center gap-2 px-3 py-2 rounded-lg transition-all border-2 shrink-0"
-            :class="[
-              isAssignedToStreamer(character)
-                ? 'bg-muted/30 border-transparent opacity-60 cursor-not-allowed'
-                : isActive(character)
-                  ? 'bg-primary-50 dark:bg-primary-900/30 border-primary-400 dark:border-primary-500'
-                  : 'bg-elevated border-transparent hover:border-muted',
-            ]"
-            :disabled="updating || isAssignedToStreamer(character)"
-            :title="
-              isAssignedToStreamer(character)
-                ? `Joué par ${character.assignedToStreamer?.streamerName}`
-                : ''
-            "
-            @click="!isAssignedToStreamer(character) && handleSelectCharacter(character)"
+            :items="getContextMenuItems(character)"
+            :disabled="character.characterType === 'pc'"
           >
-            <div class="relative shrink-0">
-              <CharacterAvatar
-                :src="character.avatarUrl"
-                :alt="character.name"
-                size="xs"
-                :class="isAssignedToStreamer(character) ? 'grayscale' : ''"
+            <button
+              class="flex items-center gap-2 px-3 py-2 rounded-lg transition-all border-2 shrink-0"
+              :class="[
+                isAssignedToStreamer(character)
+                  ? 'bg-muted/30 border-transparent opacity-60 cursor-not-allowed'
+                  : isActive(character)
+                    ? 'bg-primary-50 dark:bg-primary-900/30 border-primary-400 dark:border-primary-500'
+                    : 'bg-elevated border-transparent hover:border-muted',
+              ]"
+              :disabled="updating || isAssignedToStreamer(character)"
+              :title="
+                isAssignedToStreamer(character)
+                  ? `Joué par ${character.assignedToStreamer?.streamerName}`
+                  : ''
+              "
+              @click="!isAssignedToStreamer(character) && handleSelectCharacter(character)"
+            >
+              <div class="relative shrink-0">
+                <CharacterAvatar
+                  :src="character.avatarUrl"
+                  :alt="character.name"
+                  size="xs"
+                  :class="isAssignedToStreamer(character) ? 'grayscale' : ''"
+                />
+                <!-- Badge type ou icône assigné -->
+                <div
+                  v-if="isAssignedToStreamer(character)"
+                  class="absolute -bottom-0.5 -right-0.5 size-3.5 rounded-full bg-info-500 flex items-center justify-center"
+                  :title="`Joué par ${character.assignedToStreamer?.streamerName}`"
+                >
+                  <UIcon name="i-lucide-user" class="size-2.5 text-white" />
+                </div>
+                <div
+                  v-else
+                  class="absolute -bottom-0.5 -right-0.5 size-3.5 rounded-full flex items-center justify-center text-[8px] font-bold"
+                  :class="{
+                    'bg-success-500 text-white': character.characterType === 'pc',
+                    'bg-warning-500 text-white': character.characterType === 'npc',
+                    'bg-error-500 text-white': character.characterType === 'monster',
+                  }"
+                >
+                  {{
+                    character.characterType === 'pc'
+                      ? 'J'
+                      : character.characterType === 'npc'
+                        ? 'N'
+                        : 'M'
+                  }}
+                </div>
+              </div>
+              <div class="flex flex-col items-start min-w-0">
+                <span class="text-xs font-medium whitespace-nowrap max-w-20 truncate">
+                  {{ character.name }}
+                </span>
+                <span
+                  v-if="isAssignedToStreamer(character)"
+                  class="text-[10px] text-info-500 whitespace-nowrap max-w-20 truncate"
+                >
+                  {{ character.assignedToStreamer?.streamerName }}
+                </span>
+              </div>
+              <UIcon
+                v-if="isActive(character)"
+                name="i-lucide-check"
+                class="size-4 text-primary-500"
               />
-              <!-- Badge type ou icône assigné -->
-              <div
-                v-if="isAssignedToStreamer(character)"
-                class="absolute -bottom-0.5 -right-0.5 size-3.5 rounded-full bg-info-500 flex items-center justify-center"
-                :title="`Joué par ${character.assignedToStreamer?.streamerName}`"
-              >
-                <UIcon name="i-lucide-user" class="size-2.5 text-white" />
-              </div>
-              <div
-                v-else
-                class="absolute -bottom-0.5 -right-0.5 size-3.5 rounded-full flex items-center justify-center text-[8px] font-bold"
-                :class="{
-                  'bg-success-500 text-white': character.characterType === 'pc',
-                  'bg-warning-500 text-white': character.characterType === 'npc',
-                  'bg-error-500 text-white': character.characterType === 'monster',
-                }"
-              >
-                {{
-                  character.characterType === 'pc'
-                    ? 'J'
-                    : character.characterType === 'npc'
-                      ? 'N'
-                      : 'M'
-                }}
-              </div>
-            </div>
-            <div class="flex flex-col items-start min-w-0">
-              <span class="text-xs font-medium whitespace-nowrap max-w-20 truncate">
-                {{ character.name }}
-              </span>
-              <span
-                v-if="isAssignedToStreamer(character)"
-                class="text-[10px] text-info-500 whitespace-nowrap max-w-20 truncate"
-              >
-                {{ character.assignedToStreamer?.streamerName }}
-              </span>
-            </div>
-            <UIcon
-              v-if="isActive(character)"
-              name="i-lucide-check"
-              class="size-4 text-primary-500"
-            />
-          </button>
+            </button>
+          </UContextMenu>
 
           <!-- Bouton "+N" inline si plus de personnages -->
           <button

@@ -7,6 +7,10 @@ import type {
   PollProperties,
   DiceReverseGoalBarProperties,
   DiceReverseImpactHudProperties,
+  SpellGoalBarProperties,
+  SpellImpactHudProperties,
+  MonsterGoalBarProperties,
+  MonsterImpactHudProperties,
 } from '../types'
 
 // ===== CONSTANTES DE CONFIGURATION DU GIZMO =====
@@ -170,6 +174,69 @@ export const calculateImpactHudGizmoSize = (
   const titleHeight = props.typography.title.fontSize * 1.2 + 8 // line-height + margin-bottom
   const detailHeight = props.typography.detail.fontSize * 1.2
   const containerPadding = 20 * 2 // top + bottom padding
+  const cssHeight = titleHeight + detailHeight + containerPadding
+
+  return {
+    width: (cssWidth + GIZMO_PADDING * 2) * DICE_REVERSE_CSS_TO_CANVAS_WIDTH,
+    height: (cssHeight + GIZMO_PADDING * 2) * DICE_REVERSE_CSS_TO_CANVAS_HEIGHT,
+  }
+}
+
+// ===== SPELL & MONSTER GIZMO SIZES =====
+// Même structure CSS que DiceReverse, mêmes facteurs de conversion
+
+export const calculateSpellGoalBarGizmoSize = (
+  props: SpellGoalBarProperties
+): { width: number; height: number } => {
+  const cssWidth = props.width
+  const headerHeight = 28 + 14
+  const progressBarHeight = props.progressBar.height
+  const containerPadding = 16 * 2
+  const cssHeight = headerHeight + progressBarHeight + containerPadding
+
+  return {
+    width: (cssWidth + GIZMO_PADDING * 2) * DICE_REVERSE_CSS_TO_CANVAS_WIDTH,
+    height: (cssHeight + GIZMO_PADDING * 2) * DICE_REVERSE_CSS_TO_CANVAS_HEIGHT,
+  }
+}
+
+export const calculateSpellImpactHudGizmoSize = (
+  props: SpellImpactHudProperties
+): { width: number; height: number } => {
+  const cssWidth = props.width
+  const titleHeight = props.typography.title.fontSize * 1.2 + 8
+  const detailHeight = props.typography.detail.fontSize * 1.2
+  const containerPadding = 20 * 2
+  const cssHeight = titleHeight + detailHeight + containerPadding
+
+  return {
+    width: (cssWidth + GIZMO_PADDING * 2) * DICE_REVERSE_CSS_TO_CANVAS_WIDTH,
+    height: (cssHeight + GIZMO_PADDING * 2) * DICE_REVERSE_CSS_TO_CANVAS_HEIGHT,
+  }
+}
+
+export const calculateMonsterGoalBarGizmoSize = (
+  props: MonsterGoalBarProperties
+): { width: number; height: number } => {
+  const cssWidth = props.width
+  const headerHeight = 28 + 14
+  const progressBarHeight = props.progressBar.height
+  const containerPadding = 16 * 2
+  const cssHeight = headerHeight + progressBarHeight + containerPadding
+
+  return {
+    width: (cssWidth + GIZMO_PADDING * 2) * DICE_REVERSE_CSS_TO_CANVAS_WIDTH,
+    height: (cssHeight + GIZMO_PADDING * 2) * DICE_REVERSE_CSS_TO_CANVAS_HEIGHT,
+  }
+}
+
+export const calculateMonsterImpactHudGizmoSize = (
+  props: MonsterImpactHudProperties
+): { width: number; height: number } => {
+  const cssWidth = props.width
+  const titleHeight = props.typography.title.fontSize * 1.2 + 8
+  const detailHeight = props.typography.detail.fontSize * 1.2
+  const containerPadding = 20 * 2
   const cssHeight = titleHeight + detailHeight + containerPadding
 
   return {

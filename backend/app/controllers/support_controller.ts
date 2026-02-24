@@ -36,7 +36,7 @@ export default class SupportController {
     }
 
     const backendContext: BackendContext = {
-      nodeEnv: env.get('NODE_ENV'),
+      nodeEnv: env.get('NODE_ENV', 'development'),
       appVersion: env.get('APP_VERSION', '0.3.0'),
     }
 

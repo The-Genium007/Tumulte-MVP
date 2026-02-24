@@ -2,6 +2,7 @@ import type { HttpContext } from '@adonisjs/core/http'
 import type { NextFn } from '@adonisjs/core/types/http'
 import redis from '@adonisjs/redis/services/main'
 import logger from '@adonisjs/core/services/logger'
+import app from '@adonisjs/core/services/app'
 
 /**
  * Options for rate limiting configuration
@@ -27,6 +28,11 @@ export interface RateLimitOptions {
  */
 export default class RateLimitMiddleware {
   async handle({ request, response }: HttpContext, next: NextFn, options: RateLimitOptions = {}) {
+    // Skip rate limiting in test environment to avoid false failures
+    if (app.inTest) {
+      return next()
+    }
+
     const maxRequests = options.maxRequests ?? 60
     const windowSeconds = options.windowSeconds ?? 60
     const keyPrefix = options.keyPrefix ?? 'default'

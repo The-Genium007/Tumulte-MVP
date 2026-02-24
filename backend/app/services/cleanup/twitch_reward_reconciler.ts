@@ -1,11 +1,16 @@
 import { inject } from '@adonisjs/core'
 import logger from '@adonisjs/core/services/logger'
+import * as Sentry from '@sentry/node'
 import { DateTime } from 'luxon'
 import { streamer as Streamer } from '#models/streamer'
 import StreamerGamificationConfig from '#models/streamer_gamification_config'
 import { TwitchRewardService } from '#services/twitch/twitch_reward_service'
+import { TokenRefreshService } from '#services/auth/token_refresh_service'
 import { StreamerGamificationConfigRepository } from '#repositories/streamer_gamification_config_repository'
 import { CleanupAuditService } from './cleanup_audit_service.js'
+
+// After ~7 days of exponential backoff retries, give up on unrecoverable orphans
+const MAX_ORPHAN_RETRIES = 10
 
 /**
  * Rapport de réconciliation pour un streamer
@@ -51,11 +56,20 @@ export interface FullReconciliationResult {
  */
 @inject()
 export class TwitchRewardReconciler {
+  private tokenRefreshService: TokenRefreshService | null = null
+
   constructor(
     private twitchRewardService: TwitchRewardService,
     private configRepo: StreamerGamificationConfigRepository,
     private auditService: CleanupAuditService
   ) {}
+
+  private getTokenRefreshService(): TokenRefreshService {
+    if (!this.tokenRefreshService) {
+      this.tokenRefreshService = new TokenRefreshService()
+    }
+    return this.tokenRefreshService
+  }
 
   /**
    * Nettoie les configs orphelines (suppression avec retry)
@@ -73,6 +87,10 @@ export class TwitchRewardReconciler {
       failed: 0,
       errors: [],
     }
+
+    // Track which streamers we've already refreshed tokens for in this run
+    const refreshedStreamers = new Set<string>()
+    const tokenService = this.getTokenRefreshService()
 
     for (const config of orphanConfigs) {
       try {
@@ -96,6 +114,50 @@ export class TwitchRewardReconciler {
           )
           result.failed++
           result.errors.push({ configId: config.id, error: 'Streamer not found' })
+          continue
+        }
+
+        // Refresh token once per streamer before attempting Twitch API calls
+        if (!refreshedStreamers.has(streamer.id)) {
+          const refreshSuccess = await tokenService.refreshStreamerToken(streamer)
+          refreshedStreamers.add(streamer.id)
+          if (!refreshSuccess) {
+            logger.warn(
+              { configId: config.id, streamerId: streamer.id },
+              '[Reconciler] Token refresh failed before orphan cleanup, attempting anyway'
+            )
+          }
+        }
+
+        // Abandon if we've exceeded max retries (refresh token likely revoked)
+        const currentRetryCount = config.deletionRetryCount || 0
+        if (currentRetryCount >= MAX_ORPHAN_RETRIES) {
+          logger.error(
+            {
+              event: 'orphan_abandoned',
+              configId: config.id,
+              streamerId: streamer.id,
+              twitchRewardId: config.twitchRewardId,
+              retryCount: currentRetryCount,
+            },
+            '[Reconciler] Orphan exceeded max retries, marking as deleted'
+          )
+          Sentry.captureMessage('Orphan reward abandoned after max retries', {
+            level: 'warning',
+            tags: { service: 'TwitchRewardReconciler' },
+            extra: {
+              configId: config.id,
+              streamerId: streamer.id,
+              twitchRewardId: config.twitchRewardId,
+              retryCount: currentRetryCount,
+            },
+          })
+          await this.configRepo.markAsDeleted(config.id)
+          result.failed++
+          result.errors.push({
+            configId: config.id,
+            error: `Abandoned after ${currentRetryCount} retries`,
+          })
           continue
         }
 
@@ -242,12 +304,23 @@ export class TwitchRewardReconciler {
 
     logger.info({ streamerCount: streamerIds.length }, '[Reconciler] Starting full reconciliation')
 
+    const tokenService = this.getTokenRefreshService()
+
     for (const streamerId of streamerIds) {
       try {
         const streamer = await Streamer.find(streamerId)
         if (!streamer) {
           result.errors.push({ streamerId, error: 'Streamer not found' })
           continue
+        }
+
+        // Refresh token before reconciliation (needs valid token for listRewards + deleteReward)
+        const refreshSuccess = await tokenService.refreshStreamerToken(streamer)
+        if (!refreshSuccess) {
+          logger.warn(
+            { streamerId },
+            '[Reconciler] Token refresh failed before reconciliation, attempting anyway'
+          )
         }
 
         const report = await this.reconcileStreamer(streamer)

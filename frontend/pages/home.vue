@@ -5,6 +5,7 @@
     <LandingSolution />
     <LandingFeatures />
     <LandingUseCases />
+    <LandingVttCompatibility />
     <LandingTestimonials />
     <LandingCta />
   </div>
@@ -16,6 +17,7 @@ import LandingProblem from '~/components/landing/LandingProblem.vue'
 import LandingSolution from '~/components/landing/LandingSolution.vue'
 import LandingFeatures from '~/components/landing/LandingFeatures.vue'
 import LandingUseCases from '~/components/landing/LandingUseCases.vue'
+import LandingVttCompatibility from '~/components/landing/LandingVttCompatibility.vue'
 import LandingTestimonials from '~/components/landing/LandingTestimonials.vue'
 import LandingCta from '~/components/landing/LandingCta.vue'
 import { useAnalytics } from '~/composables/useAnalytics'

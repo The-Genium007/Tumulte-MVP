@@ -1,6 +1,7 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import { inject } from '@adonisjs/core'
 import app from '@adonisjs/core/services/app'
+import logger from '@adonisjs/core/services/logger'
 import { z } from 'zod'
 import { DateTime } from 'luxon'
 import VttConnection from '#models/vtt_connection'
@@ -97,7 +98,7 @@ export default class VttController {
       }
 
       // Erreurs inattendues
-      console.error('Error processing VTT webhook:', error)
+      logger.error({ error }, 'Error processing VTT webhook')
       return response.internalServerError({
         error: 'An error occurred while processing the webhook',
       })
@@ -148,7 +149,7 @@ export default class VttController {
         })
       }
 
-      console.error('Error testing VTT connection:', error)
+      logger.error({ error }, 'Error testing VTT connection')
       return response.internalServerError({
         error: 'An error occurred while testing the connection',
       })
@@ -227,7 +228,7 @@ export default class VttController {
         })
       }
 
-      console.error('Error processing gamification executed webhook:', error)
+      logger.error({ error }, 'Error processing gamification executed webhook')
       return response.internalServerError({
         error: 'An error occurred while processing the webhook',
       })

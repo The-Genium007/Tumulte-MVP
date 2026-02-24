@@ -19,6 +19,7 @@ interface PendingPairing {
   worldName: string
   gmUserId: string
   moduleVersion: string
+  gameSystemId?: string | null
   createdAt: number
   expiresAt: number
 }
@@ -145,11 +146,12 @@ export default class FoundryWebhookController {
    */
   async requestPairing({ request, response }: HttpContext) {
     try {
-      const { worldId, worldName, gmUserId, moduleVersion } = request.only([
+      const { worldId, worldName, gmUserId, moduleVersion, gameSystemId } = request.only([
         'worldId',
         'worldName',
         'gmUserId',
         'moduleVersion',
+        'gameSystemId',
       ])
 
       if (!worldId || !worldName) {
@@ -169,6 +171,7 @@ export default class FoundryWebhookController {
         worldName,
         gmUserId: gmUserId || 'unknown',
         moduleVersion: moduleVersion || '2.0.0',
+        gameSystemId: gameSystemId || null,
         createdAt: now,
         expiresAt: now + PAIRING_CODE_EXPIRY * 1000,
       }
@@ -184,7 +187,8 @@ export default class FoundryWebhookController {
       )
 
       // Build API URL - use API_URL env var if set, otherwise construct from HOST:PORT
-      const apiUrl = env.get('API_URL') || `http://${env.get('HOST')}:${env.get('PORT')}`
+      const apiUrl =
+        env.get('API_URL') || `http://${env.get('HOST', 'localhost')}:${env.get('PORT', 3333)}`
 
       logger.info('Foundry pairing code generated', {
         code,
@@ -192,8 +196,8 @@ export default class FoundryWebhookController {
         worldName,
         apiUrl,
         envApiUrl: env.get('API_URL'),
-        envHost: env.get('HOST'),
-        envPort: env.get('PORT'),
+        envHost: env.get('HOST', 'localhost'),
+        envPort: env.get('PORT', 3333),
       })
 
       return response.ok({
@@ -320,29 +324,16 @@ export default class FoundryWebhookController {
       const authHeader = request.header('Authorization')
       const apiKey = authHeader?.replace('Bearer ', '')
 
-      // Or from query params (for simple health checks)
-      const worldId = request.input('worldId')
-
-      if (!apiKey && !worldId) {
-        return response.badRequest({
-          error: 'Missing authentication: provide Authorization header or worldId query param',
+      if (!apiKey) {
+        return response.unauthorized({
+          error: 'Missing Authorization header with Bearer token',
         })
       }
 
-      // Find connection by API key or worldId
+      // Find connection by API key only (worldId lookup removed for security)
       let connection: VttConnection | null = null
 
-      if (apiKey) {
-        connection = await VttConnection.query()
-          .where('api_key', apiKey)
-          .preload('campaigns')
-          .first()
-      } else if (worldId) {
-        connection = await VttConnection.query()
-          .where('world_id', worldId)
-          .preload('campaigns')
-          .first()
-      }
+      connection = await VttConnection.query().where('api_key', apiKey).preload('campaigns').first()
 
       if (!connection) {
         return response.notFound({

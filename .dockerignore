@@ -1,0 +1,32 @@
+# Only send what the backend Dockerfile needs
+# Everything is ignored by default, then we whitelist
+*
+
+# Backend source code
+!backend/
+backend/node_modules
+backend/build
+backend/dist
+backend/.output
+backend/coverage
+backend/.nyc_output
+backend/tests
+backend/.env
+backend/.env.local
+backend/.env.*.local
+backend/.env.example
+backend/.git
+backend/.vscode
+backend/.idea
+backend/docs
+backend/Dockerfile*
+backend/docker-compose*.yml
+backend/.dockerignore
+backend/logs
+backend/tmp
+backend/temp
+backend/.tmp
+backend/.cache
+
+# Foundry module version file (for auto-detection)
+!modules-vtt/foundry/module.json

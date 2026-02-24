@@ -11,15 +11,20 @@
 import { onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
+import { useAnalytics } from '@/composables/useAnalytics'
 
 const route = useRoute()
 const _router = useRouter()
 const { fetchMe } = useAuth()
+const { track } = useAnalytics()
 
 onMounted(async () => {
   try {
     // Récupérer l'utilisateur connecté
     await fetchMe()
+
+    // Track Twitch OAuth callback (retour Twitch = lien confirmé)
+    track('twitch_linked')
 
     // Récupérer et valider la destination de redirection
     // Sécurité: empêcher les open redirects vers des domaines externes

@@ -11,6 +11,7 @@ import redis from '@adonisjs/redis/services/main'
 import { randomBytes } from 'node:crypto'
 import { DateTime } from 'luxon'
 import env from '#start/env'
+import { VttConnectionDto } from '#dtos/vtt/vtt_connection_dto'
 
 interface PendingPairing {
   code: string
@@ -18,6 +19,7 @@ interface PendingPairing {
   worldName: string
   gmUserId: string
   moduleVersion: string
+  gameSystemId?: string | null
   createdAt: number
   expiresAt: number
 }
@@ -100,7 +102,8 @@ export default class VttConnectionsController {
 
     await connection.load('provider')
 
-    return response.created(connection)
+    // Return full DTO with apiKey (user needs it to configure Foundry)
+    return response.created(VttConnectionDto.fromModel(connection))
   }
 
   /**
@@ -185,7 +188,8 @@ export default class VttConnectionsController {
 
     await connection.load('provider')
 
-    return response.ok(connection)
+    // Return full DTO with apiKey (user needs the new key)
+    return response.ok(VttConnectionDto.fromModel(connection))
   }
 
   /**
@@ -306,7 +310,8 @@ export default class VttConnectionsController {
     )
 
     // Build API URL
-    const apiUrl = env.get('API_URL') || `http://${env.get('HOST')}:${env.get('PORT')}`
+    const apiUrl =
+      env.get('API_URL') || `http://${env.get('HOST', 'localhost')}:${env.get('PORT', 3333)}`
 
     // Store reauthorization data for the module to pick up
     const reauthorizedData = {
@@ -469,7 +474,8 @@ export default class VttConnectionsController {
       )
 
       // Build API URL - use API_URL env var if set, otherwise construct from HOST:PORT
-      const apiUrl = env.get('API_URL') || `http://${env.get('HOST')}:${env.get('PORT')}`
+      const apiUrl =
+        env.get('API_URL') || `http://${env.get('HOST', 'localhost')}:${env.get('PORT', 3333)}`
 
       // Store completed pairing for the module to pick up
       // Include fingerprint so the module can send it back on token refresh
@@ -504,11 +510,29 @@ export default class VttConnectionsController {
           vttConnectionId: connection.id,
           vttCampaignId: pending.worldId,
           vttCampaignName: pending.worldName,
+          gameSystemId: pending.gameSystemId || null,
           lastVttSyncAt: DateTime.now(),
         })
 
         // Ajouter le propriétaire comme membre avec autorisation permanente
         await this.campaignService.addOwnerAsMember(campaign.id, user.id)
+
+        // Apply system presets if game system is known at pairing time
+        if (pending.gameSystemId) {
+          const { SystemPresetService } = await import('#services/campaigns/system_preset_service')
+          const presetService = new SystemPresetService()
+          await presetService.applyPresetsIfNeeded(campaign.id, pending.gameSystemId)
+
+          // Auto-detect item categories (spells, features, inventory)
+          const { ItemCategoryDetectionService } =
+            await import('#services/campaigns/item_category_detection_service')
+          const { CampaignItemCategoryRuleRepository } =
+            await import('#repositories/campaign_item_category_rule_repository')
+          const detectionService = new ItemCategoryDetectionService(
+            new CampaignItemCategoryRuleRepository()
+          )
+          await detectionService.detectAndSeedCategories(campaign.id, pending.gameSystemId)
+        }
       }
 
       return response.created({

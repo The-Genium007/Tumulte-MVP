@@ -56,7 +56,7 @@ Multi-channel Twitch poll management platform for Tabletop RPG Game Masters (GM)
 ├── frontend/             # Nuxt 3 (Vue 3 + Nuxt UI v3)
 ├── monitoring/           # Prometheus + Grafana + AlertManager
 ├── modules-vtt/          # Foundry VTT module (separate sub-project)
-├── docs/                 # Documentation (deployment, API, architecture)
+├── docs/                 # Documentation (see Documentation Map below)
 ├── scripts/              # Utility scripts (git hooks, lockfile sync)
 ├── .github/workflows/    # CI/CD GitHub Actions
 └── CLAUDE.md             # This file
@@ -197,63 +197,66 @@ import { UserDto } from '#dtos/user_dto'
 import { createUserValidator } from '#validators/auth/create_user'
 ```
 
+### PreFlight System
+
+Extensible, auto-discovering health check system that validates system health before launching polls, gamification events, or any feature. Uses priority-based execution (0=infrastructure → 20=business rules) with short-circuit on failure. Two modes: `full` (blocking) and `light` (observability-only).
+
+> **Full documentation:** `docs/architecture/preflight.md`
+
+### Gamification Handler Registries
+
+Registry-based handler system for gamification triggers and actions. Eliminates switch statements — adding a new handler type requires only one file + registration in `start/container.ts`.
+
+> **Full documentation:** `docs/gamification/` (architecture + code patterns)
+
+### System Presets Architecture
+
+When a campaign is connected to Foundry VTT, the game system is detected automatically. If recognized, criticality rules and gamification recommendations are auto-configured via a 3-point detection chain (pairing → first dice roll → campaign sync). Three-tier support: 15 Tier 1 systems with full adapters (~85% of users), ~25 Tier 2 with degraded GenericAdapter support, and 320+ Tier 3 with basic dice extraction only.
+
+> **Full documentation:** `docs/architecture/system-presets.md`
+
+---
+
+## Documentation Map
+
+Quick lookup table — use this to find detailed documentation on any topic.
+
+> **RULE: Documentation maintenance.** When creating, moving, or deleting a markdown file in `docs/`:
+> 1. **Update this table** — add/remove/edit the corresponding row
+> 2. **Update `docs/README.md`** — add/remove the link in the appropriate section
+> 3. **Update `.claude/agents/docs.md`** — keep the documentation structure tree in sync
+>
+> All documentation lives in `docs/`. Never create standalone `.md` files at the project root or in subdirectories like `.github/`, `backend/`, or `frontend/` — place them in the appropriate `docs/` subdirectory instead.
+
+| Topic | File | Description |
+|-------|------|-------------|
+| **Gamification system** | `docs/gamification/` | Architecture, code patterns, handler registries |
+| **Database models** | `docs/reference/models.md` | All 28+ models with schema details |
+| **API routes** | `docs/api/reference.md` | Complete endpoint documentation |
+| **API authentication** | `docs/api/authentication.md` | OAuth flows, session management |
+| **Error handling** | `docs/architecture/backend.md` | Exception handler, resilience patterns |
+| **Security** | `docs/architecture/security.md` | Auth guards, token storage, HTTP security |
+| **PreFlight checks** | `docs/architecture/preflight.md` | Health check system, priorities, observability |
+| **System presets** | `docs/architecture/system-presets.md` | Foundry VTT system detection, preset registry |
+| **Backend architecture** | `docs/architecture/backend.md` | Layered pattern, DI, ORM conventions |
+| **Frontend architecture** | `docs/architecture/frontend.md` | Nuxt 3 patterns, composables, components |
+| **Testing** | `docs/guides/testing.md` | Japa + Vitest patterns, CI/CD, coverage |
+| **CI/CD & workflows** | `docs/infrastructure/ci-cd.md` | GitHub Actions, staging/production pipelines |
+| **Branch protection** | `docs/infrastructure/branch-protection.md` | GitHub rules, deployment workflow |
+| **Monitoring & Docker** | `docs/infrastructure/monitoring.md` | Prometheus, Grafana, Docker setup |
+| **Design system** | `docs/reference/design-system.md` | Spacing, typography, colors, components |
+| **VTT feature matrix** | `docs/reference/vtt-feature-matrix.md` | Feature support levels per VTT system, how to add features |
+| **Environment variables** | `docs/getting-started/configuration.md` | All .env options for backend & frontend |
+| **Installation** | `docs/getting-started/installation.md` | Self-hosting setup guide |
+| **VTT integration** | `docs/vtt-integration/` | Foundry VTT, pairing, webhooks, characters |
+| **Overlay Studio** | `docs/overlay-studio/` | Visual editor, customization, CSS |
+| **Contributing** | `docs/guides/contributing.md` | Code standards, PR process |
+| **Deployment** | `docs/guides/deployment.md` | Docker, Dokploy, production checklist |
+| **Services reference** | `docs/reference/services.md` | All backend services by domain |
+
 ---
 
 ## Database
-
-### Models (27 models)
-
-**Core Domain:**
-
-| Model | Description |
-|-------|-------------|
-| `User` | Users (email/password + OAuth providers) |
-| `AuthProvider` | OAuth providers linked to users (Twitch, Google) |
-| `Streamer` | Twitch channel info (encrypted tokens, scopes) |
-| `Campaign` | RPG campaigns created by GM |
-| `CampaignMembership` | Streamer invitations & authorization status |
-
-**Polls:**
-
-| Model | Description |
-|-------|-------------|
-| `Poll` | Poll definition (question, options, duration) |
-| `PollTemplate` | Reusable poll templates |
-| `PollSession` | Group of polls launched together |
-| `PollInstance` | Single launched poll (status: PENDING → STARTED → ENDED/CANCELLED) |
-| `PollResult` | Aggregated results per channel |
-| `PollChannelLink` | Links a poll instance to streamer channels |
-
-**VTT Integration:**
-
-| Model | Description |
-|-------|-------------|
-| `VttProvider` | VTT platform definitions (Foundry, Roll20, etc.) |
-| `VttConnection` | User's connection to a VTT instance |
-| `Character` | Imported characters from VTT |
-| `CharacterAssignment` | Streamer ↔ character assignments |
-| `DiceRoll` | Dice rolls received from VTT |
-| `TokenRevocationList` | Revoked VTT connection tokens |
-
-**Gamification:**
-
-| Model | Description |
-|-------|-------------|
-| `GamificationEvent` | Event definitions (dice roll, poll vote, etc.) |
-| `GamificationInstance` | Active gamification session |
-| `GamificationContribution` | Viewer contributions to gamification goals |
-| `StreamerGamificationConfig` | Per-streamer gamification settings |
-| `CampaignGamificationConfig` | Per-campaign gamification settings |
-
-**Other:**
-
-| Model | Description |
-|-------|-------------|
-| `OverlayConfig` | Overlay Studio visual configurations |
-| `PushSubscription` | Web push notification subscriptions |
-| `NotificationPreference` | Per-user notification settings |
-| `RetryEvent` | Failed operation retry tracking |
-| `Subscription` | User subscription (future monetization) |
 
 ### Database Conventions
 
@@ -265,233 +268,9 @@ import { createUserValidator } from '#validators/auth/create_user'
 
 ### Migration Count
 
-69 migrations as of v0.6.x. Migrations include both schema changes and data migrations (seeds, backfills). See the "Database Migration Safety" section above before creating new ones.
+70+ migrations as of v0.6.x. Migrations include both schema changes and data migrations (seeds, backfills). See the "Database Migration Safety" section above before creating new ones.
 
----
-
-## API Routes Overview
-
-### Public (no auth)
-
-| Group | Key Endpoints |
-|-------|---------------|
-| **Health** | `GET /health`, `GET /health/ready`, `GET /health/live` |
-| **Auth** | `POST /auth/register`, `POST /auth/login`, `GET /auth/twitch/redirect`, `GET /auth/twitch/callback`, `GET /auth/google/redirect`, `GET /auth/google/callback`, `POST /auth/forgot-password`, `POST /auth/reset-password` |
-| **Overlay** (OBS) | `GET /overlay/:streamerId`, `GET /overlay/:streamerId/active-poll`, `GET /overlay/:streamerId/config`, `GET /overlay/:streamerId/gamification/active` |
-| **Webhooks** | `POST /webhooks/twitch/eventsub`, `POST /webhooks/vtt/dice-roll`, `POST /webhooks/foundry/*` |
-
-### Authenticated
-
-| Group | Key Endpoints |
-|-------|---------------|
-| **Session** | `GET /auth/me`, `POST /auth/logout`, `POST /auth/change-password` |
-| **OAuth Linking** | `GET /auth/link/twitch`, `GET /auth/link/google`, `POST /auth/unlink` |
-| **GM - Campaigns** | `CRUD /mj/campaigns`, `POST /mj/campaigns/:id/invite`, `GET /mj/campaigns/:id/members`, `GET /mj/campaigns/:id/events` |
-| **GM - Polls** | `CRUD /mj/campaigns/:campaignId/polls`, `POST /mj/polls/:id/launch`, `POST /mj/polls/:id/cancel`, `GET /mj/polls/:id/results` |
-| **GM - Gamification** | `GET /mj/gamification/events`, `POST /mj/campaigns/:id/gamification/trigger`, gamification instance management |
-| **GM - VTT** | `CRUD /mj/vtt-connections`, `POST /mj/vtt-connections/pair-with-code`, sync operations |
-| **GM - Characters** | `GET /mj/campaigns/:id/characters`, `POST /mj/campaigns/:id/active-character`, dice roll attribution |
-| **Streamer** | `GET /streamer/campaigns/invitations`, accept/decline invitations, authorization grant/revoke, character assignment |
-| **Dashboard** | Mirrors `/streamer` routes + streamer gamification settings |
-| **Overlay Studio** | `CRUD /streamer/overlay-studio/configs`, activate, preview commands |
-| **Notifications** | VAPID key, subscribe/unsubscribe, preferences |
-| **Support** | `POST /support/report`, `POST /support/suggestion` |
-| **Admin** | `GET /admin/metrics/*` (admin middleware) |
-| **Account** | `DELETE /account/delete` |
-
-### Rate Limiting
-
-Rate limits are applied per-endpoint via Redis-based middleware:
-- Auth endpoints: 3-10 req/60s (strictest on registration, forgot-password)
-- Auth lockout: Exponential backoff (30s → 1h) after 5 failed logins
-- Poll operations: 20 req/60s
-- Overlay Studio: Per-action rate limiting
-- VTT webhooks: 100 req/60s
-
----
-
-## Error Handling
-
-### Backend
-
-**Exception Handler** (`app/exceptions/handler.ts`):
-- Logs all errors with request context (method, URL, IP, requestId)
-- Sends 5xx errors to Sentry (4xx filtered out)
-- Production: Masks sensitive error messages with generic responses
-
-**Custom Exceptions:**
-- `ValidationException`: Zod validation failures → HTTP 400 with field details
-- `CircuitOpenError`: Circuit breaker open → HTTP 503
-
-**Resilience Patterns** (`app/services/resilience/`):
-- **Circuit Breaker**: Redis-backed, distributed, Lua atomic scripts. States: CLOSED → OPEN → HALF_OPEN
-- **Retry Utility**: Exponential backoff + jitter, Retry-After header support, circuit breaker integration
-- **Health Check Service**: Pre-validates Twitch API, Redis, streamer tokens, WebSocket before poll operations
-
-**Error Response Format:**
-```json
-{
-  "error": "Human-readable message",
-  "details": [{ "field": "email", "message": "Invalid email", "code": "INVALID_EMAIL" }]
-}
-```
-
-### Frontend
-
-- **Global 401 handler** (`plugins/api-auth-handler.client.ts`): Clears auth state, redirects to login
-- **Sentry** with Session Replay: Captures errors, breadcrumbs, user context
-- **Toast notifications**: Debounced error toast when Sentry captures an error
-- **Support reporter** (`composables/useSupportReporter.ts`): Collects diagnostics (console, performance, store state) with automatic sensitive data sanitization
-- **Resilient WebSocket** (`composables/useResilientWebSocket.ts`): Auto-reconnect with exponential backoff, HTTP polling fallback when WebSocket is down
-- **Error message catalog** (`utils/supportErrorMessages.ts`): 60+ typed action categories with French user-facing messages
-
----
-
-## Security Architecture
-
-### Authentication
-- **Two guards**: `web` (session/cookie) and `api` (access token)
-- **OAuth**: Twitch + Google with PKCE-like state validation (`timingSafeEqual`)
-- **Password hashing**: Scrypt (cost: 16384, blockSize: 8)
-- **Sessions**: Redis-backed, `httpOnly`, `secure` (prod), 7-day expiry
-- **Brute force protection**: Exponential lockout (IP + IP+email tracking)
-
-### Token Storage
-- All OAuth tokens (Twitch, Google) encrypted at rest via AdonisJS Encryption (`APP_KEY`)
-- Token fields use `serializeAs: null` — never exposed in API responses
-- Automatic token refresh with failure tracking
-
-### HTTP Security
-- **CORS**: Whitelist-only (frontend URL). Exception: Foundry VTT endpoints (API key auth)
-- **Security Headers Middleware**: CSP, HSTS, X-Frame-Options (DENY except `/overlay`), X-Content-Type-Options, Permissions-Policy
-- **Rate Limiting**: Redis-based, per-IP, per-endpoint configurable
-- **Request IDs**: UUID per request for traceability
-- **Input validation**: Zod schemas on all endpoints
-
-### Sensitive Data
-- Passwords, tokens, API keys filtered from Sentry breadcrumbs
-- Support reporter sanitizes Bearer tokens, JWT, passwords before sending
-- Generic error messages in production (prevents email enumeration)
-
----
-
-## Testing Conventions
-
-### Backend (Japa)
-
-**Structure:**
-```
-backend/tests/
-├── unit/
-│   ├── services/        # Service tests (manual DI mocking)
-│   ├── repositories/    # Repository tests (real DB + transactions)
-│   ├── models/          # Model tests (computed properties, relations)
-│   └── validators/      # Validator tests
-├── functional/          # HTTP endpoint tests
-├── e2e/                 # End-to-end tests
-└── helpers/             # Test utilities (factories, database cleanup)
-```
-
-**Patterns:**
-- File naming: `snake_case.spec.ts`
-- Test groups: `test.group('ServiceName - methodName', () => { ... })`
-- Test names: Descriptive sentences — `'should launch a pending poll successfully'`
-- Assertions: `assert.equal()`, `assert.isTrue()`, `assert.rejects()`
-- **Service mocking**: Manual constructor injection (no DI container manipulation)
-  ```typescript
-  const service = new PollLifecycleService(
-    mockRepository as any,
-    mockChannelLinkRepo as any,
-    // ... other mocked dependencies
-  )
-  ```
-- **Repository tests**: Real database with `group.each.setup(() => testUtils.db().withGlobalTransaction())`
-- **Test helpers**: `createTestUser()`, `createTestStreamer()`, `createTestCampaign()`, etc. (faker-based)
-
-### Frontend (Vitest + Playwright)
-
-**Structure:**
-```
-frontend/tests/
-├── unit/
-│   ├── stores/          # Pinia store tests
-│   └── composables/     # Composable tests
-├── component/           # Vue component tests (Vue Test Utils)
-├── e2e/                 # Playwright browser tests
-└── setup.ts             # Global mocks (Nuxt auto-imports, localStorage)
-```
-
-**Patterns:**
-- File naming: `PascalCase.spec.ts` (components) or `camelCase.spec.ts` (stores/composables)
-- Describe/test: `describe('StoreName', () => { test('should ...', () => {}) })`
-- Assertions: `expect().toBe()`, `expect().toEqual()`, `expect().toContain()`
-- **Store tests**: Fresh Pinia per test via `setActivePinia(createPinia())`
-- **Component tests**: Mount with `@vue/test-utils`, mock Nuxt UI components as simple templates
-- **Composable tests**: `vi.resetModules()` in `afterEach` for clean imports
-- **Mocking**: `vi.mock()` for modules, `vi.stubGlobal()` for Nuxt composables, `vi.fn()` for functions
-- **Timers**: `vi.useFakeTimers()` / `vi.useRealTimers()` for interval-based logic
-
-### When Writing Tests
-
-- **Services**: Mock all dependencies via constructor injection. Test business logic, not DB queries.
-- **Repositories**: Use real DB with transaction rollback. Test actual queries.
-- **Components**: Test user interactions and rendered output. Mock API calls.
-- **Stores**: Test state mutations and actions. Mock axios calls.
-- Always follow the **Arrange-Act-Assert** (AAA) pattern.
-
----
-
-## Monitoring & Infrastructure
-
-### Docker Production Setup
-
-**Backend** (`backend/Dockerfile`):
-- 4-stage multi-stage build (deps → builder → prod-deps → production)
-- Non-root user (`nodejs:1001`)
-- `dumb-init` for proper signal handling
-- Health check: `GET /health/ready`
-- Resource limits: 2 CPU / 2GB RAM
-
-**Frontend** (`frontend/Dockerfile`):
-- 2-stage build (builder → production)
-- Nuxt SSR deployment
-- Health check: `GET /health`
-
-**Entrypoint** (`backend/docker-entrypoint.sh`):
-- Waits for PostgreSQL + Redis connectivity
-- Runs `migration:run --force` automatically
-- Exits with error if migrations fail
-
-### Monitoring Stack (`monitoring/`)
-
-```
-Prometheus (metrics collection, 30-day retention)
-  ├── Node Exporter (CPU, RAM, disk, network)
-  ├── cAdvisor (Docker container metrics)
-  ├── PostgreSQL Exporter (DB health)
-  └── Redis Exporter (cache metrics)
-
-Grafana (dashboards)
-AlertManager → Discord webhooks (normal + critical channels)
-```
-
-### CI/CD (`/.github/workflows/`)
-
-| Workflow | Branch | Behavior |
-|----------|--------|----------|
-| `staging-ci.yml` | staging | Functional tests non-blocking |
-| `production-ci.yml` | main | All tests blocking |
-| `sync-foundry-module.yml` | — | Syncs Foundry VTT module |
-
-**Pipeline:**
-```
-backend-quality ──► backend-unit-tests ──► backend-functional-tests
-frontend-quality ──► frontend-unit-tests
-                            ↓
-                         build
-                            ↓
-                   frontend-e2e-tests (prod only)
-```
+> **Full models reference (28+ models):** `docs/reference/models.md`
 
 ---
 
@@ -519,6 +298,23 @@ frontend-quality ──► frontend-unit-tests
 - Twitch API responses
 - PostgreSQL query results
 
+### Loading Icons
+
+**All loading/spinner indicators MUST use the branded D20 dice icon.** Never use generic spinners (`i-lucide-loader-2`, `i-heroicons-arrow-path`, SVG circle spinners, etc.).
+
+```vue
+<!-- Standard loading indicator -->
+<UIcon name="i-game-icons-dice-twenty-faces-twenty" class="size-8 text-primary animate-spin-slow" />
+
+<!-- Small inline loading (buttons, compact areas) -->
+<UIcon name="i-game-icons-dice-twenty-faces-twenty" class="size-4 animate-spin-slow" />
+```
+
+- **Icon**: `i-game-icons-dice-twenty-faces-twenty`
+- **Animation**: `animate-spin-slow` (4.5s rotation, defined in `main.css`) — preferred for most cases. Use `animate-spin` (1s) only for very short micro-interactions.
+- **Color**: `text-primary` for prominent loaders, `text-muted` for subtle inline ones.
+- **Full-page loading**: Use the `<LoadingScreen />` component (`components/ui/loading/LoadingScreen.vue`).
+
 ### File Organization
 
 **Backend service directories:**
@@ -528,89 +324,17 @@ app/services/
 ├── cache/             # Redis service
 ├── campaigns/         # Campaign + membership logic
 ├── core/              # Health checks, database seeder
-├── gamification/      # Gamification engine (events, rewards, tracking)
+├── gamification/      # Gamification engine (events, rewards, handler registries)
+├── monitoring/        # Prometheus metrics service
 ├── mail/              # Email sending (welcome, verification)
 ├── notifications/     # Push notifications
 ├── polls/             # Poll lifecycle (creation, polling, aggregation, results)
+├── preflight/         # Pre-flight health checks (registry, runner, checks/)
 ├── resilience/        # Circuit breaker, retry, backoff
 ├── scheduler/         # Scheduled tasks (token refresh, expiry checks)
 ├── twitch/            # Twitch API, polls, chat, countdown
 ├── vtt/               # VTT integration (sync, webhooks, pairing, import)
 └── websocket/         # WebSocket (Transmit) broadcasting
-```
-
----
-
-## Environment Variables
-
-### Backend (.env)
-
-```env
-# App
-PORT=3333
-HOST=localhost
-APP_KEY=<generated>             # CRITICAL: Used for encryption. Never change in prod.
-NODE_ENV=development
-LOG_LEVEL=info
-TZ=Europe/Paris
-
-# Database (PostgreSQL 16)
-DB_HOST=localhost
-DB_PORT=5432
-DB_USER=postgres
-DB_PASSWORD=postgres
-DB_DATABASE=twitch_polls
-DB_POOL_MIN=2
-DB_POOL_MAX=20
-
-# Cache (Redis 7)
-REDIS_HOST=localhost
-REDIS_PORT=6379
-
-# Twitch OAuth
-TWITCH_CLIENT_ID=
-TWITCH_CLIENT_SECRET=
-TWITCH_REDIRECT_URI=http://localhost:3333/auth/twitch/callback
-
-# Google OAuth
-GOOGLE_CLIENT_ID=
-GOOGLE_CLIENT_SECRET=
-GOOGLE_REDIRECT_URI=http://localhost:3333/auth/google/callback
-
-# Session
-SESSION_DRIVER=cookie            # Use 'redis' in production
-
-# CORS
-FRONTEND_URL=http://localhost:3000
-
-# Error Tracking
-SENTRY_DSN=
-
-# Email
-RESEND_API_KEY=
-
-# Web Push
-VAPID_PUBLIC_KEY=
-VAPID_PRIVATE_KEY=
-
-# Integrations
-DISCORD_WEBHOOK_SUPPORT=
-DISCORD_WEBHOOK_SUGGESTIONS=
-GITHUB_TOKEN=
-
-# Analytics
-POSTHOG_API_KEY=
-POSTHOG_HOST=
-
-# Admin
-ADMIN_EMAILS=admin@example.com
-```
-
-### Frontend (.env)
-
-```env
-NUXT_PUBLIC_API_BASE=http://localhost:3333
-NUXT_PUBLIC_SENTRY_DSN=
 ```
 
 ---
@@ -632,27 +356,3 @@ NUXT_PUBLIC_SENTRY_DSN=
 7. **Rate limiting fails closed**: If Redis is down, requests are blocked (HTTP 503) rather than allowed through.
 
 8. **The monitoring stack** is optional for development but required in production. AlertManager sends to Discord.
-
----
-
-## Quick Start
-
-```bash
-# 1. Start services
-docker-compose up -d  # PostgreSQL + Redis
-
-# 2. Backend
-cd backend
-cp .env.example .env  # Configure variables
-npm install
-node --loader ts-node-maintained/esm bin/console.ts migration:run
-npm run dev
-
-# 3. Frontend
-cd frontend
-cp .env.example .env
-npm install
-npm run dev
-
-# 4. Open http://localhost:3000
-```

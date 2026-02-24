@@ -4,11 +4,11 @@ export default defineNuxtConfig({
   devtools: { enabled: process.env.NODE_ENV === 'development' },
   ssr: false, // SPA mode - variables must be set at build time
 
-  // Source maps: enabled for Sentry error tracking
-  // In production, maps are uploaded to Sentry then deleted from build output
+  // Source maps: hidden mode — maps are generated for Sentry upload but not served to clients.
+  // This prevents exposing full source code via browser DevTools in production.
   sourcemap: {
     server: false,
-    client: true,
+    client: 'hidden',
   },
 
   modules: [
@@ -49,9 +49,13 @@ export default defineNuxtConfig({
         leave: { opacity: 0, scale: 0.9, transition: { duration: 300, ease: 'easeIn' } },
       },
       // Pop (pour les icônes/badges) - avec spring
-      'pop': {
+      pop: {
         initial: { opacity: 0, scale: 0.5 },
-        visible: { opacity: 1, scale: 1, transition: { type: 'spring', stiffness: 300, damping: 20 } },
+        visible: {
+          opacity: 1,
+          scale: 1,
+          transition: { type: 'spring', stiffness: 300, damping: 20 },
+        },
         leave: { opacity: 0, scale: 0.5, transition: { duration: 200, ease: 'easeIn' } },
       },
     },
@@ -100,8 +104,7 @@ export default defineNuxtConfig({
       // PostHog Analytics (EU)
       posthogKey: process.env.NUXT_PUBLIC_POSTHOG_KEY || '',
       posthogHost: process.env.NUXT_PUBLIC_POSTHOG_HOST || 'https://eu.i.posthog.com',
-      // Google Tag Manager (marketing pixels)
-      gtmId: process.env.NUXT_PUBLIC_GTM_ID || '',
+      posthogEnv: process.env.NUXT_PUBLIC_POSTHOG_ENV || '',
     },
   },
 
@@ -270,9 +273,11 @@ export default defineNuxtConfig({
           content: [
             "default-src 'self'",
             // Scripts: self + inline (Vue/Nuxt needs it) + GTM
+            // SECURITY NOTE: 'unsafe-inline' is required by Vue 3/Nuxt for runtime rendering.
+            // Migrating to nonce-based CSP requires the nuxt-security module — tracked as future work.
             // Note: unsafe-eval only needed in dev for HMR, removed in production for security
             `script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com ${process.env.NODE_ENV === 'development' ? "'unsafe-eval'" : ''}`,
-            // Styles: self + inline (Tailwind/Vue needs it)
+            // Styles: self + inline (Tailwind/Vue dynamic styles require unsafe-inline — accepted risk)
             "style-src 'self' 'unsafe-inline'",
             // Images: self + data URIs + Twitch CDN for profile images
             "img-src 'self' data: https: blob:",

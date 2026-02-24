@@ -100,7 +100,8 @@ export class TwitchEventSubService {
   constructor(private twitchApiService: TwitchApiService) {
     this.clientId = env.get('TWITCH_CLIENT_ID') || ''
     this.webhookSecret = env.get('TWITCH_EVENTSUB_SECRET') || ''
-    this.callbackBaseUrl = env.get('API_URL') || `http://${env.get('HOST')}:${env.get('PORT')}`
+    this.callbackBaseUrl =
+      env.get('API_URL') || `http://${env.get('HOST', 'localhost')}:${env.get('PORT', 3333)}`
     this.retryUtility = new RetryUtility()
   }
 

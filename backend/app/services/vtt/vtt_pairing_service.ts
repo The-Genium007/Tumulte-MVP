@@ -154,13 +154,31 @@ export default class VttPairingService {
         }
 
         if (fingerprintToValidate !== connection.connectionFingerprint) {
-          logger.warn('Token refresh attempted with mismatched fingerprint', {
-            connectionId: connection.id,
-            worldId: connection.worldId,
-            expected: connection.connectionFingerprint.substring(0, 8) + '...',
-            received: fingerprintToValidate.substring(0, 8) + '...',
-          })
-          throw new Error('Invalid connection fingerprint')
+          // Self-healing: if the DB fingerprint was corrupted (e.g. by a heartbeat
+          // recalculation bug) but the provided fingerprint matches the one embedded
+          // in the signed JWT, the client is legitimate — fix the DB and allow refresh.
+          if (
+            providedFingerprint &&
+            decoded.fingerprint &&
+            providedFingerprint === decoded.fingerprint
+          ) {
+            logger.warn('Fingerprint mismatch healed — DB value was stale, restored from JWT', {
+              connectionId: connection.id,
+              worldId: connection.worldId,
+              staleFingerprint: connection.connectionFingerprint.substring(0, 8) + '...',
+              restoredFingerprint: providedFingerprint.substring(0, 8) + '...',
+            })
+            connection.connectionFingerprint = providedFingerprint
+            await connection.save()
+          } else {
+            logger.warn('Token refresh attempted with mismatched fingerprint', {
+              connectionId: connection.id,
+              worldId: connection.worldId,
+              expected: connection.connectionFingerprint.substring(0, 8) + '...',
+              received: fingerprintToValidate.substring(0, 8) + '...',
+            })
+            throw new Error('Invalid connection fingerprint')
+          }
         }
       }
 

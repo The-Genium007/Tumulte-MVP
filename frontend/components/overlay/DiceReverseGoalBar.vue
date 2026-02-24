@@ -343,7 +343,8 @@ onUnmounted(() => {
 .dice-reverse-goal-bar {
   position: relative;
   width: 500px;
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family:
+    'Inter', system-ui, 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
   transition: transform 0.05s linear;
 }
 

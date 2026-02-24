@@ -1,14 +1,5 @@
 # =============================================================================
-# Grafana Datasources - Auto-provisioning
-# =============================================================================
-# CE FICHIER EST GÉNÉRÉ AUTOMATIQUEMENT par scripts/deploy.sh
-# Ne pas modifier manuellement - les changements seront écrasés
-#
-# Pour régénérer:
-#   ./scripts/deploy.sh staging
-#   ./scripts/deploy.sh prod
-#
-# ENV_SUFFIX: staging
+# Grafana Datasources - Auto-provisioning (Production)
 # =============================================================================
 
 apiVersion: 1
@@ -18,14 +9,9 @@ datasources:
   - name: Prometheus
     type: prometheus
     access: proxy
-    # URL utilise le container_name avec suffixe d'environnement
-    # Staging: tumulte-prometheus-staging:9090
-    # Prod: tumulte-prometheus-prod:9090
-    url: http://tumulte-prometheus-staging:9090
+    url: http://tumulte-prometheus:9090
     isDefault: true
     editable: false
     jsonData:
-      # Intervalle de scrape (doit correspondre à prometheus.yml)
       timeInterval: '15s'
-      # Permet les requêtes exemplaires (si tu utilises le tracing)
       exemplarTraceIdDestinations: []

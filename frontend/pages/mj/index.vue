@@ -6,14 +6,22 @@
         v-if="campaignsLoaded && campaigns.length > 0"
         v-model="selectedCampaignId"
         :campaigns="campaigns"
+        @created="handleCampaignCreated"
       />
 
-      <!-- VTT Connection Alert Banner -->
+      <!-- VTT Connection Alert Banner (only for campaigns with VTT) -->
       <MjVttAlertBanner
-        v-if="selectedCampaignId && vttHasIssue"
+        v-if="
+          selectedCampaignId &&
+          currentCampaign?.vttConnection &&
+          (vttHasIssue || isModuleOutdated)
+        "
         :status="vttHealthStatus"
         :campaign-id="selectedCampaignId"
         :campaign-name="currentCampaign?.name"
+        :is-module-outdated="isModuleOutdated"
+        :current-module-version="vttConnectionHealth?.moduleVersion"
+        :latest-module-version="vttConnectionHealth?.latestModuleVersion"
       />
 
       <!-- Carte 2: Dashboard de la campagne sélectionnée -->
@@ -31,17 +39,28 @@
           <UIcon name="i-lucide-folder-x" class="size-12 text-muted mb-4" />
           <h2 class="heading-section text-muted mb-2">Aucune campagne disponible</h2>
           <p class="text-body-sm text-muted mb-6 max-w-md mx-auto">
-            Créez votre premiere campagne pour commencer à configurer vos sondages
+            Créez votre première campagne pour commencer à configurer vos sondages
           </p>
-          <UButton
-            color="primary"
-            size="lg"
-            icon="i-lucide-plus"
-            label="Connecter un VTT"
-            @click="router.push('/mj/vtt-connections/create')"
-          />
+          <div class="flex justify-center">
+            <UDropdownMenu
+              :items="newCampaignMenuItems"
+              :ui="{ content: 'bg-elevated shadow-lg border border-default' }"
+            >
+              <UButton
+                color="primary"
+                size="lg"
+                icon="i-lucide-plus"
+                trailing-icon="i-lucide-chevron-down"
+              >
+                Créer une campagne
+              </UButton>
+            </UDropdownMenu>
+          </div>
         </div>
       </UCard>
+
+      <!-- Campaign Create Modal -->
+      <MjCampaignCreateModal v-model="showCampaignCreateModal" @created="handleCampaignCreated" />
 
       <!-- Active Poll Control Card -->
       <PollControlCard
@@ -216,6 +235,33 @@ interface StreamerDisplay {
 
 // Campaign management
 const campaignsLoaded = ref(false)
+const showCampaignCreateModal = ref(false)
+
+// Menu items for new campaign dropdown (empty state + selector card consistency)
+const newCampaignMenuItems = [
+  [
+    {
+      label: 'Créer sans VTT',
+      icon: 'i-lucide-file-plus',
+      onSelect: () => {
+        showCampaignCreateModal.value = true
+      },
+    },
+    {
+      label: 'Connecter un VTT',
+      icon: 'i-lucide-plug-zap',
+      onSelect: () => {
+        router.push('/mj/vtt-connections/create')
+      },
+    },
+  ],
+]
+
+// Handler for campaign creation (from modal or CampaignSelectorCard)
+const handleCampaignCreated = async (campaign: { id: string }) => {
+  await fetchCampaigns()
+  selectedCampaignId.value = campaign.id
+}
 
 // Utiliser le composable pour la persistance localStorage
 const { selectedCampaignId, loadFromStorage } = useSelectedCampaign()
@@ -229,6 +275,8 @@ const currentCampaign = computed(
 const {
   healthStatus: vttHealthStatus,
   hasIssue: vttHasIssue,
+  isModuleOutdated,
+  vttConnection: vttConnectionHealth,
   startPolling: startVttPolling,
   stopPolling: _stopVttPolling,
 } = useVttHealth(selectedCampaignId)
@@ -792,8 +840,8 @@ onMounted(async () => {
     selectedCampaignId.value = campaigns.value[0]?.id ?? null
   }
 
-  // Start VTT health polling if a campaign is selected
-  if (selectedCampaignId.value) {
+  // Start VTT health polling only for campaigns with a VTT connection
+  if (selectedCampaignId.value && currentCampaign.value?.vttConnection) {
     startVttPolling()
   }
 

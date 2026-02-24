@@ -10,6 +10,7 @@ export interface GmCharacter {
   name: string
   avatarUrl: string | null
   characterType: 'pc' | 'npc' | 'monster'
+  characterTypeOverride: boolean
   vttCharacterId: string
   stats: Record<string, unknown> | null
   lastSyncAt: string | null
@@ -126,6 +127,46 @@ export const useGmCharacters = () => {
   }
 
   /**
+   * Toggle a character's type between NPC and Monster
+   */
+  const toggleCharacterType = async (
+    campaignId: string,
+    characterId: string,
+    newType: 'npc' | 'monster'
+  ): Promise<void> => {
+    const response = await fetch(
+      `${API_URL}/mj/campaigns/${campaignId}/characters/${characterId}/type`,
+      {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ characterType: newType }),
+      }
+    )
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Failed to toggle character type')
+    }
+
+    const data = await response.json()
+
+    // Update local state
+    const index = characters.value.findIndex((c) => c.id === characterId)
+    const char = characters.value[index]
+    if (char) {
+      char.characterType = data.data.characterType
+      char.characterTypeOverride = data.data.characterTypeOverride
+    }
+
+    // Also update activeCharacter if it's the one being toggled
+    if (activeCharacter.value?.id === characterId) {
+      activeCharacter.value.characterType = data.data.characterType
+      activeCharacter.value.characterTypeOverride = data.data.characterTypeOverride
+    }
+  }
+
+  /**
    * Initialize: fetch both characters list and active character
    */
   const initialize = async (campaignId: string): Promise<void> => {
@@ -149,6 +190,7 @@ export const useGmCharacters = () => {
     fetchActiveCharacter,
     setActiveCharacter,
     clearActiveCharacter,
+    toggleCharacterType,
     initialize,
   }
 }

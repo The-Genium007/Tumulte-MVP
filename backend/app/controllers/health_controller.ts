@@ -67,7 +67,7 @@ export default class HealthController {
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
       version: env.get('APP_VERSION', '0.0.0'),
-      environment: env.get('NODE_ENV'),
+      environment: env.get('NODE_ENV', 'development'),
       services: {
         database: databaseStatus,
         redis: redisStatus,

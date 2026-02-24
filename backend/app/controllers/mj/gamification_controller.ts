@@ -385,8 +385,8 @@ export default class GamificationController {
    * POST /mj/campaigns/:id/gamification/instances/:instanceId/force-complete
    */
   async forceComplete({ auth, params, response }: HttpContext) {
-    // Bloquer en production (ENV_SUFFIX distingue prod/staging, contrairement à NODE_ENV)
-    const envSuffix = process.env.ENV_SUFFIX || 'dev'
+    // Blocked in production — fail-closed: if ENV_SUFFIX is not explicitly set to a non-prod value, deny
+    const envSuffix = env.get('ENV_SUFFIX', 'prod')
     if (envSuffix === 'prod') {
       return response.forbidden({ error: 'Cette route est désactivée en production' })
     }
@@ -425,16 +425,92 @@ export default class GamificationController {
    * Réinitialise les cooldowns de gamification d'une campagne
    * POST /mj/campaigns/:id/gamification/reset-cooldowns
    *
-   * DEV/STAGING uniquement.
+   * Production-safe : ne reset que les cooldowns encore actifs.
+   * Body optionnel : { streamerId?: string }
    */
-  async resetCooldowns({ auth, params, response }: HttpContext) {
-    const envSuffix = process.env.ENV_SUFFIX || 'dev'
-    if (envSuffix === 'prod') {
-      return response.forbidden({ error: 'Cette route est désactivée en production' })
-    }
-
+  async resetCooldowns({ auth, params, request, response }: HttpContext) {
     const userId = auth.user!.id
     const campaignId = params.id
+    const streamerId = request.input('streamerId') || undefined
+
+    const isOwner = await this.campaignRepository.isOwner(campaignId, userId)
+    if (!isOwner) {
+      return response.forbidden({ error: "Vous n'êtes pas propriétaire de cette campagne" })
+    }
+
+    if (streamerId) {
+      const memberships = await this.membershipRepository.findActiveByCampaign(campaignId)
+      const isMember = memberships.some((m) => m.streamerId === streamerId)
+      if (!isMember) {
+        return response.badRequest({ error: 'Ce streamer ne fait pas partie de la campagne' })
+      }
+    }
+
+    const gamificationService = await this.getGamificationService()
+    const count = await gamificationService.resetCooldownsForMj(campaignId, streamerId)
+
+    return response.ok({
+      data: {
+        message: streamerId
+          ? `${count} cooldown(s) réinitialisé(s) pour le streamer`
+          : `${count} cooldown(s) réinitialisé(s) pour la campagne`,
+        count,
+      },
+    })
+  }
+
+  /**
+   * Annule toutes les instances actives/armées de gamification d'une campagne
+   * POST /mj/campaigns/:id/gamification/reset-state
+   *
+   * Production-safe : annule les instances et broadcast vers les overlays.
+   * Body optionnel : { streamerId?: string }
+   */
+  async resetState({ auth, params, request, response }: HttpContext) {
+    const userId = auth.user!.id
+    const campaignId = params.id
+    const streamerId = request.input('streamerId') || undefined
+
+    const isOwner = await this.campaignRepository.isOwner(campaignId, userId)
+    if (!isOwner) {
+      return response.forbidden({ error: "Vous n'êtes pas propriétaire de cette campagne" })
+    }
+
+    if (streamerId) {
+      const memberships = await this.membershipRepository.findActiveByCampaign(campaignId)
+      const isMember = memberships.some((m) => m.streamerId === streamerId)
+      if (!isMember) {
+        return response.badRequest({ error: 'Ce streamer ne fait pas partie de la campagne' })
+      }
+    }
+
+    const gamificationService = await this.getGamificationService()
+    const count = await gamificationService.cancelAllActiveInstances(campaignId, streamerId)
+
+    return response.ok({
+      data: {
+        message: streamerId
+          ? `${count} instance(s) annulée(s) pour le streamer`
+          : `${count} instance(s) annulée(s) pour la campagne`,
+        count,
+      },
+    })
+  }
+
+  /**
+   * Envoie une commande de nettoyage global à Foundry VTT
+   * POST /mj/campaigns/:id/gamification/cleanup-foundry
+   *
+   * Supprime tous les flags Tumulte des items Foundry (sorts désactivés, buffs/debuffs),
+   * restaure les sorts, annule les timers, et optionnellement nettoie les messages chat.
+   * Commande fire-and-forget.
+   *
+   * Body optionnel : { cleanChat?: boolean }
+   */
+  async cleanupFoundry({ auth, params, request, response }: HttpContext) {
+    const userId = auth.user!.id
+    const campaignId = params.id
+    const cleanChat = request.input('cleanChat', false)
 
     const isOwner = await this.campaignRepository.isOwner(campaignId, userId)
     if (!isOwner) {
@@ -442,10 +518,17 @@ export default class GamificationController {
     }
 
     const gamificationService = await this.getGamificationService()
-    await gamificationService.onSessionStart(campaignId)
+    const result = await gamificationService.cleanupFoundryEffects(campaignId, cleanChat)
+
+    if (!result.success) {
+      return response.badRequest({ error: result.error })
+    }
 
     return response.ok({
-      data: { message: 'Cooldowns réinitialisés' },
+      data: {
+        message: 'Commande de nettoyage envoyée à Foundry',
+        success: true,
+      },
     })
   }
 
@@ -488,7 +571,8 @@ export default class GamificationController {
    * /webhooks/twitch/eventsub pour tester le pipeline complet.
    */
   async simulateRedemption({ auth, params, response }: HttpContext) {
-    const envSuffix = process.env.ENV_SUFFIX || 'dev'
+    // Blocked in production — fail-closed: if ENV_SUFFIX is not explicitly set to a non-prod value, deny
+    const envSuffix = env.get('ENV_SUFFIX', 'prod')
     if (envSuffix === 'prod') {
       return response.forbidden({ error: 'Cette route est désactivée en production' })
     }
@@ -601,124 +685,191 @@ export default class GamificationController {
       })
     }
 
+    // Pre-check: les actions spell nécessitent un personnage avec des sorts
+    const spellActionTypes = ['spell_disable', 'spell_buff', 'spell_debuff']
+    const eventActionType = streamerConfig.event?.actionType
+    if (eventActionType && spellActionTypes.includes(eventActionType)) {
+      const { resolveActorForStreamer } =
+        await import('#services/gamification/handlers/actions/spell_utils')
+      const resolved = await resolveActorForStreamer(campaignId, targetMembership.streamerId)
+
+      if (!resolved) {
+        return response.badRequest({
+          error:
+            'Aucun personnage trouvé pour ce streamer. Assignez un personnage au streamer ou sélectionnez un personnage actif MJ dans la section Personnages.',
+        })
+      }
+
+      if (!resolved.character.spells || resolved.character.spells.length === 0) {
+        return response.badRequest({
+          error: `Le personnage "${resolved.character.name}" n'a aucun sort synchronisé depuis Foundry. Lancez une synchronisation depuis le module Foundry VTT.`,
+        })
+      }
+    }
+
     // Réinitialiser les cooldowns pour cette campagne avant la simulation
     // afin de permettre des tests en boucle sans être bloqué
     const gamificationService = await this.getGamificationService()
     await gamificationService.onSessionStart(campaignId)
 
-    // Construire le payload EventSub identique à Twitch
-    const redemptionId = randomUUID()
-    const testViewerId = String(Math.floor(Math.random() * 900000000) + 100000000)
-    const testViewerName = `test_viewer_${Math.floor(Math.random() * 9999)}`
+    // Calculer le coût effectif et l'objectif cible
+    const campaignConfig = await this.configRepository.findByCampaignAndEvent(campaignId, eventId)
+    const effectiveCost = streamerConfig.getEffectiveCost(campaignConfig, streamerConfig.event)
 
-    const effectiveCost = streamerConfig.getEffectiveCost(
-      await this.configRepository.findByCampaignAndEvent(campaignId, eventId),
-      streamerConfig.event
-    )
+    // Reproduire le calcul de ObjectiveCalculator.calculateIndividual()
+    // pour savoir combien de fake payloads envoyer (remplir la jauge à 100%)
+    const viewerCount = 100 // Même valeur hardcodée que dans onStreamerRedemption
+    const coefficient =
+      campaignConfig?.objectiveCoefficient ??
+      streamerConfig.event?.defaultObjectiveCoefficient ??
+      0.2
+    const minimumObjective =
+      campaignConfig?.minimumObjective ?? streamerConfig.event?.defaultMinimumObjective ?? 3
+    const objectiveTarget = Math.max(minimumObjective, Math.round(viewerCount * coefficient))
 
-    const eventsubPayload = {
-      subscription: {
-        id: randomUUID(),
-        type: 'channel.channel_points_custom_reward_redemption.add',
-        version: '1',
-        status: 'enabled',
-        condition: {
-          broadcaster_user_id: streamer.twitchUserId,
-        },
-        transport: {
-          method: 'webhook',
-          callback: `http://localhost/webhooks/twitch/eventsub`,
-        },
-        created_at: new Date().toISOString(),
-      },
-
-      event: {
-        id: redemptionId,
-        broadcaster_user_id: streamer.twitchUserId,
-        broadcaster_user_login: streamer.twitchLogin || 'test_broadcaster', // eslint-disable-line camelcase
-        broadcaster_user_name: streamer.twitchDisplayName || 'Test_Broadcaster', // eslint-disable-line camelcase
-        user_id: testViewerId,
-        user_login: testViewerName, // eslint-disable-line camelcase
-        user_name: testViewerName, // eslint-disable-line camelcase
-        user_input: '', // eslint-disable-line camelcase
-        status: 'unfulfilled',
-        reward: {
-          id: streamerConfig.twitchRewardId,
-          title: streamerConfig.event?.name || 'Gamification Test',
-          cost: effectiveCost,
-          prompt: '',
-        },
-        redeemed_at: new Date().toISOString(), // eslint-disable-line camelcase
-      },
-    }
-
-    // Calculer la signature HMAC-SHA256 (même algo que twitch_eventsub_controller.ts:295-330)
-    const messageId = randomUUID()
-    const timestamp = new Date().toISOString()
-    const bodyString = JSON.stringify(eventsubPayload)
-    const hmacMessage = messageId + timestamp + bodyString
-    const signature =
-      'sha256=' + createHmac('sha256', webhookSecret).update(hmacMessage).digest('hex')
-
-    // Self HTTP call vers le vrai endpoint webhook
+    // Self HTTP call config
     const port = env.get('PORT', 3333)
     const host = env.get('HOST', 'localhost')
     const webhookUrl = `http://${host}:${port}/webhooks/twitch/eventsub`
 
+    // Envoyer N fake EventSub payloads pour remplir la jauge à 100%
+    // Chaque payload = 1 contribution = 1 clic de viewer simulé
+    let lastRedemptionId = ''
+    let lastViewerName = ''
+    let successCount = 0
+
+    logger.info(
+      {
+        event: 'simulate_redemption_start',
+        campaignId,
+        eventId,
+        objectiveTarget,
+        coefficient,
+        minimumObjective,
+      },
+      `Simulation: envoi de ${objectiveTarget} contributions`
+    )
+
     try {
-      const webhookResponse = await fetch(webhookUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Twitch-Eventsub-Message-Id': messageId,
-          'Twitch-Eventsub-Message-Timestamp': timestamp,
-          'Twitch-Eventsub-Message-Signature': signature,
-          'Twitch-Eventsub-Message-Type': 'notification',
-        },
-        body: bodyString,
-      })
+      for (let i = 0; i < objectiveTarget; i++) {
+        const redemptionId = randomUUID()
+        const testViewerId = String(Math.floor(Math.random() * 900000000) + 100000000)
+        const testViewerName = `test_viewer_${Math.floor(Math.random() * 9999)}`
 
-      const webhookStatus = webhookResponse.status
-      const webhookBody = await webhookResponse.text()
-
-      if (webhookStatus === 200) {
-        logger.info(
-          {
-            event: 'simulate_redemption_success',
-            campaignId,
-            eventId,
-            streamerId: streamer.id,
-            redemptionId,
-            viewerName: testViewerName,
+        const eventsubPayload = {
+          subscription: {
+            id: randomUUID(),
+            type: 'channel.channel_points_custom_reward_redemption.add',
+            version: '1',
+            status: 'enabled',
+            condition: {
+              broadcaster_user_id: streamer.twitchUserId,
+            },
+            transport: {
+              method: 'webhook',
+              callback: `http://localhost/webhooks/twitch/eventsub`,
+            },
+            created_at: new Date().toISOString(),
           },
-          'Simulation redemption réussie'
-        )
-
-        return response.ok({
-          message: 'Redemption simulée avec succès',
-          data: {
-            redemptionId,
-            viewerName: testViewerName,
-            cost: effectiveCost,
-            streamerId: streamer.id,
-            streamerName: streamer.twitchDisplayName || streamer.twitchLogin,
-            webhookStatus,
+          event: {
+            id: redemptionId,
+            broadcaster_user_id: streamer.twitchUserId,
+            broadcaster_user_login: streamer.twitchLogin || 'test_broadcaster', // eslint-disable-line camelcase
+            broadcaster_user_name: streamer.twitchDisplayName || 'Test_Broadcaster', // eslint-disable-line camelcase
+            user_id: testViewerId,
+            user_login: testViewerName, // eslint-disable-line camelcase
+            user_name: testViewerName, // eslint-disable-line camelcase
+            user_input: '', // eslint-disable-line camelcase
+            status: 'unfulfilled',
+            reward: {
+              id: streamerConfig.twitchRewardId,
+              title: streamerConfig.event?.name || 'Gamification Test',
+              cost: effectiveCost,
+              prompt: '',
+            },
+            redeemed_at: new Date().toISOString(), // eslint-disable-line camelcase
           },
+        }
+
+        // Calculer la signature HMAC-SHA256
+        const messageId = randomUUID()
+        const timestamp = new Date().toISOString()
+        const bodyString = JSON.stringify(eventsubPayload)
+        const hmacMessage = messageId + timestamp + bodyString
+        const signature =
+          'sha256=' + createHmac('sha256', webhookSecret).update(hmacMessage).digest('hex')
+
+        const webhookResponse = await fetch(webhookUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Twitch-Eventsub-Message-Id': messageId,
+            'Twitch-Eventsub-Message-Timestamp': timestamp,
+            'Twitch-Eventsub-Message-Signature': signature,
+            'Twitch-Eventsub-Message-Type': 'notification',
+          },
+          body: bodyString,
         })
+
+        if (webhookResponse.status !== 200) {
+          const webhookBody = await webhookResponse.text()
+          logger.warn(
+            {
+              event: 'simulate_redemption_webhook_failed',
+              iteration: i + 1,
+              webhookStatus: webhookResponse.status,
+              webhookBody,
+            },
+            'Le webhook EventSub a rejeté la simulation'
+          )
+          return response.badRequest({
+            error: `Le webhook a répondu avec le status ${webhookResponse.status} (contribution ${i + 1}/${objectiveTarget})`,
+            details: webhookBody,
+          })
+        }
+
+        successCount++
+        lastRedemptionId = redemptionId
+        lastViewerName = testViewerName
       }
 
-      logger.warn(
+      logger.info(
         {
-          event: 'simulate_redemption_webhook_failed',
-          webhookStatus,
-          webhookBody,
+          event: 'simulate_redemption_success',
+          campaignId,
+          eventId,
+          streamerId: streamer.id,
+          lastRedemptionId,
+          contributionsCount: successCount,
+          objectiveTarget,
         },
-        'Le webhook EventSub a rejeté la simulation'
+        `Simulation terminée: ${successCount} contributions envoyées`
       )
 
-      return response.badRequest({
-        error: `Le webhook a répondu avec le status ${webhookStatus}`,
-        details: webhookBody,
+      // Récupérer l'instance créée pour inclure le résultat de l'action
+      const latestInstance = await this.instanceRepository.findLatestByCampaignAndEvent(
+        campaignId,
+        eventId
+      )
+      const actionResult = latestInstance?.resultData ?? null
+      const actionSuccess = actionResult?.success ?? null
+
+      return response.ok({
+        message:
+          actionSuccess === false
+            ? `Simulation terminée mais l'action a échoué: ${actionResult?.error}`
+            : 'Redemption simulée avec succès',
+        data: {
+          redemptionId: lastRedemptionId,
+          viewerName: lastViewerName,
+          cost: effectiveCost,
+          streamerId: streamer.id,
+          streamerName: streamer.twitchDisplayName || streamer.twitchLogin,
+          webhookStatus: 200,
+          contributionsCount: successCount,
+          objectiveTarget,
+          actionResult,
+        },
       })
     } catch (err) {
       logger.error(

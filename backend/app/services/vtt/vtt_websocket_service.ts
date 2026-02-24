@@ -3,6 +3,7 @@ import app from '@adonisjs/core/services/app'
 import type { Server, Socket } from 'socket.io'
 import jwt from 'jsonwebtoken'
 import { DateTime } from 'luxon'
+import redis from '@adonisjs/redis/services/main'
 import VttConnection from '#models/vtt_connection'
 import TokenRevocationList from '#models/token_revocation_list'
 import { campaign as Campaign } from '#models/campaign'
@@ -146,6 +147,10 @@ export default class VttWebSocketService {
         await this.handleCombatStart(socket, data)
       })
 
+      socket.on('combat:sync', async (data) => {
+        await this.handleCombatSync(socket, data)
+      })
+
       socket.on('combat:turn', async (data) => {
         await this.handleCombatTurn(socket, data)
       })
@@ -175,10 +180,43 @@ export default class VttWebSocketService {
         await this.handleDisconnection(socket, reason)
       })
 
-      // Acknowledge connection
+      // Load item category rules for the campaigns linked to this connection
+      let itemCategories: Array<{
+        itemType: string
+        category: string
+        subcategory: string
+        isTargetable: boolean
+      }> = []
+
+      try {
+        const campaigns = await connection.related('campaigns').query()
+        if (campaigns.length > 0) {
+          const CampaignItemCategoryRuleModel = await import('#models/campaign_item_category_rule')
+          const CampaignItemCategoryRule = CampaignItemCategoryRuleModel.default
+          const rules = await CampaignItemCategoryRule.query()
+            .where('campaignId', campaigns[0].id)
+            .where('isEnabled', true)
+            .select('itemType', 'category', 'subcategory', 'isTargetable')
+
+          itemCategories = rules.map((r) => ({
+            itemType: r.itemType,
+            category: r.category,
+            subcategory: r.subcategory,
+            isTargetable: r.isTargetable,
+          }))
+        }
+      } catch (err) {
+        logger.warn('Failed to load item categories for VTT connection', {
+          connectionId,
+          error: err instanceof Error ? err.message : String(err),
+        })
+      }
+
+      // Acknowledge connection (includes item categories for visual system)
       socket.emit('connected', {
         connectionId,
         timestamp: DateTime.now().toISO(),
+        itemCategories,
       })
     } catch (error) {
       logger.error('Failed to handle VTT connection', { error, connectionId })
@@ -216,14 +254,29 @@ export default class VttWebSocketService {
     }, this.heartbeatInterval)
 
     // Handle pong response
-    socket.on('pong', async () => {
+    socket.on('pong', async (data: { timestamp?: number; moduleVersion?: string }) => {
       // Clear timeout
       if (socket.heartbeatTimeoutTimer) {
         clearTimeout(socket.heartbeatTimeoutTimer)
       }
 
-      // Update last heartbeat timestamp
       connection.lastHeartbeatAt = DateTime.now()
+
+      // Update module version if it changed (sent by module >= 2.2.0)
+      // Note: we do NOT recalculate the fingerprint here — the fingerprint is set
+      // at pairing time and must remain stable, otherwise the module (which still
+      // holds the old fingerprint) will fail token refresh.
+      if (data?.moduleVersion && data.moduleVersion !== connection.moduleVersion) {
+        const oldVersion = connection.moduleVersion
+        connection.moduleVersion = data.moduleVersion
+
+        logger.info('Module version updated via heartbeat', {
+          connectionId: connection.id,
+          oldVersion,
+          newVersion: data.moduleVersion,
+        })
+      }
+
       await connection.save()
     })
   }
@@ -448,6 +501,8 @@ export default class VttWebSocketService {
         characterType: data.characterType,
         stats: data.stats,
         inventory: data.inventory,
+        spells: data.spells,
+        features: data.features,
         vttData: data.vttData,
       })
 
@@ -456,16 +511,51 @@ export default class VttWebSocketService {
         characterName: character.name,
       })
 
+      // Categorize items against campaign rules (non-fatal)
+      try {
+        const { ItemCategorySyncService } =
+          await import('#services/campaigns/item_category_sync_service')
+        const { CampaignItemCategoryRuleRepository } =
+          await import('#repositories/campaign_item_category_rule_repository')
+        const syncService = new ItemCategorySyncService(new CampaignItemCategoryRuleRepository())
+        const syncResult = await syncService.syncCharacterCategories(
+          character,
+          character.campaignId
+        )
+
+        if (syncResult.changed) {
+          const transmitModule = await import('@adonisjs/transmit/services/main')
+          const transmit = transmitModule.default
+          transmit.broadcast(`campaign:${character.campaignId}:characters`, {
+            event: 'character:categories_updated',
+            data: {
+              characterId: character.id,
+              characterName: character.name,
+              summary: syncResult.summary,
+            },
+          })
+        }
+      } catch (syncError) {
+        const syncMsg = syncError instanceof Error ? syncError.message : String(syncError)
+        logger.error('Failed to sync item categories (non-fatal)', {
+          error: syncMsg,
+          characterId: character.id,
+        })
+      }
+
       socket.emit('character:update:ack', { success: true, characterId: character.id })
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
       const errorStack = error instanceof Error ? error.stack : undefined
-      logger.error('Failed to handle character update', {
-        error: errorMessage,
-        stack: errorStack,
-        connectionId: socket.vttConnectionId,
-        characterName: data?.name,
-      })
+      logger.error(
+        {
+          error: errorMessage,
+          stack: errorStack,
+          connectionId: socket.vttConnectionId,
+          characterName: data?.name,
+        },
+        `Failed to handle character update: ${errorMessage}`
+      )
       socket.emit('character:update:ack', { success: false, error: errorMessage })
     }
   }
@@ -492,6 +582,33 @@ export default class VttWebSocketService {
             combatants: data.combatants,
             timestamp: data.timestamp,
           })
+
+          // Cache combat state in Redis for monster action handlers
+          await redis.setex(
+            `campaign:${campaign.id}:combat:active`,
+            86400,
+            JSON.stringify({
+              combatId: data.combatId,
+              combatants: data.combatants,
+              round: data.round,
+              timestamp: data.timestamp,
+            })
+          )
+
+          // Réactiver les rewards monster (combat-linked toggle)
+          try {
+            const combatRewardToggle = await app.container.make('combatRewardToggleService')
+            await combatRewardToggle.onCombatStart(campaign.id)
+          } catch (toggleError) {
+            logger.error(
+              {
+                event: 'combat_reward_toggle_start_error',
+                campaignId: campaign.id,
+                error: toggleError instanceof Error ? toggleError.message : String(toggleError),
+              },
+              'Failed to toggle combat rewards on combat start'
+            )
+          }
         }
       }
 
@@ -499,6 +616,68 @@ export default class VttWebSocketService {
     } catch (error) {
       logger.error('Failed to handle combat start', { error })
       socket.emit('combat:start:ack', { success: false, error: (error as Error).message })
+    }
+  }
+
+  /**
+   * Handle combat sync event from VTT (reconnection with active combat)
+   * Identical to combat:start — caches combat state and broadcasts to overlay.
+   */
+  private async handleCombatSync(socket: VttSocket, data: any): Promise<void> {
+    try {
+      const connectionId = socket.vttConnectionId!
+      logger.info('Combat sync (reconnection)', {
+        connectionId,
+        combatId: data.combatId,
+        round: data.round,
+      })
+
+      const connection = await VttConnection.findOrFail(connectionId)
+      await connection.load('campaigns')
+
+      if (connection.campaigns && connection.campaigns.length > 0) {
+        for (const campaign of connection.campaigns) {
+          await this.broadcastToOverlay(campaign.id, 'combat:start', {
+            combatId: data.combatId,
+            round: data.round,
+            turn: data.turn,
+            combatants: data.combatants,
+            timestamp: data.timestamp,
+          })
+
+          // Cache combat state in Redis for monster action handlers
+          await redis.setex(
+            `campaign:${campaign.id}:combat:active`,
+            86400,
+            JSON.stringify({
+              combatId: data.combatId,
+              combatants: data.combatants,
+              round: data.round,
+              timestamp: data.timestamp,
+            })
+          )
+
+          // Réactiver les rewards monster (combat-linked toggle, idempotent)
+          try {
+            const combatRewardToggle = await app.container.make('combatRewardToggleService')
+            await combatRewardToggle.onCombatStart(campaign.id)
+          } catch (toggleError) {
+            logger.error(
+              {
+                event: 'combat_reward_toggle_sync_error',
+                campaignId: campaign.id,
+                error: toggleError instanceof Error ? toggleError.message : String(toggleError),
+              },
+              'Failed to toggle combat rewards on combat sync'
+            )
+          }
+        }
+      }
+
+      socket.emit('combat:sync:ack', { success: true, combatId: data.combatId })
+    } catch (error) {
+      logger.error('Failed to handle combat sync', { error })
+      socket.emit('combat:sync:ack', { success: false, error: (error as Error).message })
     }
   }
 
@@ -562,6 +741,20 @@ export default class VttWebSocketService {
             combatants: data.combatants,
             timestamp: data.timestamp,
           })
+
+          // Refresh cached combat state with latest combatants
+          if (data.combatants) {
+            await redis.setex(
+              `campaign:${campaign.id}:combat:active`,
+              86400,
+              JSON.stringify({
+                combatId: data.combatId,
+                combatants: data.combatants,
+                round: data.round,
+                timestamp: data.timestamp,
+              })
+            )
+          }
         }
       }
 
@@ -590,6 +783,24 @@ export default class VttWebSocketService {
             finalRound: data.finalRound,
             timestamp: data.timestamp,
           })
+
+          // Clear cached combat state
+          await redis.del(`campaign:${campaign.id}:combat:active`)
+
+          // Mettre en pause les rewards monster (combat-linked toggle)
+          try {
+            const combatRewardToggle = await app.container.make('combatRewardToggleService')
+            await combatRewardToggle.onCombatEnd(campaign.id)
+          } catch (toggleError) {
+            logger.error(
+              {
+                event: 'combat_reward_toggle_end_error',
+                campaignId: campaign.id,
+                error: toggleError instanceof Error ? toggleError.message : String(toggleError),
+              },
+              'Failed to toggle combat rewards on combat end'
+            )
+          }
         }
       }
 
@@ -618,6 +829,9 @@ export default class VttWebSocketService {
             combatant: data.combatant,
             timestamp: data.timestamp,
           })
+
+          // Add combatant to cached combat state
+          await this.addCombatantToCache(campaign.id, data.combatant)
         }
       }
 
@@ -647,6 +861,9 @@ export default class VttWebSocketService {
             name: data.name,
             timestamp: data.timestamp,
           })
+
+          // Remove combatant from cached combat state
+          await this.removeCombatantFromCache(campaign.id, data.combatantId)
         }
       }
 
@@ -686,6 +903,13 @@ export default class VttWebSocketService {
         }
       }
 
+      // Update cached combat state: mark combatant as defeated
+      if (connection.campaigns && connection.campaigns.length > 0) {
+        for (const campaign of connection.campaigns) {
+          await this.updateCachedCombatant(campaign.id, data.combatant)
+        }
+      }
+
       socket.emit('combat:combatant-defeated:ack', { success: true })
     } catch (error) {
       logger.error('Failed to handle combatant defeated', { error })
@@ -693,6 +917,80 @@ export default class VttWebSocketService {
         success: false,
         error: (error as Error).message,
       })
+    }
+  }
+
+  /**
+   * Update a single combatant in the cached combat state
+   */
+  private async updateCachedCombatant(campaignId: string, combatant: any): Promise<void> {
+    if (!combatant?.id) return
+
+    try {
+      const cached = await redis.get(`campaign:${campaignId}:combat:active`)
+      if (!cached) return
+
+      const combatData = JSON.parse(cached)
+      if (!combatData.combatants) return
+
+      const index = combatData.combatants.findIndex((c: any) => c.id === combatant.id)
+      if (index !== -1) {
+        combatData.combatants[index] = { ...combatData.combatants[index], ...combatant }
+      }
+
+      await redis.setex(`campaign:${campaignId}:combat:active`, 86400, JSON.stringify(combatData))
+    } catch (error) {
+      logger.warn('Failed to update cached combatant', { campaignId, error })
+    }
+  }
+
+  /**
+   * Add a combatant to the cached combat state
+   */
+  private async addCombatantToCache(campaignId: string, combatant: any): Promise<void> {
+    if (!combatant?.id) return
+
+    try {
+      const cached = await redis.get(`campaign:${campaignId}:combat:active`)
+      if (!cached) return
+
+      const combatData = JSON.parse(cached)
+      if (!combatData.combatants) combatData.combatants = []
+
+      // Avoid duplicates
+      const exists = combatData.combatants.some((c: any) => c.id === combatant.id)
+      if (!exists) {
+        combatData.combatants.push(combatant)
+      }
+
+      await redis.setex(`campaign:${campaignId}:combat:active`, 86400, JSON.stringify(combatData))
+    } catch (error) {
+      logger.warn('Failed to add combatant to cache', {
+        campaignId,
+        combatantId: combatant?.id,
+        error,
+      })
+    }
+  }
+
+  /**
+   * Remove a combatant from the cached combat state
+   */
+  private async removeCombatantFromCache(campaignId: string, combatantId: string): Promise<void> {
+    if (!combatantId) return
+
+    try {
+      const cached = await redis.get(`campaign:${campaignId}:combat:active`)
+      if (!cached) return
+
+      const combatData = JSON.parse(cached)
+      if (!combatData.combatants) return
+
+      combatData.combatants = combatData.combatants.filter((c: any) => c.id !== combatantId)
+
+      await redis.setex(`campaign:${campaignId}:combat:active`, 86400, JSON.stringify(combatData))
+    } catch (error) {
+      logger.warn('Failed to remove combatant from cache', { campaignId, combatantId, error })
     }
   }
 
@@ -820,12 +1118,38 @@ export default class VttWebSocketService {
   /**
    * Broadcast event to specific VTT connection
    */
-  async broadcast(connectionId: string, event: string, data: any): Promise<void> {
+  async broadcast(connectionId: string, event: string, data: any): Promise<boolean> {
     if (!this.io) {
       throw new Error('WebSocket service not initialized')
     }
 
     const vttNamespace = this.io.of('/vtt')
-    vttNamespace.to(`vtt:${connectionId}`).emit(event, data)
+    const roomName = `vtt:${connectionId}`
+
+    // Check if there are actual sockets in the room before emitting
+    const sockets = await vttNamespace.in(roomName).fetchSockets()
+    if (sockets.length === 0) {
+      logger.warn(
+        {
+          event: 'vtt_broadcast_no_sockets',
+          connectionId,
+          socketEvent: event,
+        },
+        `No VTT sockets in room ${roomName} — command will not be received by Foundry`
+      )
+      return false
+    }
+
+    logger.debug(
+      {
+        connectionId,
+        socketEvent: event,
+        socketCount: sockets.length,
+      },
+      `Broadcasting to ${sockets.length} socket(s) in room ${roomName}`
+    )
+
+    vttNamespace.to(roomName).emit(event, data)
+    return true
   }
 }

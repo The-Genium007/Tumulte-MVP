@@ -230,6 +230,21 @@ export class GamificationInstanceRepository {
   }
 
   /**
+   * Récupère la dernière instance créée pour un couple campagne/événement
+   */
+  async findLatestByCampaignAndEvent(
+    campaignId: string,
+    eventId: string
+  ): Promise<GamificationInstance | null> {
+    return GamificationInstance.query()
+      .where('campaignId', campaignId)
+      .where('eventId', eventId)
+      .preload('event')
+      .orderBy('createdAt', 'desc')
+      .first()
+  }
+
+  /**
    * Compte les instances par statut pour une campagne
    */
   async countByStatus(campaignId: string): Promise<Record<GamificationInstanceStatus, number>> {

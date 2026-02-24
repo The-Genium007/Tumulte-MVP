@@ -1,6 +1,7 @@
 import { inject } from '@adonisjs/core'
 import type { HttpContext } from '@adonisjs/core/http'
 import logger from '@adonisjs/core/services/logger'
+import db from '@adonisjs/lucid/services/db'
 import { CampaignService } from '#services/campaigns/campaign_service'
 import { MembershipService } from '#services/campaigns/membership_service'
 import { ReadinessService } from '#services/campaigns/readiness_service'
@@ -11,7 +12,15 @@ import { CampaignEventsService } from '#services/campaign_events_service'
 import VttImportService from '#services/vtt/vtt_import_service'
 import VttConnection from '#models/vtt_connection'
 import { campaign as Campaign } from '#models/campaign'
-import { CampaignDto, CampaignDetailDto, CampaignInvitationDto } from '#dtos/campaigns/campaign_dto'
+import Character from '#models/character'
+import DiceRoll from '#models/dice_roll'
+import {
+  CampaignDto,
+  CampaignDetailDto,
+  CampaignInvitationDto,
+  type VttEnrichmentData,
+} from '#dtos/campaigns/campaign_dto'
+import { getSystemPreset } from '#services/campaigns/system_preset_registry'
 import { validateRequest } from '#middleware/validate_middleware'
 import {
   createCampaignSchema,
@@ -57,8 +66,47 @@ export default class CampaignsController {
     const userId = auth.user!.id
     const campaign = await this.campaignService.getCampaignWithMembers(params.id, userId)
 
+    // Gather VTT enrichment data (only for campaigns with a VTT connection)
+    let vttEnrichment: VttEnrichmentData | undefined
+
+    if (campaign.vttConnectionId) {
+      const preset = campaign.gameSystemId ? getSystemPreset(campaign.gameSystemId) : null
+
+      const [charCounts, rollCount] = await Promise.all([
+        Character.query()
+          .where('campaignId', campaign.id)
+          .select(
+            db.raw("COUNT(*) FILTER (WHERE character_type = 'pc') as pc"),
+            db.raw("COUNT(*) FILTER (WHERE character_type = 'npc') as npc"),
+            db.raw("COUNT(*) FILTER (WHERE character_type = 'monster') as monster"),
+            db.raw('COUNT(*) as total')
+          )
+          .first(),
+        DiceRoll.query().where('campaignId', campaign.id).count('* as total').first(),
+      ])
+
+      const campaignWithVtt = campaign as typeof campaign & { vttConnection?: any }
+
+      vttEnrichment = {
+        gameSystemId: campaign.gameSystemId,
+        gameSystemName: preset?.displayName ?? null,
+        isKnownSystem: !!preset,
+        primaryDie: preset?.capabilities.primaryDie ?? null,
+        systemCapabilities: preset?.capabilities ?? null,
+        characterCounts: {
+          pc: Number(charCounts?.$extras.pc ?? 0),
+          npc: Number(charCounts?.$extras.npc ?? 0),
+          monster: Number(charCounts?.$extras.monster ?? 0),
+          total: Number(charCounts?.$extras.total ?? 0),
+        },
+        diceRollCount: Number(rollCount?.$extras.total ?? 0),
+        lastVttSyncAt: campaign.lastVttSyncAt?.toISO() ?? null,
+        connectedSince: campaignWithVtt.vttConnection?.createdAt?.toISO() ?? null,
+      }
+    }
+
     return response.ok({
-      data: CampaignDetailDto.fromModel(campaign),
+      data: CampaignDetailDto.fromDetailModel(campaign, vttEnrichment),
     })
   }
 
@@ -117,7 +165,12 @@ export default class CampaignsController {
    * Invite un streamer à rejoindre la campagne
    * POST /api/v2/mj/campaigns/:id/invite
    */
-  async invite({ params, request, response }: HttpContext) {
+  async invite({ auth, params, request, response }: HttpContext) {
+    const userId = auth.user!.id
+
+    // Verify the user owns this campaign before inviting
+    await this.campaignService.getCampaignWithMembers(params.id, userId)
+
     const data = inviteStreamerSchema.parse(request.all())
 
     // Trouver ou créer le streamer
@@ -160,7 +213,12 @@ export default class CampaignsController {
    * Liste les membres actifs d'une campagne
    * GET /api/v2/mj/campaigns/:id/members
    */
-  async listMembers({ params, response }: HttpContext) {
+  async listMembers({ auth, params, response }: HttpContext) {
+    const userId = auth.user!.id
+
+    // Verify the user owns or is a member of this campaign
+    await this.campaignService.getCampaignWithMembers(params.id, userId)
+
     const members = await this.membershipService.getActiveMembers(params.id)
 
     return response.ok({

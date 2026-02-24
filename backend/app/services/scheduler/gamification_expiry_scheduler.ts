@@ -29,6 +29,7 @@ export class GamificationExpiryScheduler {
   private refundService: { processExpiredInstances: () => Promise<number> } | null = null
   private orphanDetector: {
     findOrphansDueForRetry: () => Promise<StreamerGamificationConfig[]>
+    detectStaleOrphans: () => Promise<StreamerGamificationConfig[]>
   } | null = null
   private reconciler: {
     cleanupOrphans: (orphans: StreamerGamificationConfig[]) => Promise<OrphanCleanupResult>
@@ -156,6 +157,9 @@ export class GamificationExpiryScheduler {
       const result = await this.reconciler!.cleanupOrphans(orphans)
 
       logger.info({ result }, '[GamificationScheduler] Orphan cleanup completed')
+
+      // Alert on stale orphans (stuck > 3 days)
+      await this.orphanDetector!.detectStaleOrphans()
     } catch (error) {
       logger.error(
         { error: error instanceof Error ? error.message : String(error) },

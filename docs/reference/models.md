@@ -1,246 +1,162 @@
 # Database Models
 
-This document describes the database schema and model relationships in Tumulte.
+This document describes all database models in Tumulte, organized by domain.
 
-## Entity Relationship Diagram
+## Overview
+
+Tumulte uses PostgreSQL 16 with Lucid ORM. All models use UUIDs as primary keys and include `created_at`/`updated_at` timestamps.
+
+### Conventions
+
+- Tables: `snake_case` plural (`poll_instances`)
+- Columns: `snake_case` (`created_at`, `user_id`)
+- Foreign keys in TypeScript: `camelCase` (`userId`, `campaignId`)
+- UUIDs for all primary keys
+- 70+ migrations as of v0.6.x
+
+---
+
+## Core Domain
+
+| Model | Table | Description |
+|-------|-------|-------------|
+| `User` | `users` | Users (email/password + OAuth providers) |
+| `AuthProvider` | `auth_providers` | OAuth providers linked to users (Twitch, Google) |
+| `Streamer` | `streamers` | Twitch channel info (encrypted tokens, scopes) |
+| `Campaign` | `campaigns` | RPG campaigns created by GM |
+| `CampaignMembership` | `campaign_memberships` | Streamer invitations and authorization status |
+
+### Key Relationships
 
 ```
-┌─────────┐      ┌──────────────────┐      ┌──────────┐
-│  User   │─────▶│CampaignMembership│◀─────│ Campaign │
-└────┬────┘      └──────────────────┘      └────┬─────┘
-     │                                          │
-     ▼                                          ▼
-┌──────────┐                             ┌─────────────┐
-│ Streamer │                             │ PollSession │
-└──────────┘                             └──────┬──────┘
-                                                │
-                                                ▼
-                                          ┌──────────┐
-                                          │   Poll   │
-                                          └────┬─────┘
-                                               │
-                                               ▼
-                                       ┌──────────────┐
-                                       │ PollInstance │
-                                       └──────┬───────┘
-                                              │
-                                              ▼
-                                       ┌────────────┐
-                                       │ PollResult │
-                                       └────────────┘
+User ──has one──► Streamer
+User ──has many──► Campaign (as owner)
+User ──has many──► AuthProvider
+Campaign ──has many──► CampaignMembership
+CampaignMembership ──belongs to──► User (streamer)
 ```
 
-## Models
-
-### User
-
-Represents an authenticated user (GM or Streamer).
-
-| Column | Type | Description |
-|--------|------|-------------|
-| id | integer | Primary key |
-| twitch_id | string | Twitch user ID (unique) |
-| username | string | Twitch username |
-| display_name | string | Twitch display name |
-| email | string | User email (optional) |
-| role | enum | Current role: `gm` or `streamer` |
-| created_at | timestamp | Creation date |
-| updated_at | timestamp | Last update |
-
-**Relationships**:
-- Has one Streamer
-- Has many Campaigns (as owner)
-- Has many CampaignMemberships
-
 ---
 
-### Streamer
+## Polls
 
-Stores Twitch channel information and OAuth tokens.
+| Model | Table | Description |
+|-------|-------|-------------|
+| `Poll` | `polls` | Poll definition (question, options, duration) |
+| `PollTemplate` | `poll_templates` | Reusable poll templates |
+| `PollSession` | `poll_sessions` | Group of polls launched together |
+| `PollInstance` | `poll_instances` | Single launched poll (status: PENDING → STARTED → ENDED/CANCELLED) |
+| `PollResult` | `poll_results` | Aggregated results per channel |
+| `PollChannelLink` | `poll_channel_links` | Links a poll instance to streamer channels |
 
-| Column | Type | Description |
-|--------|------|-------------|
-| id | integer | Primary key |
-| user_id | integer | Foreign key to User |
-| access_token | string | Encrypted Twitch access token |
-| refresh_token | string | Encrypted Twitch refresh token |
-| token_expires_at | timestamp | Token expiration date |
-| broadcaster_type | string | Twitch broadcaster type |
-| created_at | timestamp | Creation date |
-| updated_at | timestamp | Last update |
+### Key Relationships
 
-**Relationships**:
-- Belongs to User
-
-**Security Note**: Tokens are encrypted before storage.
-
----
-
-### Campaign
-
-Represents a game campaign that groups poll sessions.
-
-| Column | Type | Description |
-|--------|------|-------------|
-| id | integer | Primary key |
-| user_id | integer | Foreign key to User (owner) |
-| name | string | Campaign name |
-| description | text | Campaign description (optional) |
-| status | enum | Status: `active` or `archived` |
-| created_at | timestamp | Creation date |
-| updated_at | timestamp | Last update |
-
-**Relationships**:
-- Belongs to User (owner)
-- Has many PollSessions
-- Has many CampaignMemberships
-
----
-
-### CampaignMembership
-
-Junction table for campaign-streamer invitations.
-
-| Column | Type | Description |
-|--------|------|-------------|
-| id | integer | Primary key |
-| campaign_id | integer | Foreign key to Campaign |
-| user_id | integer | Foreign key to User (streamer) |
-| status | enum | Status: `pending`, `accepted`, `declined` |
-| channel_authorized | boolean | Whether channel is authorized |
-| invited_at | timestamp | Invitation date |
-| responded_at | timestamp | Response date (optional) |
-
-**Relationships**:
-- Belongs to Campaign
-- Belongs to User
-
----
-
-### PollSession
-
-Represents a game session during which polls can be run.
-
-| Column | Type | Description |
-|--------|------|-------------|
-| id | integer | Primary key |
-| campaign_id | integer | Foreign key to Campaign |
-| name | string | Session name |
-| status | enum | Status: `draft`, `active`, `ended` |
-| started_at | timestamp | When session started (optional) |
-| ended_at | timestamp | When session ended (optional) |
-| created_at | timestamp | Creation date |
-| updated_at | timestamp | Last update |
-
-**Relationships**:
-- Belongs to Campaign
-- Has many Polls
-
----
-
-### Poll
-
-Defines a poll template with question and choices.
-
-| Column | Type | Description |
-|--------|------|-------------|
-| id | integer | Primary key |
-| session_id | integer | Foreign key to PollSession |
-| question | string | Poll question |
-| choices | json | Array of choice objects |
-| duration_seconds | integer | Poll duration in seconds |
-| created_at | timestamp | Creation date |
-| updated_at | timestamp | Last update |
-
-**Choices JSON structure**:
-```json
-[
-  { "id": 1, "text": "Option A" },
-  { "id": 2, "text": "Option B" }
-]
+```
+Campaign ──has many──► PollSession
+PollSession ──has many──► Poll
+Poll ──has many──► PollInstance
+PollInstance ──has many──► PollResult
+PollInstance ──has many──► PollChannelLink
 ```
 
-**Relationships**:
-- Belongs to PollSession
-- Has many PollInstances
-
 ---
 
-### PollInstance
+## VTT Integration
 
-Represents a launched instance of a poll.
+| Model | Table | Description |
+|-------|-------|-------------|
+| `VttProvider` | `vtt_providers` | VTT platform definitions (Foundry, Roll20, etc.) |
+| `VttConnection` | `vtt_connections` | User's connection to a VTT instance |
+| `Character` | `characters` | Imported characters from VTT |
+| `CharacterAssignment` | `character_assignments` | Streamer-to-character assignments |
+| `DiceRoll` | `dice_rolls` | Dice rolls received from VTT |
+| `TokenRevocationList` | `token_revocation_lists` | Revoked VTT connection tokens |
 
-| Column | Type | Description |
-|--------|------|-------------|
-| id | integer | Primary key |
-| poll_id | integer | Foreign key to Poll |
-| status | enum | Status: `active`, `closed` |
-| twitch_poll_id | string | Twitch poll ID (optional) |
-| started_at | timestamp | When poll started |
-| ends_at | timestamp | When poll will end |
-| ended_at | timestamp | When poll actually ended (optional) |
-| created_at | timestamp | Creation date |
+### Key Relationships
 
-**Relationships**:
-- Belongs to Poll
-- Has many PollResults
-
----
-
-### PollResult
-
-Stores aggregated poll results per channel.
-
-| Column | Type | Description |
-|--------|------|-------------|
-| id | integer | Primary key |
-| poll_instance_id | integer | Foreign key to PollInstance |
-| streamer_id | integer | Foreign key to Streamer |
-| choice_id | integer | Choice ID from poll |
-| votes | integer | Number of votes |
-| updated_at | timestamp | Last update |
-
-**Relationships**:
-- Belongs to PollInstance
-- Belongs to Streamer
-
----
-
-## Indexes
-
-Key indexes for query performance:
-
-```sql
--- User lookups
-CREATE UNIQUE INDEX users_twitch_id_unique ON users(twitch_id);
-
--- Campaign queries
-CREATE INDEX campaigns_user_id_index ON campaigns(user_id);
-CREATE INDEX campaigns_status_index ON campaigns(status);
-
--- Membership queries
-CREATE INDEX memberships_campaign_id_index ON campaign_memberships(campaign_id);
-CREATE INDEX memberships_user_id_index ON campaign_memberships(user_id);
-
--- Session queries
-CREATE INDEX sessions_campaign_id_index ON poll_sessions(campaign_id);
-CREATE INDEX sessions_status_index ON poll_sessions(status);
-
--- Poll result aggregation
-CREATE INDEX results_instance_id_index ON poll_results(poll_instance_id);
-CREATE INDEX results_streamer_id_index ON poll_results(streamer_id);
 ```
+Campaign ──has many──► VttConnection
+VttConnection ──has many──► Character
+Character ──has many──► CharacterAssignment
+CharacterAssignment ──belongs to──► Streamer
+Campaign ──has many──► DiceRoll
+```
+
+---
+
+## Gamification
+
+| Model | Table | Description |
+|-------|-------|-------------|
+| `GamificationEvent` | `gamification_events` | Event definitions (dice roll, poll vote, etc.) |
+| `GamificationInstance` | `gamification_instances` | Active gamification session with progress tracking |
+| `GamificationContribution` | `gamification_contributions` | Viewer contributions to gamification goals |
+| `StreamerGamificationConfig` | `streamer_gamification_configs` | Per-streamer gamification settings and Twitch reward |
+| `CampaignGamificationConfig` | `campaign_gamification_configs` | Per-campaign gamification settings |
+
+### Key Relationships
+
+```
+GamificationEvent ──has many──► CampaignGamificationConfig
+GamificationEvent ──has many──► StreamerGamificationConfig
+Campaign ──has many──► GamificationInstance
+GamificationInstance ──has many──► GamificationContribution
+```
+
+### Instance Status Lifecycle
+
+```
+active → armed → completed (executed/failed)
+active → expired (refund)
+active → cancelled
+```
+
+> For complete gamification architecture documentation, see `docs/gamification/architecture.md`.
+
+---
+
+## Criticality Rules
+
+| Model | Table | Description |
+|-------|-------|-------------|
+| `CampaignCriticalityRule` | `campaign_criticality_rules` | Dice criticality rules per campaign (custom + system presets) |
+| `CampaignItemCategoryRule` | `campaign_item_category_rules` | Item category rules per campaign |
+
+---
+
+## Overlay & Notifications
+
+| Model | Table | Description |
+|-------|-------|-------------|
+| `OverlayConfig` | `overlay_configs` | Overlay Studio visual configurations |
+| `PushSubscription` | `push_subscriptions` | Web push notification subscriptions |
+| `NotificationPreference` | `notification_preferences` | Per-user notification settings |
+
+---
+
+## System
+
+| Model | Table | Description |
+|-------|-------|-------------|
+| `RetryEvent` | `retry_events` | Failed operation retry tracking |
+| `Subscription` | `subscriptions` | User subscription (future monetization) |
+| `PreflightReport` | `preflight_reports` | Pre-flight health check reports (JSONB checks column) |
+
+---
 
 ## Migrations
 
 Migrations are located in `backend/database/migrations/`.
 
-Run migrations:
 ```bash
+# Run migrations
 node --loader ts-node-maintained/esm bin/console.ts migration:run
+
+# Rollback
+node --loader ts-node-maintained/esm bin/console.ts migration:rollback
+
+# Check status
+node --loader ts-node-maintained/esm bin/console.ts migration:status
 ```
 
-Rollback:
-```bash
-node --loader ts-node-maintained/esm bin/console.ts migration:rollback
-```
+See the "Database Migration Safety" section in `CLAUDE.md` for production safety rules.

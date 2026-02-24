@@ -1,6 +1,6 @@
 {
   "name": "tumulte-frontend",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "private": true,
   "type": "module",
   "scripts": {
@@ -49,6 +49,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
+    "@iconify-json/game-icons": "^1.2.3",
     "@iconify-json/lucide": "^1.2.81",
     "@iconify-json/simple-icons": "^1.2.63",
     "@nuxt/test-utils": "^3.15.0",
@@ -73,6 +74,7 @@
     "typescript": "^5.7.0",
     "typescript-eslint": "^8.50.1",
     "vitest": "^3.2.0",
+    "vue-eslint-parser": "^10.4.0",
     "vue-tsc": "^3.1.8"
   }
 }

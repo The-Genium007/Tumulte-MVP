@@ -38,7 +38,7 @@ const sessionConfig = defineConfig({
    * - Ability to revoke sessions (logout global)
    * - Session visibility and management
    */
-  store: env.get('SESSION_DRIVER'),
+  store: env.get('SESSION_DRIVER', 'redis'),
 
   /**
    * List of configured stores. Refer documentation to see

@@ -7,11 +7,11 @@ const dbConfig = defineConfig({
     postgres: {
       client: 'pg',
       connection: {
-        host: env.get('DB_HOST'),
-        port: env.get('DB_PORT'),
-        user: env.get('DB_USER'),
-        password: env.get('DB_PASSWORD'),
-        database: env.get('DB_DATABASE'),
+        host: env.get('DB_HOST', '127.0.0.1'),
+        port: env.get('DB_PORT', 5432),
+        user: env.get('DB_USER', 'postgres'),
+        password: env.get('DB_PASSWORD', ''),
+        database: env.get('DB_DATABASE', 'twitch_polls'),
       },
       /**
        * Connection pool configuration for high availability
@@ -30,7 +30,7 @@ const dbConfig = defineConfig({
         reapIntervalMillis: 1000, // Check for dead connections every 1s
         createRetryIntervalMillis: 200, // Retry connection creation every 200ms
       },
-      debug: env.get('NODE_ENV') === 'development',
+      debug: env.get('NODE_ENV', 'development') === 'development',
       migrations: {
         naturalSort: true,
         paths: ['database/migrations'],

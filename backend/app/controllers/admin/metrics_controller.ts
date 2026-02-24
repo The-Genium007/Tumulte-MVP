@@ -213,8 +213,8 @@ export default class MetricsController {
    * Get daily growth data for charts
    */
   async growth({ request, response }: HttpContext) {
-    const days = request.input('days', 30)
-    const startDate = DateTime.now().minus({ days: Number(days) })
+    const days = Math.min(Math.max(Number(request.input('days', 30)), 1), 365)
+    const startDate = DateTime.now().minus({ days })
 
     // Users per day
     const userGrowth = await db

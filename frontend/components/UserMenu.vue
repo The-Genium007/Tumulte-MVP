@@ -145,6 +145,12 @@
             <!-- Divider -->
             <div class="my-1 border-t border-(--theme-border)"></div>
 
+            <!-- Color mode toggle -->
+            <ColorModeToggle />
+
+            <!-- Divider -->
+            <div class="my-1 border-t border-(--theme-border)"></div>
+
             <!-- Déconnexion -->
             <button
               @click="handleLogout"

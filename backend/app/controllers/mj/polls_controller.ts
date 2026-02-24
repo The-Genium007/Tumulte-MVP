@@ -420,6 +420,28 @@ export default class PollsController {
       })
     }
 
+    // Effectuer le health check avant de lancer
+    const healthCheck = await this.healthCheckService.performHealthCheck(params.campaignId, userId)
+
+    if (!healthCheck.healthy) {
+      let readinessDetails = null
+      if (!healthCheck.services.tokens.valid) {
+        readinessDetails = await this.readinessService.getCampaignReadiness(params.campaignId)
+      }
+
+      logger.error({
+        event: 'poll_launch_blocked_health',
+        campaignId: params.campaignId,
+        healthCheck,
+      })
+
+      return response.status(503).json({
+        error: 'Health check failed. Cannot launch poll.',
+        healthCheck,
+        readinessDetails,
+      })
+    }
+
     logger.info({
       event: 'poll_launch_initiated',
       userId,

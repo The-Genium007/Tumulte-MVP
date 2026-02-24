@@ -22,7 +22,14 @@ function createMockStream(userId: string, streamId: string) {
   /* eslint-enable camelcase */
 }
 
-test.group('TwitchApiService - getAppAccessToken', () => {
+test.group('TwitchApiService - getAppAccessToken', (group) => {
+  group.each.setup(async () => {
+    // Reset static token cache between tests
+    const { TwitchApiService } = await import('#services/twitch/twitch_api_service')
+    ;(TwitchApiService as any).appAccessToken = null
+    ;(TwitchApiService as any).tokenExpiry = 0
+  })
+
   test('should return cached token if still valid', async ({ assert }) => {
     const { TwitchApiService } = await import('#services/twitch/twitch_api_service')
     const service = new TwitchApiService()
@@ -403,7 +410,14 @@ test.group('TwitchApiService - getUsersByIdsWithRetry', () => {
   })
 })
 
-test.group('TwitchApiService - getAppAccessTokenWithRetry', () => {
+test.group('TwitchApiService - getAppAccessTokenWithRetry', (group) => {
+  group.each.setup(async () => {
+    // Reset static token cache between tests
+    const { TwitchApiService } = await import('#services/twitch/twitch_api_service')
+    ;(TwitchApiService as any).appAccessToken = null
+    ;(TwitchApiService as any).tokenExpiry = 0
+  })
+
   test('should return cached token without API call', async ({ assert }) => {
     const { TwitchApiService } = await import('#services/twitch/twitch_api_service')
     const service = new TwitchApiService()

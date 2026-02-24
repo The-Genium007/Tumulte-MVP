@@ -37,6 +37,17 @@ export const useAuthStore = defineStore('auth', () => {
    * Links anonymous events to identified user for funnel tracking.
    */
   function identifyUserInAnalytics(userData: User): void {
+    // Sentry user context (error tracking)
+    import('@/sentry.client.config')
+      .then(({ setSentryUser }) => {
+        setSentryUser({
+          id: userData.id,
+          email: userData.email ?? undefined,
+          username: userData.displayName,
+        })
+      })
+      .catch(() => {})
+
     /* eslint-disable camelcase */
     identify(userData.id, {
       // Données de base
@@ -161,6 +172,11 @@ export const useAuthStore = defineStore('auth', () => {
 
       // Reset PostHog analytics (creates new anonymous ID)
       resetAnalytics()
+
+      // Clear Sentry user context
+      import('@/sentry.client.config')
+        .then(({ setSentryUser }) => setSentryUser(null))
+        .catch(() => {})
 
       // Clear offline storage
       await clearUserData()

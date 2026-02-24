@@ -28,16 +28,8 @@ export type AnalyticsEvent =
 
   // === RETENTION / ENGAGEMENT ===
   | 'poll_launched' // Any poll launch (not just first)
-  | 'poll_results_viewed' // User views poll results
   | 'vtt_connected' // User connects VTT integration
-  | 'session_started' // User starts a poll session
   | 'dashboard_viewed' // User views their dashboard
-
-  // === REVENUE (future) ===
-  | 'pricing_viewed' // User views pricing page
-  | 'checkout_started' // User starts checkout
-  | 'subscription_created' // User subscribes
-  | 'subscription_cancelled' // User cancels
 
   // === ERRORS / FRICTION ===
   | 'auth_error' // Authentication error occurred

@@ -118,7 +118,7 @@ export const createGamificationEventSchema = z.object({
   triggerConfig: triggerConfigSchema,
   actionType: actionTypeEnum,
   actionConfig: actionConfigSchema,
-  defaultCost: z.number().int().min(1).max(1000000).default(100),
+  defaultCost: z.number().int().min(1).max(1000000).default(1000),
   defaultObjectiveCoefficient: z.number().min(0.01).max(10).default(0.3),
   defaultMinimumObjective: z.number().int().min(1).max(1000).default(3),
   defaultDuration: z.number().int().min(10).max(600).default(60),

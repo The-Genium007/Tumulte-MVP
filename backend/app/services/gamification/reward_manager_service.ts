@@ -9,6 +9,8 @@ import { StreamerGamificationConfigRepository } from '#repositories/streamer_gam
 import { GamificationConfigRepository } from '#repositories/gamification_config_repository'
 import { TwitchRewardService, type CreateRewardData } from '#services/twitch/twitch_reward_service'
 import type { TwitchEventSubService } from '#services/twitch/twitch_eventsub_service'
+import redis from '@adonisjs/redis/services/main'
+import { COMBAT_REQUIRED_ACTION_TYPES } from '#services/gamification/combat_reward_toggle_service'
 
 /**
  * RewardManagerService - Orchestration de la création/gestion des rewards Twitch
@@ -127,6 +129,26 @@ export class RewardManagerService {
     if (reward) {
       // 5. Créer la subscription EventSub pour recevoir les rédemptions
       await this.ensureEventSubSubscription(streamer, reward.id, logCtx)
+
+      // 6. Si c'est un event combat et qu'il n'y a pas de combat actif, pause immédiatement
+      if (COMBAT_REQUIRED_ACTION_TYPES.includes(event.actionType)) {
+        const combatActive = await redis.get(`campaign:${campaignId}:combat:active`)
+        if (!combatActive) {
+          const pauseSuccess = await this.twitchRewardService.disableReward(streamer, reward.id)
+          if (pauseSuccess) {
+            streamerConfig.twitchRewardStatus = 'paused'
+            await streamerConfig.save()
+            logger.info(
+              {
+                event: 'reward_paused_no_combat',
+                ...logCtx,
+                rewardId: reward.id,
+              },
+              'Reward combat pausé à la création (pas de combat actif)'
+            )
+          }
+        }
+      }
     }
 
     await streamerConfig.load('event')

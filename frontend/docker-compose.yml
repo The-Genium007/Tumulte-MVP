@@ -81,18 +81,12 @@ services:
       # API URL (must be provided via .env file)
       NUXT_PUBLIC_API_BASE: ${NUXT_PUBLIC_API_BASE}
 
-      # Sentry (optional)
+      # Sentry (optional — DSN only, auth token is build-time only via CI/CD)
       NUXT_PUBLIC_SENTRY_DSN: ${NUXT_PUBLIC_SENTRY_DSN}
-      SENTRY_ORG: ${SENTRY_ORG}
-      SENTRY_PROJECT: ${SENTRY_PROJECT}
-      SENTRY_AUTH_TOKEN: ${SENTRY_AUTH_TOKEN}
 
       # Analytics (PostHog)
       NUXT_PUBLIC_POSTHOG_KEY: ${NUXT_PUBLIC_POSTHOG_KEY}
       NUXT_PUBLIC_POSTHOG_HOST: ${NUXT_PUBLIC_POSTHOG_HOST:-https://eu.i.posthog.com}
-
-      # Analytics (GTM - optional)
-      NUXT_PUBLIC_GTM_ID: ${NUXT_PUBLIC_GTM_ID}
     networks:
       - dokploy-network
     restart: unless-stopped
