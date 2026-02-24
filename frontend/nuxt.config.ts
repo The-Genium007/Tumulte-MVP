@@ -104,6 +104,7 @@ export default defineNuxtConfig({
       // PostHog Analytics (EU)
       posthogKey: process.env.NUXT_PUBLIC_POSTHOG_KEY || '',
       posthogHost: process.env.NUXT_PUBLIC_POSTHOG_HOST || 'https://eu.i.posthog.com',
+      posthogEnv: process.env.NUXT_PUBLIC_POSTHOG_ENV || '',
     },
   },
 

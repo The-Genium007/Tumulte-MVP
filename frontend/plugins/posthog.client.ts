@@ -58,7 +58,8 @@ export default defineNuxtPlugin((nuxtApp) => {
   const config = useRuntimeConfig()
   const posthogKey = config.public.posthogKey as string
   const posthogHost = config.public.posthogHost as string
-  const environment = import.meta.env.PROD ? 'production' : 'development'
+  const posthogEnv = config.public.posthogEnv as string
+  const environment = posthogEnv || (import.meta.env.PROD ? 'production' : 'development')
 
   // Ne pas initialiser si pas de clé API
   if (!posthogKey) {
