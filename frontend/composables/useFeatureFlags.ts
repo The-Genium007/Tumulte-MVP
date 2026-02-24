@@ -7,12 +7,8 @@ import { useAnalytics } from '@/composables/useAnalytics'
  * de l'autocomplétion et du typage.
  */
 export type FeatureFlagKey =
-  // Feature rollouts
-  | 'vtt_integration' // Intégration VTT (Foundry, etc.)
-  | 'gamification' // Système de gamification
-
   // A/B tests
-  | 'cta_variant' // Variante du CTA sur la landing
+  'cta_variant' // Variante du CTA sur la landing
 
 /**
  * Composable typé pour les feature flags PostHog.
@@ -22,12 +18,7 @@ export type FeatureFlagKey =
  *
  * @example
  * ```ts
- * const { isVttIntegrationEnabled, getCtaVariant } = useFeatureFlags()
- *
- * // Vérifier un flag booléen
- * if (isVttIntegrationEnabled()) {
- *   // Afficher les fonctionnalités VTT
- * }
+ * const { getCtaVariant } = useFeatureFlags()
  *
  * // Récupérer une variante A/B
  * const variant = getCtaVariant()
@@ -38,22 +29,6 @@ export type FeatureFlagKey =
  */
 export const useFeatureFlags = () => {
   const { isFeatureEnabled, getFeatureFlag } = useAnalytics()
-
-  // ========== Feature Flags Booléens ==========
-
-  /**
-   * Vérifie si l'intégration VTT est activée
-   */
-  const isVttIntegrationEnabled = (): boolean => {
-    return isFeatureEnabled('vtt_integration')
-  }
-
-  /**
-   * Vérifie si le système de gamification est activé
-   */
-  const isGamificationEnabled = (): boolean => {
-    return isFeatureEnabled('gamification')
-  }
 
   // ========== Feature Flags Multivariés (A/B Tests) ==========
 
@@ -85,10 +60,6 @@ export const useFeatureFlags = () => {
   }
 
   return {
-    // Feature flags booléens
-    isVttIntegrationEnabled,
-    isGamificationEnabled,
-
     // A/B tests (variantes)
     getCtaVariant,
 

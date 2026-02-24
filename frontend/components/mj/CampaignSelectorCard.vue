@@ -11,6 +11,7 @@ const emit = defineEmits<{
   created: [campaign: Campaign]
 }>()
 
+const router = useRouter()
 const showCreateModal = ref(false)
 
 const items = [
@@ -25,7 +26,9 @@ const items = [
     {
       label: 'Connecter un VTT',
       icon: 'i-lucide-plug-zap',
-      to: '/mj/vtt-connections/create',
+      onSelect: () => {
+        router.push('/mj/vtt-connections/create')
+      },
     },
   ],
 ]

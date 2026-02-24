@@ -298,7 +298,6 @@ import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useToast } from '#ui/composables/useToast'
 import { useAnalytics } from '@/composables/useAnalytics'
-import { useFeatureFlags } from '@/composables/useFeatureFlags'
 
 definePageMeta({
   layout: 'authenticated' as const,
@@ -310,12 +309,6 @@ const route = useRoute()
 const toast = useToast()
 const config = useRuntimeConfig()
 const { track, setUserPropertiesOnce } = useAnalytics()
-const { isVttIntegrationEnabled } = useFeatureFlags()
-
-// Redirect if VTT integration is disabled
-if (!isVttIntegrationEnabled()) {
-  navigateTo('/mj')
-}
 
 // Foundry module URL for installation
 const foundryModuleUrl =

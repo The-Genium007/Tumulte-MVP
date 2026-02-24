@@ -346,9 +346,8 @@
         </div>
       </UCard>
 
-      <!-- VTT Connection Section (gated by feature flag) -->
-      <template v-if="isVttIntegrationEnabled()">
-        <UCard v-if="campaign?.vttConnection" class="mt-8">
+      <!-- VTT Connection Section -->
+      <UCard v-if="campaign?.vttConnection" class="mt-8">
           <template #header>
             <div class="flex items-center justify-between">
               <h2 class="text-xl font-bold text-primary">Connexion Foundry VTT</h2>
@@ -625,35 +624,34 @@
           </div>
         </UCard>
 
-        <!-- No VTT Connection - Optional invite to connect -->
-        <UCard v-else class="mt-8">
-          <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div class="flex items-center gap-4">
-              <div class="bg-info-light p-3 rounded-lg">
-                <UIcon name="i-lucide-plug-zap" class="size-6 text-info-500" />
-              </div>
-              <div>
-                <h3 class="font-semibold text-primary">Connecter un VTT (optionnel)</h3>
-                <p class="text-sm text-muted">
-                  Vous pouvez connecter Foundry VTT à tout moment pour activer la synchronisation
-                  des jets de dés et des personnages.
-                </p>
-              </div>
+      <!-- No VTT Connection - Optional invite to connect -->
+      <UCard v-else class="mt-8">
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div class="flex items-center gap-4">
+            <div class="bg-info-light p-3 rounded-lg">
+              <UIcon name="i-lucide-plug-zap" class="size-6 text-info-500" />
             </div>
-            <UButton
-              color="primary"
-              variant="soft"
-              label="Connecter"
-              icon="i-lucide-link"
-              to="/mj/vtt-connections/create"
-              class="w-full sm:w-auto"
-            />
+            <div>
+              <h3 class="font-semibold text-primary">Connecter un VTT (optionnel)</h3>
+              <p class="text-sm text-muted">
+                Vous pouvez connecter Foundry VTT à tout moment pour activer la synchronisation
+                des jets de dés et des personnages.
+              </p>
+            </div>
           </div>
-        </UCard>
-      </template>
+          <UButton
+            color="primary"
+            variant="soft"
+            label="Connecter"
+            icon="i-lucide-link"
+            to="/mj/vtt-connections/create"
+            class="w-full sm:w-auto"
+          />
+        </div>
+      </UCard>
 
       <!-- Intégration Twitch Section (VTT only — gamification events depend on VTT) -->
-      <UCard v-if="campaign?.vttConnection && isGamificationEnabled()" class="mt-8">
+      <UCard v-if="campaign?.vttConnection" class="mt-8">
         <template #header>
           <div class="flex items-center gap-3">
             <UIcon name="i-lucide-twitch" class="size-6 text-[#9146FF]" />
@@ -1825,15 +1823,12 @@ import {
   type UpdateCriticalityRuleData,
 } from '@/composables/useCriticalityRules'
 import { useItemCategoryRules } from '@/composables/useItemCategoryRules'
-import { useFeatureFlags } from '@/composables/useFeatureFlags'
 import type { Campaign, CampaignMembership, StreamerSearchResult, LiveStatusMap } from '@/types'
 import type { GamificationInstance, UpdateGamificationConfigRequest } from '@/types/api'
 
 const _router = useRouter()
 const route = useRoute()
 const campaignId = route.params.id as string
-const { isVttIntegrationEnabled, isGamificationEnabled } = useFeatureFlags()
-
 const {
   getCampaignDetails,
   inviteStreamer,

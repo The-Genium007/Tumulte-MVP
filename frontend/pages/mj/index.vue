@@ -12,7 +12,6 @@
       <!-- VTT Connection Alert Banner (only for campaigns with VTT) -->
       <MjVttAlertBanner
         v-if="
-          isVttIntegrationEnabled() &&
           selectedCampaignId &&
           currentCampaign?.vttConnection &&
           (vttHasIssue || isModuleOutdated)
@@ -42,23 +41,20 @@
           <p class="text-body-sm text-muted mb-6 max-w-md mx-auto">
             Créez votre première campagne pour commencer à configurer vos sondages
           </p>
-          <div class="flex flex-col sm:flex-row gap-3 justify-center">
-            <UButton
-              color="primary"
-              size="lg"
-              icon="i-lucide-plus"
-              label="Créer une campagne"
-              @click="showCampaignCreateModal = true"
-            />
-            <UButton
-              v-if="isVttIntegrationEnabled()"
-              color="neutral"
-              variant="soft"
-              size="lg"
-              icon="i-lucide-plug-zap"
-              label="Connecter un VTT"
-              @click="router.push('/mj/vtt-connections/create')"
-            />
+          <div class="flex justify-center">
+            <UDropdownMenu
+              :items="newCampaignMenuItems"
+              :ui="{ content: 'bg-elevated shadow-lg border border-default' }"
+            >
+              <UButton
+                color="primary"
+                size="lg"
+                icon="i-lucide-plus"
+                trailing-icon="i-lucide-chevron-down"
+              >
+                Créer une campagne
+              </UButton>
+            </UDropdownMenu>
           </div>
         </div>
       </UCard>
@@ -183,7 +179,6 @@ import { usePollControlStore } from '@/stores/pollControl'
 import { useWebSocket } from '@/composables/useWebSocket'
 import { useActionButton } from '@/composables/useActionButton'
 import { useVttHealth } from '@/composables/useVttHealth'
-import { useFeatureFlags } from '@/composables/useFeatureFlags'
 import { loggers } from '@/utils/logger'
 
 definePageMeta({
@@ -201,7 +196,6 @@ const route = useRoute()
 const router = useRouter()
 const { createTemplate, deleteTemplate, launchPoll } = usePollTemplates()
 const { campaigns, fetchCampaigns, getCampaignMembers, getLiveStatus } = useCampaigns()
-const { isVttIntegrationEnabled } = useFeatureFlags()
 
 // WebSocket setup
 const { subscribeToPoll } = useWebSocket()
@@ -242,6 +236,26 @@ interface StreamerDisplay {
 // Campaign management
 const campaignsLoaded = ref(false)
 const showCampaignCreateModal = ref(false)
+
+// Menu items for new campaign dropdown (empty state + selector card consistency)
+const newCampaignMenuItems = [
+  [
+    {
+      label: 'Créer sans VTT',
+      icon: 'i-lucide-file-plus',
+      onSelect: () => {
+        showCampaignCreateModal.value = true
+      },
+    },
+    {
+      label: 'Connecter un VTT',
+      icon: 'i-lucide-plug-zap',
+      onSelect: () => {
+        router.push('/mj/vtt-connections/create')
+      },
+    },
+  ],
+]
 
 // Handler for campaign creation (from modal or CampaignSelectorCard)
 const handleCampaignCreated = async (campaign: { id: string }) => {

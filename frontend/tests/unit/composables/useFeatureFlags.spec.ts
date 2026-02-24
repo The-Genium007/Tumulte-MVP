@@ -17,46 +17,6 @@ describe('useFeatureFlags Composable', () => {
     vi.clearAllMocks()
   })
 
-  describe('Boolean feature flags', () => {
-    test('isVttIntegrationEnabled() should check vtt_integration flag', () => {
-      mockIsFeatureEnabled.mockReturnValue(true)
-
-      const { isVttIntegrationEnabled } = useFeatureFlags()
-      const result = isVttIntegrationEnabled()
-
-      expect(mockIsFeatureEnabled).toHaveBeenCalledWith('vtt_integration')
-      expect(result).toBe(true)
-    })
-
-    test('isVttIntegrationEnabled() should return false when disabled', () => {
-      mockIsFeatureEnabled.mockReturnValue(false)
-
-      const { isVttIntegrationEnabled } = useFeatureFlags()
-      const result = isVttIntegrationEnabled()
-
-      expect(result).toBe(false)
-    })
-
-    test('isGamificationEnabled() should check gamification flag', () => {
-      mockIsFeatureEnabled.mockReturnValue(true)
-
-      const { isGamificationEnabled } = useFeatureFlags()
-      const result = isGamificationEnabled()
-
-      expect(mockIsFeatureEnabled).toHaveBeenCalledWith('gamification')
-      expect(result).toBe(true)
-    })
-
-    test('isGamificationEnabled() should return false when disabled', () => {
-      mockIsFeatureEnabled.mockReturnValue(false)
-
-      const { isGamificationEnabled } = useFeatureFlags()
-      const result = isGamificationEnabled()
-
-      expect(result).toBe(false)
-    })
-  })
-
   describe('Multivariate feature flags (A/B tests)', () => {
     test('getCtaVariant() should return variant string when set', () => {
       mockGetFeatureFlag.mockReturnValue('variant_a')
@@ -101,9 +61,9 @@ describe('useFeatureFlags Composable', () => {
       mockIsFeatureEnabled.mockReturnValue(true)
 
       const { checkFlag } = useFeatureFlags()
-      const result = checkFlag('vtt_integration')
+      const result = checkFlag('cta_variant')
 
-      expect(mockIsFeatureEnabled).toHaveBeenCalledWith('vtt_integration')
+      expect(mockIsFeatureEnabled).toHaveBeenCalledWith('cta_variant')
       expect(result).toBe(true)
     })
 
@@ -111,9 +71,9 @@ describe('useFeatureFlags Composable', () => {
       mockIsFeatureEnabled.mockReturnValue(false)
 
       const { checkFlag } = useFeatureFlags()
-      const result = checkFlag('gamification')
+      const result = checkFlag('cta_variant')
 
-      expect(mockIsFeatureEnabled).toHaveBeenCalledWith('gamification')
+      expect(mockIsFeatureEnabled).toHaveBeenCalledWith('cta_variant')
       expect(result).toBe(false)
     })
 
@@ -131,9 +91,9 @@ describe('useFeatureFlags Composable', () => {
       mockGetFeatureFlag.mockReturnValue(true)
 
       const { getFlagValue } = useFeatureFlags()
-      const result = getFlagValue('gamification')
+      const result = getFlagValue('cta_variant')
 
-      expect(mockGetFeatureFlag).toHaveBeenCalledWith('gamification')
+      expect(mockGetFeatureFlag).toHaveBeenCalledWith('cta_variant')
       expect(result).toBe(true)
     })
 
@@ -151,10 +111,6 @@ describe('useFeatureFlags Composable', () => {
   describe('All returned functions', () => {
     test('should return all feature flag helpers', () => {
       const featureFlags = useFeatureFlags()
-
-      // Boolean flags
-      expect(featureFlags.isVttIntegrationEnabled).toBeDefined()
-      expect(featureFlags.isGamificationEnabled).toBeDefined()
 
       // A/B tests
       expect(featureFlags.getCtaVariant).toBeDefined()
