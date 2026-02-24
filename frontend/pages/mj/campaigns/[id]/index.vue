@@ -348,281 +348,276 @@
 
       <!-- VTT Connection Section -->
       <UCard v-if="campaign?.vttConnection" class="mt-8">
-          <template #header>
-            <div class="flex items-center justify-between">
-              <h2 class="text-xl font-bold text-primary">Connexion Foundry VTT</h2>
-              <UBadge :color="getTunnelStatusColor(campaign.vttConnection.tunnelStatus)" size="lg">
-                {{ getTunnelStatusLabel(campaign.vttConnection.tunnelStatus) }}
-              </UBadge>
-            </div>
-          </template>
+        <template #header>
+          <div class="flex items-center justify-between">
+            <h2 class="text-xl font-bold text-primary">Connexion Foundry VTT</h2>
+            <UBadge :color="getTunnelStatusColor(campaign.vttConnection.tunnelStatus)" size="lg">
+              {{ getTunnelStatusLabel(campaign.vttConnection.tunnelStatus) }}
+            </UBadge>
+          </div>
+        </template>
 
-          <div class="space-y-4">
-            <!-- Info Grid: unified 3-column layout -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
-              <!-- Système de jeu -->
-              <div>
-                <label class="block text-sm font-bold text-primary ml-4 uppercase mb-2">
-                  Système de jeu
-                </label>
-                <div class="flex items-center gap-2 ml-4">
-                  <UBadge
-                    v-if="campaign.vttInfo?.gameSystemName"
-                    :color="campaign.vttInfo.isKnownSystem ? 'success' : 'neutral'"
-                    variant="soft"
-                  >
-                    {{ campaign.vttInfo.gameSystemName }}
-                  </UBadge>
-                  <UBadge v-else-if="campaign.vttInfo?.gameSystemId" color="neutral" variant="soft">
-                    {{ campaign.vttInfo.gameSystemId }}
-                  </UBadge>
-                  <span v-else class="text-muted text-sm italic">En attente de détection</span>
-                  <UBadge
-                    v-if="campaign.vttInfo?.primaryDie"
-                    color="info"
-                    variant="subtle"
-                    size="xs"
-                  >
-                    {{ campaign.vttInfo.primaryDie }}
-                  </UBadge>
-                </div>
-              </div>
-
-              <!-- Monde VTT -->
-              <div>
-                <label class="block text-sm font-bold text-primary ml-4 uppercase mb-2">
-                  Monde VTT
-                </label>
-                <p class="text-primary ml-4">
-                  {{ campaign.vttConnection.worldName || 'Non configuré' }}
-                </p>
-              </div>
-
-              <!-- Connecté depuis -->
-              <div v-if="campaign.vttInfo?.connectedSince">
-                <label class="block text-sm font-bold text-primary ml-4 uppercase mb-2">
-                  Connecté depuis
-                </label>
-                <p class="text-muted ml-4">
-                  {{ formatDate(campaign.vttInfo.connectedSince) }}
-                </p>
-              </div>
-
-              <!-- Version du Module -->
-              <div v-if="campaign.vttConnection.moduleVersion">
-                <label class="block text-sm font-bold text-primary ml-4 uppercase mb-2">
-                  Version du Module
-                </label>
-                <p class="text-muted ml-4">v{{ campaign.vttConnection.moduleVersion }}</p>
-              </div>
-
-              <!-- Dernière activité -->
-              <div v-if="campaign.vttConnection.lastHeartbeatAt">
-                <label class="block text-sm font-bold text-primary ml-4 uppercase mb-2">
-                  Dernière activité
-                </label>
-                <p class="text-muted ml-4">
-                  {{ formatRelativeTime(campaign.vttConnection.lastHeartbeatAt) }}
-                </p>
-              </div>
-            </div>
-
-            <!-- System Capability Badges -->
-            <div
-              v-if="campaign.vttInfo?.isKnownSystem && campaign.vttInfo.systemCapabilities"
-              class="flex flex-wrap gap-2 ml-4"
-            >
-              <UBadge
-                v-if="campaign.vttInfo.systemCapabilities.hasSpells"
-                color="primary"
-                variant="subtle"
-                size="xs"
-              >
-                <UIcon name="i-lucide-wand-sparkles" class="size-3 mr-1" />
-                Sorts
-              </UBadge>
-              <UBadge
-                v-if="campaign.vttInfo.systemCapabilities.hasTraditionalCriticals"
-                color="primary"
-                variant="subtle"
-                size="xs"
-              >
-                <UIcon name="i-lucide-target" class="size-3 mr-1" />
-                Critiques d20
-              </UBadge>
-              <UBadge
-                v-if="campaign.vttInfo.systemCapabilities.hasDicePool"
-                color="primary"
-                variant="subtle"
-                size="xs"
-              >
-                <UIcon name="i-lucide-dice-5" class="size-3 mr-1" />
-                Pool de dés
-              </UBadge>
-              <UBadge
-                v-if="campaign.vttInfo.systemCapabilities.hasPercentile"
-                color="primary"
-                variant="subtle"
-                size="xs"
-              >
-                <UIcon name="i-lucide-percent" class="size-3 mr-1" />
-                Percentile
-              </UBadge>
-              <UBadge
-                v-if="campaign.vttInfo.systemCapabilities.hasFudgeDice"
-                color="primary"
-                variant="subtle"
-                size="xs"
-              >
-                <UIcon name="i-lucide-plus-minus" class="size-3 mr-1" />
-                Dés FATE
-              </UBadge>
-              <UBadge
-                v-if="campaign.vttInfo.systemCapabilities.hasNarrativeDice"
-                color="primary"
-                variant="subtle"
-                size="xs"
-              >
-                <UIcon name="i-lucide-book-open" class="size-3 mr-1" />
-                Dés narratifs
-              </UBadge>
-            </div>
-
-            <!-- Campaign Stats (visual counters) -->
-            <div
-              v-if="hasVttStats"
-              class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4 border-t border-neutral-200 dark:border-neutral-700"
-            >
-              <div class="text-center p-3 rounded-lg bg-elevated">
-                <UIcon name="i-lucide-users" class="size-5 text-primary mx-auto mb-1" />
-                <p class="text-lg font-bold text-primary">
-                  {{ campaign.vttInfo?.characterCounts?.total ?? 0 }}
-                </p>
-                <p class="text-xs text-muted">Personnages</p>
-                <p
-                  v-if="
-                    campaign.vttInfo?.characterCounts && campaign.vttInfo.characterCounts.total > 0
-                  "
-                  class="text-xs text-muted mt-0.5"
+        <div class="space-y-4">
+          <!-- Info Grid: unified 3-column layout -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
+            <!-- Système de jeu -->
+            <div>
+              <label class="block text-sm font-bold text-primary ml-4 uppercase mb-2">
+                Système de jeu
+              </label>
+              <div class="flex items-center gap-2 ml-4">
+                <UBadge
+                  v-if="campaign.vttInfo?.gameSystemName"
+                  :color="campaign.vttInfo.isKnownSystem ? 'success' : 'neutral'"
+                  variant="soft"
                 >
-                  {{ campaign.vttInfo.characterCounts.pc }} PJ
-                  <template v-if="campaign.vttInfo.characterCounts.npc > 0">
-                    &middot; {{ campaign.vttInfo.characterCounts.npc }} PNJ
-                  </template>
-                  <template v-if="campaign.vttInfo.characterCounts.monster > 0">
-                    &middot; {{ campaign.vttInfo.characterCounts.monster }} Monstres
-                  </template>
-                </p>
-              </div>
-              <div class="text-center p-3 rounded-lg bg-elevated">
-                <UIcon name="i-lucide-dice-5" class="size-5 text-primary mx-auto mb-1" />
-                <p class="text-lg font-bold text-primary">
-                  {{ campaign.vttInfo?.diceRollCount ?? 0 }}
-                </p>
-                <p class="text-xs text-muted">Jets de dés</p>
-              </div>
-              <div class="text-center p-3 rounded-lg bg-elevated">
-                <UIcon name="i-lucide-refresh-cw" class="size-5 text-primary mx-auto mb-1" />
-                <p class="text-lg font-bold text-primary">
-                  {{
-                    campaign.vttInfo?.lastVttSyncAt
-                      ? formatRelativeTime(campaign.vttInfo.lastVttSyncAt)
-                      : '—'
-                  }}
-                </p>
-                <p class="text-xs text-muted">Dernière synchro</p>
+                  {{ campaign.vttInfo.gameSystemName }}
+                </UBadge>
+                <UBadge v-else-if="campaign.vttInfo?.gameSystemId" color="neutral" variant="soft">
+                  {{ campaign.vttInfo.gameSystemId }}
+                </UBadge>
+                <span v-else class="text-muted text-sm italic">En attente de détection</span>
+                <UBadge v-if="campaign.vttInfo?.primaryDie" color="info" variant="subtle" size="xs">
+                  {{ campaign.vttInfo.primaryDie }}
+                </UBadge>
               </div>
             </div>
 
-            <!-- Connection Status Alert -->
+            <!-- Monde VTT -->
+            <div>
+              <label class="block text-sm font-bold text-primary ml-4 uppercase mb-2">
+                Monde VTT
+              </label>
+              <p class="text-primary ml-4">
+                {{ campaign.vttConnection.worldName || 'Non configuré' }}
+              </p>
+            </div>
+
+            <!-- Connecté depuis -->
+            <div v-if="campaign.vttInfo?.connectedSince">
+              <label class="block text-sm font-bold text-primary ml-4 uppercase mb-2">
+                Connecté depuis
+              </label>
+              <p class="text-muted ml-4">
+                {{ formatDate(campaign.vttInfo.connectedSince) }}
+              </p>
+            </div>
+
+            <!-- Version du Module -->
+            <div v-if="campaign.vttConnection.moduleVersion">
+              <label class="block text-sm font-bold text-primary ml-4 uppercase mb-2">
+                Version du Module
+              </label>
+              <p class="text-muted ml-4">v{{ campaign.vttConnection.moduleVersion }}</p>
+            </div>
+
+            <!-- Dernière activité -->
+            <div v-if="campaign.vttConnection.lastHeartbeatAt">
+              <label class="block text-sm font-bold text-primary ml-4 uppercase mb-2">
+                Dernière activité
+              </label>
+              <p class="text-muted ml-4">
+                {{ formatRelativeTime(campaign.vttConnection.lastHeartbeatAt) }}
+              </p>
+            </div>
+          </div>
+
+          <!-- System Capability Badges -->
+          <div
+            v-if="campaign.vttInfo?.isKnownSystem && campaign.vttInfo.systemCapabilities"
+            class="flex flex-wrap gap-2 ml-4"
+          >
+            <UBadge
+              v-if="campaign.vttInfo.systemCapabilities.hasSpells"
+              color="primary"
+              variant="subtle"
+              size="xs"
+            >
+              <UIcon name="i-lucide-wand-sparkles" class="size-3 mr-1" />
+              Sorts
+            </UBadge>
+            <UBadge
+              v-if="campaign.vttInfo.systemCapabilities.hasTraditionalCriticals"
+              color="primary"
+              variant="subtle"
+              size="xs"
+            >
+              <UIcon name="i-lucide-target" class="size-3 mr-1" />
+              Critiques d20
+            </UBadge>
+            <UBadge
+              v-if="campaign.vttInfo.systemCapabilities.hasDicePool"
+              color="primary"
+              variant="subtle"
+              size="xs"
+            >
+              <UIcon name="i-lucide-dice-5" class="size-3 mr-1" />
+              Pool de dés
+            </UBadge>
+            <UBadge
+              v-if="campaign.vttInfo.systemCapabilities.hasPercentile"
+              color="primary"
+              variant="subtle"
+              size="xs"
+            >
+              <UIcon name="i-lucide-percent" class="size-3 mr-1" />
+              Percentile
+            </UBadge>
+            <UBadge
+              v-if="campaign.vttInfo.systemCapabilities.hasFudgeDice"
+              color="primary"
+              variant="subtle"
+              size="xs"
+            >
+              <UIcon name="i-lucide-plus-minus" class="size-3 mr-1" />
+              Dés FATE
+            </UBadge>
+            <UBadge
+              v-if="campaign.vttInfo.systemCapabilities.hasNarrativeDice"
+              color="primary"
+              variant="subtle"
+              size="xs"
+            >
+              <UIcon name="i-lucide-book-open" class="size-3 mr-1" />
+              Dés narratifs
+            </UBadge>
+          </div>
+
+          <!-- Campaign Stats (visual counters) -->
+          <div
+            v-if="hasVttStats"
+            class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4 border-t border-neutral-200 dark:border-neutral-700"
+          >
+            <div class="text-center p-3 rounded-lg bg-elevated">
+              <UIcon name="i-lucide-users" class="size-5 text-primary mx-auto mb-1" />
+              <p class="text-lg font-bold text-primary">
+                {{ campaign.vttInfo?.characterCounts?.total ?? 0 }}
+              </p>
+              <p class="text-xs text-muted">Personnages</p>
+              <p
+                v-if="
+                  campaign.vttInfo?.characterCounts && campaign.vttInfo.characterCounts.total > 0
+                "
+                class="text-xs text-muted mt-0.5"
+              >
+                {{ campaign.vttInfo.characterCounts.pc }} PJ
+                <template v-if="campaign.vttInfo.characterCounts.npc > 0">
+                  &middot; {{ campaign.vttInfo.characterCounts.npc }} PNJ
+                </template>
+                <template v-if="campaign.vttInfo.characterCounts.monster > 0">
+                  &middot; {{ campaign.vttInfo.characterCounts.monster }} Monstres
+                </template>
+              </p>
+            </div>
+            <div class="text-center p-3 rounded-lg bg-elevated">
+              <UIcon name="i-lucide-dice-5" class="size-5 text-primary mx-auto mb-1" />
+              <p class="text-lg font-bold text-primary">
+                {{ campaign.vttInfo?.diceRollCount ?? 0 }}
+              </p>
+              <p class="text-xs text-muted">Jets de dés</p>
+            </div>
+            <div class="text-center p-3 rounded-lg bg-elevated">
+              <UIcon name="i-lucide-refresh-cw" class="size-5 text-primary mx-auto mb-1" />
+              <p class="text-lg font-bold text-primary">
+                {{
+                  campaign.vttInfo?.lastVttSyncAt
+                    ? formatRelativeTime(campaign.vttInfo.lastVttSyncAt)
+                    : '—'
+                }}
+              </p>
+              <p class="text-xs text-muted">Dernière synchro</p>
+            </div>
+          </div>
+
+          <!-- Connection Status Alert -->
+          <UAlert
+            v-if="campaign.vttConnection.tunnelStatus === 'connected'"
+            color="success"
+            variant="soft"
+            icon="i-lucide-check-circle"
+            title="Connexion active"
+            description="La connexion avec votre VTT est établie et fonctionnelle."
+          />
+          <UAlert
+            v-else-if="campaign.vttConnection.tunnelStatus === 'connecting'"
+            color="warning"
+            variant="soft"
+            icon="i-game-icons-dice-twenty-faces-twenty"
+            title="Connexion en cours"
+            description="Le tunnel est en cours d'établissement avec votre VTT."
+          />
+          <UAlert
+            v-else-if="campaign.vttConnection.tunnelStatus === 'error'"
+            color="error"
+            variant="soft"
+            icon="i-lucide-alert-circle"
+            title="Erreur de connexion"
+            description="Le tunnel a rencontré une erreur. Vérifiez que votre VTT est bien en ligne."
+          />
+          <UAlert
+            v-else
+            color="neutral"
+            variant="soft"
+            icon="i-lucide-unplug"
+            title="Déconnecté"
+            description="Le tunnel n'est pas actif. Lancez votre VTT pour établir la connexion."
+          />
+
+          <!-- Revoked Status Alert with Reauthorize button -->
+          <div
+            v-if="campaign.vttConnection.status === 'revoked'"
+            class="pt-4 border-t border-neutral-200"
+          >
             <UAlert
-              v-if="campaign.vttConnection.tunnelStatus === 'connected'"
-              color="success"
-              variant="soft"
-              icon="i-lucide-check-circle"
-              title="Connexion active"
-              description="La connexion avec votre VTT est établie et fonctionnelle."
-            />
-            <UAlert
-              v-else-if="campaign.vttConnection.tunnelStatus === 'connecting'"
               color="warning"
               variant="soft"
-              icon="i-game-icons-dice-twenty-faces-twenty"
-              title="Connexion en cours"
-              description="Le tunnel est en cours d'établissement avec votre VTT."
+              icon="i-lucide-shield-off"
+              title="Connexion révoquée"
+              description="L'accès à Foundry VTT a été révoqué. Les données sont conservées. Vous pouvez réautoriser l'accès pour reconnecter le module sans refaire l'appairage."
             />
-            <UAlert
-              v-else-if="campaign.vttConnection.tunnelStatus === 'error'"
-              color="error"
-              variant="soft"
-              icon="i-lucide-alert-circle"
-              title="Erreur de connexion"
-              description="Le tunnel a rencontré une erreur. Vérifiez que votre VTT est bien en ligne."
-            />
-            <UAlert
-              v-else
-              color="neutral"
-              variant="soft"
-              icon="i-lucide-unplug"
-              title="Déconnecté"
-              description="Le tunnel n'est pas actif. Lancez votre VTT pour établir la connexion."
-            />
-
-            <!-- Revoked Status Alert with Reauthorize button -->
-            <div
-              v-if="campaign.vttConnection.status === 'revoked'"
-              class="pt-4 border-t border-neutral-200"
-            >
-              <UAlert
-                color="warning"
-                variant="soft"
-                icon="i-lucide-shield-off"
-                title="Connexion révoquée"
-                description="L'accès à Foundry VTT a été révoqué. Les données sont conservées. Vous pouvez réautoriser l'accès pour reconnecter le module sans refaire l'appairage."
-              />
-              <div class="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <h3 class="font-semibold text-primary">Réautoriser l'accès</h3>
-                  <p class="text-sm text-muted">
-                    Réactive la connexion Foundry. Le module récupérera automatiquement les nouveaux
-                    tokens.
-                  </p>
-                </div>
-                <UButton
-                  color="success"
-                  variant="soft"
-                  label="Réautoriser"
-                  icon="i-lucide-shield-check"
-                  :loading="reauthorizingVtt"
-                  class="w-full sm:w-auto"
-                  @click="handleReauthorizeVtt"
-                />
-              </div>
-            </div>
-
-            <!-- Revoke Connection (only if not already revoked) -->
-            <div
-              v-else
-              class="pt-4 border-t border-neutral-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-            >
+            <div class="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <h3 class="font-semibold text-primary">Révoquer la connexion</h3>
+                <h3 class="font-semibold text-primary">Réautoriser l'accès</h3>
                 <p class="text-sm text-muted">
-                  Déconnecte le VTT et invalide les tokens d'authentification.
+                  Réactive la connexion Foundry. Le module récupérera automatiquement les nouveaux
+                  tokens.
                 </p>
               </div>
               <UButton
-                color="warning"
+                color="success"
                 variant="soft"
-                label="Révoquer"
-                icon="i-lucide-shield-off"
-                :loading="revokingVtt"
+                label="Réautoriser"
+                icon="i-lucide-shield-check"
+                :loading="reauthorizingVtt"
                 class="w-full sm:w-auto"
-                @click="handleRevokeVtt"
+                @click="handleReauthorizeVtt"
               />
             </div>
           </div>
-        </UCard>
+
+          <!-- Revoke Connection (only if not already revoked) -->
+          <div
+            v-else
+            class="pt-4 border-t border-neutral-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+          >
+            <div>
+              <h3 class="font-semibold text-primary">Révoquer la connexion</h3>
+              <p class="text-sm text-muted">
+                Déconnecte le VTT et invalide les tokens d'authentification.
+              </p>
+            </div>
+            <UButton
+              color="warning"
+              variant="soft"
+              label="Révoquer"
+              icon="i-lucide-shield-off"
+              :loading="revokingVtt"
+              class="w-full sm:w-auto"
+              @click="handleRevokeVtt"
+            />
+          </div>
+        </div>
+      </UCard>
 
       <!-- No VTT Connection - Optional invite to connect -->
       <UCard v-else class="mt-8">
@@ -634,8 +629,8 @@
             <div>
               <h3 class="font-semibold text-primary">Connecter un VTT (optionnel)</h3>
               <p class="text-sm text-muted">
-                Vous pouvez connecter Foundry VTT à tout moment pour activer la synchronisation
-                des jets de dés et des personnages.
+                Vous pouvez connecter Foundry VTT à tout moment pour activer la synchronisation des
+                jets de dés et des personnages.
               </p>
             </div>
           </div>

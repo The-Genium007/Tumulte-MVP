@@ -12,9 +12,7 @@
       <!-- VTT Connection Alert Banner (only for campaigns with VTT) -->
       <MjVttAlertBanner
         v-if="
-          selectedCampaignId &&
-          currentCampaign?.vttConnection &&
-          (vttHasIssue || isModuleOutdated)
+          selectedCampaignId && currentCampaign?.vttConnection && (vttHasIssue || isModuleOutdated)
         "
         :status="vttHealthStatus"
         :campaign-id="selectedCampaignId"
