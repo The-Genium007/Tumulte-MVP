@@ -25,6 +25,7 @@ interface CachedCombatData {
     initiative: number | null
     isDefeated: boolean
     isNPC: boolean
+    characterType?: 'pc' | 'npc' | 'monster'
     isVisible: boolean
     hp: { current: number; max: number; temp: number } | null
   }>
@@ -50,11 +51,24 @@ export async function getActiveCombatData(campaignId: string): Promise<CachedCom
 
 /**
  * Filter hostile, non-defeated monsters from combatants.
- * A hostile monster is an NPC combatant that is not defeated and has an actorId.
+ *
+ * Uses `characterType` (from classifyActor) when available for precise filtering:
+ * only 'npc' and 'monster' are eligible. Falls back to `isNPC` flag for
+ * backward compatibility with older Foundry module versions.
  */
 export function getHostileMonsters(combatants: CachedCombatData['combatants']): MonsterInfo[] {
   return combatants
-    .filter((c) => c.isNPC && !c.isDefeated && c.actorId)
+    .filter((c) => {
+      if (!c.actorId || c.isDefeated) return false
+
+      // Prefer precise characterType classification when available
+      if (c.characterType) {
+        return c.characterType === 'npc' || c.characterType === 'monster'
+      }
+
+      // Fallback for older module versions without characterType
+      return c.isNPC
+    })
     .map((c) => ({
       actorId: c.actorId!,
       name: c.name,

@@ -18,6 +18,7 @@ function createCombatant(
     initiative: number | null
     isDefeated: boolean
     isNPC: boolean
+    characterType: 'pc' | 'npc' | 'monster'
     isVisible: boolean
     hp: { current: number; max: number; temp: number } | null
   }> = {}
@@ -117,6 +118,44 @@ test.group('monster_utils - getHostileMonsters', () => {
     ]
     const result = getHostileMonsters(combatants)
     assert.deepEqual(result, [])
+  })
+
+  // --- characterType-based filtering (new Foundry module) ---
+
+  test('should use characterType when available and exclude PCs', async ({ assert }) => {
+    const combatants = [
+      createCombatant({ name: 'Goblin', isNPC: true, characterType: 'monster' }),
+      createCombatant({ name: 'Ally NPC', isNPC: true, characterType: 'npc' }),
+      createCombatant({ name: 'PC Wizard', isNPC: false, characterType: 'pc' }),
+    ]
+    const result = getHostileMonsters(combatants)
+    assert.lengthOf(result, 2)
+    assert.deepEqual(result.map((m) => m.name).sort(), ['Ally NPC', 'Goblin'])
+  })
+
+  test('should exclude PC even when isNPC is incorrectly true (characterType takes priority)', async ({
+    assert,
+  }) => {
+    const combatants = [
+      createCombatant({ name: 'Misclassified PC', isNPC: true, characterType: 'pc' }),
+      createCombatant({ name: 'Real Monster', isNPC: true, characterType: 'monster' }),
+    ]
+    const result = getHostileMonsters(combatants)
+    assert.lengthOf(result, 1)
+    assert.equal(result[0].name, 'Real Monster')
+  })
+
+  test('should fall back to isNPC when characterType is absent (older module)', async ({
+    assert,
+  }) => {
+    const combatants = [
+      createCombatant({ name: 'Goblin', isNPC: true }),
+      createCombatant({ name: 'Player', isNPC: false }),
+    ]
+    // No characterType field — should behave as before
+    const result = getHostileMonsters(combatants)
+    assert.lengthOf(result, 1)
+    assert.equal(result[0].name, 'Goblin')
   })
 })
 
