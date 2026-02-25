@@ -2,6 +2,7 @@
   "annotations": {
     "list": []
   },
+  "description": "Dashboard de monitoring complet pour Tumulte. Couvre les services, l'application, les conteneurs Docker, PostgreSQL, Redis, et l'infrastructure systeme. Vue par defaut sur 7 jours pour le suivi des tendances et la planification de capacite.",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -10,13 +11,25 @@
   "liveNow": false,
   "panels": [
     {
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 0 },
+      "id": 200,
+      "options": {
+        "mode": "markdown",
+        "content": "# Tumulte - Monitoring Production\n\n**Comment lire ce dashboard :**\n\n| Indicateur | Normal (vert) | Attention (jaune) | Critique (rouge) | Action |\n|---|---|---|---|---|\n| **Error Rate** | < 1% | 1-5% | > 5% | Verifier les logs backend |\n| **Latency p99** | < 500ms | 500ms-1s | > 1s | Verifier DB/Redis/charge |\n| **CPU Serveur** | < 70% | 70-85% | > 85% | Envisager scaling vertical |\n| **Memoire** | < 70% | 70-85% | > 85% | Verifier fuites memoire |\n| **DB Connections** | < 60 | 60-80 | > 80 | Augmenter pool ou replicas |\n| **Redis Memoire** | < 70% | 70-90% | > 90% | Evictions probables, augmenter RAM |\n| **Disk Usage** | < 70% | 70-85% | > 85% | Nettoyer logs/donnees ou augmenter disque |\n| **Container Restarts** | 0 | 1-3/h | > 3/h | Container instable, verifier les logs |\n\n**Liens utiles :** Alertes actives sur le channel Discord #monitoring. Les alertes critiques vont sur #alertes-critiques."
+      },
+      "title": "Guide de lecture",
+      "type": "text"
+    },
+
+    {
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 6 },
       "id": 100,
       "title": "Services Status",
       "type": "row"
     },
     {
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "Etat du backend AdonisJS. DOWN = le conteneur ne repond plus sur /metrics.",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" },
@@ -26,15 +39,16 @@
           "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
         }
       },
-      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 1 },
+      "gridPos": { "h": 3, "w": 4, "x": 0, "y": 7 },
       "id": 1,
       "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
-      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "up{job=\"prometheus\"}", "refId": "A" }],
-      "title": "Prometheus",
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "up{job=\"tumulte-apps\", service=\"backend\"}", "refId": "A" }],
+      "title": "Backend",
       "type": "stat"
     },
     {
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "Etat du frontend Nuxt 3 SSR.",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" },
@@ -44,8 +58,27 @@
           "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
         }
       },
-      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 1 },
+      "gridPos": { "h": 3, "w": 4, "x": 4, "y": 7 },
       "id": 2,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "up{job=\"tumulte-apps\", service=\"frontend\"}", "refId": "A" }],
+      "title": "Frontend",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "Etat de PostgreSQL via l'exporter. DOWN = DB inaccessible.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "0": { "color": "red", "text": "DOWN" }, "1": { "color": "green", "text": "UP" } }, "type": "value" }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        }
+      },
+      "gridPos": { "h": 3, "w": 4, "x": 8, "y": 7 },
+      "id": 3,
       "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
       "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "pg_up", "refId": "A" }],
       "title": "PostgreSQL",
@@ -53,6 +86,7 @@
     },
     {
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "Etat de Redis via l'exporter. DOWN = cache/sessions inaccessibles.",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" },
@@ -62,8 +96,8 @@
           "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
         }
       },
-      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 1 },
-      "id": 3,
+      "gridPos": { "h": 3, "w": 4, "x": 12, "y": 7 },
+      "id": 4,
       "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
       "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "redis_up", "refId": "A" }],
       "title": "Redis",
@@ -71,6 +105,7 @@
     },
     {
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "Etat de Prometheus (self-monitoring).",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" },
@@ -80,117 +115,308 @@
           "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
         }
       },
-      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 1 },
-      "id": 4,
-      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
-      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "up{job=\"node-exporter\"}", "refId": "A" }],
-      "title": "Node Exporter",
-      "type": "stat"
-    },
-    {
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "thresholds" },
-          "mappings": [
-            { "options": { "0": { "color": "red", "text": "DOWN" }, "1": { "color": "green", "text": "UP" } }, "type": "value" }
-          ],
-          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
-        }
-      },
-      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 1 },
+      "gridPos": { "h": 3, "w": 4, "x": 16, "y": 7 },
       "id": 5,
       "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
-      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "up{job=\"cadvisor\"}", "refId": "A" }],
-      "title": "cAdvisor",
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "up{job=\"prometheus\"}", "refId": "A" }],
+      "title": "Prometheus",
       "type": "stat"
     },
     {
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "Nombre total de services qui repondent. Si < 6, un service est down.",
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 4 }, { "color": "green", "value": 6 }] },
           "unit": "short"
         }
       },
-      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 1 },
+      "gridPos": { "h": 3, "w": 4, "x": 20, "y": 7 },
       "id": 6,
-      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "options": { "colorMode": "background", "graphMode": "area", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
       "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "count(up == 1)", "refId": "A" }],
       "title": "Services UP",
       "type": "stat"
     },
+
     {
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "Taux d'erreurs HTTP 5xx sur les 5 dernieres minutes. > 1% = a investiguer, > 5% = critique. Les 4xx ne sont pas comptees car ce sont des erreurs client (mauvaises requetes).",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 1 }, { "color": "red", "value": 5 }] },
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "decimals": 2
+        }
+      },
+      "gridPos": { "h": 3, "w": 6, "x": 0, "y": 10 },
+      "id": 7,
+      "options": { "colorMode": "background", "graphMode": "area", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "100 * (sum(rate(tumulte_http_requests_total{status_code=~\"5..\"}[5m])) or vector(0)) / (sum(rate(tumulte_http_requests_total[5m])) > 0 or vector(1))", "refId": "A" }],
+      "title": "Error Rate (5xx)",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "Latence au 99eme percentile sur 5min. Signifie que 99% des requetes sont plus rapides. > 500ms = lent, > 1s = probleme de performance (DB lente, charge elevee, N+1 queries).",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 0.5 }, { "color": "red", "value": 1 }] },
+          "unit": "s",
+          "decimals": 0
+        }
+      },
+      "gridPos": { "h": 3, "w": 6, "x": 6, "y": 10 },
+      "id": 8,
+      "options": { "colorMode": "background", "graphMode": "area", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "histogram_quantile(0.99, sum(rate(tumulte_http_request_duration_seconds_bucket[5m])) by (le))", "refId": "A" }],
+      "title": "Latency p99",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "Nombre de requetes HTTP par seconde traitees par le backend. Permet de mesurer la charge. Si ca monte et que la latence monte aussi, il faut scaler.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 100 }, { "color": "red", "value": 500 }] },
+          "unit": "reqps",
+          "decimals": 1
+        }
+      },
+      "gridPos": { "h": 3, "w": 6, "x": 12, "y": 10 },
+      "id": 9,
+      "options": { "colorMode": "background", "graphMode": "area", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "sum(rate(tumulte_http_requests_total[5m]))", "refId": "A" }],
+      "title": "Requests/s",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "Connexions WebSocket actives (Transmit). Chaque overlay OBS ou page frontend connectee = 1 connexion. > 1000 = alerte configuree.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 500 }, { "color": "red", "value": 1000 }] },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 3, "w": 6, "x": 18, "y": 10 },
+      "id": 10,
+      "options": { "colorMode": "background", "graphMode": "area", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "tumulte_websocket_connections_total", "refId": "A" }],
+      "title": "WebSocket Connections",
+      "type": "stat"
+    },
+
+    {
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 13 },
       "id": 101,
-      "title": "CPU & Memory",
+      "title": "Application Performance (HTTP)",
       "type": "row"
     },
     {
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "Debit de requetes HTTP par seconde, ventile par methode. Permet de voir les pics de charge et les patterns de trafic (ex: pic de GET pendant un sondage).",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
-          "custom": { "axisCenteredZero": false, "axisLabel": "", "drawStyle": "line", "fillOpacity": 20, "lineWidth": 1, "showPoints": "never" },
-          "max": 100,
-          "min": 0,
-          "unit": "percent"
+          "custom": { "axisCenteredZero": false, "axisLabel": "", "drawStyle": "line", "fillOpacity": 20, "lineWidth": 1, "showPoints": "never", "stacking": { "mode": "none" } },
+          "unit": "reqps"
         }
       },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
-      "id": 10,
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
+      "id": 11,
       "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
       "targets": [
-        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "100 - (avg(irate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)", "legendFormat": "CPU Usage", "refId": "A" }
+        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "sum(rate(tumulte_http_requests_total[5m])) by (method)", "legendFormat": "{{method}}", "refId": "A" }
       ],
-      "title": "CPU Usage %",
+      "title": "Request Rate by Method",
       "type": "timeseries"
     },
     {
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "Distribution des temps de reponse. p50 = temps median, p95 = 95% des requetes, p99 = les plus lentes. Si p99 >> p50, certaines requetes sont beaucoup plus lentes que la moyenne (probablement des requetes DB complexes).",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
-          "custom": { "axisCenteredZero": false, "axisLabel": "", "drawStyle": "line", "fillOpacity": 20, "lineWidth": 1, "showPoints": "never" },
-          "unit": "bytes"
+          "custom": { "axisCenteredZero": false, "axisLabel": "", "drawStyle": "line", "fillOpacity": 10, "lineWidth": 2, "showPoints": "never" },
+          "unit": "s"
         }
       },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
-      "id": 11,
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
+      "id": 12,
       "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
       "targets": [
-        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes", "legendFormat": "Used", "refId": "A" },
-        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "node_memory_MemAvailable_bytes", "legendFormat": "Available", "refId": "B" }
+        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "histogram_quantile(0.50, sum(rate(tumulte_http_request_duration_seconds_bucket[5m])) by (le))", "legendFormat": "p50 (median)", "refId": "A" },
+        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "histogram_quantile(0.95, sum(rate(tumulte_http_request_duration_seconds_bucket[5m])) by (le))", "legendFormat": "p95", "refId": "B" },
+        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "histogram_quantile(0.99, sum(rate(tumulte_http_request_duration_seconds_bucket[5m])) by (le))", "legendFormat": "p99", "refId": "C" }
       ],
-      "title": "Memory Usage",
+      "title": "HTTP Latency Distribution (p50/p95/p99)",
       "type": "timeseries"
     },
     {
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "Pourcentage d'erreurs 5xx. En conditions normales, ce graphe doit rester a 0%. Un pic indique un probleme backend (crash, timeout DB, etc).",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "fixed", "fixedColor": "red" },
+          "custom": { "axisCenteredZero": false, "axisLabel": "", "drawStyle": "line", "fillOpacity": 30, "lineWidth": 2, "showPoints": "never" },
+          "unit": "percent",
+          "min": 0
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 22 },
+      "id": 13,
+      "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "100 * sum(rate(tumulte_http_requests_total{status_code=~\"5..\"}[5m])) / sum(rate(tumulte_http_requests_total[5m]))", "legendFormat": "5xx Error Rate %", "refId": "A" }
+      ],
+      "title": "Error Rate % (5xx)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "Repartition des codes de reponse HTTP. 2xx = succes, 3xx = redirections, 4xx = erreurs client (normal), 5xx = erreurs serveur (a investiguer).",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "axisCenteredZero": false, "axisLabel": "", "drawStyle": "bars", "fillOpacity": 80, "lineWidth": 0, "showPoints": "never", "stacking": { "mode": "normal" } },
+          "unit": "reqps"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 22 },
+      "id": 14,
+      "options": { "legend": { "calcs": ["mean"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "sum(rate(tumulte_http_requests_total{status_code=~\"2..\"}[5m]))", "legendFormat": "2xx Success", "refId": "A" },
+        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "sum(rate(tumulte_http_requests_total{status_code=~\"3..\"}[5m]))", "legendFormat": "3xx Redirect", "refId": "B" },
+        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "sum(rate(tumulte_http_requests_total{status_code=~\"4..\"}[5m]))", "legendFormat": "4xx Client Error", "refId": "C" },
+        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "sum(rate(tumulte_http_requests_total{status_code=~\"5..\"}[5m]))", "legendFormat": "5xx Server Error", "refId": "D" }
+      ],
+      "title": "HTTP Status Codes Distribution",
+      "type": "timeseries"
+    },
+
+    {
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 30 },
       "id": 102,
+      "title": "Conteneurs Docker (par service)",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "Utilisation CPU par conteneur Docker. Chaque ligne = un conteneur Tumulte. Si un conteneur depasse 80% de facon soutenue, envisager un scaling horizontal ou vertical.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "axisCenteredZero": false, "axisLabel": "", "drawStyle": "line", "fillOpacity": 15, "lineWidth": 1, "showPoints": "never" },
+          "unit": "percent",
+          "min": 0
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 31 },
+      "id": 15,
+      "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "sortBy": "Max", "sortDesc": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "sum(rate(container_cpu_usage_seconds_total{name=~\"tumulte-.*\"}[5m])) by (name) * 100", "legendFormat": "{{name}}", "refId": "A" }
+      ],
+      "title": "CPU par conteneur",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "Utilisation memoire par conteneur Docker (RSS). Compare avec les limites Docker si configurees. Une croissance continue peut indiquer une fuite memoire.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "axisCenteredZero": false, "axisLabel": "", "drawStyle": "line", "fillOpacity": 15, "lineWidth": 1, "showPoints": "never" },
+          "unit": "bytes"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 31 },
+      "id": 16,
+      "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "sortBy": "Max", "sortDesc": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "container_memory_usage_bytes{name=~\"tumulte-.*\"}", "legendFormat": "{{name}}", "refId": "A" }
+      ],
+      "title": "Memoire par conteneur",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "Nombre de redemarrages par conteneur sur la derniere heure. > 0 = le conteneur a crashe et a ete relance. > 3/h = probablement un crash loop (verifier les logs).",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 1 }, { "color": "red", "value": 3 }] },
+          "unit": "short",
+          "decimals": 0
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 39 },
+      "id": 17,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "horizontal", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "increase(container_restart_count{name=~\"tumulte-.*\"}[1h])", "legendFormat": "{{name}}", "refId": "A" }
+      ],
+      "title": "Container Restarts (last 1h)",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "Trafic reseau par conteneur. Permet de voir quel service genere le plus de trafic. Le backend devrait avoir le plus de trafic entrant (API calls), le frontend le plus de sortant (SSR pages).",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "axisCenteredZero": false, "axisLabel": "", "drawStyle": "line", "fillOpacity": 10, "lineWidth": 1, "showPoints": "never" },
+          "unit": "Bps"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 39 },
+      "id": 18,
+      "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "sum(rate(container_network_receive_bytes_total{name=~\"tumulte-.*\"}[5m])) by (name)", "legendFormat": "RX {{name}}", "refId": "A" },
+        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "sum(rate(container_network_transmit_bytes_total{name=~\"tumulte-.*\"}[5m])) by (name)", "legendFormat": "TX {{name}}", "refId": "B" }
+      ],
+      "title": "Network I/O par conteneur",
+      "type": "timeseries"
+    },
+
+    {
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 47 },
+      "id": 103,
       "title": "PostgreSQL",
       "type": "row"
     },
     {
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "Connexions actives par etat. 'active' = en train d'executer une requete, 'idle' = en attente. Si 'active' est souvent > 20, les requetes sont peut-etre trop lentes. Alerte configuree a > 80 connexions totales.",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
-          "custom": { "axisCenteredZero": false, "axisLabel": "", "drawStyle": "line", "fillOpacity": 10, "lineWidth": 1, "showPoints": "never" },
+          "custom": { "axisCenteredZero": false, "axisLabel": "", "drawStyle": "line", "fillOpacity": 20, "lineWidth": 1, "showPoints": "never", "stacking": { "mode": "normal" } },
           "unit": "short"
         }
       },
-      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 15 },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 48 },
       "id": 20,
       "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
       "targets": [
         { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "pg_stat_activity_count", "legendFormat": "{{state}}", "refId": "A" }
       ],
-      "title": "PostgreSQL Connections",
+      "title": "PostgreSQL Connections (par etat)",
       "type": "timeseries"
     },
     {
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "Taille de chaque base de donnees. Une croissance continue est normale mais une croissance soudaine peut indiquer un probleme (logs excessifs, tables non nettoyees).",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -198,7 +424,7 @@
           "unit": "bytes"
         }
       },
-      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 15 },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 48 },
       "id": 21,
       "options": { "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
       "targets": [
@@ -209,31 +435,76 @@
     },
     {
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "Nombre de transactions par seconde (commits et rollbacks). Un ratio rollbacks/commits eleve (> 5%) peut indiquer des problemes de concurrence ou des erreurs applicatives.",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
           "custom": { "axisCenteredZero": false, "axisLabel": "", "drawStyle": "line", "fillOpacity": 10, "lineWidth": 1, "showPoints": "never" },
-          "unit": "short"
+          "unit": "ops"
         }
       },
-      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 15 },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 48 },
       "id": 22,
-      "options": { "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
       "targets": [
-        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "rate(pg_stat_database_xact_commit[5m])", "legendFormat": "Commits/s", "refId": "A" },
-        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "rate(pg_stat_database_xact_rollback[5m])", "legendFormat": "Rollbacks/s", "refId": "B" }
+        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "sum(rate(pg_stat_database_xact_commit[5m]))", "legendFormat": "Commits/s", "refId": "A" },
+        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "sum(rate(pg_stat_database_xact_rollback[5m]))", "legendFormat": "Rollbacks/s", "refId": "B" }
       ],
       "title": "Transactions/s",
       "type": "timeseries"
     },
     {
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 23 },
-      "id": 103,
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "Pool de connexions cote application (Lucid ORM). Active = connexions utilisees, Idle = disponibles dans le pool. Si Active est souvent proche du max pool, augmenter la taille du pool dans la config backend.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "axisCenteredZero": false, "axisLabel": "", "drawStyle": "line", "fillOpacity": 20, "lineWidth": 1, "showPoints": "never", "stacking": { "mode": "normal" } },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 56 },
+      "id": 23,
+      "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "tumulte_db_connections_active", "legendFormat": "Active", "refId": "A" },
+        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "tumulte_db_connections_idle", "legendFormat": "Idle", "refId": "B" }
+      ],
+      "title": "Application DB Connection Pool",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "Tuples (lignes) retournees, inserees, mises a jour et supprimees par seconde. Permet de comprendre le profil de charge : beaucoup de reads (SELECT) vs writes (INSERT/UPDATE/DELETE).",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "axisCenteredZero": false, "axisLabel": "", "drawStyle": "line", "fillOpacity": 10, "lineWidth": 1, "showPoints": "never" },
+          "unit": "ops"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 56 },
+      "id": 24,
+      "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "sum(rate(pg_stat_database_tup_returned[5m]))", "legendFormat": "Returned (SELECT)", "refId": "A" },
+        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "sum(rate(pg_stat_database_tup_inserted[5m]))", "legendFormat": "Inserted", "refId": "B" },
+        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "sum(rate(pg_stat_database_tup_updated[5m]))", "legendFormat": "Updated", "refId": "C" },
+        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "sum(rate(pg_stat_database_tup_deleted[5m]))", "legendFormat": "Deleted", "refId": "D" }
+      ],
+      "title": "Tuple Operations/s (Read vs Write)",
+      "type": "timeseries"
+    },
+
+    {
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 64 },
+      "id": 104,
       "title": "Redis",
       "type": "row"
     },
     {
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "Memoire utilisee par Redis. Si elle approche du max (redis_memory_max_bytes), des evictions commenceront. Alerte configuree a > 90%.",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -241,17 +512,19 @@
           "unit": "bytes"
         }
       },
-      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 24 },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 65 },
       "id": 30,
       "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
       "targets": [
-        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "redis_memory_used_bytes", "legendFormat": "Used Memory", "refId": "A" }
+        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "redis_memory_used_bytes", "legendFormat": "Used", "refId": "A" },
+        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "redis_memory_max_bytes", "legendFormat": "Max limit", "refId": "B" }
       ],
-      "title": "Redis Memory Usage",
+      "title": "Redis Memory (Used vs Max)",
       "type": "timeseries"
     },
     {
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "Nombre de clients connectes a Redis. Chaque worker backend + chaque subscriber Transmit = 1 connexion. Une croissance anormale peut indiquer des fuites de connexions.",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -259,7 +532,7 @@
           "unit": "short"
         }
       },
-      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 24 },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 65 },
       "id": 31,
       "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
       "targets": [
@@ -270,6 +543,7 @@
     },
     {
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "Commandes Redis traitees par seconde. Inclut GET, SET, PUBLISH, etc. Un pic = activite elevee (sondage en cours, beaucoup de cache lookups).",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -277,7 +551,7 @@
           "unit": "ops"
         }
       },
-      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 24 },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 65 },
       "id": 32,
       "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
       "targets": [
@@ -287,13 +561,117 @@
       "type": "timeseries"
     },
     {
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 32 },
-      "id": 104,
-      "title": "Disk & Network",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "Taux de cache hits vs misses applicatif (metriques Tumulte). Un bon ratio > 80%. Si les misses augmentent, le cache est peut-etre mal configure ou les TTL sont trop courts.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "axisCenteredZero": false, "axisLabel": "", "drawStyle": "line", "fillOpacity": 20, "lineWidth": 1, "showPoints": "never" },
+          "unit": "ops"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 73 },
+      "id": 33,
+      "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "sum(rate(tumulte_cache_hits_total[5m]))", "legendFormat": "Cache Hits/s", "refId": "A" },
+        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "sum(rate(tumulte_cache_misses_total[5m]))", "legendFormat": "Cache Misses/s", "refId": "B" }
+      ],
+      "title": "Application Cache Hits vs Misses",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "Nombre de cles evictees par Redis par seconde. Les evictions se produisent quand Redis manque de memoire et doit supprimer des cles. > 0 de facon soutenue = Redis a besoin de plus de RAM.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "fixed", "fixedColor": "red" },
+          "custom": { "axisCenteredZero": false, "axisLabel": "", "drawStyle": "line", "fillOpacity": 30, "lineWidth": 2, "showPoints": "never" },
+          "unit": "ops"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 73 },
+      "id": 34,
+      "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "rate(redis_evicted_keys_total[5m])", "legendFormat": "Evicted Keys/s", "refId": "A" }
+      ],
+      "title": "Redis Evictions (cles supprimees par manque de RAM)",
+      "type": "timeseries"
+    },
+
+    {
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 81 },
+      "id": 105,
+      "title": "Infrastructure Systeme (Serveur hote)",
       "type": "row"
     },
     {
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "Utilisation CPU globale du serveur. > 70% en continu = risque de degradation. > 85% = scaler. Le load average donne une vue complementaire : s'il depasse le nombre de CPU, des processus attendent.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "axisCenteredZero": false, "axisLabel": "", "drawStyle": "line", "fillOpacity": 20, "lineWidth": 1, "showPoints": "never" },
+          "max": 100,
+          "min": 0,
+          "unit": "percent"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 82 },
+      "id": 40,
+      "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "100 - (avg(irate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)", "legendFormat": "CPU Usage %", "refId": "A" }
+      ],
+      "title": "CPU Usage %",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "Memoire du serveur. Used = consommee, Available = libre + cache recuperable. Si Available descend sous 10% du total, le systeme va commencer a swapper (tres lent). Alerte configuree a < 10%.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "axisCenteredZero": false, "axisLabel": "", "drawStyle": "line", "fillOpacity": 20, "lineWidth": 1, "showPoints": "never" },
+          "unit": "bytes"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 82 },
+      "id": 41,
+      "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes", "legendFormat": "Used", "refId": "A" },
+        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "node_memory_MemAvailable_bytes", "legendFormat": "Available", "refId": "B" }
+      ],
+      "title": "Memory Usage (Serveur)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "Load average 1min, 5min, 15min. Represente le nombre moyen de processus en attente de CPU. Si > nombre de cores (ex: 2 cores, load > 2), le serveur est surcharge. Le 15min donne la tendance long terme.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "axisCenteredZero": false, "axisLabel": "", "drawStyle": "line", "fillOpacity": 10, "lineWidth": 1, "showPoints": "never" },
+          "unit": "short",
+          "decimals": 2
+        }
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 90 },
+      "id": 42,
+      "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "node_load1", "legendFormat": "Load 1m", "refId": "A" },
+        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "node_load5", "legendFormat": "Load 5m", "refId": "B" },
+        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "node_load15", "legendFormat": "Load 15m", "refId": "C" }
+      ],
+      "title": "Load Average",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "Utilisation du disque principal. Seuils : > 70% jaune, > 85% rouge. Si le disque se remplit, les bases de donnees crasheront. Verifier la taille des logs Docker, des backups, et de PostgreSQL.",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" },
@@ -303,9 +681,9 @@
           "unit": "percent"
         }
       },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 33 },
-      "id": 40,
-      "options": { "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showThresholdLabels": false, "showThresholdMarkers": true },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 90 },
+      "id": 43,
+      "options": { "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showThresholdLabels": true, "showThresholdMarkers": true },
       "targets": [
         { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "100 - ((node_filesystem_avail_bytes{mountpoint=\"/\",fstype!=\"rootfs\"} / node_filesystem_size_bytes{mountpoint=\"/\",fstype!=\"rootfs\"}) * 100)", "legendFormat": "Disk Usage", "refId": "A" }
       ],
@@ -314,6 +692,7 @@
     },
     {
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "description": "Trafic reseau du serveur (hors interfaces virtuelles Docker). RX = entrant (requetes utilisateurs), TX = sortant (reponses). Un pic inhabituel peut indiquer une attaque ou un trafic anormal.",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -321,21 +700,143 @@
           "unit": "Bps"
         }
       },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 33 },
-      "id": 41,
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 90 },
+      "id": 44,
       "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
       "targets": [
         { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "rate(node_network_receive_bytes_total{device!~\"lo|veth.*|docker.*|br-.*\"}[5m])", "legendFormat": "RX {{device}}", "refId": "A" },
         { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "rate(node_network_transmit_bytes_total{device!~\"lo|veth.*|docker.*|br-.*\"}[5m])", "legendFormat": "TX {{device}}", "refId": "B" }
       ],
-      "title": "Network I/O",
+      "title": "Network I/O (Serveur)",
       "type": "timeseries"
+    },
+
+    {
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 98 },
+      "id": 106,
+      "title": "Business Metrics (Polls, Gamification, PreFlight)",
+      "type": "row",
+      "collapsed": true,
+      "panels": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "description": "Nombre de sondages actuellement en cours. Permet de correler avec la charge : plus de sondages actifs = plus de requetes API + WebSocket.",
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "thresholds" },
+              "thresholds": { "mode": "absolute", "steps": [{ "color": "blue", "value": null }] },
+              "unit": "short"
+            }
+          },
+          "gridPos": { "h": 4, "w": 6, "x": 0, "y": 99 },
+          "id": 50,
+          "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+          "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "tumulte_polls_active_total", "refId": "A" }],
+          "title": "Active Polls",
+          "type": "stat"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "description": "Sondages lances par seconde sur les 5 dernieres minutes.",
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "axisCenteredZero": false, "axisLabel": "", "drawStyle": "line", "fillOpacity": 20, "lineWidth": 1, "showPoints": "never" },
+              "unit": "ops"
+            }
+          },
+          "gridPos": { "h": 8, "w": 6, "x": 6, "y": 99 },
+          "id": 51,
+          "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+          "targets": [
+            { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "sum(rate(tumulte_polls_launched_total[5m]))", "legendFormat": "Polls launched/s", "refId": "A" }
+          ],
+          "title": "Poll Launch Rate",
+          "type": "timeseries"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "description": "Votes recus par seconde. Peut monter en pic pendant un sondage populaire.",
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "axisCenteredZero": false, "axisLabel": "", "drawStyle": "line", "fillOpacity": 20, "lineWidth": 1, "showPoints": "never" },
+              "unit": "ops"
+            }
+          },
+          "gridPos": { "h": 8, "w": 6, "x": 12, "y": 99 },
+          "id": 52,
+          "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+          "targets": [
+            { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "sum(rate(tumulte_votes_received_total[5m]))", "legendFormat": "Votes/s", "refId": "A" }
+          ],
+          "title": "Vote Throughput",
+          "type": "timeseries"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "description": "Resultats des checks PreFlight : pass = OK, warn = degradation, fail = bloquant. Des fails frequents indiquent un probleme d'infrastructure.",
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "axisCenteredZero": false, "axisLabel": "", "drawStyle": "line", "fillOpacity": 20, "lineWidth": 1, "showPoints": "never" },
+              "unit": "ops"
+            }
+          },
+          "gridPos": { "h": 8, "w": 6, "x": 18, "y": 99 },
+          "id": 53,
+          "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+          "targets": [
+            { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "sum(rate(tumulte_preflight_runs_total[5m])) by (result)", "legendFormat": "{{result}}", "refId": "A" }
+          ],
+          "title": "PreFlight Results",
+          "type": "timeseries"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "description": "Triggers de gamification par seconde, par resultat. 'triggered' = regle executee, 'blocked' = regle bloquee par cooldown, 'error' = erreur d'execution.",
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "axisCenteredZero": false, "axisLabel": "", "drawStyle": "line", "fillOpacity": 20, "lineWidth": 1, "showPoints": "never" },
+              "unit": "ops"
+            }
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 107 },
+          "id": 54,
+          "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+          "targets": [
+            { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "sum(rate(tumulte_gamification_triggers_total[5m])) by (result)", "legendFormat": "{{result}}", "refId": "A" }
+          ],
+          "title": "Gamification Triggers",
+          "type": "timeseries"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "description": "Actions de gamification executees par seconde, par type et resultat.",
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "axisCenteredZero": false, "axisLabel": "", "drawStyle": "line", "fillOpacity": 20, "lineWidth": 1, "showPoints": "never" },
+              "unit": "ops"
+            }
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 107 },
+          "id": 55,
+          "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+          "targets": [
+            { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "sum(rate(tumulte_gamification_actions_total[5m])) by (action_type, result)", "legendFormat": "{{action_type}} ({{result}})", "refId": "A" }
+          ],
+          "title": "Gamification Actions",
+          "type": "timeseries"
+        }
+      ]
     }
   ],
   "refresh": "30s",
   "schemaVersion": 38,
   "style": "dark",
-  "tags": ["tumulte", "overview", "infrastructure"],
+  "tags": ["tumulte", "production", "overview", "infrastructure"],
   "templating": {
     "list": [
       {
@@ -353,10 +854,13 @@
       }
     ]
   },
-  "time": { "from": "now-1h", "to": "now" },
-  "timepicker": {},
+  "time": { "from": "now-7d", "to": "now" },
+  "timepicker": {
+    "refresh_intervals": ["10s", "30s", "1m", "5m", "15m"],
+    "time_options": ["5m", "15m", "1h", "6h", "12h", "24h", "2d", "7d", "14d", "30d"]
+  },
   "timezone": "browser",
-  "title": "Tumulte - Overview",
+  "title": "Tumulte - Production Overview",
   "uid": "tumulte-overview",
-  "version": 1
+  "version": 2
 }
