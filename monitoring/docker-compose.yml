@@ -95,7 +95,7 @@ services:
     ports:
       - '127.0.0.1:9093:9093'
     volumes:
-      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - ./alertmanager/alertmanager.generated.yml:/etc/alertmanager/alertmanager.yml:ro
       - ./alertmanager/templates:/etc/alertmanager/templates:ro
       - alertmanager_data:/alertmanager
     networks:
