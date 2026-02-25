@@ -89,13 +89,19 @@ services:
     container_name: tumulte-alertmanager
     hostname: tumulte-alertmanager
     restart: unless-stopped
+    entrypoint: ["/bin/sh", "-c"]
     command:
-      - '--config.file=/etc/alertmanager/alertmanager.yml'
-      - '--storage.path=/alertmanager'
+      - |
+        cp /etc/alertmanager/alertmanager.template.yml /tmp/alertmanager.yml
+        sed -i "s|DISCORD_MONITORING_WEBHOOK_PLACEHOLDER|$$DISCORD_MONITORING_WEBHOOK_URL|g" /tmp/alertmanager.yml
+        sed -i "s|DISCORD_CRITICAL_WEBHOOK_PLACEHOLDER|$$DISCORD_CRITICAL_WEBHOOK_URL|g" /tmp/alertmanager.yml
+        exec /bin/alertmanager \
+          --config.file=/tmp/alertmanager.yml \
+          --storage.path=/alertmanager
     ports:
       - '127.0.0.1:9093:9093'
     volumes:
-      - ./alertmanager/alertmanager.generated.yml:/etc/alertmanager/alertmanager.yml:ro
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.template.yml:ro
       - ./alertmanager/templates:/etc/alertmanager/templates:ro
       - alertmanager_data:/alertmanager
     networks:
