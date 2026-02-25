@@ -12,8 +12,5 @@
     service: 'backend'
     app: 'tumulte'
 
-- targets:
-    - 'tumulte-frontend-prod:3000'
-  labels:
-    service: 'frontend'
-    app: 'tumulte'
+# Note: Frontend (Nuxt 3) does not expose a /metrics endpoint.
+# Frontend health is monitored via cAdvisor container metrics instead.

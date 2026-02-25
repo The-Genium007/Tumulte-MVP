@@ -28,21 +28,30 @@ services:
     container_name: tumulte-prometheus
     hostname: tumulte-prometheus
     restart: unless-stopped
+    entrypoint: ["/bin/sh", "-c"]
     command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--storage.tsdb.retention.time=${PROMETHEUS_RETENTION_TIME:-30d}'
-      - '--storage.tsdb.retention.size=${PROMETHEUS_RETENTION_SIZE:-10GB}'
-      - '--web.enable-lifecycle'
+      - |
+        cp /etc/prometheus/prometheus.template.yml /tmp/prometheus.yml
+        sed -i "s|METRICS_TOKEN_PLACEHOLDER|$$METRICS_TOKEN|g" /tmp/prometheus.yml
+        exec /bin/prometheus \
+          --config.file=/tmp/prometheus.yml \
+          --storage.tsdb.path=/prometheus \
+          --storage.tsdb.retention.time=$${PROMETHEUS_RETENTION_TIME:-30d} \
+          --storage.tsdb.retention.size=$${PROMETHEUS_RETENTION_SIZE:-10GB} \
+          --web.enable-lifecycle
     ports:
       - '127.0.0.1:9090:9090'
     volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.template.yml:ro
       - ./prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
       - ./prometheus/targets:/etc/prometheus/targets:ro
       - prometheus_data:/prometheus
     networks:
       - dokploy-network
+    environment:
+      - METRICS_TOKEN=${METRICS_TOKEN:-}
+      - PROMETHEUS_RETENTION_TIME=${PROMETHEUS_RETENTION_TIME:-30d}
+      - PROMETHEUS_RETENTION_SIZE=${PROMETHEUS_RETENTION_SIZE:-10GB}
     extra_hosts:
       - 'host.docker.internal:host-gateway'
 

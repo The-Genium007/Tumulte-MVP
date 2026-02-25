@@ -48,11 +48,8 @@ router.get('/health/ready', [healthController, 'ready'])
 // Liveness probe - checks if app is running
 router.get('/health/live', [healthController, 'live'])
 
-// Prometheus metrics endpoint (protected - admin only)
-router
-  .get('/metrics', [metricsController, 'index'])
-  .use(middleware.auth({ guards: ['web', 'api'] }))
-  .use(middleware.admin())
+// Prometheus metrics endpoint (protected by bearer token for Prometheus scraping)
+router.get('/metrics', [metricsController, 'index']).use(middleware.metricsAuth())
 
 // ==========================================
 // Routes d'authentification
