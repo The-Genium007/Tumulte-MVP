@@ -152,4 +152,11 @@ export default await Env.create(new URL('../', import.meta.url), {
   |----------------------------------------------------------
   */
   FOUNDRY_MODULE_LATEST_VERSION: Env.schema.string.optional(),
+
+  /*
+  |----------------------------------------------------------
+  | Prometheus metrics scraping token
+  |----------------------------------------------------------
+  */
+  METRICS_TOKEN: Env.schema.string.optional(),
 })
