@@ -68,8 +68,8 @@ services:
       - '127.0.0.1:3001:3000'
     volumes:
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
-      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
       - grafana_data:/var/lib/grafana
+      - ./grafana/dashboards:/etc/grafana/dashboards:ro
     networks:
       - dokploy-network
     depends_on:

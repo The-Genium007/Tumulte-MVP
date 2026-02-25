@@ -19,4 +19,4 @@ providers:
     options:
       # Chemin vers les fichiers JSON des dashboards
       # Monte ce dossier dans ton container Grafana
-      path: /var/lib/grafana/dashboards
+      path: /etc/grafana/dashboards
