@@ -1,6 +1,7 @@
 import redis from '@adonisjs/redis/services/main'
 import logger from '@adonisjs/core/services/logger'
 import { Sentry } from '#config/sentry'
+import { getMetricsService } from '#services/monitoring/metrics_service'
 
 /**
  * Service pour gérer le cache Redis
@@ -58,8 +59,12 @@ export class RedisService {
       const key = this.getPollResultsKey(pollInstanceId)
       const cached = await redis.get(key)
 
-      if (!cached) return null
+      if (!cached) {
+        getMetricsService().recordCacheMiss('poll_results')
+        return null
+      }
 
+      getMetricsService().recordCacheHit('poll_results')
       return JSON.parse(cached)
     } catch (error) {
       logger.error({ error, pollInstanceId }, 'Failed to get cached poll results')
@@ -98,8 +103,12 @@ export class RedisService {
       const key = this.getAggregatedVotesKey(pollInstanceId)
       const cached = await redis.get(key)
 
-      if (!cached) return null
+      if (!cached) {
+        getMetricsService().recordCacheMiss('aggregated_votes')
+        return null
+      }
 
+      getMetricsService().recordCacheHit('aggregated_votes')
       return JSON.parse(cached)
     } catch (error) {
       logger.error({ error, pollInstanceId }, 'Failed to get cached aggregated votes')
@@ -146,8 +155,12 @@ export class RedisService {
       const key = this.getStreamerTokenKey(streamerId)
       const cached = await redis.get(key)
 
-      if (!cached) return null
+      if (!cached) {
+        getMetricsService().recordCacheMiss('streamer_tokens')
+        return null
+      }
 
+      getMetricsService().recordCacheHit('streamer_tokens')
       return JSON.parse(cached)
     } catch (error) {
       logger.error({ error, streamerId }, 'Failed to get cached streamer tokens')
@@ -187,7 +200,15 @@ export class RedisService {
   async getCachedAppAccessToken(): Promise<string | null> {
     try {
       const key = this.getTwitchAppTokenKey()
-      return await redis.get(key)
+      const cached = await redis.get(key)
+
+      if (!cached) {
+        getMetricsService().recordCacheMiss('app_access_token')
+        return null
+      }
+
+      getMetricsService().recordCacheHit('app_access_token')
+      return cached
     } catch (error) {
       logger.error({ error }, 'Failed to get cached app access token')
       return null

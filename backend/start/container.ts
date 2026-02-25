@@ -63,6 +63,36 @@ app.container.bind('membershipService', async () => {
   return app.container.make(mod.membershipService)
 })
 
+// Readiness Service (streamer readiness checks for campaigns)
+app.container.bind('readinessService', async () => {
+  const mod = await import('#services/campaigns/readiness_service')
+  return app.container.make(mod.ReadinessService)
+})
+
+// Live Status Service (Twitch live status with Redis cache)
+app.container.bind('liveStatusService', async () => {
+  const mod = await import('#services/twitch/live_status_service')
+  return app.container.make(mod.LiveStatusService)
+})
+
+// Campaign Events Service (aggregates poll + gamification events)
+app.container.bind('campaignEventsService', async () => {
+  const mod = await import('#services/campaign_events_service')
+  return app.container.make(mod.CampaignEventsService)
+})
+
+// Health Check Service (pre-flight system health checks)
+app.container.bind('healthCheckService', async () => {
+  const mod = await import('#services/core/health_check_service')
+  return app.container.make(mod.HealthCheckService)
+})
+
+// Push Notification Service (Web Push via VAPID)
+app.container.bind('pushNotificationService', async () => {
+  const mod = await import('#services/notifications/push_notification_service')
+  return new mod.PushNotificationService()
+})
+
 // Twitch Services
 app.container.bind('twitchAuthService', async () => {
   const mod = await import('#services/auth/twitch_auth_service')
@@ -463,6 +493,18 @@ app.container.bind('itemCategoryDetectionService', async () => {
   return new mod.ItemCategoryDetectionService(repository)
 })
 
+// Gamification Instance Repository
+app.container.bind('gamificationInstanceRepository', async () => {
+  const mod = await import('#repositories/gamification_instance_repository')
+  return new mod.GamificationInstanceRepository()
+})
+
+// Gamification Contribution Repository
+app.container.bind('gamificationContributionRepository', async () => {
+  const mod = await import('#repositories/gamification_contribution_repository')
+  return new mod.GamificationContributionRepository()
+})
+
 /*
 |--------------------------------------------------------------------------
 | Export helpers pour typage
@@ -546,6 +588,21 @@ declare module '@adonisjs/core/types' {
     preFlightRunner: InstanceType<
       typeof import('#services/preflight/preflight_runner').PreFlightRunner
     >
+    readinessService: InstanceType<
+      typeof import('#services/campaigns/readiness_service').ReadinessService
+    >
+    liveStatusService: InstanceType<
+      typeof import('#services/twitch/live_status_service').LiveStatusService
+    >
+    campaignEventsService: InstanceType<
+      typeof import('#services/campaign_events_service').CampaignEventsService
+    >
+    healthCheckService: InstanceType<
+      typeof import('#services/core/health_check_service').HealthCheckService
+    >
+    pushNotificationService: InstanceType<
+      typeof import('#services/notifications/push_notification_service').PushNotificationService
+    >
 
     // Repositories
     userRepository: InstanceType<typeof import('#repositories/user_repository').UserRepository>
@@ -585,6 +642,12 @@ declare module '@adonisjs/core/types' {
     >
     itemCategoryDetectionService: InstanceType<
       typeof import('#services/campaigns/item_category_detection_service').ItemCategoryDetectionService
+    >
+    gamificationInstanceRepository: InstanceType<
+      typeof import('#repositories/gamification_instance_repository').GamificationInstanceRepository
+    >
+    gamificationContributionRepository: InstanceType<
+      typeof import('#repositories/gamification_contribution_repository').GamificationContributionRepository
     >
   }
 }
