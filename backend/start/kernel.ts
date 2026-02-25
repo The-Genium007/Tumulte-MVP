@@ -52,4 +52,5 @@ export const middleware = router.named({
   validateUuid: () => import('#middleware/validate_uuid_params_middleware'),
   admin: () => import('#middleware/admin_middleware'),
   premium: () => import('#middleware/premium_middleware'),
+  metricsAuth: () => import('#middleware/metrics_auth_middleware'),
 })
